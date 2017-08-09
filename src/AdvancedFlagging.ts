@@ -225,7 +225,7 @@ function SetupPostPage() {
         dropDown.append(commentingRow);
 
         nattyLink.append(dropDown);
-        nattyLink.hover(() => dropDown.toggle());
+        nattyLink.click(() => dropDown.toggle());
 
         jqueryItem.append(nattyLink);
         jqueryItem.append(reportedIcon);

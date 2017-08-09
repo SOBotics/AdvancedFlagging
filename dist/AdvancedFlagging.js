@@ -404,7 +404,7 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
             commentingRow.append(leaveCommentBox);
             dropDown.append(commentingRow);
             nattyLink.append(dropDown);
-            nattyLink.hover(function () { return dropDown.toggle(); });
+            nattyLink.click(function () { return dropDown.toggle(); });
             jqueryItem.append(nattyLink);
             jqueryItem.append(reportedIcon);
             var nattyIcon = $('<div>')

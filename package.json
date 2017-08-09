@@ -1,0 +1,9 @@
+{
+  "name": "testbed",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "Robert Rudman <rjrudman@gmail.com> (https://github.com/rjrudman/TSLinq)",
+  "license": "ISC"
+}

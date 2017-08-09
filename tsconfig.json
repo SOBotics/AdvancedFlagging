@@ -1,0 +1,21 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "sourceMap": false,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "downlevelIteration": true,
+    "strict": true,
+    "outFile": "./dist/AdvancedFlagging.js",
+    "module": "amd",
+    "target": "es5",
+    "lib": [
+      "es2015",
+      "dom"
+    ]
+  }
+}

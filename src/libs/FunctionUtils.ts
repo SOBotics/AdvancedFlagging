@@ -1,3 +1,4 @@
+// tslint:disable-next-line:typeof-compare
 const hasStorage = typeof (Storage) !== undefined;
 
 export interface ExpiryingCacheItem<T> {
@@ -5,14 +6,15 @@ export interface ExpiryingCacheItem<T> {
     Expires?: Date
 }
 
-export function GetAndCache<T>(cacheKey: string, getterPromise: Promise<T>, expiresAt?: Date): Promise<T> {
-    let cachedItem = GetFromCache<T>(cacheKey);
+export function GetAndCache<T>(cacheKey: string, getterPromise: () => Promise<T>, expiresAt?: Date): Promise<T> {
+    const cachedItem = GetFromCache<T>(cacheKey);
     if (cachedItem) {
         return Promise.resolve(cachedItem);
     }
 
-    getterPromise.then(result => { StoreInCache(cacheKey, result, expiresAt); });
-    return getterPromise;
+    const promise = getterPromise();
+    promise.then(result => { StoreInCache(cacheKey, result, expiresAt); });
+    return promise;
 }
 
 export function GetFromCache<T>(cacheKey: string): T | undefined {
@@ -46,8 +48,8 @@ export function GroupBy<T>(collection: T[], propertyGetter: (item: T) => any) {
 };
 
 export function GetMembers(item: any): string[] {
-    let members = [];
-    for (let key in item) {
+    const members = [];
+    for (const key in item) {
         if (item.hasOwnProperty(key)) {
             members.push(key);
         }

@@ -33,5 +33,5 @@ export function GetNattyFeedback(answerId: number): Promise<NattyFeedbackInfo> {
             },
         });
     });
-    return GetAndCache(`NattyApi.Feedback.${answerId}`, getterPromise);
+    return GetAndCache(`NattyApi.Feedback.${answerId}`, () => getterPromise);
 }

@@ -15,14 +15,14 @@ export class ChatApi {
                     url: `${this.chatRoomUrl}/rooms/${roomId}`,
                     type: 'GET'
                 }).done((data: any, textStatus: string, jqXHR: JQueryXHR) => {
-                    var fkey = data.match(/hidden" value="([\dabcdef]{32})/)[1];
+                    const fkey = data.match(/hidden" value="([\dabcdef]{32})/)[1];
                     resolve(fkey);
                 }).fail((jqXHR: JQueryXHR, textStatus: string, errorThrown: string) => {
                     reject({ jqXHR, textStatus, errorThrown });
                 })
         });
 
-        return GetAndCache(cachingKey, getterPromise);
+        return GetAndCache(cachingKey, () => getterPromise);
     }
 
     public SendMessage(roomId: number, message: string, providedFkey?: string): Promise<void> {

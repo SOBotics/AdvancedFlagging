@@ -148,7 +148,6 @@ function SetupPostPage() {
         const nattyPromise = new Promise<boolean>((resolve, reject) => nattyPromiseResolver = resolve);
 
         const reportedIcon = $('<div>').addClass('comment-flag').css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' }).hide();
-
         const getDivider = () => $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' });
         flagCategories.forEach(flagCategory => {
             flagCategory.FlagTypes.forEach(flagType => {
@@ -169,7 +168,11 @@ function SetupPostPage() {
                         })
                     }
                     if (result.FlagPromise) {
-                        result.FlagPromise.then(() => reportedIcon.show());
+                        result.FlagPromise.then(() => {
+                            StoreInCache(`AdvancedFlagging.Flagged.${answerId}`, flagType);
+                            reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`)
+                            reportedIcon.show();
+                        });
                     }
 
                     smokeyPromise.then(r => {
@@ -221,15 +224,19 @@ function SetupPostPage() {
         jqueryItem.append(nattyLink);
         jqueryItem.append(reportedIcon);
 
-        const nattyIcon = $('<img>')
-            .css({ 'width': '15px', 'height': '16px', 'margin-left': '5px' })
-            .attr('src', 'https://i.stack.imgur.com/aMUMt.jpg?s=328&g=1')
+        const nattyIcon = $('<div>')
+            .css({
+                'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
+                'background': 'url("https://i.stack.imgur.com/aMUMt.jpg?s=328&g=1"', 'background-size': '100%'
+            })
             .attr('title', 'Reported by Natty')
             .hide();
 
         const smokeyIcon = $('<img>')
-            .css({ 'width': '15px', 'height': '16px', 'margin-left': '5px' })
-            .attr('src', 'https://i.stack.imgur.com/WyV1l.png?s=128&g=1')
+            .css({
+                'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
+                'background': 'url("https://i.stack.imgur.com/WyV1l.png?s=128&g=1"', 'background-size': '100%'
+            })
             .attr('title', 'Reported by Smokey')
             .hide();
 
@@ -260,6 +267,12 @@ function SetupPostPage() {
                 smokeyPromiseResolver(false);
             }
         });
+
+        const previousFlag = GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${answerId}`);
+        if (previousFlag) {
+            reportedIcon.attr('title', `Previously flagged as ${previousFlag.ReportType}`)
+            reportedIcon.show();
+        }
 
         jqueryItem.append(nattyIcon);
         jqueryItem.append(smokeyIcon);

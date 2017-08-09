@@ -281,6 +281,10 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
                 .attr('type', 'checkbox')
                 .attr('name', checkboxName)
                 .prop('checked', true);
+            var smokeyPromiseResolver;
+            var smokeyPromise = new Promise(function (resolve, reject) { return smokeyPromiseResolver = resolve; });
+            var nattyPromiseResolver;
+            var nattyPromise = new Promise(function (resolve, reject) { return nattyPromiseResolver = resolve; });
             var reportedIcon = $('<div>').addClass('comment-flag').css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' }).hide();
             var getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
             FlagTypes_1.flagCategories.forEach(function (flagCategory) {
@@ -301,8 +305,28 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
                             });
                         }
                         if (result.FlagPromise) {
-                            result.FlagPromise.then(function () { return reportedIcon.show(); });
+                            result.FlagPromise.then(function () {
+                                FunctionUtils_2.StoreInCache("AdvancedFlagging.Flagged." + answerId, flagType);
+                                reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
+                                reportedIcon.show();
+                            });
                         }
+                        smokeyPromise.then(function (r) {
+                            if (r) {
+                                // Flag TP
+                            }
+                            else {
+                                // Report
+                            }
+                        });
+                        nattyPromise.then(function (r) {
+                            if (r) {
+                                // Flag TP
+                            }
+                            else {
+                                // Report
+                            }
+                        });
                     });
                     nattyLinkItem.text(flagType.DisplayName);
                     dropdownItem.append(nattyLinkItem);
@@ -325,20 +349,28 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
             nattyLink.hover(function () { return dropDown.toggle(); });
             jqueryItem.append(nattyLink);
             jqueryItem.append(reportedIcon);
-            var nattyIcon = $('<img>')
-                .css({ 'width': '15px', 'height': '16px', 'margin-left': '5px' })
-                .attr('src', 'https://i.stack.imgur.com/aMUMt.jpg?s=328&g=1')
+            var nattyIcon = $('<div>')
+                .css({
+                'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
+                'background': 'url("https://i.stack.imgur.com/aMUMt.jpg?s=328&g=1"', 'background-size': '100%'
+            })
                 .attr('title', 'Reported by Natty')
                 .hide();
             var smokeyIcon = $('<img>')
-                .css({ 'width': '15px', 'height': '16px', 'margin-left': '5px' })
-                .attr('src', 'https://i.stack.imgur.com/WyV1l.png?s=128&g=1')
+                .css({
+                'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
+                'background': 'url("https://i.stack.imgur.com/WyV1l.png?s=128&g=1"', 'background-size': '100%'
+            })
                 .attr('title', 'Reported by Smokey')
                 .hide();
             FunctionUtils_2.GetAndCache("NattyFeedback." + answerId, function () { return NattyApi_1.GetNattyFeedback(answerId); })
                 .then(function (nattyResult) {
                 if (nattyResult.items && nattyResult.items[0]) {
+                    nattyPromiseResolver(true);
                     nattyIcon.show();
+                }
+                else {
+                    nattyPromiseResolver(false);
                 }
             });
             FunctionUtils_2.GetAndCache("SmokeyFeedback." + answerId, function () { return new Promise(function (resolve, reject) {
@@ -352,9 +384,18 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
                 });
             }); }).then(function (smokeyResult) {
                 if (smokeyResult.items.length > 0) {
+                    smokeyPromiseResolver(true);
                     smokeyIcon.show();
                 }
+                else {
+                    smokeyPromiseResolver(false);
+                }
             });
+            var previousFlag = FunctionUtils_2.GetFromCache("AdvancedFlagging.Flagged." + answerId);
+            if (previousFlag) {
+                reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
+                reportedIcon.show();
+            }
             jqueryItem.append(nattyIcon);
             jqueryItem.append(smokeyIcon);
         });

@@ -1,163 +1,177 @@
 "use strict";
-debugger;
-var redFlagLinks = [
-    {
-        LinkName: 'Spam',
-        ReportType: 'redflag'
-    },
-    {
-        LinkName: 'Rude or Abusive',
-        ReportType: 'redflag'
-    }
-];
-var nattyLinks = [
-    {
-        LinkName: 'Link Only',
-        ReportType: 'naa',
-        Comment: 'A link to a solution is welcome, but please ensure your answer is useful without it: ' +
-            '[add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will ' +
-            'have some idea what it is and why it’s there, then quote the most relevant part of the ' +
-            'page you\'re linking to in case the target page is unavailable. ' +
-            '[Answers that are little more than a link may be deleted.](//stackoverflow.com/help/deleted-answers)'
-    },
-    {
-        LinkName: 'Not an answer',
-        ReportType: 'naa',
-        Comments: [
-            {
-                ReputationLimit: 0,
-                Comment: 'This does not provide an answer to the question. You can [search for similar questions](//stackoverflow.com/search), ' +
-                    'or refer to the related and linked questions on the right-hand side of the page to find an answer. ' +
-                    'If you have a related but different question, [ask a new question](//stackoverflow.com/questions/ask), ' +
-                    'and include a link to this one to help provide context. ' +
-                    'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)',
-            },
-            {
-                ReputationLimit: 50,
-                Comment: 'This post doesn\'t look like an attempt to answer this question. Every post here is expected to be ' +
-                    'an explicit attempt to *answer* this question; if you have a critique or need a clarification of ' +
-                    'the question or another answer, you can [post a comment](//stackoverflow.com/help/privileges/comment) ' +
-                    '(like this one) directly below it. Please remove this answer and create either a comment or a new question. ' +
-                    'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)',
-            }
-        ]
-    },
-    {
-        LinkName: 'Thanks',
-        ReportType: 'naa',
-        Comment: 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
-            'and can be perceived as noise by its future visitors. Once you [earn](http://meta.stackoverflow.com/q/146472) ' +
-            'enough [reputation](http://stackoverflow.com/help/whats-reputation), you will gain privileges to ' +
-            '[upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
-            'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
-            'See [Why is voting important](http://stackoverflow.com/help/why-vote).',
-    },
-    {
-        LinkName: 'Me too',
-        ReportType: 'naa',
-        Comment: 'Please don\'t add *"Me too"* as answers. It doesn\'t actually provide an answer to the question. ' +
-            'If you have a different but related question, then [ask](//$SITEURL$/questions/ask) it ' +
-            '(reference this one if it will help provide context). If you\'re interested in this specific question, ' +
-            'you can [upvote](//stackoverflow.com/help/privileges/vote-up) it, leave a [comment](//stackoverflow.com/help/privileges/comment), ' +
-            'or start a [bounty](//stackoverflow.com/help/privileges/set-bounties) ' +
-            'once you have enough [reputation](//stackoverflow.com/help/whats-reputation).',
-    },
-    {
-        LinkName: 'Library',
-        ReportType: 'naa',
-        Comment: 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](http://meta.stackoverflow.com/a/251605) in the answer itself.'
-    }
-];
-function handleClick(link, commentRequired) {
-    if (commentRequired) {
-        var commentText = null;
-        if (link.Comment) {
-            commentText = Promise.resolve(link.Comment);
+define("FlagTypes", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.flagCategories = [
+        {
+            BoxStyle: { 'padding-left': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
+            FlagTypes: [
+                {
+                    DisplayName: 'Spam',
+                    ReportType: 'redflag'
+                },
+                {
+                    DisplayName: 'Rude or Abusive',
+                    ReportType: 'redflag'
+                }
+            ]
+        },
+        {
+            BoxStyle: { 'padding-left': '5px' },
+            FlagTypes: [
+                {
+                    DisplayName: 'Link Only',
+                    ReportType: 'naa',
+                    Comment: 'A link to a solution is welcome, but please ensure your answer is useful without it: ' +
+                        '[add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will ' +
+                        'have some idea what it is and why it’s there, then quote the most relevant part of the ' +
+                        'page you\'re linking to in case the target page is unavailable. ' +
+                        '[Answers that are little more than a link may be deleted.](//stackoverflow.com/help/deleted-answers)'
+                },
+                {
+                    DisplayName: 'Not an answer',
+                    ReportType: 'naa',
+                    Comments: [
+                        {
+                            ReputationLimit: 0,
+                            Comment: 'This does not provide an answer to the question. You can [search for similar questions](//stackoverflow.com/search), ' +
+                                'or refer to the related and linked questions on the right-hand side of the page to find an answer. ' +
+                                'If you have a related but different question, [ask a new question](//stackoverflow.com/questions/ask), ' +
+                                'and include a link to this one to help provide context. ' +
+                                'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)',
+                        },
+                        {
+                            ReputationLimit: 50,
+                            Comment: 'This post doesn\'t look like an attempt to answer this question. Every post here is expected to be ' +
+                                'an explicit attempt to *answer* this question; if you have a critique or need a clarification of ' +
+                                'the question or another answer, you can [post a comment](//stackoverflow.com/help/privileges/comment) ' +
+                                '(like this one) directly below it. Please remove this answer and create either a comment or a new question. ' +
+                                'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)',
+                        }
+                    ]
+                },
+                {
+                    DisplayName: 'Thanks',
+                    ReportType: 'naa',
+                    Comment: 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
+                        'and can be perceived as noise by its future visitors. Once you [earn](http://meta.stackoverflow.com/q/146472) ' +
+                        'enough [reputation](http://stackoverflow.com/help/whats-reputation), you will gain privileges to ' +
+                        '[upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
+                        'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
+                        'See [Why is voting important](http://stackoverflow.com/help/why-vote).',
+                },
+                {
+                    DisplayName: 'Me too',
+                    ReportType: 'naa',
+                    Comment: 'Please don\'t add *"Me too"* as answers. It doesn\'t actually provide an answer to the question. ' +
+                        'If you have a different but related question, then [ask](//$SITEURL$/questions/ask) it ' +
+                        '(reference this one if it will help provide context). If you\'re interested in this specific question, ' +
+                        'you can [upvote](//stackoverflow.com/help/privileges/vote-up) it, leave a [comment](//stackoverflow.com/help/privileges/comment), ' +
+                        'or start a [bounty](//stackoverflow.com/help/privileges/set-bounties) ' +
+                        'once you have enough [reputation](//stackoverflow.com/help/whats-reputation).',
+                },
+                {
+                    DisplayName: 'Library',
+                    ReportType: 'naa',
+                    Comment: 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](http://meta.stackoverflow.com/a/251605) in the answer itself.'
+                }
+            ]
         }
-        else if (link.Comments) {
-            var comments_1 = link.Comments;
-            commentText = new Promise(function (resolve, reject) {
-                var opReputation = 5; //?;
-                for (var i = 0; i < comments_1.length; i++) {
-                    if (comments_1[i].ReputationLimit <= opReputation) {
-                        resolve(comments_1[i].Comment);
+    ];
+});
+define("AdvancedFlagging", ["require", "exports", "FlagTypes"], function (require, exports, FlagTypes_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    // tslint:disable-next-line:no-debugger
+    debugger;
+    function handleClick(postId, link, commentRequired, userReputation) {
+        if (commentRequired) {
+            var commentText = null;
+            if (link.Comment) {
+                commentText = link.Comment;
+            }
+            else if (link.Comments) {
+                var comments = link.Comments;
+                comments.sort(function (a, b) { return b.ReputationLimit - a.ReputationLimit; });
+                for (var i = 0; i < comments.length; i++) {
+                    if (comments[i].ReputationLimit <= userReputation) {
+                        commentText = comments[i].Comment;
+                        break;
                     }
                 }
-                resolve(undefined);
-            });
-        }
-        if (commentText) {
-            commentText.then(function (text) {
-                if (!text) {
-                    // Now we leave a comment.
-                    return;
-                }
-            });
+            }
+            if (commentText) {
+                console.log("Going to leave the message '" + commentText + "' on answer " + postId);
+            }
         }
     }
-}
-function SetupPostPage() {
-    var postMenus = $('.answercell > .post-menu');
-    postMenus.each(function (index, item) {
-        var jqueryItem = $(item);
-        var answerId = parseInt(jqueryItem.find('.flag-post-link').attr('data-postid'));
-        var nattyLink = $('<a />').text('Natty ' + answerId);
-        var dropDown = $('<dl />').css({
-            'margin': '0',
-            'z-index': '1',
-            'position': 'absolute',
-            'white-space': 'nowrap',
-            'background': '#FFF',
-            'padding': '5px',
-            'border': '1px solid #9fa6ad',
-            'box-shadow': '0 2px 4px rgba(36,39,41,0.3)',
-            'cursor': 'default'
-        }).hide();
-        var linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
-        var checkboxName = "comment_checkbox_" + answerId;
-        var leaveCommentBox = $('<input />')
-            .attr('type', 'checkbox')
-            .attr('name', checkboxName)
-            .prop('checked', true);
-        redFlagLinks.forEach(function (link) {
-            var dropdownItem = $('<dd />').css({ 'padding-left': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' });
-            var nattyLinkItem = $('<a />').css(linkStyle);
-            nattyLinkItem.click(function () { return handleClick(link, leaveCommentBox.is(':checked')); });
-            nattyLinkItem.text(link.LinkName);
-            dropdownItem.append(nattyLinkItem);
-            dropDown.append(dropdownItem);
+    function SetupPostPage() {
+        var postMenus = $('.answercell .post-menu');
+        postMenus.each(function (index, item) {
+            var jqueryItem = $(item);
+            var answerId = parseInt(jqueryItem.find('.flag-post-link').attr('data-postid'), 10);
+            var reputationDiv = jqueryItem.closest('.answercell').find('.reputation-score');
+            var reputationText = reputationDiv.text();
+            if (reputationText.indexOf('k') !== -1) {
+                reputationText = reputationDiv.attr('title').substr('reputation score '.length);
+            }
+            reputationText = reputationText.replace(',', '');
+            var reputation = parseInt(reputationText, 10);
+            var nattyLink = $('<a />').text('Natty ' + answerId);
+            var dropDown = $('<dl />').css({
+                'margin': '0',
+                'z-index': '1',
+                'position': 'absolute',
+                'white-space': 'nowrap',
+                'background': '#FFF',
+                'padding': '5px',
+                'border': '1px solid #9fa6ad',
+                'box-shadow': '0 2px 4px rgba(36,39,41,0.3)',
+                'cursor': 'default'
+            }).hide();
+            var linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
+            var checkboxName = "comment_checkbox_" + answerId;
+            var leaveCommentBox = $('<input />')
+                .attr('type', 'checkbox')
+                .attr('name', checkboxName)
+                .prop('checked', true);
+            var getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
+            FlagTypes_1.flagCategories.forEach(function (flagCategory) {
+                flagCategory.FlagTypes.forEach(function (flagType) {
+                    var dropdownItem = $('<dd />');
+                    if (flagCategory.BoxStyle) {
+                        dropdownItem.css(flagCategory.BoxStyle);
+                    }
+                    var nattyLinkItem = $('<a />').css(linkStyle);
+                    nattyLinkItem.click(function () { return handleClick(answerId, flagType, leaveCommentBox.is(':checked'), reputation); });
+                    nattyLinkItem.text(flagType.DisplayName);
+                    dropdownItem.append(nattyLinkItem);
+                    dropDown.append(dropdownItem);
+                });
+                dropDown.append(getDivider());
+            });
+            var commentBoxLabel = $('<label />').text('Leave comment')
+                .attr('for', checkboxName)
+                .css({
+                'margin-right': '5px',
+                'margin-left': '4px',
+            });
+            commentBoxLabel.click(function () { return leaveCommentBox.click(); });
+            var commentingRow = $('<dd />');
+            commentingRow.append(commentBoxLabel);
+            commentingRow.append(leaveCommentBox);
+            dropDown.append(commentingRow);
+            nattyLink.append(dropDown);
+            nattyLink.hover(function () { return dropDown.toggle(); });
+            jqueryItem.append(nattyLink);
         });
-        var getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
-        dropDown.append(getDivider());
-        nattyLinks.forEach(function (link) {
-            var dropdownItem = $('<dd />').css({ 'padding-left': '5px' });
-            var nattyLinkItem = $('<a />').css(linkStyle);
-            nattyLinkItem.click(function () { return handleClick(link, leaveCommentBox.is(':checked')); });
-            nattyLinkItem.text(link.LinkName);
-            dropdownItem.append(nattyLinkItem);
-            dropDown.append(dropdownItem);
-        });
-        var commentBoxLabel = $('<label />').text('Leave comment')
-            .attr('for', checkboxName)
-            .css({
-            'margin-right': '5px',
-            'margin-left': '4px',
-        });
-        commentBoxLabel.click(function () { return leaveCommentBox.click(); });
-        var commentingRow = $('<dd />');
-        commentingRow.append(getDivider());
-        commentingRow.append(commentBoxLabel);
-        commentingRow.append(leaveCommentBox);
-        dropDown.append(commentingRow);
-        nattyLink.append(dropDown);
-        nattyLink.hover(function () { return dropDown.toggle(); });
-        jqueryItem.append(nattyLink);
+    }
+    $(function () {
+        SetupPostPage();
     });
-}
-$(function () {
-    SetupPostPage();
 });
-define("FunctionUtils", ["require", "exports"], function (require, exports) {
+require(['AdvancedFlagging']);
+define("libs/FunctionUtils", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var hasStorage = typeof (Storage) !== undefined;
@@ -213,7 +227,7 @@ define("FunctionUtils", ["require", "exports"], function (require, exports) {
     }
     exports.GetMembers = GetMembers;
 });
-define("ChatApi", ["require", "exports", "FunctionUtils"], function (require, exports, FunctionUtils_1) {
+define("libs/ChatApi", ["require", "exports", "libs/FunctionUtils"], function (require, exports, FunctionUtils_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var ChatApi = (function () {
@@ -265,8 +279,7 @@ define("ChatApi", ["require", "exports", "FunctionUtils"], function (require, ex
     }());
     exports.ChatApi = ChatApi;
 });
-// require(['AdvancedFlagging']); 
-define("NattyApi", ["require", "exports", "FunctionUtils"], function (require, exports, FunctionUtils_2) {
+define("libs/NattyApi", ["require", "exports", "libs/FunctionUtils"], function (require, exports, FunctionUtils_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
@@ -286,11 +299,11 @@ define("NattyApi", ["require", "exports", "FunctionUtils"], function (require, e
     }
     exports.GetNattyFeedback = GetNattyFeedback;
 });
-define("StackExchangeApi.Interfaces", ["require", "exports"], function (require, exports) {
+define("libs/StackExchangeApi.Interfaces", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
 });
-define("StackExchangeApi", ["require", "exports", "FunctionUtils"], function (require, exports, FunctionUtils_3) {
+define("libs/StackExchangeApi", ["require", "exports", "libs/FunctionUtils"], function (require, exports, FunctionUtils_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var stackExchangeApiURL = '//api.stackexchange.com/2.2';

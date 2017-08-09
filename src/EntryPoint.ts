@@ -1,3 +1,3 @@
 declare var require: any;
 
-// require(['AdvancedFlagging']);
+require(['AdvancedFlagging']);

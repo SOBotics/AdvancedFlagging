@@ -79,7 +79,84 @@ define("FlagTypes", ["require", "exports"], function (require, exports) {
         }
     ];
 });
-define("AdvancedFlagging", ["require", "exports", "FlagTypes"], function (require, exports, FlagTypes_1) {
+define("libs/FunctionUtils", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var hasStorage = typeof (Storage) !== undefined;
+    function GetAndCache(cacheKey, getterPromise, expiresAt) {
+        var cachedItem = GetFromCache(cacheKey);
+        if (cachedItem) {
+            return Promise.resolve(cachedItem);
+        }
+        getterPromise.then(function (result) { StoreInCache(cacheKey, result, expiresAt); });
+        return getterPromise;
+    }
+    exports.GetAndCache = GetAndCache;
+    function GetFromCache(cacheKey) {
+        if (hasStorage) {
+            var cachedItem = localStorage.getItem(cacheKey);
+            if (cachedItem) {
+                try {
+                    var actualItem = JSON.parse(cachedItem);
+                    if (actualItem.Expires && actualItem.Expires < new Date()) {
+                        // It expired, so return nothing
+                        return;
+                    }
+                    return actualItem.Data;
+                }
+                catch (error) { }
+            }
+        }
+    }
+    exports.GetFromCache = GetFromCache;
+    function StoreInCache(cacheKey, item, expiresAt) {
+        if (hasStorage) {
+            var jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
+            localStorage.setItem(cacheKey, jsonStr);
+        }
+    }
+    exports.StoreInCache = StoreInCache;
+    function GroupBy(collection, propertyGetter) {
+        return collection.reduce(function (previousValue, currentItem) {
+            (previousValue[propertyGetter(currentItem)] = previousValue[propertyGetter(currentItem)] || []).push(currentItem);
+            return previousValue;
+        }, {});
+    }
+    exports.GroupBy = GroupBy;
+    ;
+    function GetMembers(item) {
+        var members = [];
+        for (var key in item) {
+            if (item.hasOwnProperty(key)) {
+                members.push(key);
+            }
+        }
+        return members;
+    }
+    exports.GetMembers = GetMembers;
+});
+define("libs/NattyApi", ["require", "exports", "libs/FunctionUtils"], function (require, exports, FunctionUtils_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
+    function GetNattyFeedback(answerId) {
+        var getterPromise = new Promise(function (resolve, reject) {
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: nattyFeedbackUrl + "/" + answerId,
+                onload: function (response) {
+                    resolve(JSON.parse(response.responseText));
+                },
+                onerror: function (response) {
+                    reject(response);
+                },
+            });
+        });
+        return FunctionUtils_1.GetAndCache("NattyApi.Feedback." + answerId, getterPromise);
+    }
+    exports.GetNattyFeedback = GetNattyFeedback;
+});
+define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi"], function (require, exports, FlagTypes_1, NattyApi_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // tslint:disable-next-line:no-debugger
@@ -140,7 +217,7 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes"], function (requir
             }
             reputationText = reputationText.replace(',', '');
             var reputation = parseInt(reputationText, 10);
-            var nattyLink = $('<a />').text('Natty ' + answerId);
+            var nattyLink = $('<a />').text('Advanced Flagging');
             var dropDown = $('<dl />').css({
                 'margin': '0',
                 'z-index': '1',
@@ -202,6 +279,16 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes"], function (requir
             nattyLink.hover(function () { return dropDown.toggle(); });
             jqueryItem.append(nattyLink);
             jqueryItem.append(reportedIcon);
+            var nattyIcon = $('<img>').css({ 'width': '15px', 'height': '16px' })
+                .attr('src', 'https://i.stack.imgur.com/aMUMt.jpg?s=328&g=1')
+                .attr('title', 'Reported by Natty')
+                .hide();
+            NattyApi_1.GetNattyFeedback(answerId).then(function (nattyResult) {
+                if (nattyResult.items && nattyResult.items[0]) {
+                    nattyIcon.show();
+                }
+            });
+            jqueryItem.append(nattyIcon);
         });
     }
     $(function () {
@@ -209,63 +296,7 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes"], function (requir
     });
 });
 require(['AdvancedFlagging']);
-define("libs/FunctionUtils", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var hasStorage = typeof (Storage) !== undefined;
-    function GetAndCache(cacheKey, getterPromise, expiresAt) {
-        var cachedItem = GetFromCache(cacheKey);
-        if (cachedItem) {
-            return Promise.resolve(cachedItem);
-        }
-        getterPromise.then(function (result) { StoreInCache(cacheKey, result, expiresAt); });
-        return getterPromise;
-    }
-    exports.GetAndCache = GetAndCache;
-    function GetFromCache(cacheKey) {
-        if (hasStorage) {
-            var cachedItem = localStorage.getItem(cacheKey);
-            if (cachedItem) {
-                try {
-                    var actualItem = JSON.parse(cachedItem);
-                    if (actualItem.Expires && actualItem.Expires < new Date()) {
-                        // It expired, so return nothing
-                        return;
-                    }
-                    return actualItem.Data;
-                }
-                catch (error) { }
-            }
-        }
-    }
-    exports.GetFromCache = GetFromCache;
-    function StoreInCache(cacheKey, item, expiresAt) {
-        if (hasStorage) {
-            var jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
-            localStorage.setItem(cacheKey, jsonStr);
-        }
-    }
-    exports.StoreInCache = StoreInCache;
-    function GroupBy(collection, propertyGetter) {
-        return collection.reduce(function (previousValue, currentItem) {
-            (previousValue[propertyGetter(currentItem)] = previousValue[propertyGetter(currentItem)] || []).push(currentItem);
-            return previousValue;
-        }, {});
-    }
-    exports.GroupBy = GroupBy;
-    ;
-    function GetMembers(item) {
-        var members = [];
-        for (var key in item) {
-            if (item.hasOwnProperty(key)) {
-                members.push(key);
-            }
-        }
-        return members;
-    }
-    exports.GetMembers = GetMembers;
-});
-define("libs/ChatApi", ["require", "exports", "libs/FunctionUtils"], function (require, exports, FunctionUtils_1) {
+define("libs/ChatApi", ["require", "exports", "libs/FunctionUtils"], function (require, exports, FunctionUtils_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var ChatApi = (function () {
@@ -287,7 +318,7 @@ define("libs/ChatApi", ["require", "exports", "libs/FunctionUtils"], function (r
                     reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
                 });
             });
-            return FunctionUtils_1.GetAndCache(cachingKey, getterPromise);
+            return FunctionUtils_2.GetAndCache(cachingKey, getterPromise);
         };
         ChatApi.prototype.SendMessage = function (roomId, message, providedFkey) {
             var _this = this;
@@ -316,26 +347,6 @@ define("libs/ChatApi", ["require", "exports", "libs/FunctionUtils"], function (r
         return ChatApi;
     }());
     exports.ChatApi = ChatApi;
-});
-define("libs/NattyApi", ["require", "exports", "libs/FunctionUtils"], function (require, exports, FunctionUtils_2) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
-    function GetNattyFeedback(answerId) {
-        var getterPromise = new Promise(function (resolve, reject) {
-            $.ajax({
-                url: nattyFeedbackUrl + "/" + answerId,
-                type: 'GET',
-                dataType: 'json'
-            }).done(function (data, textStatus, jqXHR) {
-                resolve(data);
-            }).fail(function (jqXHR, textStatus, errorThrown) {
-                reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
-            });
-        });
-        return FunctionUtils_2.GetAndCache("NattyApi.Feedback." + answerId, getterPromise);
-    }
-    exports.GetNattyFeedback = GetNattyFeedback;
 });
 define("libs/StackExchangeApi.Interfaces", ["require", "exports"], function (require, exports) {
     "use strict";

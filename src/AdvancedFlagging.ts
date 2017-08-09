@@ -1,4 +1,5 @@
 import { FlagType, flagCategories } from './FlagTypes';
+import { GetNattyFeedback } from "./libs/NattyApi";
 // tslint:disable-next-line:no-debugger
 debugger;
 
@@ -69,7 +70,7 @@ function SetupPostPage() {
         reputationText = reputationText.replace(',', '');
         const reputation = parseInt(reputationText, 10);
 
-        const nattyLink = $('<a />').text('Natty ' + answerId);
+        const nattyLink = $('<a />').text('Advanced Flagging');
 
         const dropDown = $('<dl />').css({
             'margin': '0',
@@ -147,6 +148,19 @@ function SetupPostPage() {
 
         jqueryItem.append(nattyLink);
         jqueryItem.append(reportedIcon);
+
+        const nattyIcon = $('<img>').css({ 'width': '15px', 'height': '16px' })
+            .attr('src', 'https://i.stack.imgur.com/aMUMt.jpg?s=328&g=1')
+            .attr('title', 'Reported by Natty')
+            .hide();
+
+        GetNattyFeedback(answerId).then(nattyResult => {
+            if (nattyResult.items && nattyResult.items[0]) {
+                nattyIcon.show();
+            }
+        });
+
+        jqueryItem.append(nattyIcon);
     })
 
 }

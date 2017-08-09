@@ -1,4 +1,5 @@
 declare var $: JQueryStatic;
+declare const GM_xmlhttpRequest: any;
 
 import { GetAndCache } from './FunctionUtils';
 
@@ -12,24 +13,25 @@ export interface NattyFeedbackItemInfo {
     reasons: { reasonName: string }[];
     link: string;
     name: string;
-    type: "None" | "True Positive" | "False Positive" | "Needs Editing"
+    type: 'None' | 'True Positive' | 'False Positive' | 'Needs Editing'
 }
 export interface NattyFeedbackInfo {
     items: [null] | NattyFeedbackItemInfo[];
-    message: "success"
+    message: 'success'
 }
 
 export function GetNattyFeedback(answerId: number): Promise<NattyFeedbackInfo> {
     const getterPromise = new Promise<NattyFeedbackInfo>((resolve, reject) => {
-        $.ajax({
+        GM_xmlhttpRequest({
+            method: 'GET',
             url: `${nattyFeedbackUrl}/${answerId}`,
-            type: 'GET',
-            dataType: 'json'
-        }).done((data: any, textStatus: string, jqXHR: JQueryXHR) => {
-            resolve(data);
-        }).fail((jqXHR: JQueryXHR, textStatus: string, errorThrown: string) => {
-            reject({ jqXHR, textStatus, errorThrown });
-        })
+            onload: (response: any) => {
+                resolve(JSON.parse(response.responseText));
+            },
+            onerror: (response: any) => {
+                reject(response);
+            },
+        });
     });
     return GetAndCache(`NattyApi.Feedback.${answerId}`, getterPromise);
 }

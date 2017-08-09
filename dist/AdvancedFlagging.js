@@ -158,7 +158,60 @@ define("libs/NattyApi", ["require", "exports", "libs/FunctionUtils"], function (
     }
     exports.GetNattyFeedback = GetNattyFeedback;
 });
-define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", "libs/FunctionUtils"], function (require, exports, FlagTypes_1, NattyApi_1, FunctionUtils_2) {
+define("libs/ChatApi", ["require", "exports", "libs/FunctionUtils"], function (require, exports, FunctionUtils_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var ChatApi = (function () {
+        function ChatApi(chatUrl) {
+            if (chatUrl === void 0) { chatUrl = 'http://chat.stackoverflow.com'; }
+            this.chatRoomUrl = "" + chatUrl;
+        }
+        ChatApi.prototype.GetChannelFKey = function (roomId) {
+            var _this = this;
+            var cachingKey = "StackExchange.ChatApi.FKey_" + roomId;
+            var getterPromise = new Promise(function (resolve, reject) {
+                GM_xmlhttpRequest({
+                    method: 'GET',
+                    url: _this.chatRoomUrl + "/rooms/" + roomId,
+                    onload: function (response) {
+                        var fkey = response.responseText.match(/hidden" value="([\dabcdef]{32})/)[1];
+                        resolve(fkey);
+                    },
+                    onerror: function (data) { return reject(data); }
+                });
+            });
+            return FunctionUtils_2.GetAndCache(cachingKey, function () { return getterPromise; });
+        };
+        ChatApi.prototype.SendMessage = function (roomId, message, providedFkey) {
+            var _this = this;
+            var fkeyPromise;
+            if (!providedFkey) {
+                fkeyPromise = this.GetChannelFKey(roomId);
+            }
+            else {
+                fkeyPromise = Promise.resolve(providedFkey);
+            }
+            return fkeyPromise.then(function (fKey) {
+                return new Promise(function (resolve, reject) {
+                    console.log('using key: ' + fKey);
+                    GM_xmlhttpRequest({
+                        method: 'POST',
+                        url: _this.chatRoomUrl + "/chats/" + roomId + "/messages/new",
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        data: 'text=' + encodeURIComponent(message) + '&fkey=' + fKey,
+                        onload: function () { return resolve(); },
+                        onerror: function (response) {
+                            reject(response);
+                        },
+                    });
+                });
+            });
+        };
+        return ChatApi;
+    }());
+    exports.ChatApi = ChatApi;
+});
+define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", "libs/FunctionUtils", "libs/ChatApi"], function (require, exports, FlagTypes_1, NattyApi_1, FunctionUtils_3, ChatApi_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // tslint:disable-next-line:no-debugger
@@ -167,19 +220,19 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
     var MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
     var MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
     unsafeWindow.resetMetaSmokeConfig = function () {
-        FunctionUtils_2.StoreInCache(MetaSmokeDisabledConfig, false);
-        FunctionUtils_2.StoreInCache(MetaSmokeUserKeyConfig, false);
+        FunctionUtils_3.StoreInCache(MetaSmokeDisabledConfig, false);
+        FunctionUtils_3.StoreInCache(MetaSmokeUserKeyConfig, false);
     };
     function handleMetaSmoke() {
-        var metasmokeDisabled = FunctionUtils_2.GetFromCache(MetaSmokeDisabledConfig);
+        var metasmokeDisabled = FunctionUtils_3.GetFromCache(MetaSmokeDisabledConfig);
         metasmokeDisabled = false;
         if (metasmokeDisabled) {
             return;
         }
-        var metaSmokeUserKey = FunctionUtils_2.GetFromCache(MetaSmokeUserKeyConfig);
+        var metaSmokeUserKey = FunctionUtils_3.GetFromCache(MetaSmokeUserKeyConfig);
         if (!metaSmokeUserKey) {
             if (!confirm('AdvancedFlagging can connect to MetaSmoke for reporting. If you do not wish to connect, press cancel. This will only be asked once. Invoke window.resetMetaSmokeConfig() to see this again.')) {
-                FunctionUtils_2.StoreInCache('MetaSmoke.Disabled', true);
+                FunctionUtils_3.StoreInCache('MetaSmoke.Disabled', true);
                 return;
             }
         }
@@ -198,8 +251,8 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
                             url: "https://metasmoke.erwaysoftware.com/oauth/token?key=" + metaSmokeKey + "&code=" + code,
                             method: 'GET'
                         }).done(function (data) {
-                            FunctionUtils_2.StoreInCache(MetaSmokeDisabledConfig, false);
-                            FunctionUtils_2.StoreInCache(MetaSmokeUserKeyConfig, data.token);
+                            FunctionUtils_3.StoreInCache(MetaSmokeDisabledConfig, false);
+                            FunctionUtils_3.StoreInCache(MetaSmokeUserKeyConfig, data.token);
                         });
                     }
                 }, 500);
@@ -306,7 +359,7 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
                         }
                         if (result.FlagPromise) {
                             result.FlagPromise.then(function () {
-                                FunctionUtils_2.StoreInCache("AdvancedFlagging.Flagged." + answerId, flagType);
+                                FunctionUtils_3.StoreInCache("AdvancedFlagging.Flagged." + answerId, flagType);
                                 reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
                                 reportedIcon.show();
                             });
@@ -320,11 +373,18 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
                             }
                         });
                         nattyPromise.then(function (r) {
+                            var chat = new ChatApi_1.ChatApi();
+                            console.log('found key: ' + StackExchange.options.user.fkey);
                             if (r) {
-                                // Flag TP
+                                if (flagType.ReportType === 'AnswerNotAnAnswer') {
+                                    chat.SendMessage(111347, "feedback http://stackoverflow.com/a/" + answerId + " tp", StackExchange.options.user.fkey);
+                                }
+                                else {
+                                    // chat.SendMessage(111347, `feedback http://stackoverflow.com/a/${answerId} fp`)
+                                }
                             }
                             else {
-                                // Report
+                                chat.SendMessage(111347, "report http://stackoverflow.com/a/" + answerId + " tp", StackExchange.options.user.fkey);
                             }
                         });
                     });
@@ -363,7 +423,7 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
             })
                 .attr('title', 'Reported by Smokey')
                 .hide();
-            FunctionUtils_2.GetAndCache("NattyFeedback." + answerId, function () { return NattyApi_1.GetNattyFeedback(answerId); })
+            FunctionUtils_3.GetAndCache("NattyFeedback." + answerId, function () { return NattyApi_1.GetNattyFeedback(answerId); })
                 .then(function (nattyResult) {
                 if (nattyResult.items && nattyResult.items[0]) {
                     nattyPromiseResolver(true);
@@ -373,7 +433,7 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
                     nattyPromiseResolver(false);
                 }
             });
-            FunctionUtils_2.GetAndCache("SmokeyFeedback." + answerId, function () { return new Promise(function (resolve, reject) {
+            FunctionUtils_3.GetAndCache("SmokeyFeedback." + answerId, function () { return new Promise(function (resolve, reject) {
                 $.ajax({
                     url: "https://metasmoke.erwaysoftware.com/api/posts/urls?urls=//" + window.location.hostname + "/a/" + answerId + "&key=" + metaSmokeKey,
                     type: 'GET'
@@ -391,7 +451,7 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
                     smokeyPromiseResolver(false);
                 }
             });
-            var previousFlag = FunctionUtils_2.GetFromCache("AdvancedFlagging.Flagged." + answerId);
+            var previousFlag = FunctionUtils_3.GetFromCache("AdvancedFlagging.Flagged." + answerId);
             if (previousFlag) {
                 reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
                 reportedIcon.show();
@@ -406,58 +466,6 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
     });
 });
 require(['AdvancedFlagging']);
-define("libs/ChatApi", ["require", "exports", "libs/FunctionUtils"], function (require, exports, FunctionUtils_3) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var ChatApi = (function () {
-        function ChatApi(chatUrl) {
-            if (chatUrl === void 0) { chatUrl = 'https://chat.stackoverflow.com'; }
-            this.chatRoomUrl = "" + chatUrl;
-        }
-        ChatApi.prototype.GetChannelFKey = function (roomId) {
-            var _this = this;
-            var cachingKey = "StackExchange.ChatApi.FKey_" + roomId;
-            var getterPromise = new Promise(function (resolve, reject) {
-                $.ajax({
-                    url: _this.chatRoomUrl + "/rooms/" + roomId,
-                    type: 'GET'
-                }).done(function (data, textStatus, jqXHR) {
-                    var fkey = data.match(/hidden" value="([\dabcdef]{32})/)[1];
-                    resolve(fkey);
-                }).fail(function (jqXHR, textStatus, errorThrown) {
-                    reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
-                });
-            });
-            return FunctionUtils_3.GetAndCache(cachingKey, function () { return getterPromise; });
-        };
-        ChatApi.prototype.SendMessage = function (roomId, message, providedFkey) {
-            var _this = this;
-            var fkeyPromise;
-            if (!providedFkey) {
-                fkeyPromise = this.GetChannelFKey(roomId);
-            }
-            else {
-                fkeyPromise = Promise.resolve(providedFkey);
-            }
-            return fkeyPromise.then(function (fKey) {
-                return new Promise(function (resolve, reject) {
-                    $.ajax({
-                        url: _this.chatRoomUrl + "/chats/" + roomId + "/messages/new",
-                        type: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        data: 'text=' + encodeURIComponent(message) + '&fkey=' + fKey,
-                    })
-                        .done(function () { return resolve(); })
-                        .fail(function (jqXHR, textStatus, errorThrown) {
-                        reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
-                    });
-                });
-            });
-        };
-        return ChatApi;
-    }());
-    exports.ChatApi = ChatApi;
-});
 define("libs/StackExchangeApi.Interfaces", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });

@@ -1,6 +1,7 @@
 import { FlagType, flagCategories } from './FlagTypes';
 import { GetNattyFeedback } from './libs/NattyApi';
 import { GetFromCache, StoreInCache, GetAndCache } from './libs/FunctionUtils';
+import { ChatApi } from "./libs/ChatApi";
 // tslint:disable-next-line:no-debugger
 debugger;
 
@@ -184,10 +185,16 @@ function SetupPostPage() {
                     });
 
                     nattyPromise.then(r => {
+                        const chat = new ChatApi();
+                        console.log('found key: ' + StackExchange.options.user.fkey);
                         if (r) {
-                            // Flag TP
+                            if (flagType.ReportType === 'AnswerNotAnAnswer') {
+                                chat.SendMessage(111347, `@Natty feedback http://stackoverflow.com/a/${answerId} tp`);
+                            } else {
+                                // chat.SendMessage(111347, `feedback http://stackoverflow.com/a/${answerId} fp`)
+                            }
                         } else {
-                            // Report
+                            chat.SendMessage(111347, `@Natty report http://stackoverflow.com/a/${answerId} tp`);
                         }
                     })
 

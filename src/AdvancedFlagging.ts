@@ -193,7 +193,7 @@ function SetupPostPage() {
                                 // chat.SendMessage(111347, `feedback http://stackoverflow.com/a/${answerId} fp`)
                             }
                         } else {
-                            chat.SendMessage(111347, `@Natty report http://stackoverflow.com/a/${answerId} tp`);
+                            chat.SendMessage(111347, `@Natty report http://stackoverflow.com/a/${answerId}`);
                         }
                     })
 

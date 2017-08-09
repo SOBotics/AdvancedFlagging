@@ -382,7 +382,7 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
                                 }
                             }
                             else {
-                                chat.SendMessage(111347, "@Natty report http://stackoverflow.com/a/" + answerId + " tp");
+                                chat.SendMessage(111347, "@Natty report http://stackoverflow.com/a/" + answerId);
                             }
                         });
                     });

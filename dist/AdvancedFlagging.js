@@ -85,25 +85,39 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes"], function (requir
     // tslint:disable-next-line:no-debugger
     debugger;
     function handleClick(postId, link, commentRequired, userReputation) {
+        var result = {};
         if (commentRequired) {
-            var commentText = null;
+            var commentText_1 = null;
             if (link.Comment) {
-                commentText = link.Comment;
+                commentText_1 = link.Comment;
             }
             else if (link.Comments) {
                 var comments = link.Comments;
                 comments.sort(function (a, b) { return b.ReputationLimit - a.ReputationLimit; });
                 for (var i = 0; i < comments.length; i++) {
                     if (comments[i].ReputationLimit <= userReputation) {
-                        commentText = comments[i].Comment;
+                        commentText_1 = comments[i].Comment;
                         break;
                     }
                 }
             }
-            if (commentText) {
-                console.log("Going to leave the message '" + commentText + "' on answer " + postId);
+            if (commentText_1) {
+                result.CommentPromise = new Promise(function (resolve, reject) {
+                    $.ajax({
+                        url: "//stackoverflow.com/posts/" + postId + "/comments",
+                        type: 'POST',
+                        data: { 'fkey': StackExchange.options.user.fkey, 'comment': commentText_1 }
+                    })
+                        .done(function (data) {
+                        resolve(data);
+                    })
+                        .fail(function (jqXHR, textStatus, errorThrown) {
+                        reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                    });
+                });
             }
         }
+        return result;
     }
     function SetupPostPage() {
         var postMenus = $('.answercell .post-menu');
@@ -143,7 +157,17 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes"], function (requir
                         dropdownItem.css(flagCategory.BoxStyle);
                     }
                     var nattyLinkItem = $('<a />').css(linkStyle);
-                    nattyLinkItem.click(function () { return handleClick(answerId, flagType, leaveCommentBox.is(':checked'), reputation); });
+                    nattyLinkItem.click(function () {
+                        var result = handleClick(answerId, flagType, leaveCommentBox.is(':checked'), reputation);
+                        if (result.CommentPromise) {
+                            result.CommentPromise.then(function (data) {
+                                var commentUI = StackExchange.comments.uiForPost($('#comments-' + answerId));
+                                commentUI.addShow(true, false);
+                                commentUI.showComments(data, null, false, true);
+                                $(document).trigger('comment', answerId);
+                            });
+                        }
+                    });
                     nattyLinkItem.text(flagType.DisplayName);
                     dropdownItem.append(nattyLinkItem);
                     dropDown.append(dropdownItem);
@@ -317,7 +341,7 @@ define("libs/StackExchangeApi", ["require", "exports", "libs/FunctionUtils"], fu
                 return;
             }
             if (!clientId || !key) {
-                this.getAccessTokenPromise = function () { throw 'Access token not available. StackExchangeAPI class must be passed either an access token, or a clientId and a key.'; };
+                this.getAccessTokenPromise = function () { throw Error('Access token not available. StackExchangeAPI class must be passed either an access token, or a clientId and a key.'); };
                 return;
             }
             var promise = new Promise(function (resolve, reject) {
@@ -327,11 +351,11 @@ define("libs/StackExchangeApi", ["require", "exports", "libs/FunctionUtils"], fu
                     channelUrl: window.location,
                     complete: function (data) {
                         SE.authenticate({
-                            success: function (data) {
-                                resolve(data.accessToken);
+                            success: function (result) {
+                                resolve(result.accessToken);
                             },
-                            error: function (data) {
-                                reject(data);
+                            error: function (error) {
+                                reject(error);
                             },
                             networkUsers: true
                         });
@@ -342,7 +366,7 @@ define("libs/StackExchangeApi", ["require", "exports", "libs/FunctionUtils"], fu
         };
         StackExchangeAPI.prototype.Answers_GetComments = function (answerIds, skipCache, site, filter) {
             if (skipCache === void 0) { skipCache = false; }
-            if (site === void 0) { site = "stackoverflow"; }
+            if (site === void 0) { site = 'stackoverflow'; }
             return this.MakeRequest(function (objectId) { return "StackExchange.Api.AnswerComments." + objectId; }, function (objectIds) { return stackExchangeApiURL + "/answers/" + objectIds.join(';') + "/comments"; }, function (comment) { return comment.post_id; }, answerIds, skipCache, site, true, filter);
         };
         StackExchangeAPI.prototype.MakeRequest = function (cacheKey, apiUrl, uniqueIdentifier, objectIds, skipCache, site, multi, filter) {
@@ -360,7 +384,7 @@ define("libs/StackExchangeApi", ["require", "exports", "libs/FunctionUtils"], fu
                     }).done(function (data, textStatus, jqXHR) {
                         var returnItems = (data.items || []);
                         var grouping = FunctionUtils_3.GroupBy(returnItems, uniqueIdentifier);
-                        FunctionUtils_3.GetMembers(grouping).forEach(function (key) { return FunctionUtils_3.StoreInCache(cacheKey(parseInt(key)), grouping[key]); });
+                        FunctionUtils_3.GetMembers(grouping).forEach(function (key) { return FunctionUtils_3.StoreInCache(cacheKey(parseInt(key, 10)), grouping[key]); });
                         cachedResults.forEach(function (result) {
                             returnItems.push(result);
                         });

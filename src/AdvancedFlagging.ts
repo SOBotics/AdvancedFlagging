@@ -2,8 +2,13 @@ import { FlagType, flagCategories } from './FlagTypes';
 // tslint:disable-next-line:no-debugger
 debugger;
 
+declare const StackExchange: any;
 
 function handleClick(postId: number, link: FlagType, commentRequired: boolean, userReputation: number) {
+    const result: {
+        CommentPromise?: Promise<void>;
+    } = {};
+
     if (commentRequired) {
         let commentText: string | null = null;
         if (link.Comment) {
@@ -20,9 +25,22 @@ function handleClick(postId: number, link: FlagType, commentRequired: boolean, u
         }
 
         if (commentText) {
-            console.log(`Going to leave the message '${commentText}' on answer ${postId}`);
+            result.CommentPromise = new Promise((resolve, reject) => {
+                $.ajax({
+                    url: `//stackoverflow.com/posts/${postId}/comments`,
+                    type: 'POST',
+                    data: { 'fkey': StackExchange.options.user.fkey, 'comment': commentText }
+                })
+                    .done((data) => {
+                        resolve(data);
+                    })
+                    .fail(function (jqXHR, textStatus, errorThrown) {
+                        reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                    });
+            })
         }
     }
+    return result;
 }
 
 function SetupPostPage() {
@@ -70,7 +88,17 @@ function SetupPostPage() {
                 }
 
                 const nattyLinkItem = $('<a />').css(linkStyle);
-                nattyLinkItem.click(() => handleClick(answerId, flagType, leaveCommentBox.is(':checked'), reputation));
+                nattyLinkItem.click(() => {
+                    const result = handleClick(answerId, flagType, leaveCommentBox.is(':checked'), reputation)
+                    if (result.CommentPromise) {
+                        result.CommentPromise.then((data) => {
+                            const commentUI = StackExchange.comments.uiForPost($('#comments-' + answerId));
+                            commentUI.addShow(true, false);
+                            commentUI.showComments(data, null, false, true);
+                            $(document).trigger('comment', answerId);
+                        })
+                    }
+                });
 
                 nattyLinkItem.text(flagType.DisplayName);
                 dropdownItem.append(nattyLinkItem);

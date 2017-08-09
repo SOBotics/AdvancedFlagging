@@ -4,17 +4,18 @@ debugger;
 
 declare const StackExchange: any;
 
-function handleClick(postId: number, link: FlagType, commentRequired: boolean, userReputation: number) {
+function handleClick(postId: number, flag: FlagType, commentRequired: boolean, userReputation: number) {
     const result: {
-        CommentPromise?: Promise<void>;
+        CommentPromise?: Promise<string>;
+        FlagPromise?: Promise<string>;
     } = {};
 
     if (commentRequired) {
         let commentText: string | null = null;
-        if (link.Comment) {
-            commentText = link.Comment;
-        } else if (link.Comments) {
-            const comments = link.Comments;
+        if (flag.Comment) {
+            commentText = flag.Comment;
+        } else if (flag.Comments) {
+            const comments = flag.Comments;
             comments.sort((a, b) => b.ReputationLimit - a.ReputationLimit);
             for (let i = 0; i < comments.length; i++) {
                 if (comments[i].ReputationLimit <= userReputation) {
@@ -30,16 +31,27 @@ function handleClick(postId: number, link: FlagType, commentRequired: boolean, u
                     url: `//stackoverflow.com/posts/${postId}/comments`,
                     type: 'POST',
                     data: { 'fkey': StackExchange.options.user.fkey, 'comment': commentText }
-                })
-                    .done((data) => {
-                        resolve(data);
-                    })
-                    .fail(function (jqXHR, textStatus, errorThrown) {
-                        reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
-                    });
+                }).done((data) => {
+                    resolve(data);
+                }).fail(function (jqXHR, textStatus, errorThrown) {
+                    reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                });
             })
         }
     }
+
+    result.FlagPromise = new Promise((resolve, reject) => {
+        $.ajax({
+            url: `//stackoverflow.com/flags/posts/${postId}/add/${flag.ReportType}`,
+            type: 'POST',
+            data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
+        }).done((data) => {
+            resolve(data);
+        }).fail(function (jqXHR, textStatus, errorThrown) {
+            reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+        });
+    })
+
     return result;
 }
 
@@ -79,6 +91,8 @@ function SetupPostPage() {
             .attr('name', checkboxName)
             .prop('checked', true);
 
+        const reportedIcon = $('<div>').addClass('comment-flag').css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' }).hide();
+
         const getDivider = () => $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' });
         flagCategories.forEach(flagCategory => {
             flagCategory.FlagTypes.forEach(flagType => {
@@ -97,6 +111,9 @@ function SetupPostPage() {
                             commentUI.showComments(data, null, false, true);
                             $(document).trigger('comment', answerId);
                         })
+                    }
+                    if (result.FlagPromise) {
+                        result.FlagPromise.then(() => reportedIcon.show());
                     }
                 });
 
@@ -129,6 +146,7 @@ function SetupPostPage() {
         nattyLink.hover(() => dropDown.toggle());
 
         jqueryItem.append(nattyLink);
+        jqueryItem.append(reportedIcon);
     })
 
 }

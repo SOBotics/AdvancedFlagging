@@ -1,6 +1,6 @@
 export interface FlagType {
     DisplayName: string;
-    ReportType: 'redflag' | 'naa';
+    ReportType: 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam';
     Comment?: string;
     Comments?: { ReputationLimit: number, Comment: string }[];
 }
@@ -20,11 +20,11 @@ export const flagCategories: FlagCategory[] = [
         FlagTypes: [
             {
                 DisplayName: 'Spam',
-                ReportType: 'redflag'
+                ReportType: 'PostSpam'
             },
             {
                 DisplayName: 'Rude or Abusive',
-                ReportType: 'redflag'
+                ReportType: 'PostOffensive'
             }
         ]
     },
@@ -33,7 +33,7 @@ export const flagCategories: FlagCategory[] = [
         FlagTypes: [
             {
                 DisplayName: 'Link Only',
-                ReportType: 'naa',
+                ReportType: 'AnswerNotAnAnswer',
                 Comment: 'A link to a solution is welcome, but please ensure your answer is useful without it: ' +
                 '[add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will ' +
                 'have some idea what it is and why it’s there, then quote the most relevant part of the ' +
@@ -42,7 +42,7 @@ export const flagCategories: FlagCategory[] = [
             },
             {
                 DisplayName: 'Not an answer',
-                ReportType: 'naa',
+                ReportType: 'AnswerNotAnAnswer',
                 Comments: [
                     {
                         ReputationLimit: 0,
@@ -64,7 +64,7 @@ export const flagCategories: FlagCategory[] = [
             },
             {
                 DisplayName: 'Thanks',
-                ReportType: 'naa',
+                ReportType: 'AnswerNotAnAnswer',
                 Comment: 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
                 'and can be perceived as noise by its future visitors. Once you [earn](http://meta.stackoverflow.com/q/146472) ' +
                 'enough [reputation](http://stackoverflow.com/help/whats-reputation), you will gain privileges to ' +
@@ -74,7 +74,7 @@ export const flagCategories: FlagCategory[] = [
             },
             {
                 DisplayName: 'Me too',
-                ReportType: 'naa',
+                ReportType: 'AnswerNotAnAnswer',
                 Comment: 'Please don\'t add *"Me too"* as answers. It doesn\'t actually provide an answer to the question. ' +
                 'If you have a different but related question, then [ask](//$SITEURL$/questions/ask) it ' +
                 '(reference this one if it will help provide context). If you\'re interested in this specific question, ' +
@@ -84,7 +84,7 @@ export const flagCategories: FlagCategory[] = [
             },
             {
                 DisplayName: 'Library',
-                ReportType: 'naa',
+                ReportType: 'AnswerNotAnAnswer',
                 Comment: 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](http://meta.stackoverflow.com/a/251605) in the answer itself.'
             }
         ]

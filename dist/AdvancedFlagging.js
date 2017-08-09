@@ -8,11 +8,11 @@ define("FlagTypes", ["require", "exports"], function (require, exports) {
             FlagTypes: [
                 {
                     DisplayName: 'Spam',
-                    ReportType: 'redflag'
+                    ReportType: 'PostSpam'
                 },
                 {
                     DisplayName: 'Rude or Abusive',
-                    ReportType: 'redflag'
+                    ReportType: 'PostOffensive'
                 }
             ]
         },
@@ -21,7 +21,7 @@ define("FlagTypes", ["require", "exports"], function (require, exports) {
             FlagTypes: [
                 {
                     DisplayName: 'Link Only',
-                    ReportType: 'naa',
+                    ReportType: 'AnswerNotAnAnswer',
                     Comment: 'A link to a solution is welcome, but please ensure your answer is useful without it: ' +
                         '[add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will ' +
                         'have some idea what it is and why it’s there, then quote the most relevant part of the ' +
@@ -30,7 +30,7 @@ define("FlagTypes", ["require", "exports"], function (require, exports) {
                 },
                 {
                     DisplayName: 'Not an answer',
-                    ReportType: 'naa',
+                    ReportType: 'AnswerNotAnAnswer',
                     Comments: [
                         {
                             ReputationLimit: 0,
@@ -52,7 +52,7 @@ define("FlagTypes", ["require", "exports"], function (require, exports) {
                 },
                 {
                     DisplayName: 'Thanks',
-                    ReportType: 'naa',
+                    ReportType: 'AnswerNotAnAnswer',
                     Comment: 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
                         'and can be perceived as noise by its future visitors. Once you [earn](http://meta.stackoverflow.com/q/146472) ' +
                         'enough [reputation](http://stackoverflow.com/help/whats-reputation), you will gain privileges to ' +
@@ -62,7 +62,7 @@ define("FlagTypes", ["require", "exports"], function (require, exports) {
                 },
                 {
                     DisplayName: 'Me too',
-                    ReportType: 'naa',
+                    ReportType: 'AnswerNotAnAnswer',
                     Comment: 'Please don\'t add *"Me too"* as answers. It doesn\'t actually provide an answer to the question. ' +
                         'If you have a different but related question, then [ask](//$SITEURL$/questions/ask) it ' +
                         '(reference this one if it will help provide context). If you\'re interested in this specific question, ' +
@@ -72,7 +72,7 @@ define("FlagTypes", ["require", "exports"], function (require, exports) {
                 },
                 {
                     DisplayName: 'Library',
-                    ReportType: 'naa',
+                    ReportType: 'AnswerNotAnAnswer',
                     Comment: 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](http://meta.stackoverflow.com/a/251605) in the answer itself.'
                 }
             ]
@@ -84,15 +84,15 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes"], function (requir
     Object.defineProperty(exports, "__esModule", { value: true });
     // tslint:disable-next-line:no-debugger
     debugger;
-    function handleClick(postId, link, commentRequired, userReputation) {
+    function handleClick(postId, flag, commentRequired, userReputation) {
         var result = {};
         if (commentRequired) {
             var commentText_1 = null;
-            if (link.Comment) {
-                commentText_1 = link.Comment;
+            if (flag.Comment) {
+                commentText_1 = flag.Comment;
             }
-            else if (link.Comments) {
-                var comments = link.Comments;
+            else if (flag.Comments) {
+                var comments = flag.Comments;
                 comments.sort(function (a, b) { return b.ReputationLimit - a.ReputationLimit; });
                 for (var i = 0; i < comments.length; i++) {
                     if (comments[i].ReputationLimit <= userReputation) {
@@ -107,16 +107,25 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes"], function (requir
                         url: "//stackoverflow.com/posts/" + postId + "/comments",
                         type: 'POST',
                         data: { 'fkey': StackExchange.options.user.fkey, 'comment': commentText_1 }
-                    })
-                        .done(function (data) {
+                    }).done(function (data) {
                         resolve(data);
-                    })
-                        .fail(function (jqXHR, textStatus, errorThrown) {
+                    }).fail(function (jqXHR, textStatus, errorThrown) {
                         reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
                     });
                 });
             }
         }
+        result.FlagPromise = new Promise(function (resolve, reject) {
+            $.ajax({
+                url: "//stackoverflow.com/flags/posts/" + postId + "/add/" + flag.ReportType,
+                type: 'POST',
+                data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
+            }).done(function (data) {
+                resolve(data);
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+            });
+        });
         return result;
     }
     function SetupPostPage() {
@@ -149,6 +158,7 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes"], function (requir
                 .attr('type', 'checkbox')
                 .attr('name', checkboxName)
                 .prop('checked', true);
+            var reportedIcon = $('<div>').addClass('comment-flag').css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' }).hide();
             var getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
             FlagTypes_1.flagCategories.forEach(function (flagCategory) {
                 flagCategory.FlagTypes.forEach(function (flagType) {
@@ -166,6 +176,9 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes"], function (requir
                                 commentUI.showComments(data, null, false, true);
                                 $(document).trigger('comment', answerId);
                             });
+                        }
+                        if (result.FlagPromise) {
+                            result.FlagPromise.then(function () { return reportedIcon.show(); });
                         }
                     });
                     nattyLinkItem.text(flagType.DisplayName);
@@ -188,6 +201,7 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes"], function (requir
             nattyLink.append(dropDown);
             nattyLink.hover(function () { return dropDown.toggle(); });
             jqueryItem.append(nattyLink);
+            jqueryItem.append(reportedIcon);
         });
     }
     $(function () {

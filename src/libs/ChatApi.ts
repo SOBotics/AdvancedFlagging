@@ -37,7 +37,6 @@ export class ChatApi {
 
         return fkeyPromise.then((fKey) => {
             return new Promise<void>((resolve, reject) => {
-                console.log('using key: ' + fKey);
                 GM_xmlhttpRequest({
                     method: 'POST',
                     url: `${this.chatRoomUrl}/chats/${roomId}/messages/new`,

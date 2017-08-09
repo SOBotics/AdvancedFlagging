@@ -193,7 +193,6 @@ define("libs/ChatApi", ["require", "exports", "libs/FunctionUtils"], function (r
             }
             return fkeyPromise.then(function (fKey) {
                 return new Promise(function (resolve, reject) {
-                    console.log('using key: ' + fKey);
                     GM_xmlhttpRequest({
                         method: 'POST',
                         url: _this.chatRoomUrl + "/chats/" + roomId + "/messages/new",
@@ -374,17 +373,16 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
                         });
                         nattyPromise.then(function (r) {
                             var chat = new ChatApi_1.ChatApi();
-                            console.log('found key: ' + StackExchange.options.user.fkey);
                             if (r) {
                                 if (flagType.ReportType === 'AnswerNotAnAnswer') {
-                                    chat.SendMessage(111347, "feedback http://stackoverflow.com/a/" + answerId + " tp", StackExchange.options.user.fkey);
+                                    chat.SendMessage(111347, "@Natty feedback http://stackoverflow.com/a/" + answerId + " tp");
                                 }
                                 else {
                                     // chat.SendMessage(111347, `feedback http://stackoverflow.com/a/${answerId} fp`)
                                 }
                             }
                             else {
-                                chat.SendMessage(111347, "report http://stackoverflow.com/a/" + answerId + " tp", StackExchange.options.user.fkey);
+                                chat.SendMessage(111347, "@Natty report http://stackoverflow.com/a/" + answerId + " tp");
                             }
                         });
                     });

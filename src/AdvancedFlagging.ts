@@ -186,7 +186,6 @@ function SetupPostPage() {
 
                     nattyPromise.then(r => {
                         const chat = new ChatApi();
-                        console.log('found key: ' + StackExchange.options.user.fkey);
                         if (r) {
                             if (flagType.ReportType === 'AnswerNotAnAnswer') {
                                 chat.SendMessage(111347, `@Natty feedback http://stackoverflow.com/a/${answerId} tp`);

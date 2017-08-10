@@ -158,14 +158,15 @@ function SetupPostPage() {
                         if (wasReported) {
                             if (naaFlag) {
                                 natty.ReportTruePositive(answerId);
-                            } else {
-                                //natty.ReportTruePositive(answerId);
+                            } else if (looksOk) {
+                                natty.ReportFalsePositive(answerId);
                             }
                         } else if (naaFlag) {
                             natty.Report(answerId);
                         }
-                    })
+                    });
 
+                    dropDown.hide();
                 });
 
                 nattyLinkItem.text(flagType.DisplayName);
@@ -194,7 +195,11 @@ function SetupPostPage() {
         dropDown.append(commentingRow);
 
         nattyLink.append(dropDown);
+        $(window).click(function() {
+            dropDown.hide();
+        });
         nattyLink.click(e => {
+            e.stopPropagation();
             if (e.target === nattyLink.get(0)) {
                 dropDown.toggle()
             }

@@ -407,6 +407,9 @@ define("libs/NattyApi", ["require", "exports", "libs/FunctionUtils", "libs/ChatA
         NattyAPI.prototype.ReportTruePositive = function (answerId) {
             this.chat.SendMessage(111347, "@Natty feedback http://stackoverflow.com/a/" + answerId + " tp");
         };
+        NattyAPI.prototype.ReportFalsePositive = function (answerId) {
+            this.chat.SendMessage(111347, "@Natty feedback http://stackoverflow.com/a/" + answerId + " fp");
+        };
         return NattyAPI;
     }());
     exports.NattyAPI = NattyAPI;
@@ -549,14 +552,15 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                                 if (naaFlag) {
                                     natty.ReportTruePositive(answerId);
                                 }
-                                else {
-                                    //natty.ReportTruePositive(answerId);
+                                else if (looksOk) {
+                                    natty.ReportFalsePositive(answerId);
                                 }
                             }
                             else if (naaFlag) {
                                 natty.Report(answerId);
                             }
                         });
+                        dropDown.hide();
                     });
                     nattyLinkItem.text(flagType.DisplayName);
                     dropdownItem.append(nattyLinkItem);
@@ -576,7 +580,11 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             commentingRow.append(leaveCommentBox);
             dropDown.append(commentingRow);
             nattyLink.append(dropDown);
+            $(window).click(function () {
+                dropDown.hide();
+            });
             nattyLink.click(function (e) {
+                e.stopPropagation();
                 if (e.target === nattyLink.get(0)) {
                     dropDown.toggle();
                 }

@@ -46,4 +46,7 @@ export class NattyAPI {
     public ReportTruePositive(answerId: number) {
         this.chat.SendMessage(111347, `@Natty feedback http://stackoverflow.com/a/${answerId} tp`);
     }
+    public ReportFalsePositive(answerId: number) {
+        this.chat.SendMessage(111347, `@Natty feedback http://stackoverflow.com/a/${answerId} fp`);
+    }
 }

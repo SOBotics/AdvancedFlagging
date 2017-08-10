@@ -64,12 +64,18 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
 }
 
 function SetupPostPage() {
-    const postMenus = $('.answercell .post-menu');
+    const postMenus = $('.post-menu');
     postMenus.each((index, item) => {
         const jqueryItem = $(item);
 
-        const answerId = parseInt(jqueryItem.find('.flag-post-link').attr('data-postid'), 10);
-        const reputationDiv = jqueryItem.closest('.answercell').find('.reputation-score');
+        const postType = jqueryItem.closest('.answercell').length > 0
+            ? 'Answer'
+            : 'Question';
+
+        const postId = parseInt(jqueryItem.find('.flag-post-link').attr('data-postid'), 10);
+
+        const reputationDiv = jqueryItem.closest(postType == 'Answer' ? '.answercell' : '.postcell').find('.reputation-score');
+
         let reputationText = reputationDiv.text();
         if (reputationText.indexOf('k') !== -1) {
             reputationText = reputationDiv.attr('title').substr('reputation score '.length);
@@ -93,7 +99,7 @@ function SetupPostPage() {
 
         const linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
 
-        const checkboxName = `comment_checkbox_${answerId}`;
+        const checkboxName = `comment_checkbox_${postId}`;
         const leaveCommentBox = $('<input />')
             .attr('type', 'checkbox')
             .attr('name', checkboxName)
@@ -101,15 +107,27 @@ function SetupPostPage() {
 
 
         const metaSmoke = new MetaSmokeyAPI(metaSmokeKey);
-        const metaSmokeWasReported = metaSmoke.GetFeedback(answerId);
+        const metaSmokeWasReported = metaSmoke.GetFeedback(postId, postType);
 
         const natty = new NattyAPI();
-        const nattyWasReported = natty.WasReported(answerId);
+        const nattyWasReported = natty.WasReported(postId);
 
         const reportedIcon = $('<div>').addClass('comment-flag').css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' }).hide();
         const getDivider = () => $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' });
+        
+        let hasCommentOptions = false;
+        let firstCategory = true;
         flagCategories.forEach(flagCategory => {
+            if (flagCategory.AppliesTo.indexOf(postType) === -1) {
+                return;
+            }
+            if (!firstCategory) {
+                dropDown.append(getDivider());
+            }
             flagCategory.FlagTypes.forEach(flagType => {
+                if (flagType.Comment || (flagType.Comments && flagType.Comments.length > 0)) {
+                    hasCommentOptions = true;
+                }
                 const dropdownItem = $('<dd />');
                 if (flagCategory.BoxStyle) {
                     dropdownItem.css(flagCategory.BoxStyle);
@@ -117,18 +135,18 @@ function SetupPostPage() {
 
                 const nattyLinkItem = $('<a />').css(linkStyle);
                 nattyLinkItem.click(() => {
-                    const result = handleFlagAndComment(answerId, flagType, leaveCommentBox.is(':checked'), reputation)
+                    const result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation)
                     if (result.CommentPromise) {
                         result.CommentPromise.then((data) => {
-                            const commentUI = StackExchange.comments.uiForPost($('#comments-' + answerId));
+                            const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
                             commentUI.addShow(true, false);
                             commentUI.showComments(data, null, false, true);
-                            $(document).trigger('comment', answerId);
+                            $(document).trigger('comment', postId);
                         })
                     }
                     if (result.FlagPromise) {
                         result.FlagPromise.then(() => {
-                            StoreInCache(`AdvancedFlagging.Flagged.${answerId}`, flagType);
+                            StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType);
                             reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`)
                             reportedIcon.show();
                         });
@@ -147,22 +165,22 @@ function SetupPostPage() {
                             } else if (naaFlag) {
                                 metaSmoke.ReportNAA(metaSmokeId);
                             } else if (looksOk) {
-                                metaSmoke.ReportTruePositive(metaSmokeId);
+                                metaSmoke.ReportFalsePositive(metaSmokeId);
                             }
                         } else if (rudeFlag) {
-                            metaSmoke.Report(answerId);
+                            metaSmoke.Report(postId, postType);
                         }
                     });
 
                     nattyWasReported.then(wasReported => {
                         if (wasReported) {
                             if (naaFlag) {
-                                natty.ReportTruePositive(answerId);
+                                natty.ReportTruePositive(postId);
                             } else if (looksOk) {
-                                natty.ReportFalsePositive(answerId);
+                                natty.ReportFalsePositive(postId);
                             }
                         } else if (naaFlag) {
-                            natty.Report(answerId);
+                            natty.Report(postId);
                         }
                     });
 
@@ -174,28 +192,31 @@ function SetupPostPage() {
 
                 dropDown.append(dropdownItem);
             });
-
-            dropDown.append(getDivider());
+            firstCategory = false;
         });
 
-        const commentBoxLabel =
-            $('<label />').text('Leave comment')
-                .attr('for', checkboxName)
-                .css({
-                    'margin-right': '5px',
-                    'margin-left': '4px',
-                });
+        if (hasCommentOptions) {
+            dropDown.append(getDivider());
 
-        commentBoxLabel.click(() => leaveCommentBox.click());
+            const commentBoxLabel =
+                $('<label />').text('Leave comment')
+                    .attr('for', checkboxName)
+                    .css({
+                        'margin-right': '5px',
+                        'margin-left': '4px',
+                    });
 
-        const commentingRow = $('<dd />');
-        commentingRow.append(commentBoxLabel);
-        commentingRow.append(leaveCommentBox);
+            commentBoxLabel.click(() => leaveCommentBox.click());
 
-        dropDown.append(commentingRow);
+            const commentingRow = $('<dd />');
+            commentingRow.append(commentBoxLabel);
+            commentingRow.append(leaveCommentBox);
+
+            dropDown.append(commentingRow);
+        }
 
         nattyLink.append(dropDown);
-        $(window).click(function() {
+        $(window).click(function () {
             dropDown.hide();
         });
         nattyLink.click(e => {
@@ -238,7 +259,7 @@ function SetupPostPage() {
                 }
             });
 
-        const previousFlagPromise = GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${answerId}`);
+        const previousFlagPromise = GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`);
         previousFlagPromise.then(previousFlag => {
             if (previousFlag) {
                 reportedIcon.attr('title', `Previously flagged as ${previousFlag.ReportType}`)

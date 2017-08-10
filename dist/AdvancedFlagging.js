@@ -162,8 +162,11 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
                 });
             });
         };
-        MetaSmokeyAPI.prototype.GetFeedback = function (answerId) {
+        MetaSmokeyAPI.prototype.GetFeedback = function (postId, postType) {
             var _this = this;
+            var urlStr = postType === 'Answer'
+                ? "//" + window.location.hostname + "/a/" + postId
+                : "//" + window.location.hostname + "/questions/" + postId;
             var isDisabledPromise = this.IsDisabled();
             return new Promise(function (resolve, reject) {
                 isDisabledPromise.then(function (disabled) {
@@ -171,12 +174,12 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
                         resolve([]);
                         return;
                     }
-                    FunctionUtils_1.GetAndCache(MetaSmokeWasReportedConfig + "." + answerId, function () { return new Promise(function (resolve, reject) {
+                    FunctionUtils_1.GetAndCache(MetaSmokeWasReportedConfig + "." + urlStr, function () { return new Promise(function (resolve, reject) {
                         $.ajax({
                             type: 'GET',
                             url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
                             data: {
-                                urls: "//" + window.location.hostname + "/a/" + answerId,
+                                urls: urlStr,
                                 key: "" + _this.appKey
                             }
                         }).done(function (result) {
@@ -190,15 +193,18 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
                 });
             });
         };
-        MetaSmokeyAPI.prototype.Report = function (answerId) {
+        MetaSmokeyAPI.prototype.Report = function (postId, postType) {
             var _this = this;
+            var urlStr = postType === 'Answer'
+                ? "//" + window.location.hostname + "/a/" + postId
+                : "//" + window.location.hostname + "/q/" + postId;
             return new Promise(function (resolve, reject) {
                 _this.getUserKey().then(function (userKey) {
                     $.ajax({
                         type: "POST",
                         url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
                         data: {
-                            post_link: "//" + window.location.hostname + "/a/" + answerId,
+                            post_link: urlStr,
                             key: _this.appKey,
                             token: userKey
                         }
@@ -242,7 +248,8 @@ define("FlagTypes", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.flagCategories = [
         {
-            BoxStyle: { 'padding-left': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
+            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
+            AppliesTo: ['Answer', 'Question'],
             FlagTypes: [
                 {
                     DisplayName: 'Spam',
@@ -255,7 +262,8 @@ define("FlagTypes", ["require", "exports"], function (require, exports) {
             ]
         },
         {
-            BoxStyle: { 'padding-left': '5px' },
+            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
+            AppliesTo: ['Answer'],
             FlagTypes: [
                 {
                     DisplayName: 'Link Only',
@@ -316,7 +324,8 @@ define("FlagTypes", ["require", "exports"], function (require, exports) {
             ]
         },
         {
-            BoxStyle: { 'padding-left': '5px' },
+            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
+            AppliesTo: ['Answer', 'Question'],
             FlagTypes: [
                 {
                     DisplayName: 'Looks Fine',
@@ -467,11 +476,14 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
         return result;
     }
     function SetupPostPage() {
-        var postMenus = $('.answercell .post-menu');
+        var postMenus = $('.post-menu');
         postMenus.each(function (index, item) {
             var jqueryItem = $(item);
-            var answerId = parseInt(jqueryItem.find('.flag-post-link').attr('data-postid'), 10);
-            var reputationDiv = jqueryItem.closest('.answercell').find('.reputation-score');
+            var postType = jqueryItem.closest('.answercell').length > 0
+                ? 'Answer'
+                : 'Question';
+            var postId = parseInt(jqueryItem.find('.flag-post-link').attr('data-postid'), 10);
+            var reputationDiv = jqueryItem.closest(postType == 'Answer' ? '.answercell' : '.postcell').find('.reputation-score');
             var reputationText = reputationDiv.text();
             if (reputationText.indexOf('k') !== -1) {
                 reputationText = reputationDiv.attr('title').substr('reputation score '.length);
@@ -491,37 +503,48 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                 'cursor': 'default'
             }).hide();
             var linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
-            var checkboxName = "comment_checkbox_" + answerId;
+            var checkboxName = "comment_checkbox_" + postId;
             var leaveCommentBox = $('<input />')
                 .attr('type', 'checkbox')
                 .attr('name', checkboxName)
                 .prop('checked', true);
             var metaSmoke = new MetaSmokeyAPI_1.MetaSmokeyAPI(metaSmokeKey);
-            var metaSmokeWasReported = metaSmoke.GetFeedback(answerId);
+            var metaSmokeWasReported = metaSmoke.GetFeedback(postId, postType);
             var natty = new NattyApi_1.NattyAPI();
-            var nattyWasReported = natty.WasReported(answerId);
+            var nattyWasReported = natty.WasReported(postId);
             var reportedIcon = $('<div>').addClass('comment-flag').css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' }).hide();
             var getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
+            var hasCommentOptions = false;
+            var firstCategory = true;
             FlagTypes_1.flagCategories.forEach(function (flagCategory) {
+                if (flagCategory.AppliesTo.indexOf(postType) === -1) {
+                    return;
+                }
+                if (!firstCategory) {
+                    dropDown.append(getDivider());
+                }
                 flagCategory.FlagTypes.forEach(function (flagType) {
+                    if (flagType.Comment || (flagType.Comments && flagType.Comments.length > 0)) {
+                        hasCommentOptions = true;
+                    }
                     var dropdownItem = $('<dd />');
                     if (flagCategory.BoxStyle) {
                         dropdownItem.css(flagCategory.BoxStyle);
                     }
                     var nattyLinkItem = $('<a />').css(linkStyle);
                     nattyLinkItem.click(function () {
-                        var result = handleFlagAndComment(answerId, flagType, leaveCommentBox.is(':checked'), reputation);
+                        var result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation);
                         if (result.CommentPromise) {
                             result.CommentPromise.then(function (data) {
-                                var commentUI = StackExchange.comments.uiForPost($('#comments-' + answerId));
+                                var commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
                                 commentUI.addShow(true, false);
                                 commentUI.showComments(data, null, false, true);
-                                $(document).trigger('comment', answerId);
+                                $(document).trigger('comment', postId);
                             });
                         }
                         if (result.FlagPromise) {
                             result.FlagPromise.then(function () {
-                                FunctionUtils_4.StoreInCache("AdvancedFlagging.Flagged." + answerId, flagType);
+                                FunctionUtils_4.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType);
                                 reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
                                 reportedIcon.show();
                             });
@@ -540,24 +563,24 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                                     metaSmoke.ReportNAA(metaSmokeId);
                                 }
                                 else if (looksOk) {
-                                    metaSmoke.ReportTruePositive(metaSmokeId);
+                                    metaSmoke.ReportFalsePositive(metaSmokeId);
                                 }
                             }
                             else if (rudeFlag) {
-                                metaSmoke.Report(answerId);
+                                metaSmoke.Report(postId, postType);
                             }
                         });
                         nattyWasReported.then(function (wasReported) {
                             if (wasReported) {
                                 if (naaFlag) {
-                                    natty.ReportTruePositive(answerId);
+                                    natty.ReportTruePositive(postId);
                                 }
                                 else if (looksOk) {
-                                    natty.ReportFalsePositive(answerId);
+                                    natty.ReportFalsePositive(postId);
                                 }
                             }
                             else if (naaFlag) {
-                                natty.Report(answerId);
+                                natty.Report(postId);
                             }
                         });
                         dropDown.hide();
@@ -566,19 +589,22 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                     dropdownItem.append(nattyLinkItem);
                     dropDown.append(dropdownItem);
                 });
+                firstCategory = false;
+            });
+            if (hasCommentOptions) {
                 dropDown.append(getDivider());
-            });
-            var commentBoxLabel = $('<label />').text('Leave comment')
-                .attr('for', checkboxName)
-                .css({
-                'margin-right': '5px',
-                'margin-left': '4px',
-            });
-            commentBoxLabel.click(function () { return leaveCommentBox.click(); });
-            var commentingRow = $('<dd />');
-            commentingRow.append(commentBoxLabel);
-            commentingRow.append(leaveCommentBox);
-            dropDown.append(commentingRow);
+                var commentBoxLabel = $('<label />').text('Leave comment')
+                    .attr('for', checkboxName)
+                    .css({
+                    'margin-right': '5px',
+                    'margin-left': '4px',
+                });
+                commentBoxLabel.click(function () { return leaveCommentBox.click(); });
+                var commentingRow = $('<dd />');
+                commentingRow.append(commentBoxLabel);
+                commentingRow.append(leaveCommentBox);
+                dropDown.append(commentingRow);
+            }
             nattyLink.append(dropDown);
             $(window).click(function () {
                 dropDown.hide();
@@ -617,7 +643,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                     nattyIcon.show();
                 }
             });
-            var previousFlagPromise = FunctionUtils_4.GetFromCache("AdvancedFlagging.Flagged." + answerId);
+            var previousFlagPromise = FunctionUtils_4.GetFromCache("AdvancedFlagging.Flagged." + postId);
             previousFlagPromise.then(function (previousFlag) {
                 if (previousFlag) {
                     reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);

@@ -9,6 +9,7 @@ export interface FlagCategory {
     BoxStyle?: any;
     LinkStyle?: any;
 
+    AppliesTo: ('Answer' | 'Question')[];
     RestrictTo?: ('answers' | 'nato')[];
 
     FlagTypes: FlagType[];
@@ -16,7 +17,8 @@ export interface FlagCategory {
 
 export const flagCategories: FlagCategory[] = [
     {
-        BoxStyle: { 'padding-left': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
+        BoxStyle: { 'padding-left': '5px', 'padding-right': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
+        AppliesTo: ['Answer', 'Question'],
         FlagTypes: [
             {
                 DisplayName: 'Spam',
@@ -29,7 +31,8 @@ export const flagCategories: FlagCategory[] = [
         ]
     },
     {
-        BoxStyle: { 'padding-left': '5px' },
+        BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
+        AppliesTo: ['Answer'],
         FlagTypes: [
             {
                 DisplayName: 'Link Only',
@@ -90,7 +93,8 @@ export const flagCategories: FlagCategory[] = [
         ]
     },
     {
-        BoxStyle: { 'padding-left': '5px' },
+        BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
+        AppliesTo: ['Answer', 'Question'],
         FlagTypes: [
             {
                 DisplayName: 'Looks Fine',

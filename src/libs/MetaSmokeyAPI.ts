@@ -128,7 +128,12 @@ export class MetaSmokeyAPI {
             })
         });
     }
-    public GetFeedback(answerId: number): Promise<MetaSmokeApiItem[]> {
+    public GetFeedback(postId: number, postType: 'Answer' | 'Question'): Promise<MetaSmokeApiItem[]> {
+        const urlStr =
+            postType === 'Answer'
+                ? `//${window.location.hostname}/a/${postId}`
+                : `//${window.location.hostname}/questions/${postId}`;
+
         const isDisabledPromise = this.IsDisabled();
         return new Promise((resolve, reject) => {
             isDisabledPromise.then(disabled => {
@@ -137,12 +142,12 @@ export class MetaSmokeyAPI {
                     return;
                 }
 
-                GetAndCache<MetaSmokeApiItem[]>(`${MetaSmokeWasReportedConfig}.${answerId}`, () => new Promise((resolve, reject) => {
+                GetAndCache<MetaSmokeApiItem[]>(`${MetaSmokeWasReportedConfig}.${urlStr}`, () => new Promise((resolve, reject) => {
                     $.ajax({
                         type: 'GET',
                         url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
                         data: {
-                            urls: `//${window.location.hostname}/a/${answerId}`,
+                            urls: urlStr,
                             key: `${this.appKey}`
                         }
                     }).done((result: MetaSmokeApiWrapper) => {
@@ -152,19 +157,24 @@ export class MetaSmokeyAPI {
                         reject(error);
                     });
                 }))
-                .then(result => resolve(result));
+                    .then(result => resolve(result));
             });
         });
     }
 
-    public Report(answerId: number): Promise<void> {
+    public Report(postId: number, postType: 'Answer' | 'Question'): Promise<void> {
+        const urlStr =
+            postType === 'Answer'
+                ? `//${window.location.hostname}/a/${postId}`
+                : `//${window.location.hostname}/q/${postId}`;
+
         return new Promise<void>((resolve, reject) => {
             this.getUserKey().then(userKey => {
                 $.ajax({
                     type: "POST",
                     url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
                     data: {
-                        post_link: `//${window.location.hostname}/a/${answerId}`,
+                        post_link: urlStr,
                         key: this.appKey,
                         token: userKey
                     }

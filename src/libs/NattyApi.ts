@@ -23,9 +23,9 @@ export interface NattyFeedbackInfo {
 
 export class NattyAPI {
     private chat: ChatApi = new ChatApi();
-    
+
     public WasReported(answerId: number): Promise<boolean> {
-        const getterPromise = new Promise<boolean>((resolve, reject) => {
+        return GetAndCache(`NattyApi.Feedback.${answerId}`, () => new Promise<boolean>((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: `${nattyFeedbackUrl}/${answerId}`,
@@ -37,8 +37,7 @@ export class NattyAPI {
                     reject(response);
                 },
             });
-        });
-        return GetAndCache(`NattyApi.Feedback.${answerId}`, () => getterPromise);
+        }));
     }
 
     public Report(answerId: number) {

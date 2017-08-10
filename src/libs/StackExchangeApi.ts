@@ -69,7 +69,7 @@ export class StackExchangeAPI {
         multi: boolean,
         filter?: string): Promise<TResultType[]> {
 
-        const cachedResults = this.GetCachedItems<TResultType>(objectIds.slice(), skipCache, cacheKey);
+        const cachedResultsPromise = this.GetCachedItems<TResultType>(objectIds.slice(), skipCache, cacheKey);
 
         return new Promise<TResultType[]>((resolve, reject) => {
             if (objectIds.length > 0) {
@@ -85,33 +85,46 @@ export class StackExchangeAPI {
                     const grouping = GroupBy(returnItems, uniqueIdentifier);
                     GetMembers(grouping).forEach(key => StoreInCache(cacheKey(parseInt(key, 10)), grouping[key]));
 
-                    cachedResults.forEach(result => {
-                        returnItems.push(result);
-                    })
-                    resolve(returnItems);
+                    cachedResultsPromise.then(cachedResults => {
+                        cachedResults.forEach(result => {
+                            returnItems.push(result);
+                        })
+                        resolve(returnItems);
+                    });
                 }).fail((jqXHR: JQueryXHR, textStatus: string, errorThrown: string) => {
                     reject({ jqXHR, textStatus, errorThrown });
                 })
             } else {
-                resolve(cachedResults);
+                cachedResultsPromise.then(cachedResults => resolve(cachedResults));
             }
         });
     }
 
-    private GetCachedItems<TResultType>(objectIds: number[], skipCache: boolean, cacheKey: (objectId: number) => string) {
+    private GetCachedItems<TResultType>(objectIds: number[], skipCache: boolean, cacheKey: (objectId: number) => string): Promise<TResultType[]> {
         const cachedResults: TResultType[] = [];
+        const promises: Promise<void>[] = [];
         if (!skipCache) {
             objectIds.forEach(objectId => {
-                const cachedResult = GetFromCache<TResultType[]>(cacheKey(objectId));
-                if (cachedResult) {
-                    const itemIndex = objectIds.indexOf(objectId);
-                    if (itemIndex > -1) {
-                        objectIds.splice(itemIndex, 1);
-                    }
-                    cachedResult.forEach(r => cachedResults.push(r));
-                }
+                const cachedResultPromise = GetFromCache<TResultType[]>(cacheKey(objectId));
+                const tempPromise = new Promise<void>(resolve => {
+                    cachedResultPromise.then(cachedResult => {
+                        if (cachedResult) {
+                            const itemIndex = objectIds.indexOf(objectId);
+                            if (itemIndex > -1) {
+                                objectIds.splice(itemIndex, 1);
+                            }
+                            cachedResult.forEach(r => cachedResults.push(r));
+                        }
+                        resolve();
+                    });
+                });
+                promises.push(tempPromise);
             });
         }
-        return cachedResults;
+        return new Promise(resolve => {
+            Promise.all(promises).then(() => {
+                resolve(cachedResults)
+            });
+        })
     }
 }

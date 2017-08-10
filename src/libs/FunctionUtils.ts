@@ -1,5 +1,16 @@
 // tslint:disable-next-line:typeof-compare
 const hasStorage = typeof (Storage) !== undefined;
+declare const xdLocalStorage: any;
+
+let xdLocalStorageInitializedResolver = () => { };
+const xdLocalStorageInitialized = new Promise<void>((resolve, reject) => xdLocalStorageInitializedResolver = resolve)
+
+xdLocalStorage.init({
+    iframeUrl: "https://metasmoke.erwaysoftware.com/xdom_storage.html",
+    initCallback: function () {
+        xdLocalStorageInitializedResolver();
+    }
+})
 
 export interface ExpiryingCacheItem<T> {
     Data: T;
@@ -7,37 +18,42 @@ export interface ExpiryingCacheItem<T> {
 }
 
 export function GetAndCache<T>(cacheKey: string, getterPromise: () => Promise<T>, expiresAt?: Date): Promise<T> {
-    const cachedItem = GetFromCache<T>(cacheKey);
-    if (cachedItem) {
-        return Promise.resolve(cachedItem);
-    }
+    const cachedItemPromise = GetFromCache<T>(cacheKey);
+    return new Promise(resolve => {
+        cachedItemPromise.then(cachedItem => {
+            if (cachedItem) {
+                resolve(cachedItem);
+                return;
+            }
 
-    const promise = getterPromise();
-    promise.then(result => { StoreInCache(cacheKey, result, expiresAt); });
-    return promise;
+            const promise = getterPromise();
+            promise.then(result => { StoreInCache(cacheKey, result, expiresAt); });
+            promise.then(result => resolve(result));
+        });
+    });
 }
 
-export function GetFromCache<T>(cacheKey: string): T | undefined {
-    if (hasStorage) {
-        const cachedItem = localStorage.getItem(cacheKey);
-        if (cachedItem) {
-            try {
-                const actualItem = <ExpiryingCacheItem<T>>JSON.parse(cachedItem);
-                if (actualItem.Expires && actualItem.Expires < new Date()) {
-                    // It expired, so return nothing
+export function GetFromCache<T>(cacheKey: string): Promise<T | undefined> {
+    return new Promise<T | undefined>((resolve, reject) => {
+        xdLocalStorageInitialized.then(() => {
+            xdLocalStorage.getItem(cacheKey, (data: any) => {
+                const actualItem = <ExpiryingCacheItem<T>>JSON.parse(data.value);
+                if (!actualItem || (actualItem.Expires && actualItem.Expires < new Date())) {
+                    // It doesn't exist or is expired, so return nothing
+                    resolve();
                     return;
                 }
-                return actualItem.Data;
-            } catch (error) { }
-        }
-    }
+                return resolve(actualItem.Data);
+            })
+        })
+    });
 }
 
 export function StoreInCache<T>(cacheKey: string, item: T, expiresAt?: Date) {
-    if (hasStorage) {
+    xdLocalStorageInitialized.then(() => {
         const jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
-        localStorage.setItem(cacheKey, jsonStr);
-    }
+        xdLocalStorage.setItem(cacheKey, jsonStr);
+    });
 }
 
 export function GroupBy<T>(collection: T[], propertyGetter: (item: T) => any) {

@@ -4,38 +4,50 @@ define("libs/FunctionUtils", ["require", "exports"], function (require, exports)
     Object.defineProperty(exports, "__esModule", { value: true });
     // tslint:disable-next-line:typeof-compare
     var hasStorage = typeof (Storage) !== undefined;
-    function GetAndCache(cacheKey, getterPromise, expiresAt) {
-        var cachedItem = GetFromCache(cacheKey);
-        if (cachedItem) {
-            return Promise.resolve(cachedItem);
+    var xdLocalStorageInitializedResolver = function () { };
+    var xdLocalStorageInitialized = new Promise(function (resolve, reject) { return xdLocalStorageInitializedResolver = resolve; });
+    xdLocalStorage.init({
+        iframeUrl: "https://metasmoke.erwaysoftware.com/xdom_storage.html",
+        initCallback: function () {
+            xdLocalStorageInitializedResolver();
         }
-        var promise = getterPromise();
-        promise.then(function (result) { StoreInCache(cacheKey, result, expiresAt); });
-        return promise;
+    });
+    function GetAndCache(cacheKey, getterPromise, expiresAt) {
+        var cachedItemPromise = GetFromCache(cacheKey);
+        return new Promise(function (resolve) {
+            cachedItemPromise.then(function (cachedItem) {
+                if (cachedItem) {
+                    resolve(cachedItem);
+                    return;
+                }
+                var promise = getterPromise();
+                promise.then(function (result) { StoreInCache(cacheKey, result, expiresAt); });
+                promise.then(function (result) { return resolve(result); });
+            });
+        });
     }
     exports.GetAndCache = GetAndCache;
     function GetFromCache(cacheKey) {
-        if (hasStorage) {
-            var cachedItem = localStorage.getItem(cacheKey);
-            if (cachedItem) {
-                try {
-                    var actualItem = JSON.parse(cachedItem);
-                    if (actualItem.Expires && actualItem.Expires < new Date()) {
-                        // It expired, so return nothing
+        return new Promise(function (resolve, reject) {
+            xdLocalStorageInitialized.then(function () {
+                xdLocalStorage.getItem(cacheKey, function (data) {
+                    var actualItem = JSON.parse(data.value);
+                    if (!actualItem || (actualItem.Expires && actualItem.Expires < new Date())) {
+                        // It doesn't exist or is expired, so return nothing
+                        resolve();
                         return;
                     }
-                    return actualItem.Data;
-                }
-                catch (error) { }
-            }
-        }
+                    return resolve(actualItem.Data);
+                });
+            });
+        });
     }
     exports.GetFromCache = GetFromCache;
     function StoreInCache(cacheKey, item, expiresAt) {
-        if (hasStorage) {
+        xdLocalStorageInitialized.then(function () {
             var jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
-            localStorage.setItem(cacheKey, jsonStr);
-        }
+            xdLocalStorage.setItem(cacheKey, jsonStr);
+        });
     }
     exports.StoreInCache = StoreInCache;
     function GroupBy(collection, propertyGetter) {
@@ -69,35 +81,43 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
             if (!codeGetter) {
                 codeGetter = function (metaSmokeOAuthUrl) {
                     return new Promise(function (resolve, reject) {
-                        if (_this.IsDisabled()) {
-                            reject();
-                        }
-                        var cachedUserKey = FunctionUtils_1.GetFromCache(MetaSmokeUserKeyConfig);
-                        if (cachedUserKey) {
-                            resolve(cachedUserKey);
-                            return;
-                        }
-                        var metaSmokeUserKey = FunctionUtils_1.GetFromCache(MetaSmokeUserKeyConfig);
-                        if (!metaSmokeUserKey) {
-                            if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, call window.resetMetaSmokeConfiguration().')) {
-                                FunctionUtils_1.StoreInCache('MetaSmoke.Disabled', true);
+                        var isDisabledPromise = _this.IsDisabled();
+                        isDisabledPromise.then(function (isDisabled) {
+                            if (isDisabled) {
                                 reject();
                                 return;
                             }
-                        }
-                        window.open(metaSmokeOAuthUrl, '_blank');
-                        setTimeout(function () {
-                            var handleFDSCCode = function () {
-                                $(window).off('focus', handleFDSCCode);
-                                var code = window.prompt('Once you\'ve authenticated FDSC with metasmoke, you\'ll be given a code; enter it here.');
-                                if (!code) {
-                                    reject();
+                            var cachedUserKeyPromise = FunctionUtils_1.GetFromCache(MetaSmokeUserKeyConfig);
+                            cachedUserKeyPromise.then(function (cachedUserKey) {
+                                if (cachedUserKey) {
+                                    resolve(cachedUserKey);
                                     return;
                                 }
-                                resolve(code);
-                            };
-                            $(window).focus(handleFDSCCode);
-                        }, 100);
+                                var metaSmokeUserKeyPromise = FunctionUtils_1.GetFromCache(MetaSmokeUserKeyConfig);
+                                metaSmokeUserKeyPromise.then(function (metaSmokeUserKey) {
+                                    if (!metaSmokeUserKey) {
+                                        if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, call window.resetMetaSmokeConfiguration().')) {
+                                            FunctionUtils_1.StoreInCache('MetaSmoke.Disabled', true);
+                                            reject();
+                                            return;
+                                        }
+                                    }
+                                    window.open(metaSmokeOAuthUrl, '_blank');
+                                    setTimeout(function () {
+                                        var handleFDSCCode = function () {
+                                            $(window).off('focus', handleFDSCCode);
+                                            var code = window.prompt('Once you\'ve authenticated FDSC with metasmoke, you\'ll be given a code; enter it here.');
+                                            if (!code) {
+                                                reject();
+                                                return;
+                                            }
+                                            resolve(code);
+                                        };
+                                        $(window).focus(handleFDSCCode);
+                                    }, 100);
+                                });
+                            });
+                        });
                     });
                 };
             }
@@ -120,42 +140,54 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
             }); });
         };
         MetaSmokeyAPI.prototype.appendResetToWindow = function () {
+            FunctionUtils_1.StoreInCache(MetaSmokeDisabledConfig, undefined);
             if (!localStorage) {
                 return;
             }
             var scriptNode = document.createElement('script');
             scriptNode.type = 'text/javascript';
-            scriptNode.textContent = "\n    window.resetMetaSmokeConfiguration = function() {\n        localStorage.setItem('" + MetaSmokeDisabledConfig + "', undefined); \n        localStorage.setItem('" + MetaSmokeUserKeyConfig + "', undefined);\n    }\n    ";
+            scriptNode.textContent = "\n    window.resetMetaSmokeConfiguration = function() {\n        xdLocalStorage.removeItem('" + MetaSmokeDisabledConfig + "'); \n        xdLocalStorage.removeItem('" + MetaSmokeUserKeyConfig + "', undefined);\n    }\n    ";
             var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
             target.appendChild(scriptNode);
         };
         MetaSmokeyAPI.prototype.IsDisabled = function () {
-            var disabledConfig = FunctionUtils_1.GetFromCache(MetaSmokeDisabledConfig);
-            if (disabledConfig === undefined) {
-                return false;
-            }
-            return disabledConfig;
+            var disabledConfigPromise = FunctionUtils_1.GetFromCache(MetaSmokeDisabledConfig);
+            return new Promise(function (resolve) {
+                disabledConfigPromise.then(function (disabledConfig) {
+                    if (disabledConfig === undefined) {
+                        resolve(false);
+                        return;
+                    }
+                    resolve(disabledConfig);
+                });
+            });
         };
         MetaSmokeyAPI.prototype.GetFeedback = function (answerId) {
             var _this = this;
-            if (this.IsDisabled()) {
-                return Promise.resolve([]);
-            }
-            return FunctionUtils_1.GetAndCache(MetaSmokeWasReportedConfig + "." + answerId, function () { return new Promise(function (resolve, reject) {
-                $.ajax({
-                    type: 'GET',
-                    url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
-                    data: {
-                        urls: "//" + window.location.hostname + "/a/" + answerId,
-                        key: "" + _this.appKey
+            var isDisabledPromise = this.IsDisabled();
+            return new Promise(function (resolve, reject) {
+                isDisabledPromise.then(function (disabled) {
+                    if (disabled) {
+                        resolve([]);
+                        return;
                     }
-                }).done(function (result) {
-                    debugger;
-                    resolve(result.items);
-                }).fail(function (error) {
-                    reject(error);
+                    FunctionUtils_1.GetAndCache(MetaSmokeWasReportedConfig + "." + answerId, function () { return new Promise(function () {
+                        $.ajax({
+                            type: 'GET',
+                            url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
+                            data: {
+                                urls: "//" + window.location.hostname + "/a/" + answerId,
+                                key: "" + _this.appKey
+                            }
+                        }).done(function (result) {
+                            debugger;
+                            resolve(result.items);
+                        }).fail(function (error) {
+                            reject(error);
+                        });
+                    }); });
                 });
-            }); });
+            });
         };
         MetaSmokeyAPI.prototype.Report = function (answerId) {
             var _this = this;
@@ -176,6 +208,9 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
         };
         MetaSmokeyAPI.prototype.ReportTruePositive = function (metaSmokeId) {
             return this.SendFeedback(metaSmokeId, 'tpu-');
+        };
+        MetaSmokeyAPI.prototype.ReportFalsePositive = function (metaSmokeId) {
+            return this.SendFeedback(metaSmokeId, 'fp-');
         };
         MetaSmokeyAPI.prototype.ReportNAA = function (metaSmokeId) {
             return this.SendFeedback(metaSmokeId, 'naa-');
@@ -351,7 +386,7 @@ define("libs/NattyApi", ["require", "exports", "libs/FunctionUtils", "libs/ChatA
             this.chat = new ChatApi_1.ChatApi();
         }
         NattyAPI.prototype.WasReported = function (answerId) {
-            var getterPromise = new Promise(function (resolve, reject) {
+            return FunctionUtils_3.GetAndCache("NattyApi.Feedback." + answerId, function () { return new Promise(function (resolve, reject) {
                 GM_xmlhttpRequest({
                     method: 'GET',
                     url: nattyFeedbackUrl + "/" + answerId,
@@ -363,8 +398,7 @@ define("libs/NattyApi", ["require", "exports", "libs/FunctionUtils", "libs/ChatA
                         reject(response);
                     },
                 });
-            });
-            return FunctionUtils_3.GetAndCache("NattyApi.Feedback." + answerId, function () { return getterPromise; });
+            }); });
         };
         NattyAPI.prototype.Report = function (answerId) {
             this.chat.SendMessage(111347, "@Natty report http://stackoverflow.com/a/" + answerId);
@@ -490,6 +524,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                         }
                         var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType == 'PostOffensive';
                         var naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
+                        var looksOk = flagType.ReportType === 'NoFlag';
                         metaSmokeWasReported.then(function (responseItems) {
                             debugger;
                             if (responseItems.length > 0) {
@@ -497,8 +532,11 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                                 if (rudeFlag) {
                                     metaSmoke.ReportTruePositive(metaSmokeId);
                                 }
-                                else {
+                                else if (naaFlag) {
                                     metaSmoke.ReportNAA(metaSmokeId);
+                                }
+                                else if (looksOk) {
+                                    metaSmoke.ReportTruePositive(metaSmokeId);
                                 }
                             }
                             else if (rudeFlag) {
@@ -570,11 +608,13 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                     nattyIcon.show();
                 }
             });
-            var previousFlag = FunctionUtils_4.GetFromCache("AdvancedFlagging.Flagged." + answerId);
-            if (previousFlag) {
-                reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
-                reportedIcon.show();
-            }
+            var previousFlagPromise = FunctionUtils_4.GetFromCache("AdvancedFlagging.Flagged." + answerId);
+            previousFlagPromise.then(function (previousFlag) {
+                if (previousFlag) {
+                    reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
+                    reportedIcon.show();
+                }
+            });
             jqueryItem.append(nattyIcon);
             jqueryItem.append(smokeyIcon);
         });
@@ -630,7 +670,7 @@ define("libs/StackExchangeApi", ["require", "exports", "libs/FunctionUtils"], fu
             return this.MakeRequest(function (objectId) { return "StackExchange.Api.AnswerComments." + objectId; }, function (objectIds) { return stackExchangeApiURL + "/answers/" + objectIds.join(';') + "/comments"; }, function (comment) { return comment.post_id; }, answerIds, skipCache, site, true, filter);
         };
         StackExchangeAPI.prototype.MakeRequest = function (cacheKey, apiUrl, uniqueIdentifier, objectIds, skipCache, site, multi, filter) {
-            var cachedResults = this.GetCachedItems(objectIds.slice(), skipCache, cacheKey);
+            var cachedResultsPromise = this.GetCachedItems(objectIds.slice(), skipCache, cacheKey);
             return new Promise(function (resolve, reject) {
                 if (objectIds.length > 0) {
                     var url = apiUrl(objectIds) + ("?site=" + site);
@@ -645,34 +685,47 @@ define("libs/StackExchangeApi", ["require", "exports", "libs/FunctionUtils"], fu
                         var returnItems = (data.items || []);
                         var grouping = FunctionUtils_5.GroupBy(returnItems, uniqueIdentifier);
                         FunctionUtils_5.GetMembers(grouping).forEach(function (key) { return FunctionUtils_5.StoreInCache(cacheKey(parseInt(key, 10)), grouping[key]); });
-                        cachedResults.forEach(function (result) {
-                            returnItems.push(result);
+                        cachedResultsPromise.then(function (cachedResults) {
+                            cachedResults.forEach(function (result) {
+                                returnItems.push(result);
+                            });
+                            resolve(returnItems);
                         });
-                        resolve(returnItems);
                     }).fail(function (jqXHR, textStatus, errorThrown) {
                         reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
                     });
                 }
                 else {
-                    resolve(cachedResults);
+                    cachedResultsPromise.then(function (cachedResults) { return resolve(cachedResults); });
                 }
             });
         };
         StackExchangeAPI.prototype.GetCachedItems = function (objectIds, skipCache, cacheKey) {
             var cachedResults = [];
+            var promises = [];
             if (!skipCache) {
                 objectIds.forEach(function (objectId) {
-                    var cachedResult = FunctionUtils_5.GetFromCache(cacheKey(objectId));
-                    if (cachedResult) {
-                        var itemIndex = objectIds.indexOf(objectId);
-                        if (itemIndex > -1) {
-                            objectIds.splice(itemIndex, 1);
-                        }
-                        cachedResult.forEach(function (r) { return cachedResults.push(r); });
-                    }
+                    var cachedResultPromise = FunctionUtils_5.GetFromCache(cacheKey(objectId));
+                    var tempPromise = new Promise(function (resolve) {
+                        cachedResultPromise.then(function (cachedResult) {
+                            if (cachedResult) {
+                                var itemIndex = objectIds.indexOf(objectId);
+                                if (itemIndex > -1) {
+                                    objectIds.splice(itemIndex, 1);
+                                }
+                                cachedResult.forEach(function (r) { return cachedResults.push(r); });
+                            }
+                            resolve();
+                        });
+                    });
+                    promises.push(tempPromise);
                 });
             }
-            return cachedResults;
+            return new Promise(function (resolve) {
+                Promise.all(promises).then(function () {
+                    resolve(cachedResults);
+                });
+            });
         };
         return StackExchangeAPI;
     }());

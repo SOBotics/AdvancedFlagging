@@ -46,14 +46,15 @@ export class MetaSmokeyAPI {
     }
 
     private appendResetToWindow() {
+        StoreInCache(MetaSmokeDisabledConfig, undefined);
         if (!localStorage) { return; }
 
         let scriptNode = document.createElement('script');
         scriptNode.type = 'text/javascript';
         scriptNode.textContent = `
     window.resetMetaSmokeConfiguration = function() {
-        localStorage.setItem('${MetaSmokeDisabledConfig}', undefined); 
-        localStorage.setItem('${MetaSmokeUserKeyConfig}', undefined);
+        xdLocalStorage.removeItem('${MetaSmokeDisabledConfig}'); 
+        xdLocalStorage.removeItem('${MetaSmokeUserKeyConfig}', undefined);
     }
     `;
 
@@ -65,38 +66,46 @@ export class MetaSmokeyAPI {
         if (!codeGetter) {
             codeGetter = (metaSmokeOAuthUrl: string) => {
                 return new Promise((resolve, reject) => {
-                    if (this.IsDisabled()) {
-                        reject();
-                    }
-
-                    const cachedUserKey = GetFromCache<string>(MetaSmokeUserKeyConfig);
-                    if (cachedUserKey) {
-                        resolve(cachedUserKey);
-                        return;
-                    }
-
-                    const metaSmokeUserKey = GetFromCache<string>(MetaSmokeUserKeyConfig);
-                    if (!metaSmokeUserKey) {
-                        if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, call window.resetMetaSmokeConfiguration().')) {
-                            StoreInCache('MetaSmoke.Disabled', true);
+                    const isDisabledPromise = this.IsDisabled();
+                    isDisabledPromise.then(isDisabled => {
+                        if (isDisabled) {
                             reject();
                             return;
                         }
-                    }
 
-                    window.open(metaSmokeOAuthUrl, '_blank');
-                    setTimeout(() => {
-                        const handleFDSCCode = () => {
-                            $(window).off('focus', handleFDSCCode);
-                            const code = window.prompt('Once you\'ve authenticated FDSC with metasmoke, you\'ll be given a code; enter it here.');
-                            if (!code) {
-                                reject();
+                        const cachedUserKeyPromise = GetFromCache<string>(MetaSmokeUserKeyConfig);
+                        cachedUserKeyPromise.then(cachedUserKey => {
+                            if (cachedUserKey) {
+                                resolve(cachedUserKey);
                                 return;
                             }
-                            resolve(code);
-                        }
-                        $(window).focus(handleFDSCCode);
-                    }, 100);
+
+                            const metaSmokeUserKeyPromise = GetFromCache<string>(MetaSmokeUserKeyConfig);
+                            metaSmokeUserKeyPromise.then(metaSmokeUserKey => {
+                                if (!metaSmokeUserKey) {
+                                    if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, call window.resetMetaSmokeConfiguration().')) {
+                                        StoreInCache('MetaSmoke.Disabled', true);
+                                        reject();
+                                        return;
+                                    }
+                                }
+
+                                window.open(metaSmokeOAuthUrl, '_blank');
+                                setTimeout(() => {
+                                    const handleFDSCCode = () => {
+                                        $(window).off('focus', handleFDSCCode);
+                                        const code = window.prompt('Once you\'ve authenticated FDSC with metasmoke, you\'ll be given a code; enter it here.');
+                                        if (!code) {
+                                            reject();
+                                            return;
+                                        }
+                                        resolve(code);
+                                    }
+                                    $(window).focus(handleFDSCCode);
+                                }, 100);
+                            });
+                        });
+                    });
                 })
             }
         }
@@ -107,34 +116,44 @@ export class MetaSmokeyAPI {
         this.getUserKey(); // Make sure we request it immediately
     }
 
-    public IsDisabled() {
-        const disabledConfig = GetFromCache<boolean>(MetaSmokeDisabledConfig);
-        if (disabledConfig === undefined) {
-            return false;
-        }
-        return disabledConfig;
+    public IsDisabled(): Promise<boolean> {
+        const disabledConfigPromise = GetFromCache<boolean>(MetaSmokeDisabledConfig);
+        return new Promise(resolve => {
+            disabledConfigPromise.then(disabledConfig => {
+                if (disabledConfig === undefined) {
+                    resolve(false);
+                    return;
+                }
+                resolve(disabledConfig);
+            })
+        });
     }
     public GetFeedback(answerId: number): Promise<MetaSmokeApiItem[]> {
-
-        if (this.IsDisabled()) {
-            return Promise.resolve([]);
-        }
-
-        return GetAndCache(`${MetaSmokeWasReportedConfig}.${answerId}`, () => new Promise((resolve, reject) => {
-            $.ajax({
-                type: 'GET',
-                url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
-                data: {
-                    urls: `//${window.location.hostname}/a/${answerId}`,
-                    key: `${this.appKey}`
+        const isDisabledPromise = this.IsDisabled();
+        return new Promise((resolve, reject) => {
+            isDisabledPromise.then(disabled => {
+                if (disabled) {
+                    resolve([]);
+                    return;
                 }
-            }).done((result: MetaSmokeApiWrapper) => {
-                debugger;
-                resolve(result.items);
-            }).fail(error => {
-                reject(error);
+
+                GetAndCache(`${MetaSmokeWasReportedConfig}.${answerId}`, () => new Promise(() => {
+                    $.ajax({
+                        type: 'GET',
+                        url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
+                        data: {
+                            urls: `//${window.location.hostname}/a/${answerId}`,
+                            key: `${this.appKey}`
+                        }
+                    }).done((result: MetaSmokeApiWrapper) => {
+                        debugger;
+                        resolve(result.items);
+                    }).fail(error => {
+                        reject(error);
+                    });
+                }));
             });
-        }));
+        });
     }
 
     public Report(answerId: number): Promise<void> {

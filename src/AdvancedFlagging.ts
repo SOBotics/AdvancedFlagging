@@ -141,7 +141,7 @@ function SetupPostPage() {
                     metaSmokeWasReported.then(responseItems => {
                         debugger;
                         if (responseItems.length > 0) {
-                            const metaSmokeId =responseItems[0].id;
+                            const metaSmokeId = responseItems[0].id;
                             if (rudeFlag) {
                                 metaSmoke.ReportTruePositive(metaSmokeId);
                             } else if (naaFlag) {
@@ -161,7 +161,7 @@ function SetupPostPage() {
                             } else {
                                 //natty.ReportTruePositive(answerId);
                             }
-                        } else {
+                        } else if (naaFlag) {
                             natty.Report(answerId);
                         }
                     })
@@ -233,11 +233,14 @@ function SetupPostPage() {
                 }
             });
 
-        const previousFlag = GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${answerId}`);
-        if (previousFlag) {
-            reportedIcon.attr('title', `Previously flagged as ${previousFlag.ReportType}`)
-            reportedIcon.show();
-        }
+        const previousFlagPromise = GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${answerId}`);
+        previousFlagPromise.then(previousFlag => {
+            if (previousFlag) {
+                reportedIcon.attr('title', `Previously flagged as ${previousFlag.ReportType}`)
+                reportedIcon.show();
+            }
+        });
+
 
         jqueryItem.append(nattyIcon);
         jqueryItem.append(smokeyIcon);

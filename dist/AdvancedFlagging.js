@@ -699,7 +699,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                         });
                         nattyWasReported.then(function (wasReported) {
                             if (wasReported) {
-                                if (naaFlag) {
+                                if (naaFlag || rudeFlag) {
                                     natty.ReportTruePositive(postId).then(function () { return displaySuccess('Reported to natty'); });
                                 }
                                 else if (noFlag) {

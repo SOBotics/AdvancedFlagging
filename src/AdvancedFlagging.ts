@@ -248,7 +248,7 @@ function SetupPostPage() {
 
                     nattyWasReported.then(wasReported => {
                         if (wasReported) {
-                            if (naaFlag) {
+                            if (naaFlag || rudeFlag) {
                                 natty.ReportTruePositive(postId).then(() => displaySuccess('Reported to natty'));
                             } else if (noFlag) {
                                 if (needsEditing) {

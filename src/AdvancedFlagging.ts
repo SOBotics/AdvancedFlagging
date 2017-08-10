@@ -2,7 +2,7 @@ import { MetaSmokeyAPI } from './libs/MetaSmokeyAPI';
 import { FlagType, flagCategories } from './FlagTypes';
 import { NattyAPI } from './libs/NattyApi';
 import { GetFromCache, StoreInCache, GetAndCache, InitializeCache } from './libs/Caching';
-import { Delay } from "./libs/FunctionUtils";
+import { Delay } from './libs/FunctionUtils';
 // tslint:disable-next-line:no-debugger
 debugger;
 
@@ -132,8 +132,12 @@ async function displaySuccess(message: string) {
     }
 }
 
+const metaSmoke = new MetaSmokeyAPI(metaSmokeKey);
+const natty = new NattyAPI();
+
 function SetupPostPage() {
     const postMenus = $('.post-menu');
+
     postMenus.each((index, item) => {
         const jqueryItem = $(item);
 
@@ -179,10 +183,7 @@ function SetupPostPage() {
             leaveCommentBox.prop('checked', true);
         }
 
-        const metaSmoke = new MetaSmokeyAPI(metaSmokeKey);
         const metaSmokeWasReported = metaSmoke.GetFeedback(postId, postType);
-
-        const natty = new NattyAPI();
         const nattyWasReported = natty.WasReported(postId);
 
         const reportedIcon = getReportedIcon();

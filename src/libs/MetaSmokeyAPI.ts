@@ -30,19 +30,23 @@ interface MetaSmokeApiWrapper {
 }
 
 export class MetaSmokeyAPI {
+    private actualPromise: Promise<string | undefined>;
     private codeGetter: (metaSmokeOAuthUrl: string) => Promise<string | undefined>;
     private appKey: string;
 
     private getUserKey() {
-        return GetAndCache(MetaSmokeUserKeyConfig, () => new Promise<string>((resolve, reject) => {
-            this.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${this.appKey}`)
-                .then(code => {
-                    $.ajax({
-                        url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + this.appKey + '&code=' + code,
-                        method: 'GET'
-                    }).done(data => resolve(data.token))
-                        .fail(err => reject(err))
-                });
+        return GetAndCache(MetaSmokeUserKeyConfig, () => new Promise<string>(async (resolve, reject) => {
+            let prom = this.actualPromise;
+            if (prom === undefined) {
+                prom = this.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${this.appKey}`);
+                this.actualPromise = prom;
+            }
+            const code = await prom;
+            $.ajax({
+                url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + this.appKey + '&code=' + code,
+                method: 'GET'
+            }).done(data => resolve(data.token))
+                .fail(err => reject(err))
         }));
     }
 
@@ -77,21 +81,25 @@ export class MetaSmokeyAPI {
                 }
 
                 if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, call window.resetMetaSmokeConfiguration().')) {
-                    StoreInCache('MetaSmoke.Disabled', true);
+                    StoreInCache(MetaSmokeDisabledConfig, true);
                     return;
                 }
 
                 window.open(metaSmokeOAuthUrl, '_blank');
                 await Delay(100);
-                const handleFDSCCode = () => {
-                    $(window).off('focus', handleFDSCCode);
-                    const code = window.prompt('Once you\'ve authenticated FDSC with metasmoke, you\'ll be given a code; enter it here.');
-                    if (!code) {
-                        return;
+                const returnCode = await new Promise<string | undefined>((resolve) => {
+                    const handleFDSCCode = () => {
+                        $(window).off('focus', handleFDSCCode);
+                        const code = window.prompt('Once you\'ve authenticated FDSC with metasmoke, you\'ll be given a code; enter it here.');
+                        if (!code) {
+                            resolve();
+                        } else {
+                            return resolve(code);
+                        }
                     }
-                    return code;
-                }
-                $(window).focus(handleFDSCCode);
+                    $(window).focus(handleFDSCCode);
+                })
+                return returnCode;
             }
         }
         this.codeGetter = codeGetter;

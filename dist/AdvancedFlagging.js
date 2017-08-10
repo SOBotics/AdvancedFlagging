@@ -128,7 +128,7 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/Caching", "libs/Functi
             var _this = this;
             if (!codeGetter) {
                 codeGetter = function (metaSmokeOAuthUrl) { return __awaiter(_this, void 0, void 0, function () {
-                    var isDisabled, cachedUserKey, handleFDSCCode;
+                    var isDisabled, cachedUserKey, returnCode;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0: return [4 /*yield*/, this.IsDisabled()];
@@ -144,23 +144,29 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/Caching", "libs/Functi
                                     return [2 /*return*/, cachedUserKey];
                                 }
                                 if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, call window.resetMetaSmokeConfiguration().')) {
-                                    Caching_1.StoreInCache('MetaSmoke.Disabled', true);
+                                    Caching_1.StoreInCache(MetaSmokeDisabledConfig, true);
                                     return [2 /*return*/];
                                 }
                                 window.open(metaSmokeOAuthUrl, '_blank');
                                 return [4 /*yield*/, FunctionUtils_1.Delay(100)];
                             case 3:
                                 _a.sent();
-                                handleFDSCCode = function () {
-                                    $(window).off('focus', handleFDSCCode);
-                                    var code = window.prompt('Once you\'ve authenticated FDSC with metasmoke, you\'ll be given a code; enter it here.');
-                                    if (!code) {
-                                        return;
-                                    }
-                                    return code;
-                                };
-                                $(window).focus(handleFDSCCode);
-                                return [2 /*return*/];
+                                return [4 /*yield*/, new Promise(function (resolve) {
+                                        var handleFDSCCode = function () {
+                                            $(window).off('focus', handleFDSCCode);
+                                            var code = window.prompt('Once you\'ve authenticated FDSC with metasmoke, you\'ll be given a code; enter it here.');
+                                            if (!code) {
+                                                resolve();
+                                            }
+                                            else {
+                                                return resolve(code);
+                                            }
+                                        };
+                                        $(window).focus(handleFDSCCode);
+                                    })];
+                            case 4:
+                                returnCode = _a.sent();
+                                return [2 /*return*/, returnCode];
                         }
                     });
                 }); };
@@ -172,16 +178,28 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/Caching", "libs/Functi
         }
         MetaSmokeyAPI.prototype.getUserKey = function () {
             var _this = this;
-            return Caching_1.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) {
-                _this.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + _this.appKey)
-                    .then(function (code) {
-                    $.ajax({
-                        url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + _this.appKey + '&code=' + code,
-                        method: 'GET'
-                    }).done(function (data) { return resolve(data.token); })
-                        .fail(function (err) { return reject(err); });
+            return Caching_1.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
+                var prom, code;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            prom = this.actualPromise;
+                            if (prom === undefined) {
+                                prom = this.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + this.appKey);
+                                this.actualPromise = prom;
+                            }
+                            return [4 /*yield*/, prom];
+                        case 1:
+                            code = _a.sent();
+                            $.ajax({
+                                url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + this.appKey + '&code=' + code,
+                                method: 'GET'
+                            }).done(function (data) { return resolve(data.token); })
+                                .fail(function (err) { return reject(err); });
+                            return [2 /*return*/];
+                    }
                 });
-            }); });
+            }); }); });
         };
         MetaSmokeyAPI.prototype.appendResetToWindow = function () {
             Caching_1.StoreInCache(MetaSmokeDisabledConfig, undefined);
@@ -580,6 +598,8 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             });
         });
     }
+    var metaSmoke = new MetaSmokeyAPI_1.MetaSmokeyAPI(metaSmokeKey);
+    var natty = new NattyApi_1.NattyAPI();
     function SetupPostPage() {
         var postMenus = $('.post-menu');
         postMenus.each(function (index, item) {
@@ -617,9 +637,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             if (comments.length === 0) {
                 leaveCommentBox.prop('checked', true);
             }
-            var metaSmoke = new MetaSmokeyAPI_1.MetaSmokeyAPI(metaSmokeKey);
             var metaSmokeWasReported = metaSmoke.GetFeedback(postId, postType);
-            var natty = new NattyApi_1.NattyAPI();
             var nattyWasReported = natty.WasReported(postId);
             var reportedIcon = getReportedIcon();
             var getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };

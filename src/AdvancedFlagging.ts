@@ -1,7 +1,7 @@
 import { MetaSmokeyAPI } from './libs/MetaSmokeyAPI';
 import { FlagType, flagCategories } from './FlagTypes';
 import { NattyAPI } from './libs/NattyApi';
-import { GetFromCache, StoreInCache, GetAndCache } from './libs/FunctionUtils';
+import { GetFromCache, StoreInCache, GetAndCache, Delay } from './libs/FunctionUtils';
 // tslint:disable-next-line:no-debugger
 debugger;
 
@@ -9,6 +9,56 @@ const metaSmokeKey = '070f26ebb71c5e6cfca7893fe1139460cf23f30d686566f5707a4acfd5
 
 declare const StackExchange: any;
 declare const unsafeWindow: any;
+
+function setupStyles() {
+    let scriptNode = document.createElement('style');
+    scriptNode.type = 'text/css';
+    scriptNode.textContent = `
+#snackbar {
+    visibility: hidden;
+    min-width: 250px;
+    margin-left: -125px;
+    background-color: #00690c;
+    color: #fff;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: fixed;
+    z-index: 2000;
+    left: 50%;
+    top: 30px;
+    font-size: 17px;
+}
+
+#snackbar.show {
+    visibility: visible;
+    -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+@-webkit-keyframes fadein {
+    from {top: 0; opacity: 0;} 
+    to {top: 30px; opacity: 1;}
+}
+
+@keyframes fadein {
+    from {top: 0; opacity: 0;}
+    to {top: 30px; opacity: 1;}
+}
+
+@-webkit-keyframes fadeout {
+    from {top: 30px; opacity: 1;} 
+    to {top: 0; opacity: 0;}
+}
+
+@keyframes fadeout {
+    from {top: 30px; opacity: 1;}
+    to {top: 0; opacity: 0;}
+}`;
+
+    var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
+    target.appendChild(scriptNode);
+};
 
 function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: boolean, userReputation: number) {
     const result: {
@@ -61,6 +111,24 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
     }
 
     return result;
+}
+
+const popup = $('<div>').attr('id', 'snackbar');
+
+let showingPromise: Promise<void> | null = null;
+async function displaySuccess(message: string) {
+    if (!showingPromise) {
+        showingPromise = Delay(3500);
+
+        popup.text(message);
+        popup.addClass('show')
+        await Delay(3000);
+        popup.removeClass('show');
+        showingPromise = null;
+    } else {
+        await showingPromise;
+        displaySuccess(message);
+    }
 }
 
 function SetupPostPage() {
@@ -158,32 +226,37 @@ function SetupPostPage() {
 
                     const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType == 'PostOffensive';
                     const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
-                    const looksOk = flagType.ReportType === 'NoFlag';
+                    const noFlag = flagType.ReportType === 'NoFlag';
+                    const needsEditing = flagType.DisplayName === 'Needs Editing'
 
                     metaSmokeWasReported.then(responseItems => {
                         if (responseItems.length > 0) {
                             const metaSmokeId = responseItems[0].id;
                             if (rudeFlag) {
-                                metaSmoke.ReportTruePositive(metaSmokeId);
+                                metaSmoke.ReportTruePositive(metaSmokeId).then(() => displaySuccess('Reported to MS'));
                             } else if (naaFlag) {
-                                metaSmoke.ReportNAA(metaSmokeId);
-                            } else if (looksOk) {
-                                metaSmoke.ReportFalsePositive(metaSmokeId);
+                                metaSmoke.ReportNAA(metaSmokeId).then(() => displaySuccess('Reported to MS'));
+                            } else if (noFlag) {
+                                metaSmoke.ReportFalsePositive(metaSmokeId).then(() => displaySuccess('Reported to MS'));
                             }
                         } else if (rudeFlag) {
-                            metaSmoke.Report(postId, postType);
+                            metaSmoke.Report(postId, postType).then(() => displaySuccess('Reported to MS'));
                         }
                     });
 
                     nattyWasReported.then(wasReported => {
                         if (wasReported) {
                             if (naaFlag) {
-                                natty.ReportTruePositive(postId);
-                            } else if (looksOk) {
-                                natty.ReportFalsePositive(postId);
+                                natty.ReportTruePositive(postId).then(() => displaySuccess('Reported to natty'));
+                            } else if (noFlag) {
+                                if (needsEditing) {
+                                    natty.ReportNeedsEditing(postId).then(() => displaySuccess('Reported to natty'));
+                                } else {
+                                    natty.ReportFalsePositive(postId).then(() => displaySuccess('Reported to natty'));
+                                }
                             }
                         } else if (naaFlag) {
-                            natty.Report(postId);
+                            natty.Report(postId).then(() => displaySuccess('Reported to natty'));
                         }
                     });
 
@@ -259,6 +332,8 @@ function SetupPostPage() {
 
         jqueryItem.append(nattyIcon);
         jqueryItem.append(smokeyIcon);
+
+
     })
 }
 
@@ -335,4 +410,7 @@ function SetupNatoPage() {
 $(function () {
     SetupPostPage();
     SetupNatoPage();
+
+    setupStyles();
+    document.body.appendChild(popup.get(0));
 });

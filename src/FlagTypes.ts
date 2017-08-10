@@ -99,6 +99,10 @@ export const flagCategories: FlagCategory[] = [
             {
                 DisplayName: 'Looks Fine',
                 ReportType: 'NoFlag'
+            },
+            {
+                DisplayName: 'Needs Editing',
+                ReportType: 'NoFlag'
             }
         ]
     }

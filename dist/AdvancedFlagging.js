@@ -378,6 +378,10 @@ define("FlagTypes", ["require", "exports"], function (require, exports) {
                 {
                     DisplayName: 'Looks Fine',
                     ReportType: 'NoFlag'
+                },
+                {
+                    DisplayName: 'Needs Editing',
+                    ReportType: 'NoFlag'
                 }
             ]
         }
@@ -464,13 +468,20 @@ define("libs/NattyApi", ["require", "exports", "libs/FunctionUtils", "libs/ChatA
             }); });
         };
         NattyAPI.prototype.Report = function (answerId) {
-            this.chat.SendMessage(111347, "@Natty report http://stackoverflow.com/a/" + answerId);
+            var promise = this.chat.SendMessage(111347, "@Natty report http://stackoverflow.com/a/" + answerId);
+            promise.then(function () {
+                FunctionUtils_3.StoreInCache("NattyApi.Feedback." + answerId, undefined);
+            });
+            return promise;
         };
         NattyAPI.prototype.ReportTruePositive = function (answerId) {
-            this.chat.SendMessage(111347, "@Natty feedback http://stackoverflow.com/a/" + answerId + " tp");
+            return this.chat.SendMessage(111347, "@Natty feedback http://stackoverflow.com/a/" + answerId + " tp");
+        };
+        NattyAPI.prototype.ReportNeedsEditing = function (answerId) {
+            return this.chat.SendMessage(111347, "@Natty feedback http://stackoverflow.com/a/" + answerId + " ne");
         };
         NattyAPI.prototype.ReportFalsePositive = function (answerId) {
-            this.chat.SendMessage(111347, "@Natty feedback http://stackoverflow.com/a/" + answerId + " fp");
+            return this.chat.SendMessage(111347, "@Natty feedback http://stackoverflow.com/a/" + answerId + " fp");
         };
         return NattyAPI;
     }());
@@ -482,6 +493,14 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
     // tslint:disable-next-line:no-debugger
     debugger;
     var metaSmokeKey = '070f26ebb71c5e6cfca7893fe1139460cf23f30d686566f5707a4acfd50c';
+    function setupStyles() {
+        var scriptNode = document.createElement('style');
+        scriptNode.type = 'text/css';
+        scriptNode.textContent = "\n#snackbar {\n    visibility: hidden;\n    min-width: 250px;\n    margin-left: -125px;\n    background-color: #00690c;\n    color: #fff;\n    text-align: center;\n    border-radius: 2px;\n    padding: 16px;\n    position: fixed;\n    z-index: 2000;\n    left: 50%;\n    top: 30px;\n    font-size: 17px;\n}\n\n#snackbar.show {\n    visibility: visible;\n    -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;\n    animation: fadein 0.5s, fadeout 0.5s 2.5s;\n}\n\n@-webkit-keyframes fadein {\n    from {top: 0; opacity: 0;} \n    to {top: 30px; opacity: 1;}\n}\n\n@keyframes fadein {\n    from {top: 0; opacity: 0;}\n    to {top: 30px; opacity: 1;}\n}\n\n@-webkit-keyframes fadeout {\n    from {top: 30px; opacity: 1;} \n    to {top: 0; opacity: 0;}\n}\n\n@keyframes fadeout {\n    from {top: 30px; opacity: 1;}\n    to {top: 0; opacity: 0;}\n}";
+        var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
+        target.appendChild(scriptNode);
+    }
+    ;
     function handleFlagAndComment(postId, flag, commentRequired, userReputation) {
         var result = {};
         if (commentRequired) {
@@ -527,6 +546,33 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             });
         }
         return result;
+    }
+    var popup = $('<div>').attr('id', 'snackbar');
+    var showingPromise = null;
+    function displaySuccess(message) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!!showingPromise) return [3 /*break*/, 2];
+                        showingPromise = FunctionUtils_4.Delay(3500);
+                        popup.text(message);
+                        popup.addClass('show');
+                        return [4 /*yield*/, FunctionUtils_4.Delay(3000)];
+                    case 1:
+                        _a.sent();
+                        popup.removeClass('show');
+                        showingPromise = null;
+                        return [3 /*break*/, 4];
+                    case 2: return [4 /*yield*/, showingPromise];
+                    case 3:
+                        _a.sent();
+                        displaySuccess(message);
+                        _a.label = 4;
+                    case 4: return [2 /*return*/];
+                }
+            });
+        });
     }
     function SetupPostPage() {
         var postMenus = $('.post-menu');
@@ -608,35 +654,41 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                         }
                         var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType == 'PostOffensive';
                         var naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
-                        var looksOk = flagType.ReportType === 'NoFlag';
+                        var noFlag = flagType.ReportType === 'NoFlag';
+                        var needsEditing = flagType.DisplayName === 'Needs Editing';
                         metaSmokeWasReported.then(function (responseItems) {
                             if (responseItems.length > 0) {
                                 var metaSmokeId = responseItems[0].id;
                                 if (rudeFlag) {
-                                    metaSmoke.ReportTruePositive(metaSmokeId);
+                                    metaSmoke.ReportTruePositive(metaSmokeId).then(function () { return displaySuccess('Reported to MS'); });
                                 }
                                 else if (naaFlag) {
-                                    metaSmoke.ReportNAA(metaSmokeId);
+                                    metaSmoke.ReportNAA(metaSmokeId).then(function () { return displaySuccess('Reported to MS'); });
                                 }
-                                else if (looksOk) {
-                                    metaSmoke.ReportFalsePositive(metaSmokeId);
+                                else if (noFlag) {
+                                    metaSmoke.ReportFalsePositive(metaSmokeId).then(function () { return displaySuccess('Reported to MS'); });
                                 }
                             }
                             else if (rudeFlag) {
-                                metaSmoke.Report(postId, postType);
+                                metaSmoke.Report(postId, postType).then(function () { return displaySuccess('Reported to MS'); });
                             }
                         });
                         nattyWasReported.then(function (wasReported) {
                             if (wasReported) {
                                 if (naaFlag) {
-                                    natty.ReportTruePositive(postId);
+                                    natty.ReportTruePositive(postId).then(function () { return displaySuccess('Reported to natty'); });
                                 }
-                                else if (looksOk) {
-                                    natty.ReportFalsePositive(postId);
+                                else if (noFlag) {
+                                    if (needsEditing) {
+                                        natty.ReportNeedsEditing(postId).then(function () { return displaySuccess('Reported to natty'); });
+                                    }
+                                    else {
+                                        natty.ReportFalsePositive(postId).then(function () { return displaySuccess('Reported to natty'); });
+                                    }
                                 }
                             }
                             else if (naaFlag) {
-                                natty.Report(postId);
+                                natty.Report(postId).then(function () { return displaySuccess('Reported to natty'); });
                             }
                         });
                         dropDown.hide();
@@ -758,6 +810,8 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
     $(function () {
         SetupPostPage();
         SetupNatoPage();
+        setupStyles();
+        document.body.appendChild(popup.get(0));
     });
 });
 require(['AdvancedFlagging']);

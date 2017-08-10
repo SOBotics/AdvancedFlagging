@@ -1,7 +1,7 @@
 declare var $: JQueryStatic;
 declare const GM_xmlhttpRequest: any;
 
-import { GetAndCache } from './FunctionUtils';
+import { GetAndCache, StoreInCache } from './FunctionUtils';
 import { ChatApi } from './ChatApi';
 
 const nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
@@ -45,12 +45,19 @@ export class NattyAPI {
     }
 
     public Report(answerId: number) {
-        this.chat.SendMessage(111347, `@Natty report http://stackoverflow.com/a/${answerId}`);
+        const promise = this.chat.SendMessage(111347, `@Natty report http://stackoverflow.com/a/${answerId}`);
+        promise.then(() => {
+            StoreInCache(`NattyApi.Feedback.${answerId}`, undefined);
+        });
+        return promise;
     }
     public ReportTruePositive(answerId: number) {
-        this.chat.SendMessage(111347, `@Natty feedback http://stackoverflow.com/a/${answerId} tp`);
+        return this.chat.SendMessage(111347, `@Natty feedback http://stackoverflow.com/a/${answerId} tp`);
+    }
+    public ReportNeedsEditing(answerId: number) {
+        return this.chat.SendMessage(111347, `@Natty feedback http://stackoverflow.com/a/${answerId} ne`);
     }
     public ReportFalsePositive(answerId: number) {
-        this.chat.SendMessage(111347, `@Natty feedback http://stackoverflow.com/a/${answerId} fp`);
+        return this.chat.SendMessage(111347, `@Natty feedback http://stackoverflow.com/a/${answerId} fp`);
     }
 }

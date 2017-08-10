@@ -127,7 +127,6 @@ export class MetaSmokeyAPI {
                     key: `${this.appKey}`
                 }
             }).done((result: MetaSmokeApiWrapper) => {
-                debugger;
                 resolve(result.items);
             }).fail(error => {
                 reject(error);

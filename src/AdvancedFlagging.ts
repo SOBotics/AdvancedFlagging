@@ -112,9 +112,9 @@ function SetupPostPage() {
         const natty = new NattyAPI();
         const nattyWasReported = natty.WasReported(postId);
 
-        const reportedIcon = $('<div>').addClass('comment-flag').css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' }).hide();
+        const reportedIcon = getReportedIcon();
         const getDivider = () => $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' });
-        
+
         let hasCommentOptions = false;
         let firstCategory = true;
         flagCategories.forEach(flagCategory => {
@@ -157,7 +157,6 @@ function SetupPostPage() {
                     const looksOk = flagType.ReportType === 'NoFlag';
 
                     metaSmokeWasReported.then(responseItems => {
-                        debugger;
                         if (responseItems.length > 0) {
                             const metaSmokeId = responseItems[0].id;
                             if (rudeFlag) {
@@ -229,21 +228,8 @@ function SetupPostPage() {
         jqueryItem.append(nattyLink);
         jqueryItem.append(reportedIcon);
 
-        const nattyIcon = $('<div>')
-            .css({
-                'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
-                'background': 'url("https://i.stack.imgur.com/aMUMt.jpg?s=328&g=1"', 'background-size': '100%'
-            })
-            .attr('title', 'Reported by Natty')
-            .hide();
-
-        const smokeyIcon = $('<div>')
-            .css({
-                'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
-                'background': 'url("https://i.stack.imgur.com/WyV1l.png?s=128&g=1"', 'background-size': '100%'
-            })
-            .attr('title', 'Reported by Smokey')
-            .hide();
+        const nattyIcon = getNattyIcon();
+        const smokeyIcon = getSmokeyIcon();
 
         metaSmokeWasReported
             .then(responseItems => {
@@ -267,12 +253,82 @@ function SetupPostPage() {
             }
         });
 
-
         jqueryItem.append(nattyIcon);
         jqueryItem.append(smokeyIcon);
     })
 }
 
+function getReportedIcon() {
+    return $('<div>').addClass('comment-flag').css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' }).hide();
+}
+
+function getNattyIcon() {
+    return $('<div>')
+        .css({
+            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
+            'background': 'url("https://i.stack.imgur.com/aMUMt.jpg?s=328&g=1"', 'background-size': '100%'
+        })
+        .attr('title', 'Reported by Natty')
+        .hide();
+}
+function getSmokeyIcon() {
+    return $('<div>')
+        .css({
+            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
+            'background': 'url("https://i.stack.imgur.com/WyV1l.png?s=128&g=1"', 'background-size': '100%'
+        })
+        .attr('title', 'Reported by Smokey')
+        .hide()
+}
+
+function SetupNatoPage() {
+    $('.answer-hyperlink').each((index, item) => {
+        const jqueryItem = $(item);
+
+        const displayStyle = { 'display': 'inline-block' };
+
+        const reportedIcon = getReportedIcon();
+        const nattyIcon = getNattyIcon();
+        const smokeyIcon = getSmokeyIcon();
+
+        jqueryItem.after(smokeyIcon);
+        jqueryItem.after(nattyIcon);
+        jqueryItem.after(reportedIcon);
+             
+
+        const postId = parseInt(jqueryItem.attr('href').split('#')[1], 10);
+
+        const metaSmoke = new MetaSmokeyAPI(metaSmokeKey);
+        const metaSmokeWasReported = metaSmoke.GetFeedback(postId, 'Answer');
+
+        const natty = new NattyAPI();
+        const nattyWasReported = natty.WasReported(postId);
+
+        const previousFlagPromise = GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`);
+        previousFlagPromise.then(previousFlag => {
+            if (previousFlag) {
+                reportedIcon.attr('title', `Previously flagged as ${previousFlag.ReportType}`)
+                reportedIcon.show();
+            }
+        });
+
+        metaSmokeWasReported
+            .then(responseItems => {
+                if (responseItems.length > 0) {
+                    smokeyIcon.css(displayStyle);
+                }
+            });
+
+        nattyWasReported
+            .then(wasReported => {
+                if (wasReported) {
+                    nattyIcon.css(displayStyle);
+                }
+            });
+    });
+}
+
 $(function () {
     SetupPostPage();
+    SetupNatoPage();
 });

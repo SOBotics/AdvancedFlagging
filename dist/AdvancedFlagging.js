@@ -229,7 +229,6 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
                                             key: "" + _this.appKey
                                         }
                                     }).done(function (result) {
-                                        debugger;
                                         resolve(result.items);
                                     }).fail(function (error) {
                                         reject(error);
@@ -561,7 +560,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             var metaSmokeWasReported = metaSmoke.GetFeedback(postId, postType);
             var natty = new NattyApi_1.NattyAPI();
             var nattyWasReported = natty.WasReported(postId);
-            var reportedIcon = $('<div>').addClass('comment-flag').css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' }).hide();
+            var reportedIcon = getReportedIcon();
             var getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
             var hasCommentOptions = false;
             var firstCategory = true;
@@ -602,7 +601,6 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                         var naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
                         var looksOk = flagType.ReportType === 'NoFlag';
                         metaSmokeWasReported.then(function (responseItems) {
-                            debugger;
                             if (responseItems.length > 0) {
                                 var metaSmokeId = responseItems[0].id;
                                 if (rudeFlag) {
@@ -666,20 +664,8 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             });
             jqueryItem.append(nattyLink);
             jqueryItem.append(reportedIcon);
-            var nattyIcon = $('<div>')
-                .css({
-                'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
-                'background': 'url("https://i.stack.imgur.com/aMUMt.jpg?s=328&g=1"', 'background-size': '100%'
-            })
-                .attr('title', 'Reported by Natty')
-                .hide();
-            var smokeyIcon = $('<div>')
-                .css({
-                'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
-                'background': 'url("https://i.stack.imgur.com/WyV1l.png?s=128&g=1"', 'background-size': '100%'
-            })
-                .attr('title', 'Reported by Smokey')
-                .hide();
+            var nattyIcon = getNattyIcon();
+            var smokeyIcon = getSmokeyIcon();
             metaSmokeWasReported
                 .then(function (responseItems) {
                 if (responseItems.length > 0) {
@@ -703,8 +689,66 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             jqueryItem.append(smokeyIcon);
         });
     }
+    function getReportedIcon() {
+        return $('<div>').addClass('comment-flag').css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' }).hide();
+    }
+    function getNattyIcon() {
+        return $('<div>')
+            .css({
+            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
+            'background': 'url("https://i.stack.imgur.com/aMUMt.jpg?s=328&g=1"', 'background-size': '100%'
+        })
+            .attr('title', 'Reported by Natty')
+            .hide();
+    }
+    function getSmokeyIcon() {
+        return $('<div>')
+            .css({
+            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
+            'background': 'url("https://i.stack.imgur.com/WyV1l.png?s=128&g=1"', 'background-size': '100%'
+        })
+            .attr('title', 'Reported by Smokey')
+            .hide();
+    }
+    function SetupNatoPage() {
+        $('.answer-hyperlink').each(function (index, item) {
+            var jqueryItem = $(item);
+            var displayStyle = { 'display': 'inline-block' };
+            var reportedIcon = getReportedIcon();
+            var nattyIcon = getNattyIcon();
+            var smokeyIcon = getSmokeyIcon();
+            jqueryItem.after(smokeyIcon);
+            jqueryItem.after(nattyIcon);
+            jqueryItem.after(reportedIcon);
+            var postId = parseInt(jqueryItem.attr('href').split('#')[1], 10);
+            var metaSmoke = new MetaSmokeyAPI_1.MetaSmokeyAPI(metaSmokeKey);
+            var metaSmokeWasReported = metaSmoke.GetFeedback(postId, 'Answer');
+            var natty = new NattyApi_1.NattyAPI();
+            var nattyWasReported = natty.WasReported(postId);
+            var previousFlagPromise = FunctionUtils_4.GetFromCache("AdvancedFlagging.Flagged." + postId);
+            previousFlagPromise.then(function (previousFlag) {
+                if (previousFlag) {
+                    reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
+                    reportedIcon.show();
+                }
+            });
+            metaSmokeWasReported
+                .then(function (responseItems) {
+                if (responseItems.length > 0) {
+                    smokeyIcon.css(displayStyle);
+                }
+            });
+            nattyWasReported
+                .then(function (wasReported) {
+                if (wasReported) {
+                    nattyIcon.css(displayStyle);
+                }
+            });
+        });
+    }
     $(function () {
         SetupPostPage();
+        SetupNatoPage();
     });
 });
 require(['AdvancedFlagging']);

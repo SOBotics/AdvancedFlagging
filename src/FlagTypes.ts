@@ -1,6 +1,6 @@
 export interface FlagType {
     DisplayName: string;
-    ReportType: 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam';
+    ReportType: 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag';
     Comment?: string;
     Comments?: { ReputationLimit: number, Comment: string }[];
 }
@@ -86,6 +86,15 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Library',
                 ReportType: 'AnswerNotAnAnswer',
                 Comment: 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](http://meta.stackoverflow.com/a/251605) in the answer itself.'
+            }
+        ]
+    },
+    {
+        BoxStyle: { 'padding-left': '5px' },
+        FlagTypes: [
+            {
+                DisplayName: 'Looks Fine',
+                ReportType: 'NoFlag'
             }
         ]
     }

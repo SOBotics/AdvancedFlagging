@@ -1,4 +1,168 @@
 "use strict";
+define("libs/FunctionUtils", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    // tslint:disable-next-line:typeof-compare
+    var hasStorage = typeof (Storage) !== undefined;
+    function GetAndCache(cacheKey, getterPromise, expiresAt) {
+        var cachedItem = GetFromCache(cacheKey);
+        if (cachedItem) {
+            return Promise.resolve(cachedItem);
+        }
+        var promise = getterPromise();
+        promise.then(function (result) { StoreInCache(cacheKey, result, expiresAt); });
+        return promise;
+    }
+    exports.GetAndCache = GetAndCache;
+    function GetFromCache(cacheKey) {
+        if (hasStorage) {
+            var cachedItem = localStorage.getItem(cacheKey);
+            if (cachedItem) {
+                try {
+                    var actualItem = JSON.parse(cachedItem);
+                    if (actualItem.Expires && actualItem.Expires < new Date()) {
+                        // It expired, so return nothing
+                        return;
+                    }
+                    return actualItem.Data;
+                }
+                catch (error) { }
+            }
+        }
+    }
+    exports.GetFromCache = GetFromCache;
+    function StoreInCache(cacheKey, item, expiresAt) {
+        if (hasStorage) {
+            var jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
+            localStorage.setItem(cacheKey, jsonStr);
+        }
+    }
+    exports.StoreInCache = StoreInCache;
+    function GroupBy(collection, propertyGetter) {
+        return collection.reduce(function (previousValue, currentItem) {
+            (previousValue[propertyGetter(currentItem)] = previousValue[propertyGetter(currentItem)] || []).push(currentItem);
+            return previousValue;
+        }, {});
+    }
+    exports.GroupBy = GroupBy;
+    ;
+    function GetMembers(item) {
+        var members = [];
+        for (var key in item) {
+            if (item.hasOwnProperty(key)) {
+                members.push(key);
+            }
+        }
+        return members;
+    }
+    exports.GetMembers = GetMembers;
+});
+define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], function (require, exports, FunctionUtils_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
+    var MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
+    var MetaSmokeWasReportedConfig = 'MetaSmoke.WasReported';
+    var MetaSmokeyAPI = (function () {
+        function MetaSmokeyAPI(appKey, codeGetter) {
+            var _this = this;
+            if (!codeGetter) {
+                codeGetter = function (metaSmokeOAuthUrl) {
+                    return new Promise(function (resolve, reject) {
+                        if (_this.IsDisabled()) {
+                            reject();
+                        }
+                        var cachedUserKey = FunctionUtils_1.GetFromCache(MetaSmokeUserKeyConfig);
+                        if (cachedUserKey) {
+                            resolve(cachedUserKey);
+                            return;
+                        }
+                        var metaSmokeUserKey = FunctionUtils_1.GetFromCache(MetaSmokeUserKeyConfig);
+                        if (!metaSmokeUserKey) {
+                            if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, call window.resetMetaSmokeConfiguration().')) {
+                                FunctionUtils_1.StoreInCache('MetaSmoke.Disabled', true);
+                                reject();
+                                return;
+                            }
+                        }
+                        window.open(metaSmokeOAuthUrl, '_blank');
+                        setTimeout(function () {
+                            var handleFDSCCode = function () {
+                                $(window).off('focus', handleFDSCCode);
+                                var code = window.prompt('Once you\'ve authenticated FDSC with metasmoke, you\'ll be given a code; enter it here.');
+                                if (!code) {
+                                    reject();
+                                    return;
+                                }
+                                resolve(code);
+                            };
+                            $(window).focus(handleFDSCCode);
+                        }, 100);
+                    });
+                };
+            }
+            this.codeGetter = codeGetter;
+            this.appKey = appKey;
+            this.appendResetToWindow();
+        }
+        MetaSmokeyAPI.prototype.getUserKey = function () {
+            var promise = this.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + this.appKey);
+            promise.then(function (code) {
+                FunctionUtils_1.StoreInCache(MetaSmokeUserKeyConfig, code);
+            });
+            return promise;
+        };
+        MetaSmokeyAPI.prototype.appendResetToWindow = function () {
+            if (!localStorage) {
+                return;
+            }
+            var scriptNode = document.createElement('script');
+            scriptNode.type = 'text/javascript';
+            scriptNode.textContent = "\n    window.resetMetaSmokeConfiguration = function() {\n        localStorage.setItem('" + MetaSmokeDisabledConfig + "', undefined); \n        localStorage.setItem('" + MetaSmokeUserKeyConfig + "', undefined);\n    }\n    ";
+            var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
+            target.appendChild(scriptNode);
+        };
+        MetaSmokeyAPI.prototype.IsDisabled = function () {
+            var disabledConfig = FunctionUtils_1.GetFromCache(MetaSmokeDisabledConfig);
+            if (disabledConfig === undefined) {
+                return false;
+            }
+            return disabledConfig;
+        };
+        MetaSmokeyAPI.prototype.WasReported = function (answerId) {
+            var _this = this;
+            if (this.IsDisabled()) {
+                return Promise.resolve(false);
+            }
+            return FunctionUtils_1.GetAndCache(MetaSmokeWasReportedConfig + "." + answerId, function () { return new Promise(function (resolve, reject) {
+                $.ajax({
+                    url: "https://metasmoke.erwaysoftware.com/api/posts/urls?urls=//" + window.location.hostname + "/a/" + answerId + "&key=" + _this.appKey,
+                    type: 'GET'
+                }).done(function (result) {
+                    if (result.items.length > 0) {
+                        resolve(true);
+                    }
+                    else {
+                        resolve(false);
+                    }
+                }).fail(function (error) {
+                    reject(error);
+                });
+            }); });
+        };
+        MetaSmokeyAPI.prototype.Report = function (answerId) {
+            console.log("Would report '" + answerId + "' to ms");
+        };
+        MetaSmokeyAPI.prototype.ReportTruePositive = function (answerId) {
+            console.log("Would send tp feedback for '" + answerId + "' to ms");
+        };
+        MetaSmokeyAPI.prototype.ReportNAA = function (answerId) {
+            console.log("Would send naa feedback for '" + answerId + "' to ms");
+        };
+        return MetaSmokeyAPI;
+    }());
+    exports.MetaSmokeyAPI = MetaSmokeyAPI;
+});
 define("FlagTypes", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -76,87 +240,17 @@ define("FlagTypes", ["require", "exports"], function (require, exports) {
                     Comment: 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](http://meta.stackoverflow.com/a/251605) in the answer itself.'
                 }
             ]
+        },
+        {
+            BoxStyle: { 'padding-left': '5px' },
+            FlagTypes: [
+                {
+                    DisplayName: 'Looks Fine',
+                    ReportType: 'NoFlag'
+                }
+            ]
         }
     ];
-});
-define("libs/FunctionUtils", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    // tslint:disable-next-line:typeof-compare
-    var hasStorage = typeof (Storage) !== undefined;
-    function GetAndCache(cacheKey, getterPromise, expiresAt) {
-        var cachedItem = GetFromCache(cacheKey);
-        if (cachedItem) {
-            return Promise.resolve(cachedItem);
-        }
-        var promise = getterPromise();
-        promise.then(function (result) { StoreInCache(cacheKey, result, expiresAt); });
-        return promise;
-    }
-    exports.GetAndCache = GetAndCache;
-    function GetFromCache(cacheKey) {
-        if (hasStorage) {
-            var cachedItem = localStorage.getItem(cacheKey);
-            if (cachedItem) {
-                try {
-                    var actualItem = JSON.parse(cachedItem);
-                    if (actualItem.Expires && actualItem.Expires < new Date()) {
-                        // It expired, so return nothing
-                        return;
-                    }
-                    return actualItem.Data;
-                }
-                catch (error) { }
-            }
-        }
-    }
-    exports.GetFromCache = GetFromCache;
-    function StoreInCache(cacheKey, item, expiresAt) {
-        if (hasStorage) {
-            var jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
-            localStorage.setItem(cacheKey, jsonStr);
-        }
-    }
-    exports.StoreInCache = StoreInCache;
-    function GroupBy(collection, propertyGetter) {
-        return collection.reduce(function (previousValue, currentItem) {
-            (previousValue[propertyGetter(currentItem)] = previousValue[propertyGetter(currentItem)] || []).push(currentItem);
-            return previousValue;
-        }, {});
-    }
-    exports.GroupBy = GroupBy;
-    ;
-    function GetMembers(item) {
-        var members = [];
-        for (var key in item) {
-            if (item.hasOwnProperty(key)) {
-                members.push(key);
-            }
-        }
-        return members;
-    }
-    exports.GetMembers = GetMembers;
-});
-define("libs/NattyApi", ["require", "exports", "libs/FunctionUtils"], function (require, exports, FunctionUtils_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
-    function GetNattyFeedback(answerId) {
-        var getterPromise = new Promise(function (resolve, reject) {
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url: nattyFeedbackUrl + "/" + answerId,
-                onload: function (response) {
-                    resolve(JSON.parse(response.responseText));
-                },
-                onerror: function (response) {
-                    reject(response);
-                },
-            });
-        });
-        return FunctionUtils_1.GetAndCache("NattyApi.Feedback." + answerId, function () { return getterPromise; });
-    }
-    exports.GetNattyFeedback = GetNattyFeedback;
 });
 define("libs/ChatApi", ["require", "exports", "libs/FunctionUtils"], function (require, exports, FunctionUtils_2) {
     "use strict";
@@ -210,63 +304,47 @@ define("libs/ChatApi", ["require", "exports", "libs/FunctionUtils"], function (r
     }());
     exports.ChatApi = ChatApi;
 });
-define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", "libs/FunctionUtils", "libs/ChatApi"], function (require, exports, FlagTypes_1, NattyApi_1, FunctionUtils_3, ChatApi_1) {
+define("libs/NattyApi", ["require", "exports", "libs/FunctionUtils", "libs/ChatApi"], function (require, exports, FunctionUtils_3, ChatApi_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
+    var NattyAPI = (function () {
+        function NattyAPI() {
+            this.chat = new ChatApi_1.ChatApi();
+        }
+        NattyAPI.prototype.WasReported = function (answerId) {
+            var getterPromise = new Promise(function (resolve, reject) {
+                GM_xmlhttpRequest({
+                    method: 'GET',
+                    url: nattyFeedbackUrl + "/" + answerId,
+                    onload: function (response) {
+                        var nattyResult = JSON.parse(response.responseText);
+                        resolve(nattyResult.items && nattyResult.items[0]);
+                    },
+                    onerror: function (response) {
+                        reject(response);
+                    },
+                });
+            });
+            return FunctionUtils_3.GetAndCache("NattyApi.Feedback." + answerId, function () { return getterPromise; });
+        };
+        NattyAPI.prototype.Report = function (answerId) {
+            this.chat.SendMessage(111347, "@Natty report http://stackoverflow.com/a/" + answerId);
+        };
+        NattyAPI.prototype.ReportTruePositive = function (answerId) {
+            this.chat.SendMessage(111347, "@Natty feedback http://stackoverflow.com/a/" + answerId + " tp");
+        };
+        return NattyAPI;
+    }());
+    exports.NattyAPI = NattyAPI;
+});
+define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTypes", "libs/NattyApi", "libs/FunctionUtils"], function (require, exports, MetaSmokeyAPI_1, FlagTypes_1, NattyApi_1, FunctionUtils_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // tslint:disable-next-line:no-debugger
     debugger;
     var metaSmokeKey = '070f26ebb71c5e6cfca7893fe1139460cf23f30d686566f5707a4acfd50c';
-    var MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
-    var MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
-    (function appendResetToWindow() {
-        debugger;
-        if (!localStorage) {
-            return;
-        }
-        var scriptNode = document.createElement('script');
-        scriptNode.type = 'text/javascript';
-        scriptNode.textContent = "\nwindow.resetSmokey = function() {\n    localStorage.setItem('" + MetaSmokeDisabledConfig + "', undefined); \n    localStorage.setItem('" + MetaSmokeUserKeyConfig + "', undefined);\n}\n";
-        var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
-        target.appendChild(scriptNode);
-    })();
-    function handleMetaSmoke() {
-        var metasmokeDisabled = FunctionUtils_3.GetFromCache(MetaSmokeDisabledConfig);
-        metasmokeDisabled = false;
-        if (metasmokeDisabled) {
-            return;
-        }
-        var metaSmokeUserKey = FunctionUtils_3.GetFromCache(MetaSmokeUserKeyConfig);
-        if (!metaSmokeUserKey) {
-            if (!confirm('AdvancedFlagging can connect to MetaSmoke for reporting. If you do not wish to connect, press cancel. This will only be asked once. To reset smokey configuration, call window.resetSmokey().')) {
-                FunctionUtils_3.StoreInCache('MetaSmoke.Disabled', true);
-                return;
-            }
-        }
-        else {
-            return;
-        }
-        var oldWindow = window;
-        window.open("https://metasmoke.erwaysoftware.com/oauth/request?key=" + metaSmokeKey, '_blank');
-        setTimeout(function () {
-            var handleFDSCCode = function () {
-                $(window).off('focus', handleFDSCCode);
-                setTimeout(function () {
-                    var code = oldWindow.prompt('Once you\'ve authenticated FDSC with metasmoke, you\'ll be given a code; enter it here.');
-                    if (code) {
-                        $.ajax({
-                            url: "https://metasmoke.erwaysoftware.com/oauth/token?key=" + metaSmokeKey + "&code=" + code,
-                            method: 'GET'
-                        }).done(function (data) {
-                            FunctionUtils_3.StoreInCache(MetaSmokeDisabledConfig, false);
-                            FunctionUtils_3.StoreInCache(MetaSmokeUserKeyConfig, data.token);
-                        });
-                    }
-                }, 500);
-            };
-            $(window).focus(handleFDSCCode);
-        }, 500);
-    }
-    function handleClick(postId, flag, commentRequired, userReputation) {
+    function handleFlagAndComment(postId, flag, commentRequired, userReputation) {
         var result = {};
         if (commentRequired) {
             var commentText_1 = null;
@@ -297,17 +375,19 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
                 });
             }
         }
-        result.FlagPromise = new Promise(function (resolve, reject) {
-            $.ajax({
-                url: "//stackoverflow.com/flags/posts/" + postId + "/add/" + flag.ReportType,
-                type: 'POST',
-                data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
-            }).done(function (data) {
-                resolve(data);
-            }).fail(function (jqXHR, textStatus, errorThrown) {
-                reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+        if (flag.ReportType !== 'NoFlag') {
+            result.FlagPromise = new Promise(function (resolve, reject) {
+                $.ajax({
+                    url: "//stackoverflow.com/flags/posts/" + postId + "/add/" + flag.ReportType,
+                    type: 'POST',
+                    data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
+                }).done(function (data) {
+                    resolve(data);
+                }).fail(function (jqXHR, textStatus, errorThrown) {
+                    reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                });
             });
-        });
+        }
         return result;
     }
     function SetupPostPage() {
@@ -340,10 +420,10 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
                 .attr('type', 'checkbox')
                 .attr('name', checkboxName)
                 .prop('checked', true);
-            var smokeyPromiseResolver;
-            var smokeyPromise = new Promise(function (resolve, reject) { return smokeyPromiseResolver = resolve; });
-            var nattyPromiseResolver;
-            var nattyPromise = new Promise(function (resolve, reject) { return nattyPromiseResolver = resolve; });
+            var metaSmoke = new MetaSmokeyAPI_1.MetaSmokeyAPI(metaSmokeKey);
+            var metaSmokeWasReported = metaSmoke.WasReported(answerId);
+            var natty = new NattyApi_1.NattyAPI();
+            var nattyWasReported = natty.WasReported(answerId);
             var reportedIcon = $('<div>').addClass('comment-flag').css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' }).hide();
             var getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
             FlagTypes_1.flagCategories.forEach(function (flagCategory) {
@@ -354,7 +434,7 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
                     }
                     var nattyLinkItem = $('<a />').css(linkStyle);
                     nattyLinkItem.click(function () {
-                        var result = handleClick(answerId, flagType, leaveCommentBox.is(':checked'), reputation);
+                        var result = handleFlagAndComment(answerId, flagType, leaveCommentBox.is(':checked'), reputation);
                         if (result.CommentPromise) {
                             result.CommentPromise.then(function (data) {
                                 var commentUI = StackExchange.comments.uiForPost($('#comments-' + answerId));
@@ -365,31 +445,37 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
                         }
                         if (result.FlagPromise) {
                             result.FlagPromise.then(function () {
-                                FunctionUtils_3.StoreInCache("AdvancedFlagging.Flagged." + answerId, flagType);
+                                FunctionUtils_4.StoreInCache("AdvancedFlagging.Flagged." + answerId, flagType);
                                 reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
                                 reportedIcon.show();
                             });
                         }
-                        smokeyPromise.then(function (r) {
-                            if (r) {
-                                // Flag TP
-                            }
-                            else {
-                                // Report
-                            }
-                        });
-                        nattyPromise.then(function (r) {
-                            var chat = new ChatApi_1.ChatApi();
-                            if (r) {
-                                if (flagType.ReportType === 'AnswerNotAnAnswer') {
-                                    chat.SendMessage(111347, "@Natty feedback http://stackoverflow.com/a/" + answerId + " tp");
+                        var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType == 'PostOffensive';
+                        var naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
+                        metaSmokeWasReported.then(function (wasReported) {
+                            if (wasReported) {
+                                if (rudeFlag) {
+                                    metaSmoke.ReportTruePositive(answerId);
                                 }
                                 else {
-                                    // chat.SendMessage(111347, `feedback http://stackoverflow.com/a/${answerId} fp`)
+                                    metaSmoke.ReportNAA(answerId);
+                                }
+                            }
+                            else if (rudeFlag) {
+                                metaSmoke.Report(answerId);
+                            }
+                        });
+                        nattyWasReported.then(function (wasReported) {
+                            if (wasReported) {
+                                if (naaFlag) {
+                                    natty.ReportTruePositive(answerId);
+                                }
+                                else {
+                                    //natty.ReportTruePositive(answerId);
                                 }
                             }
                             else {
-                                chat.SendMessage(111347, "@Natty report http://stackoverflow.com/a/" + answerId);
+                                natty.Report(answerId);
                             }
                         });
                     });
@@ -425,42 +511,26 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
             })
                 .attr('title', 'Reported by Natty')
                 .hide();
-            var smokeyIcon = $('<img>')
+            var smokeyIcon = $('<div>')
                 .css({
                 'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
                 'background': 'url("https://i.stack.imgur.com/WyV1l.png?s=128&g=1"', 'background-size': '100%'
             })
                 .attr('title', 'Reported by Smokey')
                 .hide();
-            FunctionUtils_3.GetAndCache("NattyFeedback." + answerId, function () { return NattyApi_1.GetNattyFeedback(answerId); })
-                .then(function (nattyResult) {
-                if (nattyResult.items && nattyResult.items[0]) {
-                    nattyPromiseResolver(true);
-                    nattyIcon.show();
-                }
-                else {
-                    nattyPromiseResolver(false);
-                }
-            });
-            FunctionUtils_3.GetAndCache("SmokeyFeedback." + answerId, function () { return new Promise(function (resolve, reject) {
-                $.ajax({
-                    url: "https://metasmoke.erwaysoftware.com/api/posts/urls?urls=//" + window.location.hostname + "/a/" + answerId + "&key=" + metaSmokeKey,
-                    type: 'GET'
-                }).done(function (result) {
-                    resolve(result);
-                }).fail(function (error) {
-                    reject(error);
-                });
-            }); }).then(function (smokeyResult) {
-                if (smokeyResult.items.length > 0) {
-                    smokeyPromiseResolver(true);
+            metaSmokeWasReported
+                .then(function (wasReported) {
+                if (wasReported) {
                     smokeyIcon.show();
                 }
-                else {
-                    smokeyPromiseResolver(false);
+            });
+            nattyWasReported
+                .then(function (wasReported) {
+                if (wasReported) {
+                    nattyIcon.show();
                 }
             });
-            var previousFlag = FunctionUtils_3.GetFromCache("AdvancedFlagging.Flagged." + answerId);
+            var previousFlag = FunctionUtils_4.GetFromCache("AdvancedFlagging.Flagged." + answerId);
             if (previousFlag) {
                 reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
                 reportedIcon.show();
@@ -470,7 +540,6 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
         });
     }
     $(function () {
-        handleMetaSmoke();
         SetupPostPage();
     });
 });
@@ -479,7 +548,7 @@ define("libs/StackExchangeApi.Interfaces", ["require", "exports"], function (req
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
 });
-define("libs/StackExchangeApi", ["require", "exports", "libs/FunctionUtils"], function (require, exports, FunctionUtils_4) {
+define("libs/StackExchangeApi", ["require", "exports", "libs/FunctionUtils"], function (require, exports, FunctionUtils_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var stackExchangeApiURL = '//api.stackexchange.com/2.2';
@@ -535,8 +604,8 @@ define("libs/StackExchangeApi", ["require", "exports", "libs/FunctionUtils"], fu
                         type: 'GET',
                     }).done(function (data, textStatus, jqXHR) {
                         var returnItems = (data.items || []);
-                        var grouping = FunctionUtils_4.GroupBy(returnItems, uniqueIdentifier);
-                        FunctionUtils_4.GetMembers(grouping).forEach(function (key) { return FunctionUtils_4.StoreInCache(cacheKey(parseInt(key, 10)), grouping[key]); });
+                        var grouping = FunctionUtils_5.GroupBy(returnItems, uniqueIdentifier);
+                        FunctionUtils_5.GetMembers(grouping).forEach(function (key) { return FunctionUtils_5.StoreInCache(cacheKey(parseInt(key, 10)), grouping[key]); });
                         cachedResults.forEach(function (result) {
                             returnItems.push(result);
                         });
@@ -554,7 +623,7 @@ define("libs/StackExchangeApi", ["require", "exports", "libs/FunctionUtils"], fu
             var cachedResults = [];
             if (!skipCache) {
                 objectIds.forEach(function (objectId) {
-                    var cachedResult = FunctionUtils_4.GetFromCache(cacheKey(objectId));
+                    var cachedResult = FunctionUtils_5.GetFromCache(cacheKey(objectId));
                     if (cachedResult) {
                         var itemIndex = objectIds.indexOf(objectId);
                         if (itemIndex > -1) {

@@ -1,74 +1,16 @@
+import { MetaSmokeyAPI } from './libs/MetaSmokeyAPI';
 import { FlagType, flagCategories } from './FlagTypes';
-import { GetNattyFeedback } from './libs/NattyApi';
+import { NattyAPI } from './libs/NattyApi';
 import { GetFromCache, StoreInCache, GetAndCache } from './libs/FunctionUtils';
-import { ChatApi } from "./libs/ChatApi";
 // tslint:disable-next-line:no-debugger
 debugger;
 
-const metaSmokeKey: String = '070f26ebb71c5e6cfca7893fe1139460cf23f30d686566f5707a4acfd50c';
+const metaSmokeKey = '070f26ebb71c5e6cfca7893fe1139460cf23f30d686566f5707a4acfd50c';
 
 declare const StackExchange: any;
 declare const unsafeWindow: any;
 
-const MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
-const MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
-
-(function appendResetToWindow() {
-    debugger;
-    if (!localStorage) { return; }
-
-    let scriptNode = document.createElement('script');
-    scriptNode.type = 'text/javascript';
-    scriptNode.textContent = `
-window.resetSmokey = function() {
-    localStorage.setItem('${MetaSmokeDisabledConfig}', undefined); 
-    localStorage.setItem('${MetaSmokeUserKeyConfig}', undefined);
-}
-`;
-
-    var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
-    target.appendChild(scriptNode);
-})();
-
-function handleMetaSmoke() {
-    let metasmokeDisabled = GetFromCache<boolean>(MetaSmokeDisabledConfig);
-    metasmokeDisabled = false;
-    if (metasmokeDisabled) {
-        return;
-    }
-    const metaSmokeUserKey = GetFromCache<string>(MetaSmokeUserKeyConfig);
-    if (!metaSmokeUserKey) {
-        if (!confirm('AdvancedFlagging can connect to MetaSmoke for reporting. If you do not wish to connect, press cancel. This will only be asked once. To reset smokey configuration, call window.resetSmokey().')) {
-            StoreInCache('MetaSmoke.Disabled', true);
-            return;
-        }
-    } else {
-        return;
-    }
-
-    const oldWindow = window;
-    window.open(`https://metasmoke.erwaysoftware.com/oauth/request?key=${metaSmokeKey}`, '_blank');
-    setTimeout(() => {
-        const handleFDSCCode = () => {
-            $(window).off('focus', handleFDSCCode);
-            setTimeout(() => {
-                const code = oldWindow.prompt('Once you\'ve authenticated FDSC with metasmoke, you\'ll be given a code; enter it here.');
-                if (code) {
-                    $.ajax({
-                        url: `https://metasmoke.erwaysoftware.com/oauth/token?key=${metaSmokeKey}&code=${code}`,
-                        method: 'GET'
-                    }).done(data => {
-                        StoreInCache(MetaSmokeDisabledConfig, false)
-                        StoreInCache(MetaSmokeUserKeyConfig, data.token)
-                    });
-                }
-            }, 500);
-        }
-        $(window).focus(handleFDSCCode);
-    }, 500);
-}
-
-function handleClick(postId: number, flag: FlagType, commentRequired: boolean, userReputation: number) {
+function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: boolean, userReputation: number) {
     const result: {
         CommentPromise?: Promise<string>;
         FlagPromise?: Promise<string>;
@@ -104,17 +46,19 @@ function handleClick(postId: number, flag: FlagType, commentRequired: boolean, u
         }
     }
 
-    result.FlagPromise = new Promise((resolve, reject) => {
-        $.ajax({
-            url: `//stackoverflow.com/flags/posts/${postId}/add/${flag.ReportType}`,
-            type: 'POST',
-            data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
-        }).done((data) => {
-            resolve(data);
-        }).fail(function (jqXHR, textStatus, errorThrown) {
-            reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+    if (flag.ReportType !== 'NoFlag') {
+        result.FlagPromise = new Promise((resolve, reject) => {
+            $.ajax({
+                url: `//stackoverflow.com/flags/posts/${postId}/add/${flag.ReportType}`,
+                type: 'POST',
+                data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
+            }).done((data) => {
+                resolve(data);
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+            });
         });
-    })
+    }
 
     return result;
 }
@@ -155,10 +99,12 @@ function SetupPostPage() {
             .attr('name', checkboxName)
             .prop('checked', true);
 
-        let smokeyPromiseResolver: (value: boolean) => void;
-        const smokeyPromise = new Promise<boolean>((resolve, reject) => smokeyPromiseResolver = resolve);
-        let nattyPromiseResolver: (value: boolean) => void;
-        const nattyPromise = new Promise<boolean>((resolve, reject) => nattyPromiseResolver = resolve);
+
+        const metaSmoke = new MetaSmokeyAPI(metaSmokeKey);
+        const metaSmokeWasReported = metaSmoke.WasReported(answerId);
+
+        const natty = new NattyAPI();
+        const nattyWasReported = natty.WasReported(answerId);
 
         const reportedIcon = $('<div>').addClass('comment-flag').css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' }).hide();
         const getDivider = () => $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' });
@@ -171,7 +117,7 @@ function SetupPostPage() {
 
                 const nattyLinkItem = $('<a />').css(linkStyle);
                 nattyLinkItem.click(() => {
-                    const result = handleClick(answerId, flagType, leaveCommentBox.is(':checked'), reputation)
+                    const result = handleFlagAndComment(answerId, flagType, leaveCommentBox.is(':checked'), reputation)
                     if (result.CommentPromise) {
                         result.CommentPromise.then((data) => {
                             const commentUI = StackExchange.comments.uiForPost($('#comments-' + answerId));
@@ -188,24 +134,30 @@ function SetupPostPage() {
                         });
                     }
 
-                    smokeyPromise.then(r => {
-                        if (r) {
-                            // Flag TP
-                        } else {
-                            // Report
+                    const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType == 'PostOffensive';
+                    const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
+
+                    metaSmokeWasReported.then(wasReported => {
+                        if (wasReported) {
+                            if (rudeFlag) {
+                                metaSmoke.ReportTruePositive(answerId);
+                            } else {
+                                metaSmoke.ReportNAA(answerId);
+                            }
+                        } else if (rudeFlag) {
+                            metaSmoke.Report(answerId);
                         }
                     });
 
-                    nattyPromise.then(r => {
-                        const chat = new ChatApi();
-                        if (r) {
-                            if (flagType.ReportType === 'AnswerNotAnAnswer') {
-                                chat.SendMessage(111347, `@Natty feedback http://stackoverflow.com/a/${answerId} tp`);
+                    nattyWasReported.then(wasReported => {
+                        if (wasReported) {
+                            if (naaFlag) {
+                                natty.ReportTruePositive(answerId);
                             } else {
-                                // chat.SendMessage(111347, `feedback http://stackoverflow.com/a/${answerId} fp`)
+                                //natty.ReportTruePositive(answerId);
                             }
                         } else {
-                            chat.SendMessage(111347, `@Natty report http://stackoverflow.com/a/${answerId}`);
+                            natty.Report(answerId);
                         }
                     })
 
@@ -254,7 +206,7 @@ function SetupPostPage() {
             .attr('title', 'Reported by Natty')
             .hide();
 
-        const smokeyIcon = $('<img>')
+        const smokeyIcon = $('<div>')
             .css({
                 'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
                 'background': 'url("https://i.stack.imgur.com/WyV1l.png?s=128&g=1"', 'background-size': '100%'
@@ -262,33 +214,19 @@ function SetupPostPage() {
             .attr('title', 'Reported by Smokey')
             .hide();
 
-        GetAndCache(`NattyFeedback.${answerId}`, () => GetNattyFeedback(answerId))
-            .then(nattyResult => {
-                if (nattyResult.items && nattyResult.items[0]) {
-                    nattyPromiseResolver(true);
-                    nattyIcon.show();
-                } else {
-                    nattyPromiseResolver(false);
+        metaSmokeWasReported
+            .then(wasReported => {
+                if (wasReported) {
+                    smokeyIcon.show();
                 }
             });
 
-        GetAndCache(`SmokeyFeedback.${answerId}`, () => new Promise((resolve, reject) => {
-            $.ajax({
-                url: `https://metasmoke.erwaysoftware.com/api/posts/urls?urls=//${window.location.hostname}/a/${answerId}&key=${metaSmokeKey}`,
-                type: 'GET'
-            }).done(result => {
-                resolve(result);
-            }).fail(error => {
-                reject(error);
-            })
-        })).then((smokeyResult: any) => {
-            if (smokeyResult.items.length > 0) {
-                smokeyPromiseResolver(true);
-                smokeyIcon.show();
-            } else {
-                smokeyPromiseResolver(false);
-            }
-        });
+        nattyWasReported
+            .then(wasReported => {
+                if (wasReported) {
+                    nattyIcon.show();
+                }
+            });
 
         const previousFlag = GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${answerId}`);
         if (previousFlag) {
@@ -299,10 +237,8 @@ function SetupPostPage() {
         jqueryItem.append(nattyIcon);
         jqueryItem.append(smokeyIcon);
     })
-
 }
 
 $(function () {
-    handleMetaSmoke();
     SetupPostPage();
 });

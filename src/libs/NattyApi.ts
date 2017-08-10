@@ -31,7 +31,11 @@ export class NattyAPI {
                 url: `${nattyFeedbackUrl}/${answerId}`,
                 onload: (response: any) => {
                     const nattyResult = JSON.parse(response.responseText);
-                    resolve(nattyResult.items && nattyResult.items[0]);
+                    if (nattyResult.items && nattyResult.items[0]) {
+                        resolve(true);
+                    } else {
+                        resolve(false);
+                    }
                 },
                 onerror: (response: any) => {
                     reject(response);

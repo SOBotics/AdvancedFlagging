@@ -21,7 +21,7 @@ export function GetAndCache<T>(cacheKey: string, getterPromise: () => Promise<T>
     const cachedItemPromise = GetFromCache<T>(cacheKey);
     return new Promise(resolve => {
         cachedItemPromise.then(cachedItem => {
-            if (cachedItem) {
+            if (cachedItem !== undefined) {
                 resolve(cachedItem);
                 return;
             }

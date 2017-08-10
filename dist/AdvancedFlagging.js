@@ -51,7 +51,7 @@ define("libs/FunctionUtils", ["require", "exports"], function (require, exports)
         var cachedItemPromise = GetFromCache(cacheKey);
         return new Promise(function (resolve) {
             cachedItemPromise.then(function (cachedItem) {
-                if (cachedItem) {
+                if (cachedItem !== undefined) {
                     resolve(cachedItem);
                     return;
                 }
@@ -450,7 +450,12 @@ define("libs/NattyApi", ["require", "exports", "libs/FunctionUtils", "libs/ChatA
                     url: nattyFeedbackUrl + "/" + answerId,
                     onload: function (response) {
                         var nattyResult = JSON.parse(response.responseText);
-                        resolve(nattyResult.items && nattyResult.items[0]);
+                        if (nattyResult.items && nattyResult.items[0]) {
+                            resolve(true);
+                        }
+                        else {
+                            resolve(false);
+                        }
                     },
                     onerror: function (response) {
                         reject(response);

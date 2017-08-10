@@ -3,16 +3,46 @@ const MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
 const MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
 const MetaSmokeWasReportedConfig = 'MetaSmoke.WasReported';
 
+interface MetaSmokeApiItem {
+    id: number;
+    title: string;
+    body: string;
+    link: string;
+    post_creation_date?: Date;
+    created_at: Date;
+    updated_at?: Date;
+    site_id: number;
+    user_link: string;
+    username: string;
+    why: string;
+    user_reputation: number;
+    score?: number;
+    upvote_count?: number;
+    downvote_count?: number;
+    stack_exchange_user_id: string;
+    is_tp: boolean;
+    is_fp: boolean;
+}
+interface MetaSmokeApiWrapper {
+    items: MetaSmokeApiItem[];
+    has_more: boolean;
+}
+
 export class MetaSmokeyAPI {
     private codeGetter: (metaSmokeOAuthUrl: string) => Promise<string>;
     private appKey: string;
 
     private getUserKey() {
-        const promise = this.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${this.appKey}`);
-        promise.then(code => {
-            StoreInCache(MetaSmokeUserKeyConfig, code);
-        });
-        return promise;
+        return GetAndCache(MetaSmokeUserKeyConfig, () => new Promise<string>((resolve, reject) => {
+            this.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${this.appKey}`)
+                .then(code => {
+                    $.ajax({
+                        url: "https://metasmoke.erwaysoftware.com/oauth/token?key=" + this.appKey + "&code=" + code,
+                        method: "GET"
+                    }).done(data => resolve(data.token))
+                        .fail(err => reject(err))
+                });
+        }));
     }
 
     private appendResetToWindow() {
@@ -73,6 +103,8 @@ export class MetaSmokeyAPI {
         this.codeGetter = codeGetter;
         this.appKey = appKey;
         this.appendResetToWindow();
+
+        this.getUserKey(); // Make sure we request it immediately
     }
 
     public IsDisabled() {
@@ -82,34 +114,69 @@ export class MetaSmokeyAPI {
         }
         return disabledConfig;
     }
-    public WasReported(answerId: number): Promise<boolean> {
+    public GetFeedback(answerId: number): Promise<MetaSmokeApiItem[]> {
+
         if (this.IsDisabled()) {
-            return Promise.resolve(false);
+            return Promise.resolve([]);
         }
 
         return GetAndCache(`${MetaSmokeWasReportedConfig}.${answerId}`, () => new Promise((resolve, reject) => {
             $.ajax({
-                url: `https://metasmoke.erwaysoftware.com/api/posts/urls?urls=//${window.location.hostname}/a/${answerId}&key=${this.appKey}`,
-                type: 'GET'
-            }).done(result => {
-                if (result.items.length > 0) {
-                    resolve(true);
-                } else {
-                    resolve(false);
+                type: 'GET',
+                url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
+                data: {
+                    urls: `//${window.location.hostname}/a/${answerId}`,
+                    key: `${this.appKey}`
                 }
+            }).done((result: MetaSmokeApiWrapper) => {
+                debugger;
+                resolve(result.items);
             }).fail(error => {
                 reject(error);
             });
         }));
     }
 
-    public Report(answerId: number) {
-        console.log(`Would report '${answerId}' to ms`);
+    public Report(answerId: number): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            this.getUserKey().then(userKey => {
+                $.ajax({
+                    type: "POST",
+                    url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
+                    data: {
+                        post_link: `//${window.location.hostname}/a/${answerId}`,
+                        key: this.appKey,
+                        token: userKey
+                    }
+                }).done(() => resolve())
+                    .fail(() => reject());
+            });
+        });
     }
-    public ReportTruePositive(answerId: number) {
-        console.log(`Would send tp feedback for '${answerId}' to ms`);
+    public ReportTruePositive(metaSmokeId: number): Promise<void> {
+        return this.SendFeedback(metaSmokeId, 'tpu-');
     }
-    public ReportNAA(answerId: number) {
-        console.log(`Would send naa feedback for '${answerId}' to ms`);
+    public ReportFalsePositive(metaSmokeId: number): Promise<void> {
+        return this.SendFeedback(metaSmokeId, 'fp-');
+    }
+    public ReportNAA(metaSmokeId: number): Promise<void> {
+        return this.SendFeedback(metaSmokeId, 'naa-');
+    }
+
+    private SendFeedback(metaSmokeId: number, feedbackType: 'fp-' | 'tpu-' | 'naa-'): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            this.getUserKey().then(userKey => {
+                $.ajax({
+                    type: "POST",
+                    url: "https://metasmoke.erwaysoftware.com/api/w/post/" + metaSmokeId + "/feedback",
+                    data: {
+                        type: feedbackType,
+                        key: this.appKey,
+                        token: userKey
+                    }
+                }).done(() => resolve())
+                    .fail(() => reject());
+            })
+        });
     }
 }

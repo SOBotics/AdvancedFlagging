@@ -49,7 +49,7 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
     if (flag.ReportType !== 'NoFlag') {
         result.FlagPromise = new Promise((resolve, reject) => {
             $.ajax({
-                url: `//stackoverflow.com/flags/posts/${postId}/add/${flag.ReportType}`,
+                url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
                 type: 'POST',
                 data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
             }).done((data) => {
@@ -101,7 +101,7 @@ function SetupPostPage() {
 
 
         const metaSmoke = new MetaSmokeyAPI(metaSmokeKey);
-        const metaSmokeWasReported = metaSmoke.WasReported(answerId);
+        const metaSmokeWasReported = metaSmoke.GetFeedback(answerId);
 
         const natty = new NattyAPI();
         const nattyWasReported = natty.WasReported(answerId);
@@ -136,13 +136,18 @@ function SetupPostPage() {
 
                     const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType == 'PostOffensive';
                     const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
+                    const looksOk = flagType.ReportType === 'NoFlag';
 
-                    metaSmokeWasReported.then(wasReported => {
-                        if (wasReported) {
+                    metaSmokeWasReported.then(responseItems => {
+                        debugger;
+                        if (responseItems.length > 0) {
+                            const metaSmokeId =responseItems[0].id;
                             if (rudeFlag) {
-                                metaSmoke.ReportTruePositive(answerId);
-                            } else {
-                                metaSmoke.ReportNAA(answerId);
+                                metaSmoke.ReportTruePositive(metaSmokeId);
+                            } else if (naaFlag) {
+                                metaSmoke.ReportNAA(metaSmokeId);
+                            } else if (looksOk) {
+                                metaSmoke.ReportTruePositive(metaSmokeId);
                             }
                         } else if (rudeFlag) {
                             metaSmoke.Report(answerId);
@@ -215,8 +220,8 @@ function SetupPostPage() {
             .hide();
 
         metaSmokeWasReported
-            .then(wasReported => {
-                if (wasReported) {
+            .then(responseItems => {
+                if (responseItems.length > 0) {
                     smokeyIcon.show();
                 }
             });

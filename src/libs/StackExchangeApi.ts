@@ -26,7 +26,7 @@ export class StackExchangeAPI {
             return;
         }
 
-        const promise = new Promise<string>((resolve, reject) => {
+        this.getAccessTokenPromise = () => new Promise<string>((resolve, reject) => {
             SE.init({
                 clientId,
                 key,
@@ -44,7 +44,6 @@ export class StackExchangeAPI {
                 }
             });
         });
-        this.getAccessTokenPromise = () => promise;
     }
 
     public Answers_GetComments(answerIds: number[], skipCache = false, site: string = 'stackoverflow', filter?: string): Promise<SEApiComment[]> {

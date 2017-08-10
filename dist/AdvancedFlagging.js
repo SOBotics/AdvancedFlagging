@@ -104,13 +104,20 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
             this.codeGetter = codeGetter;
             this.appKey = appKey;
             this.appendResetToWindow();
+            this.getUserKey(); // Make sure we request it immediately
         }
         MetaSmokeyAPI.prototype.getUserKey = function () {
-            var promise = this.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + this.appKey);
-            promise.then(function (code) {
-                FunctionUtils_1.StoreInCache(MetaSmokeUserKeyConfig, code);
-            });
-            return promise;
+            var _this = this;
+            return FunctionUtils_1.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) {
+                _this.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + _this.appKey)
+                    .then(function (code) {
+                    $.ajax({
+                        url: "https://metasmoke.erwaysoftware.com/oauth/token?key=" + _this.appKey + "&code=" + code,
+                        method: "GET"
+                    }).done(function (data) { return resolve(data.token); })
+                        .fail(function (err) { return reject(err); });
+                });
+            }); });
         };
         MetaSmokeyAPI.prototype.appendResetToWindow = function () {
             if (!localStorage) {
@@ -129,35 +136,66 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
             }
             return disabledConfig;
         };
-        MetaSmokeyAPI.prototype.WasReported = function (answerId) {
+        MetaSmokeyAPI.prototype.GetFeedback = function (answerId) {
             var _this = this;
             if (this.IsDisabled()) {
-                return Promise.resolve(false);
+                return Promise.resolve([]);
             }
             return FunctionUtils_1.GetAndCache(MetaSmokeWasReportedConfig + "." + answerId, function () { return new Promise(function (resolve, reject) {
                 $.ajax({
-                    url: "https://metasmoke.erwaysoftware.com/api/posts/urls?urls=//" + window.location.hostname + "/a/" + answerId + "&key=" + _this.appKey,
-                    type: 'GET'
+                    type: 'GET',
+                    url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
+                    data: {
+                        urls: "//" + window.location.hostname + "/a/" + answerId,
+                        key: "" + _this.appKey
+                    }
                 }).done(function (result) {
-                    if (result.items.length > 0) {
-                        resolve(true);
-                    }
-                    else {
-                        resolve(false);
-                    }
+                    debugger;
+                    resolve(result.items);
                 }).fail(function (error) {
                     reject(error);
                 });
             }); });
         };
         MetaSmokeyAPI.prototype.Report = function (answerId) {
-            console.log("Would report '" + answerId + "' to ms");
+            var _this = this;
+            return new Promise(function (resolve, reject) {
+                _this.getUserKey().then(function (userKey) {
+                    $.ajax({
+                        type: "POST",
+                        url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
+                        data: {
+                            post_link: "//" + window.location.hostname + "/a/" + answerId,
+                            key: _this.appKey,
+                            token: userKey
+                        }
+                    }).done(function () { return resolve(); })
+                        .fail(function () { return reject(); });
+                });
+            });
         };
-        MetaSmokeyAPI.prototype.ReportTruePositive = function (answerId) {
-            console.log("Would send tp feedback for '" + answerId + "' to ms");
+        MetaSmokeyAPI.prototype.ReportTruePositive = function (metaSmokeId) {
+            return this.SendFeedback(metaSmokeId, 'tpu-');
         };
-        MetaSmokeyAPI.prototype.ReportNAA = function (answerId) {
-            console.log("Would send naa feedback for '" + answerId + "' to ms");
+        MetaSmokeyAPI.prototype.ReportNAA = function (metaSmokeId) {
+            return this.SendFeedback(metaSmokeId, 'naa-');
+        };
+        MetaSmokeyAPI.prototype.SendFeedback = function (metaSmokeId, feedbackType) {
+            var _this = this;
+            return new Promise(function (resolve, reject) {
+                _this.getUserKey().then(function (userKey) {
+                    $.ajax({
+                        type: "POST",
+                        url: "https://metasmoke.erwaysoftware.com/api/w/post/" + metaSmokeId + "/feedback",
+                        data: {
+                            type: feedbackType,
+                            key: _this.appKey,
+                            token: userKey
+                        }
+                    }).done(function () { return resolve(); })
+                        .fail(function () { return reject(); });
+                });
+            });
         };
         return MetaSmokeyAPI;
     }());
@@ -378,7 +416,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
         if (flag.ReportType !== 'NoFlag') {
             result.FlagPromise = new Promise(function (resolve, reject) {
                 $.ajax({
-                    url: "//stackoverflow.com/flags/posts/" + postId + "/add/" + flag.ReportType,
+                    url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
                     type: 'POST',
                     data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
                 }).done(function (data) {
@@ -421,7 +459,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                 .attr('name', checkboxName)
                 .prop('checked', true);
             var metaSmoke = new MetaSmokeyAPI_1.MetaSmokeyAPI(metaSmokeKey);
-            var metaSmokeWasReported = metaSmoke.WasReported(answerId);
+            var metaSmokeWasReported = metaSmoke.GetFeedback(answerId);
             var natty = new NattyApi_1.NattyAPI();
             var nattyWasReported = natty.WasReported(answerId);
             var reportedIcon = $('<div>').addClass('comment-flag').css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' }).hide();
@@ -452,13 +490,15 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                         }
                         var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType == 'PostOffensive';
                         var naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
-                        metaSmokeWasReported.then(function (wasReported) {
-                            if (wasReported) {
+                        metaSmokeWasReported.then(function (responseItems) {
+                            debugger;
+                            if (responseItems.length > 0) {
+                                var metaSmokeId = responseItems[0].id;
                                 if (rudeFlag) {
-                                    metaSmoke.ReportTruePositive(answerId);
+                                    metaSmoke.ReportTruePositive(metaSmokeId);
                                 }
                                 else {
-                                    metaSmoke.ReportNAA(answerId);
+                                    metaSmoke.ReportNAA(metaSmokeId);
                                 }
                             }
                             else if (rudeFlag) {
@@ -519,8 +559,8 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                 .attr('title', 'Reported by Smokey')
                 .hide();
             metaSmokeWasReported
-                .then(function (wasReported) {
-                if (wasReported) {
+                .then(function (responseItems) {
+                if (responseItems.length > 0) {
                     smokeyIcon.show();
                 }
             });
@@ -565,7 +605,7 @@ define("libs/StackExchangeApi", ["require", "exports", "libs/FunctionUtils"], fu
                 this.getAccessTokenPromise = function () { throw Error('Access token not available. StackExchangeAPI class must be passed either an access token, or a clientId and a key.'); };
                 return;
             }
-            var promise = new Promise(function (resolve, reject) {
+            this.getAccessTokenPromise = function () { return new Promise(function (resolve, reject) {
                 SE.init({
                     clientId: clientId,
                     key: key,
@@ -582,8 +622,7 @@ define("libs/StackExchangeApi", ["require", "exports", "libs/FunctionUtils"], fu
                         });
                     }
                 });
-            });
-            this.getAccessTokenPromise = function () { return promise; };
+            }); };
         };
         StackExchangeAPI.prototype.Answers_GetComments = function (answerIds, skipCache, site, filter) {
             if (skipCache === void 0) { skipCache = false; }

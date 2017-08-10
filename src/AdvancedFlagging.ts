@@ -13,10 +13,22 @@ declare const unsafeWindow: any;
 const MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
 const MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
 
-(<any>unsafeWindow).resetMetaSmokeConfig = function () {
-    StoreInCache(MetaSmokeDisabledConfig, false);
-    StoreInCache(MetaSmokeUserKeyConfig, false);
+(function appendResetToWindow() {
+    debugger;
+    if (!localStorage) { return; }
+
+    let scriptNode = document.createElement('script');
+    scriptNode.type = 'text/javascript';
+    scriptNode.textContent = `
+window.resetSmokey = function() {
+    localStorage.setItem('${MetaSmokeDisabledConfig}', undefined); 
+    localStorage.setItem('${MetaSmokeUserKeyConfig}', undefined);
 }
+`;
+
+    var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
+    target.appendChild(scriptNode);
+})();
 
 function handleMetaSmoke() {
     let metasmokeDisabled = GetFromCache<boolean>(MetaSmokeDisabledConfig);
@@ -26,7 +38,7 @@ function handleMetaSmoke() {
     }
     const metaSmokeUserKey = GetFromCache<string>(MetaSmokeUserKeyConfig);
     if (!metaSmokeUserKey) {
-        if (!confirm('AdvancedFlagging can connect to MetaSmoke for reporting. If you do not wish to connect, press cancel. This will only be asked once. Invoke window.resetMetaSmokeConfig() to see this again.')) {
+        if (!confirm('AdvancedFlagging can connect to MetaSmoke for reporting. If you do not wish to connect, press cancel. This will only be asked once. To reset smokey configuration, call window.resetSmokey().')) {
             StoreInCache('MetaSmoke.Disabled', true);
             return;
         }
@@ -225,7 +237,11 @@ function SetupPostPage() {
         dropDown.append(commentingRow);
 
         nattyLink.append(dropDown);
-        nattyLink.click(() => dropDown.toggle());
+        nattyLink.click(e => {
+            if (e.target === nattyLink.get(0)) {
+                dropDown.toggle()
+            }
+        });
 
         jqueryItem.append(nattyLink);
         jqueryItem.append(reportedIcon);

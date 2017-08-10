@@ -218,10 +218,17 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
     var metaSmokeKey = '070f26ebb71c5e6cfca7893fe1139460cf23f30d686566f5707a4acfd50c';
     var MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
     var MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
-    unsafeWindow.resetMetaSmokeConfig = function () {
-        FunctionUtils_3.StoreInCache(MetaSmokeDisabledConfig, false);
-        FunctionUtils_3.StoreInCache(MetaSmokeUserKeyConfig, false);
-    };
+    (function appendResetToWindow() {
+        debugger;
+        if (!localStorage) {
+            return;
+        }
+        var scriptNode = document.createElement('script');
+        scriptNode.type = 'text/javascript';
+        scriptNode.textContent = "\nwindow.resetSmokey = function() {\n    localStorage.setItem('" + MetaSmokeDisabledConfig + "', undefined); \n    localStorage.setItem('" + MetaSmokeUserKeyConfig + "', undefined);\n}\n";
+        var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
+        target.appendChild(scriptNode);
+    })();
     function handleMetaSmoke() {
         var metasmokeDisabled = FunctionUtils_3.GetFromCache(MetaSmokeDisabledConfig);
         metasmokeDisabled = false;
@@ -230,7 +237,7 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
         }
         var metaSmokeUserKey = FunctionUtils_3.GetFromCache(MetaSmokeUserKeyConfig);
         if (!metaSmokeUserKey) {
-            if (!confirm('AdvancedFlagging can connect to MetaSmoke for reporting. If you do not wish to connect, press cancel. This will only be asked once. Invoke window.resetMetaSmokeConfig() to see this again.')) {
+            if (!confirm('AdvancedFlagging can connect to MetaSmoke for reporting. If you do not wish to connect, press cancel. This will only be asked once. To reset smokey configuration, call window.resetSmokey().')) {
                 FunctionUtils_3.StoreInCache('MetaSmoke.Disabled', true);
                 return;
             }
@@ -404,7 +411,11 @@ define("AdvancedFlagging", ["require", "exports", "FlagTypes", "libs/NattyApi", 
             commentingRow.append(leaveCommentBox);
             dropDown.append(commentingRow);
             nattyLink.append(dropDown);
-            nattyLink.click(function () { return dropDown.toggle(); });
+            nattyLink.click(function (e) {
+                if (e.target === nattyLink.get(0)) {
+                    dropDown.toggle();
+                }
+            });
             jqueryItem.append(nattyLink);
             jqueryItem.append(reportedIcon);
             var nattyIcon = $('<div>')

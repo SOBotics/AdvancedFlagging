@@ -171,7 +171,7 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
                         resolve([]);
                         return;
                     }
-                    FunctionUtils_1.GetAndCache(MetaSmokeWasReportedConfig + "." + answerId, function () { return new Promise(function () {
+                    FunctionUtils_1.GetAndCache(MetaSmokeWasReportedConfig + "." + answerId, function () { return new Promise(function (resolve, reject) {
                         $.ajax({
                             type: 'GET',
                             url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
@@ -185,7 +185,8 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
                         }).fail(function (error) {
                             reject(error);
                         });
-                    }); });
+                    }); })
+                        .then(function (result) { return resolve(result); });
                 });
             });
         };
@@ -552,7 +553,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                                     //natty.ReportTruePositive(answerId);
                                 }
                             }
-                            else {
+                            else if (naaFlag) {
                                 natty.Report(answerId);
                             }
                         });

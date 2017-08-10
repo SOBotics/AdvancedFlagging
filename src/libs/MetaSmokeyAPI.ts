@@ -137,7 +137,7 @@ export class MetaSmokeyAPI {
                     return;
                 }
 
-                GetAndCache(`${MetaSmokeWasReportedConfig}.${answerId}`, () => new Promise(() => {
+                GetAndCache<MetaSmokeApiItem[]>(`${MetaSmokeWasReportedConfig}.${answerId}`, () => new Promise((resolve, reject) => {
                     $.ajax({
                         type: 'GET',
                         url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
@@ -151,7 +151,8 @@ export class MetaSmokeyAPI {
                     }).fail(error => {
                         reject(error);
                     });
-                }));
+                }))
+                .then(result => resolve(result));
             });
         });
     }

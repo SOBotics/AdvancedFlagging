@@ -559,8 +559,12 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             var checkboxName = "comment_checkbox_" + postId;
             var leaveCommentBox = $('<input />')
                 .attr('type', 'checkbox')
-                .attr('name', checkboxName)
-                .prop('checked', true);
+                .attr('name', checkboxName);
+            var postDiv = jqueryItem.closest(postType == 'Answer' ? '.answer' : '.question');
+            var comments = postDiv.find('.comment-body');
+            if (comments.length === 0) {
+                leaveCommentBox.prop('checked', true);
+            }
             var metaSmoke = new MetaSmokeyAPI_1.MetaSmokeyAPI(metaSmokeKey);
             var metaSmokeWasReported = metaSmoke.GetFeedback(postId, postType);
             var natty = new NattyApi_1.NattyAPI();

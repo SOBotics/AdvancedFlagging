@@ -102,9 +102,13 @@ function SetupPostPage() {
         const checkboxName = `comment_checkbox_${postId}`;
         const leaveCommentBox = $('<input />')
             .attr('type', 'checkbox')
-            .attr('name', checkboxName)
-            .prop('checked', true);
+            .attr('name', checkboxName);
 
+        const postDiv = jqueryItem.closest(postType == 'Answer' ? '.answer' : '.question');
+        const comments = postDiv.find('.comment-body');
+        if (comments.length === 0) {
+            leaveCommentBox.prop('checked', true);
+        }
 
         const metaSmoke = new MetaSmokeyAPI(metaSmokeKey);
         const metaSmokeWasReported = metaSmoke.GetFeedback(postId, postType);
@@ -294,7 +298,7 @@ function SetupNatoPage() {
         jqueryItem.after(smokeyIcon);
         jqueryItem.after(nattyIcon);
         jqueryItem.after(reportedIcon);
-             
+
 
         const postId = parseInt(jqueryItem.attr('href').split('#')[1], 10);
 

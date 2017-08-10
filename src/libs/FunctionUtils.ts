@@ -56,6 +56,15 @@ export function StoreInCache<T>(cacheKey: string, item: T, expiresAt?: Date) {
     });
 }
 
+export function Delay(milliseconds: number): Promise<void> {
+    return new Promise<void>(resolve => {
+        setTimeout(() => {
+            resolve();
+        }, milliseconds);
+    });
+}
+
+
 export function GroupBy<T>(collection: T[], propertyGetter: (item: T) => any) {
     return collection.reduce(function (previousValue: any, currentItem: T) {
         (previousValue[propertyGetter(currentItem)] = previousValue[propertyGetter(currentItem)] || []).push(currentItem);

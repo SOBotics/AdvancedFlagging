@@ -1,4 +1,4 @@
-import { GetFromCache, StoreInCache, GetAndCache } from './FunctionUtils';
+import { GetFromCache, StoreInCache, GetAndCache, Delay } from './FunctionUtils';
 const MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
 const MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
 const MetaSmokeWasReportedConfig = 'MetaSmoke.WasReported';
@@ -29,7 +29,7 @@ interface MetaSmokeApiWrapper {
 }
 
 export class MetaSmokeyAPI {
-    private codeGetter: (metaSmokeOAuthUrl: string) => Promise<string>;
+    private codeGetter: (metaSmokeOAuthUrl: string) => Promise<string | undefined>;
     private appKey: string;
 
     private getUserKey() {
@@ -62,51 +62,35 @@ export class MetaSmokeyAPI {
         target.appendChild(scriptNode);
     }
 
-    public constructor(appKey: string, codeGetter?: (metaSmokeOAuthUrl: string) => Promise<string>) {
+    public constructor(appKey: string, codeGetter?: (metaSmokeOAuthUrl: string) => Promise<string | undefined>) {
         if (!codeGetter) {
-            codeGetter = (metaSmokeOAuthUrl: string) => {
-                return new Promise((resolve, reject) => {
-                    const isDisabledPromise = this.IsDisabled();
-                    isDisabledPromise.then(isDisabled => {
-                        if (isDisabled) {
-                            reject();
-                            return;
-                        }
+            codeGetter = async (metaSmokeOAuthUrl: string | undefined) => {
+                const isDisabled = await this.IsDisabled();
+                if (isDisabled) {
+                    return;
+                }
 
-                        const cachedUserKeyPromise = GetFromCache<string>(MetaSmokeUserKeyConfig);
-                        cachedUserKeyPromise.then(cachedUserKey => {
-                            if (cachedUserKey) {
-                                resolve(cachedUserKey);
-                                return;
-                            }
+                const cachedUserKey = await GetFromCache<string>(MetaSmokeUserKeyConfig);
+                if (cachedUserKey) {
+                    return cachedUserKey;
+                }
 
-                            const metaSmokeUserKeyPromise = GetFromCache<string>(MetaSmokeUserKeyConfig);
-                            metaSmokeUserKeyPromise.then(metaSmokeUserKey => {
-                                if (!metaSmokeUserKey) {
-                                    if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, call window.resetMetaSmokeConfiguration().')) {
-                                        StoreInCache('MetaSmoke.Disabled', true);
-                                        reject();
-                                        return;
-                                    }
-                                }
+                if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, call window.resetMetaSmokeConfiguration().')) {
+                    StoreInCache('MetaSmoke.Disabled', true);
+                    return;
+                }
 
-                                window.open(metaSmokeOAuthUrl, '_blank');
-                                setTimeout(() => {
-                                    const handleFDSCCode = () => {
-                                        $(window).off('focus', handleFDSCCode);
-                                        const code = window.prompt('Once you\'ve authenticated FDSC with metasmoke, you\'ll be given a code; enter it here.');
-                                        if (!code) {
-                                            reject();
-                                            return;
-                                        }
-                                        resolve(code);
-                                    }
-                                    $(window).focus(handleFDSCCode);
-                                }, 100);
-                            });
-                        });
-                    });
-                })
+                window.open(metaSmokeOAuthUrl, '_blank');
+                await Delay(100);
+                const handleFDSCCode = () => {
+                    $(window).off('focus', handleFDSCCode);
+                    const code = window.prompt('Once you\'ve authenticated FDSC with metasmoke, you\'ll be given a code; enter it here.');
+                    if (!code) {
+                        return;
+                    }
+                    return code;
+                }
+                $(window).focus(handleFDSCCode);
             }
         }
         this.codeGetter = codeGetter;
@@ -116,50 +100,40 @@ export class MetaSmokeyAPI {
         this.getUserKey(); // Make sure we request it immediately
     }
 
-    public IsDisabled(): Promise<boolean> {
-        const disabledConfigPromise = GetFromCache<boolean>(MetaSmokeDisabledConfig);
-        return new Promise(resolve => {
-            disabledConfigPromise.then(disabledConfig => {
-                if (disabledConfig === undefined) {
-                    resolve(false);
-                    return;
-                }
-                resolve(disabledConfig);
-            })
-        });
+    public async IsDisabled() {
+        const cachedDisabled = await GetFromCache<boolean>(MetaSmokeDisabledConfig);
+        if (cachedDisabled === undefined)
+            return false;
+
+        return cachedDisabled;
     }
-    public GetFeedback(postId: number, postType: 'Answer' | 'Question'): Promise<MetaSmokeApiItem[]> {
+    public async GetFeedback(postId: number, postType: 'Answer' | 'Question'): Promise<MetaSmokeApiItem[]> {
         const urlStr =
             postType === 'Answer'
                 ? `//${window.location.hostname}/a/${postId}`
                 : `//${window.location.hostname}/questions/${postId}`;
 
-        const isDisabledPromise = this.IsDisabled();
-        return new Promise((resolve, reject) => {
-            isDisabledPromise.then(disabled => {
-                if (disabled) {
-                    resolve([]);
-                    return;
-                }
+        const isDisabled = await this.IsDisabled();
+        if (isDisabled) {
+            return [];
+        }
 
-                GetAndCache<MetaSmokeApiItem[]>(`${MetaSmokeWasReportedConfig}.${urlStr}`, () => new Promise((resolve, reject) => {
-                    $.ajax({
-                        type: 'GET',
-                        url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
-                        data: {
-                            urls: urlStr,
-                            key: `${this.appKey}`
-                        }
-                    }).done((result: MetaSmokeApiWrapper) => {
-                        debugger;
-                        resolve(result.items);
-                    }).fail(error => {
-                        reject(error);
-                    });
-                }))
-                    .then(result => resolve(result));
+        const result = await GetAndCache<MetaSmokeApiItem[]>(`${MetaSmokeWasReportedConfig}.${urlStr}`, () => new Promise((resolve, reject) => {
+            $.ajax({
+                type: 'GET',
+                url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
+                data: {
+                    urls: urlStr,
+                    key: `${this.appKey}`
+                }
+            }).done((result: MetaSmokeApiWrapper) => {
+                debugger;
+                resolve(result.items);
+            }).fail(error => {
+                reject(error);
             });
-        });
+        }));
+        return result;
     }
 
     public Report(postId: number, postType: 'Answer' | 'Question'): Promise<void> {

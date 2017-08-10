@@ -1,4 +1,5 @@
-import { GetFromCache, StoreInCache, GetAndCache, Delay } from './FunctionUtils';
+import { GetFromCache, StoreInCache, GetAndCache } from './Caching';
+import { Delay } from './FunctionUtils';
 const MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
 const MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
 const MetaSmokeWasReportedConfig = 'MetaSmoke.WasReported';
@@ -37,8 +38,8 @@ export class MetaSmokeyAPI {
             this.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${this.appKey}`)
                 .then(code => {
                     $.ajax({
-                        url: "https://metasmoke.erwaysoftware.com/oauth/token?key=" + this.appKey + "&code=" + code,
-                        method: "GET"
+                        url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + this.appKey + '&code=' + code,
+                        method: 'GET'
                     }).done(data => resolve(data.token))
                         .fail(err => reject(err))
                 });
@@ -49,16 +50,16 @@ export class MetaSmokeyAPI {
         StoreInCache(MetaSmokeDisabledConfig, undefined);
         if (!localStorage) { return; }
 
-        let scriptNode = document.createElement('script');
+        const scriptNode = document.createElement('script');
         scriptNode.type = 'text/javascript';
         scriptNode.textContent = `
     window.resetMetaSmokeConfiguration = function() {
-        xdLocalStorage.removeItem('${MetaSmokeDisabledConfig}'); 
+        xdLocalStorage.removeItem('${MetaSmokeDisabledConfig}');
         xdLocalStorage.removeItem('${MetaSmokeUserKeyConfig}', undefined);
     }
     `;
 
-        var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
+        const target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
         target.appendChild(scriptNode);
     }
 
@@ -102,8 +103,9 @@ export class MetaSmokeyAPI {
 
     public async IsDisabled() {
         const cachedDisabled = await GetFromCache<boolean>(MetaSmokeDisabledConfig);
-        if (cachedDisabled === undefined)
+        if (cachedDisabled === undefined) {
             return false;
+        }
 
         return cachedDisabled;
     }
@@ -126,8 +128,8 @@ export class MetaSmokeyAPI {
                     urls: urlStr,
                     key: `${this.appKey}`
                 }
-            }).done((result: MetaSmokeApiWrapper) => {
-                resolve(result.items);
+            }).done((metaSmokeResult: MetaSmokeApiWrapper) => {
+                resolve(metaSmokeResult.items);
             }).fail(error => {
                 reject(error);
             });
@@ -144,7 +146,7 @@ export class MetaSmokeyAPI {
         return new Promise<void>((resolve, reject) => {
             this.getUserKey().then(userKey => {
                 $.ajax({
-                    type: "POST",
+                    type: 'POST',
                     url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
                     data: {
                         post_link: urlStr,
@@ -170,8 +172,8 @@ export class MetaSmokeyAPI {
         return new Promise<void>((resolve, reject) => {
             this.getUserKey().then(userKey => {
                 $.ajax({
-                    type: "POST",
-                    url: "https://metasmoke.erwaysoftware.com/api/w/post/" + metaSmokeId + "/feedback",
+                    type: 'POST',
+                    url: 'https://metasmoke.erwaysoftware.com/api/w/post/' + metaSmokeId + '/feedback',
                     data: {
                         type: feedbackType,
                         key: this.appKey,

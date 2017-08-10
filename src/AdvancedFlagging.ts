@@ -1,7 +1,8 @@
 import { MetaSmokeyAPI } from './libs/MetaSmokeyAPI';
 import { FlagType, flagCategories } from './FlagTypes';
 import { NattyAPI } from './libs/NattyApi';
-import { GetFromCache, StoreInCache, GetAndCache, Delay } from './libs/FunctionUtils';
+import { GetFromCache, StoreInCache, GetAndCache, InitializeCache } from './libs/Caching';
+import { Delay } from "./libs/FunctionUtils";
 // tslint:disable-next-line:no-debugger
 debugger;
 
@@ -11,7 +12,7 @@ declare const StackExchange: any;
 declare const unsafeWindow: any;
 
 function setupStyles() {
-    let scriptNode = document.createElement('style');
+    const scriptNode = document.createElement('style');
     scriptNode.type = 'text/css';
     scriptNode.textContent = `
 #snackbar {
@@ -37,7 +38,7 @@ function setupStyles() {
 }
 
 @-webkit-keyframes fadein {
-    from {top: 0; opacity: 0;} 
+    from {top: 0; opacity: 0;}
     to {top: 30px; opacity: 1;}
 }
 
@@ -47,7 +48,7 @@ function setupStyles() {
 }
 
 @-webkit-keyframes fadeout {
-    from {top: 30px; opacity: 1;} 
+    from {top: 30px; opacity: 1;}
     to {top: 0; opacity: 0;}
 }
 
@@ -56,7 +57,7 @@ function setupStyles() {
     to {top: 0; opacity: 0;}
 }`;
 
-    var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
+    const target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
     target.appendChild(scriptNode);
 };
 
@@ -142,7 +143,7 @@ function SetupPostPage() {
 
         const postId = parseInt(jqueryItem.find('.flag-post-link').attr('data-postid'), 10);
 
-        const reputationDiv = jqueryItem.closest(postType == 'Answer' ? '.answercell' : '.postcell').find('.reputation-score');
+        const reputationDiv = jqueryItem.closest(postType === 'Answer' ? '.answercell' : '.postcell').find('.reputation-score');
 
         let reputationText = reputationDiv.text();
         if (reputationText.indexOf('k') !== -1) {
@@ -172,7 +173,7 @@ function SetupPostPage() {
             .attr('type', 'checkbox')
             .attr('name', checkboxName);
 
-        const postDiv = jqueryItem.closest(postType == 'Answer' ? '.answer' : '.question');
+        const postDiv = jqueryItem.closest(postType === 'Answer' ? '.answer' : '.question');
         const comments = postDiv.find('.comment-body');
         if (comments.length === 0) {
             leaveCommentBox.prop('checked', true);
@@ -224,7 +225,7 @@ function SetupPostPage() {
                         });
                     }
 
-                    const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType == 'PostOffensive';
+                    const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
                     const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
                     const noFlag = flagType.ReportType === 'NoFlag';
                     const needsEditing = flagType.DisplayName === 'Needs Editing'
@@ -408,6 +409,8 @@ function SetupNatoPage() {
 }
 
 $(function () {
+    InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
+
     SetupPostPage();
     SetupNatoPage();
 

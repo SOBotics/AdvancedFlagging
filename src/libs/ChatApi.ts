@@ -1,7 +1,7 @@
 declare var $: JQueryStatic;
 declare const GM_xmlhttpRequest: any;
 
-import { GetAndCache } from './FunctionUtils';
+import { GetAndCache } from './Caching';
 
 export class ChatApi {
     private chatRoomUrl: string;

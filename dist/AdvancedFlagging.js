@@ -34,19 +34,20 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-define("libs/FunctionUtils", ["require", "exports"], function (require, exports) {
+define("libs/Caching", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    // tslint:disable-next-line:typeof-compare
-    var hasStorage = typeof (Storage) !== undefined;
     var xdLocalStorageInitializedResolver = function () { };
     var xdLocalStorageInitialized = new Promise(function (resolve, reject) { return xdLocalStorageInitializedResolver = resolve; });
-    xdLocalStorage.init({
-        iframeUrl: "https://metasmoke.erwaysoftware.com/xdom_storage.html",
-        initCallback: function () {
-            xdLocalStorageInitializedResolver();
-        }
-    });
+    function InitializeCache(iframeUrl) {
+        xdLocalStorage.init({
+            iframeUrl: iframeUrl,
+            initCallback: function () {
+                xdLocalStorageInitializedResolver();
+            }
+        });
+    }
+    exports.InitializeCache = InitializeCache;
     function GetAndCache(cacheKey, getterPromise, expiresAt) {
         var cachedItemPromise = GetFromCache(cacheKey);
         return new Promise(function (resolve) {
@@ -85,6 +86,10 @@ define("libs/FunctionUtils", ["require", "exports"], function (require, exports)
         });
     }
     exports.StoreInCache = StoreInCache;
+});
+define("libs/FunctionUtils", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
     function Delay(milliseconds) {
         return new Promise(function (resolve) {
             setTimeout(function () {
@@ -112,7 +117,7 @@ define("libs/FunctionUtils", ["require", "exports"], function (require, exports)
     }
     exports.GetMembers = GetMembers;
 });
-define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], function (require, exports, FunctionUtils_1) {
+define("libs/MetaSmokeyAPI", ["require", "exports", "libs/Caching", "libs/FunctionUtils"], function (require, exports, Caching_1, FunctionUtils_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
@@ -132,14 +137,14 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
                                 if (isDisabled) {
                                     return [2 /*return*/];
                                 }
-                                return [4 /*yield*/, FunctionUtils_1.GetFromCache(MetaSmokeUserKeyConfig)];
+                                return [4 /*yield*/, Caching_1.GetFromCache(MetaSmokeUserKeyConfig)];
                             case 2:
                                 cachedUserKey = _a.sent();
                                 if (cachedUserKey) {
                                     return [2 /*return*/, cachedUserKey];
                                 }
                                 if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, call window.resetMetaSmokeConfiguration().')) {
-                                    FunctionUtils_1.StoreInCache('MetaSmoke.Disabled', true);
+                                    Caching_1.StoreInCache('MetaSmoke.Disabled', true);
                                     return [2 /*return*/];
                                 }
                                 window.open(metaSmokeOAuthUrl, '_blank');
@@ -167,25 +172,25 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
         }
         MetaSmokeyAPI.prototype.getUserKey = function () {
             var _this = this;
-            return FunctionUtils_1.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) {
+            return Caching_1.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) {
                 _this.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + _this.appKey)
                     .then(function (code) {
                     $.ajax({
-                        url: "https://metasmoke.erwaysoftware.com/oauth/token?key=" + _this.appKey + "&code=" + code,
-                        method: "GET"
+                        url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + _this.appKey + '&code=' + code,
+                        method: 'GET'
                     }).done(function (data) { return resolve(data.token); })
                         .fail(function (err) { return reject(err); });
                 });
             }); });
         };
         MetaSmokeyAPI.prototype.appendResetToWindow = function () {
-            FunctionUtils_1.StoreInCache(MetaSmokeDisabledConfig, undefined);
+            Caching_1.StoreInCache(MetaSmokeDisabledConfig, undefined);
             if (!localStorage) {
                 return;
             }
             var scriptNode = document.createElement('script');
             scriptNode.type = 'text/javascript';
-            scriptNode.textContent = "\n    window.resetMetaSmokeConfiguration = function() {\n        xdLocalStorage.removeItem('" + MetaSmokeDisabledConfig + "'); \n        xdLocalStorage.removeItem('" + MetaSmokeUserKeyConfig + "', undefined);\n    }\n    ";
+            scriptNode.textContent = "\n    window.resetMetaSmokeConfiguration = function() {\n        xdLocalStorage.removeItem('" + MetaSmokeDisabledConfig + "');\n        xdLocalStorage.removeItem('" + MetaSmokeUserKeyConfig + "', undefined);\n    }\n    ";
             var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
             target.appendChild(scriptNode);
         };
@@ -194,11 +199,12 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
                 var cachedDisabled;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, FunctionUtils_1.GetFromCache(MetaSmokeDisabledConfig)];
+                        case 0: return [4 /*yield*/, Caching_1.GetFromCache(MetaSmokeDisabledConfig)];
                         case 1:
                             cachedDisabled = _a.sent();
-                            if (cachedDisabled === undefined)
+                            if (cachedDisabled === undefined) {
                                 return [2 /*return*/, false];
+                            }
                             return [2 /*return*/, cachedDisabled];
                     }
                 });
@@ -220,7 +226,7 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
                             if (isDisabled) {
                                 return [2 /*return*/, []];
                             }
-                            return [4 /*yield*/, FunctionUtils_1.GetAndCache(MetaSmokeWasReportedConfig + "." + urlStr, function () { return new Promise(function (resolve, reject) {
+                            return [4 /*yield*/, Caching_1.GetAndCache(MetaSmokeWasReportedConfig + "." + urlStr, function () { return new Promise(function (resolve, reject) {
                                     $.ajax({
                                         type: 'GET',
                                         url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
@@ -228,8 +234,8 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
                                             urls: urlStr,
                                             key: "" + _this.appKey
                                         }
-                                    }).done(function (result) {
-                                        resolve(result.items);
+                                    }).done(function (metaSmokeResult) {
+                                        resolve(metaSmokeResult.items);
                                     }).fail(function (error) {
                                         reject(error);
                                     });
@@ -249,7 +255,7 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
             return new Promise(function (resolve, reject) {
                 _this.getUserKey().then(function (userKey) {
                     $.ajax({
-                        type: "POST",
+                        type: 'POST',
                         url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
                         data: {
                             post_link: urlStr,
@@ -275,8 +281,8 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/FunctionUtils"], funct
             return new Promise(function (resolve, reject) {
                 _this.getUserKey().then(function (userKey) {
                     $.ajax({
-                        type: "POST",
-                        url: "https://metasmoke.erwaysoftware.com/api/w/post/" + metaSmokeId + "/feedback",
+                        type: 'POST',
+                        url: 'https://metasmoke.erwaysoftware.com/api/w/post/' + metaSmokeId + '/feedback',
                         data: {
                             type: feedbackType,
                             key: _this.appKey,
@@ -387,7 +393,7 @@ define("FlagTypes", ["require", "exports"], function (require, exports) {
         }
     ];
 });
-define("libs/ChatApi", ["require", "exports", "libs/FunctionUtils"], function (require, exports, FunctionUtils_2) {
+define("libs/ChatApi", ["require", "exports", "libs/Caching"], function (require, exports, Caching_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var ChatApi = (function () {
@@ -409,7 +415,7 @@ define("libs/ChatApi", ["require", "exports", "libs/FunctionUtils"], function (r
                     onerror: function (data) { return reject(data); }
                 });
             });
-            return FunctionUtils_2.GetAndCache(cachingKey, function () { return getterPromise; });
+            return Caching_2.GetAndCache(cachingKey, function () { return getterPromise; });
         };
         ChatApi.prototype.SendMessage = function (roomId, message, providedFkey) {
             var _this = this;
@@ -439,7 +445,7 @@ define("libs/ChatApi", ["require", "exports", "libs/FunctionUtils"], function (r
     }());
     exports.ChatApi = ChatApi;
 });
-define("libs/NattyApi", ["require", "exports", "libs/FunctionUtils", "libs/ChatApi"], function (require, exports, FunctionUtils_3, ChatApi_1) {
+define("libs/NattyApi", ["require", "exports", "libs/Caching", "libs/ChatApi"], function (require, exports, Caching_3, ChatApi_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
@@ -448,7 +454,7 @@ define("libs/NattyApi", ["require", "exports", "libs/FunctionUtils", "libs/ChatA
             this.chat = new ChatApi_1.ChatApi();
         }
         NattyAPI.prototype.WasReported = function (answerId) {
-            return FunctionUtils_3.GetAndCache("NattyApi.Feedback." + answerId, function () { return new Promise(function (resolve, reject) {
+            return Caching_3.GetAndCache("NattyApi.Feedback." + answerId, function () { return new Promise(function (resolve, reject) {
                 GM_xmlhttpRequest({
                     method: 'GET',
                     url: nattyFeedbackUrl + "/" + answerId,
@@ -470,7 +476,7 @@ define("libs/NattyApi", ["require", "exports", "libs/FunctionUtils", "libs/ChatA
         NattyAPI.prototype.Report = function (answerId) {
             var promise = this.chat.SendMessage(111347, "@Natty report http://stackoverflow.com/a/" + answerId);
             promise.then(function () {
-                FunctionUtils_3.StoreInCache("NattyApi.Feedback." + answerId, undefined);
+                Caching_3.StoreInCache("NattyApi.Feedback." + answerId, undefined);
             });
             return promise;
         };
@@ -487,7 +493,7 @@ define("libs/NattyApi", ["require", "exports", "libs/FunctionUtils", "libs/ChatA
     }());
     exports.NattyAPI = NattyAPI;
 });
-define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTypes", "libs/NattyApi", "libs/FunctionUtils"], function (require, exports, MetaSmokeyAPI_1, FlagTypes_1, NattyApi_1, FunctionUtils_4) {
+define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTypes", "libs/NattyApi", "libs/Caching", "libs/FunctionUtils"], function (require, exports, MetaSmokeyAPI_1, FlagTypes_1, NattyApi_1, Caching_4, FunctionUtils_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // tslint:disable-next-line:no-debugger
@@ -496,7 +502,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
     function setupStyles() {
         var scriptNode = document.createElement('style');
         scriptNode.type = 'text/css';
-        scriptNode.textContent = "\n#snackbar {\n    visibility: hidden;\n    min-width: 250px;\n    margin-left: -125px;\n    background-color: #00690c;\n    color: #fff;\n    text-align: center;\n    border-radius: 2px;\n    padding: 16px;\n    position: fixed;\n    z-index: 2000;\n    left: 50%;\n    top: 30px;\n    font-size: 17px;\n}\n\n#snackbar.show {\n    visibility: visible;\n    -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;\n    animation: fadein 0.5s, fadeout 0.5s 2.5s;\n}\n\n@-webkit-keyframes fadein {\n    from {top: 0; opacity: 0;} \n    to {top: 30px; opacity: 1;}\n}\n\n@keyframes fadein {\n    from {top: 0; opacity: 0;}\n    to {top: 30px; opacity: 1;}\n}\n\n@-webkit-keyframes fadeout {\n    from {top: 30px; opacity: 1;} \n    to {top: 0; opacity: 0;}\n}\n\n@keyframes fadeout {\n    from {top: 30px; opacity: 1;}\n    to {top: 0; opacity: 0;}\n}";
+        scriptNode.textContent = "\n#snackbar {\n    visibility: hidden;\n    min-width: 250px;\n    margin-left: -125px;\n    background-color: #00690c;\n    color: #fff;\n    text-align: center;\n    border-radius: 2px;\n    padding: 16px;\n    position: fixed;\n    z-index: 2000;\n    left: 50%;\n    top: 30px;\n    font-size: 17px;\n}\n\n#snackbar.show {\n    visibility: visible;\n    -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;\n    animation: fadein 0.5s, fadeout 0.5s 2.5s;\n}\n\n@-webkit-keyframes fadein {\n    from {top: 0; opacity: 0;}\n    to {top: 30px; opacity: 1;}\n}\n\n@keyframes fadein {\n    from {top: 0; opacity: 0;}\n    to {top: 30px; opacity: 1;}\n}\n\n@-webkit-keyframes fadeout {\n    from {top: 30px; opacity: 1;}\n    to {top: 0; opacity: 0;}\n}\n\n@keyframes fadeout {\n    from {top: 30px; opacity: 1;}\n    to {top: 0; opacity: 0;}\n}";
         var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
         target.appendChild(scriptNode);
     }
@@ -555,10 +561,10 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                 switch (_a.label) {
                     case 0:
                         if (!!showingPromise) return [3 /*break*/, 2];
-                        showingPromise = FunctionUtils_4.Delay(3500);
+                        showingPromise = FunctionUtils_2.Delay(3500);
                         popup.text(message);
                         popup.addClass('show');
-                        return [4 /*yield*/, FunctionUtils_4.Delay(3000)];
+                        return [4 /*yield*/, FunctionUtils_2.Delay(3000)];
                     case 1:
                         _a.sent();
                         popup.removeClass('show');
@@ -582,7 +588,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                 ? 'Answer'
                 : 'Question';
             var postId = parseInt(jqueryItem.find('.flag-post-link').attr('data-postid'), 10);
-            var reputationDiv = jqueryItem.closest(postType == 'Answer' ? '.answercell' : '.postcell').find('.reputation-score');
+            var reputationDiv = jqueryItem.closest(postType === 'Answer' ? '.answercell' : '.postcell').find('.reputation-score');
             var reputationText = reputationDiv.text();
             if (reputationText.indexOf('k') !== -1) {
                 reputationText = reputationDiv.attr('title').substr('reputation score '.length);
@@ -606,7 +612,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             var leaveCommentBox = $('<input />')
                 .attr('type', 'checkbox')
                 .attr('name', checkboxName);
-            var postDiv = jqueryItem.closest(postType == 'Answer' ? '.answer' : '.question');
+            var postDiv = jqueryItem.closest(postType === 'Answer' ? '.answer' : '.question');
             var comments = postDiv.find('.comment-body');
             if (comments.length === 0) {
                 leaveCommentBox.prop('checked', true);
@@ -647,12 +653,12 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                         }
                         if (result.FlagPromise) {
                             result.FlagPromise.then(function () {
-                                FunctionUtils_4.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType);
+                                Caching_4.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType);
                                 reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
                                 reportedIcon.show();
                             });
                         }
-                        var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType == 'PostOffensive';
+                        var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
                         var naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
                         var noFlag = flagType.ReportType === 'NoFlag';
                         var needsEditing = flagType.DisplayName === 'Needs Editing';
@@ -739,7 +745,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                     nattyIcon.show();
                 }
             });
-            var previousFlagPromise = FunctionUtils_4.GetFromCache("AdvancedFlagging.Flagged." + postId);
+            var previousFlagPromise = Caching_4.GetFromCache("AdvancedFlagging.Flagged." + postId);
             previousFlagPromise.then(function (previousFlag) {
                 if (previousFlag) {
                     reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
@@ -786,7 +792,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             var metaSmokeWasReported = metaSmoke.GetFeedback(postId, 'Answer');
             var natty = new NattyApi_1.NattyAPI();
             var nattyWasReported = natty.WasReported(postId);
-            var previousFlagPromise = FunctionUtils_4.GetFromCache("AdvancedFlagging.Flagged." + postId);
+            var previousFlagPromise = Caching_4.GetFromCache("AdvancedFlagging.Flagged." + postId);
             previousFlagPromise.then(function (previousFlag) {
                 if (previousFlag) {
                     reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
@@ -808,6 +814,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
         });
     }
     $(function () {
+        Caching_4.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
         SetupPostPage();
         SetupNatoPage();
         setupStyles();
@@ -819,7 +826,7 @@ define("libs/StackExchangeApi.Interfaces", ["require", "exports"], function (req
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
 });
-define("libs/StackExchangeApi", ["require", "exports", "libs/FunctionUtils"], function (require, exports, FunctionUtils_5) {
+define("libs/StackExchangeApi", ["require", "exports", "libs/Caching", "libs/FunctionUtils"], function (require, exports, Caching_5, FunctionUtils_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var stackExchangeApiURL = '//api.stackexchange.com/2.2';
@@ -874,8 +881,8 @@ define("libs/StackExchangeApi", ["require", "exports", "libs/FunctionUtils"], fu
                         type: 'GET',
                     }).done(function (data, textStatus, jqXHR) {
                         var returnItems = (data.items || []);
-                        var grouping = FunctionUtils_5.GroupBy(returnItems, uniqueIdentifier);
-                        FunctionUtils_5.GetMembers(grouping).forEach(function (key) { return FunctionUtils_5.StoreInCache(cacheKey(parseInt(key, 10)), grouping[key]); });
+                        var grouping = FunctionUtils_3.GroupBy(returnItems, uniqueIdentifier);
+                        FunctionUtils_3.GetMembers(grouping).forEach(function (key) { return Caching_5.StoreInCache(cacheKey(parseInt(key, 10)), grouping[key]); });
                         cachedResultsPromise.then(function (cachedResults) {
                             cachedResults.forEach(function (result) {
                                 returnItems.push(result);
@@ -896,7 +903,7 @@ define("libs/StackExchangeApi", ["require", "exports", "libs/FunctionUtils"], fu
             var promises = [];
             if (!skipCache) {
                 objectIds.forEach(function (objectId) {
-                    var cachedResultPromise = FunctionUtils_5.GetFromCache(cacheKey(objectId));
+                    var cachedResultPromise = Caching_5.GetFromCache(cacheKey(objectId));
                     var tempPromise = new Promise(function (resolve) {
                         cachedResultPromise.then(function (cachedResult) {
                             if (cachedResult) {

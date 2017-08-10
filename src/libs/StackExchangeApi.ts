@@ -1,5 +1,6 @@
-import { GetFromCache, GetMembers, GroupBy, StoreInCache } from './FunctionUtils';
+import { GetFromCache, StoreInCache } from './Caching';
 import { SEApiWrapper, SEApiComment } from './StackExchangeApi.Interfaces';
+import { GetMembers, GroupBy } from './FunctionUtils';
 
 declare const $: JQueryStatic;
 declare const SE: any;

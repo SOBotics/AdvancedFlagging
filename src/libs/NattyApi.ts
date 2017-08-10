@@ -1,7 +1,7 @@
-declare var $: JQueryStatic;
+declare const  $: JQueryStatic;
 declare const GM_xmlhttpRequest: any;
 
-import { GetAndCache, StoreInCache } from './FunctionUtils';
+import { GetAndCache, StoreInCache } from './Caching';
 import { ChatApi } from './ChatApi';
 
 const nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';

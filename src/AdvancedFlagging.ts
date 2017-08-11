@@ -229,7 +229,10 @@ function SetupPostPage() {
                             reportedIcon.show();
                         });
                     }
-                    if (result.PerformedActionPromise) {
+
+                    const noFlag = flagType.ReportType === 'NoFlag';
+
+                    if (noFlag && result.PerformedActionPromise) {
                         result.PerformedActionPromise.then(() => {
                             StoreInCache(`AdvancedFlagging.PerformedAction.${postId}`, flagType);
                             performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`)
@@ -239,7 +242,7 @@ function SetupPostPage() {
 
                     const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
                     const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
-                    const noFlag = flagType.ReportType === 'NoFlag';
+                    
                     const needsEditing = flagType.DisplayName === 'Needs Editing'
 
                     metaSmokeWasReported.then(responseItems => {
@@ -351,7 +354,7 @@ function SetupPostPage() {
 
         const previousPerformedActionPromise = GetFromCache<FlagType>(`AdvancedFlagging.PerformedAction.${postId}`);
         previousPerformedActionPromise.then(previousAction => {
-            if (previousAction) {
+            if (previousAction && previousAction.ReportType === 'NoFlag') {
                 performedActionIcon.attr('title', `Previously performed action: ${previousAction.DisplayName}`)
                 performedActionIcon.show();
             }
@@ -433,7 +436,7 @@ function SetupAnswerLinks() {
 
         const previousPerformedActionPromise = GetFromCache<FlagType>(`AdvancedFlagging.PerformedAction.${postId}`);
         previousPerformedActionPromise.then(previousAction => {
-            if (previousAction) {
+            if (previousAction && previousAction.ReportType === 'NoFlag') {
                 performedActionIcon.attr('title', `Previously performed action: ${previousAction.DisplayName}`)
                 performedActionIcon.show();
             }

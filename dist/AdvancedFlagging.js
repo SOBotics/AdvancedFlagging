@@ -728,7 +728,8 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                                 reportedIcon.show();
                             });
                         }
-                        if (result.PerformedActionPromise) {
+                        var noFlag = flagType.ReportType === 'NoFlag';
+                        if (noFlag && result.PerformedActionPromise) {
                             result.PerformedActionPromise.then(function () {
                                 Caching_4.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType);
                                 performedActionIcon.attr('title', "Performed action: " + flagType.DisplayName);
@@ -737,7 +738,6 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                         }
                         var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
                         var naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
-                        var noFlag = flagType.ReportType === 'NoFlag';
                         var needsEditing = flagType.DisplayName === 'Needs Editing';
                         metaSmokeWasReported.then(function (responseItems) {
                             if (responseItems.length > 0) {
@@ -836,7 +836,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             });
             var previousPerformedActionPromise = Caching_4.GetFromCache("AdvancedFlagging.PerformedAction." + postId);
             previousPerformedActionPromise.then(function (previousAction) {
-                if (previousAction) {
+                if (previousAction && previousAction.ReportType === 'NoFlag') {
                     performedActionIcon.attr('title', "Previously performed action: " + previousAction.DisplayName);
                     performedActionIcon.show();
                 }
@@ -904,7 +904,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             });
             var previousPerformedActionPromise = Caching_4.GetFromCache("AdvancedFlagging.PerformedAction." + postId);
             previousPerformedActionPromise.then(function (previousAction) {
-                if (previousAction) {
+                if (previousAction && previousAction.ReportType === 'NoFlag') {
                     performedActionIcon.attr('title', "Previously performed action: " + previousAction.DisplayName);
                     performedActionIcon.show();
                 }

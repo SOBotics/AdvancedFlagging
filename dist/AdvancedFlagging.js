@@ -743,13 +743,13 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                             if (responseItems.length > 0) {
                                 var metaSmokeId = responseItems[0].id;
                                 if (rudeFlag) {
-                                    metaSmoke.ReportTruePositive(metaSmokeId).then(function () { return displaySuccess('Reported to MS'); });
+                                    metaSmoke.ReportTruePositive(metaSmokeId).then(function () { return displaySuccess('Feedback sent to MS'); });
                                 }
                                 else if (naaFlag) {
-                                    metaSmoke.ReportNAA(metaSmokeId).then(function () { return displaySuccess('Reported to MS'); });
+                                    metaSmoke.ReportNAA(metaSmokeId).then(function () { return displaySuccess('Feedback sent to MS'); });
                                 }
                                 else if (noFlag) {
-                                    metaSmoke.ReportFalsePositive(metaSmokeId).then(function () { return displaySuccess('Reported to MS'); });
+                                    metaSmoke.ReportFalsePositive(metaSmokeId).then(function () { return displaySuccess('Feedback sent to MS'); });
                                 }
                             }
                             else if (rudeFlag) {
@@ -759,14 +759,14 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                         nattyWasReported.then(function (wasReported) {
                             if (wasReported) {
                                 if (naaFlag || rudeFlag) {
-                                    natty.ReportTruePositive(postId).then(function () { return displaySuccess('Reported to natty'); });
+                                    natty.ReportTruePositive(postId).then(function () { return displaySuccess('Feedback sent to natty'); });
                                 }
                                 else if (noFlag) {
                                     if (needsEditing) {
-                                        natty.ReportNeedsEditing(postId).then(function () { return displaySuccess('Reported to natty'); });
+                                        natty.ReportNeedsEditing(postId).then(function () { return displaySuccess('Feedback sent to natty'); });
                                     }
                                     else {
-                                        natty.ReportFalsePositive(postId).then(function () { return displaySuccess('Reported to natty'); });
+                                        natty.ReportFalsePositive(postId).then(function () { return displaySuccess('Feedback sent to natty'); });
                                     }
                                 }
                             }

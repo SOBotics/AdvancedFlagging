@@ -249,11 +249,11 @@ function SetupPostPage() {
                         if (responseItems.length > 0) {
                             const metaSmokeId = responseItems[0].id;
                             if (rudeFlag) {
-                                metaSmoke.ReportTruePositive(metaSmokeId).then(() => displaySuccess('Reported to MS'));
+                                metaSmoke.ReportTruePositive(metaSmokeId).then(() => displaySuccess('Feedback sent to MS'));
                             } else if (naaFlag) {
-                                metaSmoke.ReportNAA(metaSmokeId).then(() => displaySuccess('Reported to MS'));
+                                metaSmoke.ReportNAA(metaSmokeId).then(() => displaySuccess('Feedback sent to MS'));
                             } else if (noFlag) {
-                                metaSmoke.ReportFalsePositive(metaSmokeId).then(() => displaySuccess('Reported to MS'));
+                                metaSmoke.ReportFalsePositive(metaSmokeId).then(() => displaySuccess('Feedback sent to MS'));
                             }
                         } else if (rudeFlag) {
                             metaSmoke.Report(postId, postType).then(() => displaySuccess('Reported to MS'));
@@ -263,12 +263,12 @@ function SetupPostPage() {
                     nattyWasReported.then(wasReported => {
                         if (wasReported) {
                             if (naaFlag || rudeFlag) {
-                                natty.ReportTruePositive(postId).then(() => displaySuccess('Reported to natty'));
+                                natty.ReportTruePositive(postId).then(() => displaySuccess('Feedback sent to natty'));
                             } else if (noFlag) {
                                 if (needsEditing) {
-                                    natty.ReportNeedsEditing(postId).then(() => displaySuccess('Reported to natty'));
+                                    natty.ReportNeedsEditing(postId).then(() => displaySuccess('Feedback sent to natty'));
                                 } else {
-                                    natty.ReportFalsePositive(postId).then(() => displaySuccess('Reported to natty'));
+                                    natty.ReportFalsePositive(postId).then(() => displaySuccess('Feedback sent to natty'));
                                 }
                             }
                         } else if (naaFlag) {

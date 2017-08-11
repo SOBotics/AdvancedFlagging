@@ -1,3 +1,4 @@
+import * as jquery from 'jquery';
 import { MetaSmokeyAPI } from './libs/MetaSmokeyAPI';
 import { FlagType, flagCategories } from './FlagTypes';
 import { NattyAPI } from './libs/NattyApi';
@@ -65,6 +66,7 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
     const result: {
         CommentPromise?: Promise<string>;
         FlagPromise?: Promise<string>;
+        PerformedActionPromise?: Promise<void>
     } = {};
 
     if (commentRequired) {
@@ -110,6 +112,7 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
             });
         });
     }
+    result.PerformedActionPromise = Promise.resolve();
 
     return result;
 }
@@ -186,6 +189,7 @@ function SetupPostPage() {
         const metaSmokeWasReported = metaSmoke.GetFeedback(postId, postType);
         const nattyWasReported = natty.WasReported(postId);
 
+        const performedActionIcon = getPerformedActionIcon();
         const reportedIcon = getReportedIcon();
         const getDivider = () => $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' });
 
@@ -224,6 +228,13 @@ function SetupPostPage() {
                             reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`)
                             reportedIcon.show();
                         });
+                    }
+                    if (result.PerformedActionPromise) {
+                        result.PerformedActionPromise.then(() => {
+                            StoreInCache(`AdvancedFlagging.PerformedAction.${postId}`, flagType);
+                            performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`)
+                            performedActionIcon.show();
+                        })
                     }
 
                     const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
@@ -305,6 +316,7 @@ function SetupPostPage() {
         });
 
         jqueryItem.append(nattyLink);
+        jqueryItem.append(performedActionIcon);
         jqueryItem.append(reportedIcon);
 
         const nattyIcon = getNattyIcon();
@@ -337,6 +349,14 @@ function SetupPostPage() {
             }
         });
 
+        const previousPerformedActionPromise = GetFromCache<FlagType>(`AdvancedFlagging.PerformedAction.${postId}`);
+        previousPerformedActionPromise.then(previousAction => {
+            if (previousAction) {
+                performedActionIcon.attr('title', `Previously performed action: ${previousAction.DisplayName}`)
+                performedActionIcon.show();
+            }
+        });
+
         jqueryItem.append(nattyIcon);
         jqueryItem.append(smokeyIcon);
 
@@ -344,8 +364,19 @@ function SetupPostPage() {
     })
 }
 
+function getPerformedActionIcon() {
+    return $('<div>').addClass('comment-flag')
+        .css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' })
+        .css({ 'width': '15px', 'height': '15px', 'background-position': '-20px -320px' })
+        .css({ 'cursor': 'default' })
+        .hide();
+}
+
 function getReportedIcon() {
-    return $('<div>').addClass('comment-flag').css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' }).hide();
+    return $('<div>').addClass('comment-flag')
+        .css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' })
+        .css({ 'cursor': 'default' })
+        .hide();
 }
 
 function getNattyIcon() {
@@ -373,6 +404,7 @@ function SetupAnswerLinks() {
 
         const displayStyle = { 'display': 'inline-block' };
 
+        const performedActionIcon = getPerformedActionIcon();
         const reportedIcon = getReportedIcon();
         const nattyIcon = getNattyIcon();
         const smokeyIcon = getSmokeyIcon();
@@ -380,6 +412,7 @@ function SetupAnswerLinks() {
         jqueryItem.after(smokeyIcon);
         jqueryItem.after(nattyIcon);
         jqueryItem.after(reportedIcon);
+        jqueryItem.after(performedActionIcon);
 
         const hyperLink = jqueryItem.attr('href');
         const postId = parseInt(hyperLink.split('#')[1], 10);
@@ -395,6 +428,14 @@ function SetupAnswerLinks() {
             if (previousFlag) {
                 reportedIcon.attr('title', `Previously flagged as ${previousFlag.ReportType}`)
                 reportedIcon.show();
+            }
+        });
+
+        const previousPerformedActionPromise = GetFromCache<FlagType>(`AdvancedFlagging.PerformedAction.${postId}`);
+        previousPerformedActionPromise.then(previousAction => {
+            if (previousAction) {
+                performedActionIcon.attr('title', `Previously performed action: ${previousAction.DisplayName}`)
+                performedActionIcon.show();
             }
         });
 

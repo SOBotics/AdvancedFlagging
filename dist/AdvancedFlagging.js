@@ -602,6 +602,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                 });
             });
         }
+        result.PerformedActionPromise = Promise.resolve();
         return result;
     }
     var popup = $('<div>').attr('id', 'snackbar');
@@ -672,6 +673,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             }
             var metaSmokeWasReported = metaSmoke.GetFeedback(postId, postType);
             var nattyWasReported = natty.WasReported(postId);
+            var performedActionIcon = getPerformedActionIcon();
             var reportedIcon = getReportedIcon();
             var getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
             var hasCommentOptions = false;
@@ -707,6 +709,13 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                                 Caching_4.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType);
                                 reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
                                 reportedIcon.show();
+                            });
+                        }
+                        if (result.PerformedActionPromise) {
+                            result.PerformedActionPromise.then(function () {
+                                Caching_4.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType);
+                                performedActionIcon.attr('title', "Performed action: " + flagType.DisplayName);
+                                performedActionIcon.show();
                             });
                         }
                         var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
@@ -781,6 +790,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                 }
             });
             jqueryItem.append(nattyLink);
+            jqueryItem.append(performedActionIcon);
             jqueryItem.append(reportedIcon);
             var nattyIcon = getNattyIcon();
             var smokeyIcon = getSmokeyIcon();
@@ -807,12 +817,29 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                     reportedIcon.show();
                 }
             });
+            var previousPerformedActionPromise = Caching_4.GetFromCache("AdvancedFlagging.PerformedAction." + postId);
+            previousPerformedActionPromise.then(function (previousAction) {
+                if (previousAction) {
+                    performedActionIcon.attr('title', "Previously performed action: " + previousAction.DisplayName);
+                    performedActionIcon.show();
+                }
+            });
             jqueryItem.append(nattyIcon);
             jqueryItem.append(smokeyIcon);
         });
     }
+    function getPerformedActionIcon() {
+        return $('<div>').addClass('comment-flag')
+            .css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' })
+            .css({ 'width': '15px', 'height': '15px', 'background-position': '-20px -320px' })
+            .css({ 'cursor': 'default' })
+            .hide();
+    }
     function getReportedIcon() {
-        return $('<div>').addClass('comment-flag').css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' }).hide();
+        return $('<div>').addClass('comment-flag')
+            .css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' })
+            .css({ 'cursor': 'default' })
+            .hide();
     }
     function getNattyIcon() {
         return $('<div>')
@@ -836,12 +863,14 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
         $('a.answer-hyperlink').each(function (index, item) {
             var jqueryItem = $(item);
             var displayStyle = { 'display': 'inline-block' };
+            var performedActionIcon = getPerformedActionIcon();
             var reportedIcon = getReportedIcon();
             var nattyIcon = getNattyIcon();
             var smokeyIcon = getSmokeyIcon();
             jqueryItem.after(smokeyIcon);
             jqueryItem.after(nattyIcon);
             jqueryItem.after(reportedIcon);
+            jqueryItem.after(performedActionIcon);
             var hyperLink = jqueryItem.attr('href');
             var postId = parseInt(hyperLink.split('#')[1], 10);
             var metaSmoke = new MetaSmokeyAPI_1.MetaSmokeyAPI(metaSmokeKey);
@@ -853,6 +882,13 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                 if (previousFlag) {
                     reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
                     reportedIcon.show();
+                }
+            });
+            var previousPerformedActionPromise = Caching_4.GetFromCache("AdvancedFlagging.PerformedAction." + postId);
+            previousPerformedActionPromise.then(function (previousAction) {
+                if (previousAction) {
+                    performedActionIcon.attr('title', "Previously performed action: " + previousAction.DisplayName);
+                    performedActionIcon.show();
                 }
             });
             metaSmokeWasReported

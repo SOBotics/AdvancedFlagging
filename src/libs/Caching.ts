@@ -27,6 +27,11 @@ export async function GetAndCache<T>(cacheKey: string, getterPromise: () => Prom
     return result;
 }
 
+export async function ClearCache() {
+    await xdLocalStorageInitialized;
+    xdLocalStorage.clear();
+}
+
 export async function GetFromCache<T>(cacheKey: string): Promise<T | undefined> {
     await xdLocalStorageInitialized;
     return new Promise<T | undefined>((resolve, reject) => {

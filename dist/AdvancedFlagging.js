@@ -69,6 +69,20 @@ define("libs/Caching", ["require", "exports"], function (require, exports) {
         });
     }
     exports.GetAndCache = GetAndCache;
+    function ClearCache() {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, xdLocalStorageInitialized];
+                    case 1:
+                        _a.sent();
+                        xdLocalStorage.clear();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    }
+    exports.ClearCache = ClearCache;
     function GetFromCache(cacheKey) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
@@ -549,7 +563,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
     Object.defineProperty(exports, "__esModule", { value: true });
     // tslint:disable-next-line:no-debugger
     debugger;
-    var metaSmokeKey = '070f26ebb71c5e6cfca7893fe1139460cf23f30d686566f5707a4acfd50c';
+    var metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
     function setupStyles() {
         var scriptNode = document.createElement('style');
         scriptNode.type = 'text/css';
@@ -649,7 +663,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             }
             reputationText = reputationText.replace(',', '');
             var reputation = parseInt(reputationText, 10);
-            var nattyLink = $('<a />').text('Advanced Flagging');
+            var advancedFlaggingLink = $('<a />').text('Advanced Flagging');
             var dropDown = $('<dl />').css({
                 'margin': '0',
                 'z-index': '1',
@@ -779,17 +793,17 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                 commentingRow.append(leaveCommentBox);
                 dropDown.append(commentingRow);
             }
-            nattyLink.append(dropDown);
+            advancedFlaggingLink.append(dropDown);
             $(window).click(function () {
                 dropDown.hide();
             });
-            nattyLink.click(function (e) {
+            advancedFlaggingLink.click(function (e) {
                 e.stopPropagation();
-                if (e.target === nattyLink.get(0)) {
+                if (e.target === advancedFlaggingLink.get(0)) {
                     dropDown.toggle();
                 }
             });
-            jqueryItem.append(nattyLink);
+            jqueryItem.append(advancedFlaggingLink);
             jqueryItem.append(performedActionIcon);
             jqueryItem.append(reportedIcon);
             var nattyIcon = getNattyIcon();
@@ -826,6 +840,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             });
             jqueryItem.append(nattyIcon);
             jqueryItem.append(smokeyIcon);
+            // xdLocalStorage.clear(function (data) { /* callback */ });
         });
     }
     function getPerformedActionIcon() {

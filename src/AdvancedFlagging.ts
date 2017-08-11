@@ -2,12 +2,12 @@ import * as jquery from 'jquery';
 import { MetaSmokeyAPI } from './libs/MetaSmokeyAPI';
 import { FlagType, flagCategories } from './FlagTypes';
 import { NattyAPI } from './libs/NattyApi';
-import { GetFromCache, StoreInCache, GetAndCache, InitializeCache } from './libs/Caching';
+import { ClearCache, GetAndCache, GetFromCache, InitializeCache, StoreInCache } from './libs/Caching';
 import { Delay } from './libs/FunctionUtils';
 // tslint:disable-next-line:no-debugger
 debugger;
 
-const metaSmokeKey = '070f26ebb71c5e6cfca7893fe1139460cf23f30d686566f5707a4acfd50c';
+const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
 
 declare const StackExchange: any;
 declare const unsafeWindow: any;
@@ -159,7 +159,7 @@ function SetupPostPage() {
         reputationText = reputationText.replace(',', '');
         const reputation = parseInt(reputationText, 10);
 
-        const nattyLink = $('<a />').text('Advanced Flagging');
+        const advancedFlaggingLink = $('<a />').text('Advanced Flagging');
 
         const dropDown = $('<dl />').css({
             'margin': '0',
@@ -304,18 +304,18 @@ function SetupPostPage() {
             dropDown.append(commentingRow);
         }
 
-        nattyLink.append(dropDown);
+        advancedFlaggingLink.append(dropDown);
         $(window).click(function () {
             dropDown.hide();
         });
-        nattyLink.click(e => {
+        advancedFlaggingLink.click(e => {
             e.stopPropagation();
-            if (e.target === nattyLink.get(0)) {
+            if (e.target === advancedFlaggingLink.get(0)) {
                 dropDown.toggle()
             }
         });
 
-        jqueryItem.append(nattyLink);
+        jqueryItem.append(advancedFlaggingLink);
         jqueryItem.append(performedActionIcon);
         jqueryItem.append(reportedIcon);
 
@@ -359,7 +359,7 @@ function SetupPostPage() {
 
         jqueryItem.append(nattyIcon);
         jqueryItem.append(smokeyIcon);
-
+// xdLocalStorage.clear(function (data) { /* callback */ });
 
     })
 }

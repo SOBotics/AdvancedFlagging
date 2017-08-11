@@ -420,6 +420,11 @@ define("FlagTypes", ["require", "exports"], function (require, exports) {
                     DisplayName: 'Library',
                     ReportType: 'AnswerNotAnAnswer',
                     Comment: 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](http://meta.stackoverflow.com/a/251605) in the answer itself.'
+                },
+                {
+                    DisplayName: 'Comment',
+                    ReportType: 'AnswerNotAnAnswer',
+                    Comment: 'This does not provide an answer to the question. Once you have sufficient [reputation](https://stackoverflow.com/help/whats-reputation) you will be able to [comment on any post](https://stackoverflow.com/help/privileges/comment); instead, [provide answers that don\'t require clarification from the asker](https://meta.stackexchange.com/questions/214173/why-do-i-need-50-reputation-to-comment-what-can-i-do-instead).'
                 }
             ]
         },

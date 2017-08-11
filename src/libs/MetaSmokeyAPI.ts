@@ -50,23 +50,6 @@ export class MetaSmokeyAPI {
         }));
     }
 
-    private appendResetToWindow() {
-        StoreInCache(MetaSmokeDisabledConfig, undefined);
-        if (!localStorage) { return; }
-
-        const scriptNode = document.createElement('script');
-        scriptNode.type = 'text/javascript';
-        scriptNode.textContent = `
-    window.resetMetaSmokeConfiguration = function() {
-        xdLocalStorage.removeItem('${MetaSmokeDisabledConfig}');
-        xdLocalStorage.removeItem('${MetaSmokeUserKeyConfig}', undefined);
-    }
-    `;
-
-        const target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
-        target.appendChild(scriptNode);
-    }
-
     public constructor(appKey: string, codeGetter?: (metaSmokeOAuthUrl: string) => Promise<string | undefined>) {
         if (!codeGetter) {
             codeGetter = async (metaSmokeOAuthUrl: string | undefined) => {
@@ -80,7 +63,7 @@ export class MetaSmokeyAPI {
                     return cachedUserKey;
                 }
 
-                if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, call window.resetMetaSmokeConfiguration().')) {
+                if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, see footer of Stack Overflow.')) {
                     StoreInCache(MetaSmokeDisabledConfig, true);
                     return;
                 }
@@ -104,9 +87,13 @@ export class MetaSmokeyAPI {
         }
         this.codeGetter = codeGetter;
         this.appKey = appKey;
-        this.appendResetToWindow();
 
         this.getUserKey(); // Make sure we request it immediately
+    }
+
+    public async Reset() {
+        await StoreInCache(MetaSmokeDisabledConfig, undefined);
+        await StoreInCache(MetaSmokeUserKeyConfig, undefined);
     }
 
     public async IsDisabled() {

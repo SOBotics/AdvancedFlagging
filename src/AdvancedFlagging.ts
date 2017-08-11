@@ -460,11 +460,28 @@ function SetupAnswerLinks() {
     });
 }
 
+function SetupAdminTools() {
+    const bottomBox = $('.-copyright, text-right').children('.g-column').children('.-list');
+    const optionsDiv = $('<div>').text('AdvancedFlagging Admin');
+    bottomBox.after(optionsDiv);
+
+    var optionsList = $('<ul>').css({'list-style': 'none' });
+
+    const clearMetaSmokeConfig =$('<a />').text('Clear Metasmoke Configuration');
+    clearMetaSmokeConfig.click(() => {
+        metaSmoke.Reset();
+    });
+
+    optionsDiv.append(optionsList);
+    optionsList.append($('<li>').append(clearMetaSmokeConfig));
+}
+
 $(function () {
     InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
 
     SetupPostPage();
     SetupAnswerLinks();
+    SetupAdminTools();
 
     setupStyles();
     document.body.appendChild(popup.get(0));

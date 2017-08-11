@@ -181,7 +181,7 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/Caching", "libs/Functi
                                 if (cachedUserKey) {
                                     return [2 /*return*/, cachedUserKey];
                                 }
-                                if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, call window.resetMetaSmokeConfiguration().')) {
+                                if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, see footer of Stack Overflow.')) {
                                     Caching_1.StoreInCache(MetaSmokeDisabledConfig, true);
                                     return [2 /*return*/];
                                 }
@@ -211,7 +211,6 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/Caching", "libs/Functi
             }
             this.codeGetter = codeGetter;
             this.appKey = appKey;
-            this.appendResetToWindow();
             this.getUserKey(); // Make sure we request it immediately
         }
         MetaSmokeyAPI.prototype.getUserKey = function () {
@@ -239,16 +238,20 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/Caching", "libs/Functi
                 });
             }); }); });
         };
-        MetaSmokeyAPI.prototype.appendResetToWindow = function () {
-            Caching_1.StoreInCache(MetaSmokeDisabledConfig, undefined);
-            if (!localStorage) {
-                return;
-            }
-            var scriptNode = document.createElement('script');
-            scriptNode.type = 'text/javascript';
-            scriptNode.textContent = "\n    window.resetMetaSmokeConfiguration = function() {\n        xdLocalStorage.removeItem('" + MetaSmokeDisabledConfig + "');\n        xdLocalStorage.removeItem('" + MetaSmokeUserKeyConfig + "', undefined);\n    }\n    ";
-            var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
-            target.appendChild(scriptNode);
+        MetaSmokeyAPI.prototype.Reset = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, Caching_1.StoreInCache(MetaSmokeDisabledConfig, undefined)];
+                        case 1:
+                            _a.sent();
+                            return [4 /*yield*/, Caching_1.StoreInCache(MetaSmokeUserKeyConfig, undefined)];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/];
+                    }
+                });
+            });
         };
         MetaSmokeyAPI.prototype.IsDisabled = function () {
             return __awaiter(this, void 0, void 0, function () {
@@ -924,10 +927,23 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             });
         });
     }
+    function SetupAdminTools() {
+        var bottomBox = $('.-copyright, text-right').children('.g-column').children('.-list');
+        var optionsDiv = $('<div>').text('AdvancedFlagging Admin');
+        bottomBox.after(optionsDiv);
+        var optionsList = $('<ul>').css({ 'list-style': 'none' });
+        var clearMetaSmokeConfig = $('<a />').text('Clear Metasmoke Configuration');
+        clearMetaSmokeConfig.click(function () {
+            metaSmoke.Reset();
+        });
+        optionsDiv.append(optionsList);
+        optionsList.append($('<li>').append(clearMetaSmokeConfig));
+    }
     $(function () {
         Caching_4.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
         SetupPostPage();
         SetupAnswerLinks();
+        SetupAdminTools();
         setupStyles();
         document.body.appendChild(popup.get(0));
     });

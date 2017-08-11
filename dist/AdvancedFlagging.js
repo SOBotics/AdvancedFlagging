@@ -294,7 +294,7 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/Caching", "libs/Functi
             var urlStr = postType === 'Answer'
                 ? "//" + window.location.hostname + "/a/" + postId
                 : "//" + window.location.hostname + "/q/" + postId;
-            return new Promise(function (resolve, reject) {
+            var promise = new Promise(function (resolve, reject) {
                 _this.getUserKey().then(function (userKey) {
                     $.ajax({
                         type: 'POST',
@@ -308,6 +308,10 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/Caching", "libs/Functi
                         .fail(function () { return reject(); });
                 });
             });
+            promise.then(function () {
+                Caching_1.StoreInCache(MetaSmokeWasReportedConfig + "." + urlStr, undefined);
+            });
+            return promise;
         };
         MetaSmokeyAPI.prototype.ReportTruePositive = function (metaSmokeId) {
             return this.SendFeedback(metaSmokeId, 'tpu-');

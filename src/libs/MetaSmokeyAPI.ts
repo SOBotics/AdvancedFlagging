@@ -151,7 +151,7 @@ export class MetaSmokeyAPI {
                 ? `//${window.location.hostname}/a/${postId}`
                 : `//${window.location.hostname}/q/${postId}`;
 
-        return new Promise<void>((resolve, reject) => {
+        const promise = new Promise<void>((resolve, reject) => {
             this.getUserKey().then(userKey => {
                 $.ajax({
                     type: 'POST',
@@ -165,6 +165,11 @@ export class MetaSmokeyAPI {
                     .fail(() => reject());
             });
         });
+
+        promise.then(() => {
+            StoreInCache(`${MetaSmokeWasReportedConfig}.${urlStr}`, undefined);
+        });
+        return promise;
     }
     public ReportTruePositive(metaSmokeId: number): Promise<void> {
         return this.SendFeedback(metaSmokeId, 'tpu-');

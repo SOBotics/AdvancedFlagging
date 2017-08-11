@@ -778,6 +778,10 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             metaSmokeWasReported
                 .then(function (responseItems) {
                 if (responseItems.length > 0) {
+                    var metaSmokeId_1 = responseItems[0].id;
+                    smokeyIcon.click(function () {
+                        window.open("https://metasmoke.erwaysoftware.com/post/" + metaSmokeId_1, '_blank');
+                    });
                     smokeyIcon.show();
                 }
             });
@@ -813,7 +817,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
     function getSmokeyIcon() {
         return $('<div>')
             .css({
-            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
+            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
             'background': 'url("https://i.stack.imgur.com/WyV1l.png?s=128&g=1"', 'background-size': '100%'
         })
             .attr('title', 'Reported by Smokey')
@@ -844,6 +848,10 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             metaSmokeWasReported
                 .then(function (responseItems) {
                 if (responseItems.length > 0) {
+                    var metaSmokeId_2 = responseItems[0].id;
+                    smokeyIcon.click(function () {
+                        window.open("https://metasmoke.erwaysoftware.com/post/" + metaSmokeId_2, '_blank');
+                    });
                     smokeyIcon.css(displayStyle);
                 }
             });

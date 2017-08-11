@@ -313,6 +313,11 @@ function SetupPostPage() {
         metaSmokeWasReported
             .then(responseItems => {
                 if (responseItems.length > 0) {
+                    const metaSmokeId = responseItems[0].id;
+                    smokeyIcon.click(() => {
+                        window.open(`https://metasmoke.erwaysoftware.com/post/${metaSmokeId}`, '_blank');
+                    });
+
                     smokeyIcon.show();
                 }
             });
@@ -355,7 +360,7 @@ function getNattyIcon() {
 function getSmokeyIcon() {
     return $('<div>')
         .css({
-            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
+            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
             'background': 'url("https://i.stack.imgur.com/WyV1l.png?s=128&g=1"', 'background-size': '100%'
         })
         .attr('title', 'Reported by Smokey')
@@ -396,6 +401,11 @@ function SetupNatoPage() {
         metaSmokeWasReported
             .then(responseItems => {
                 if (responseItems.length > 0) {
+                    const metaSmokeId = responseItems[0].id;
+                    smokeyIcon.click(() => {
+                        window.open(`https://metasmoke.erwaysoftware.com/post/${metaSmokeId}`, '_blank');
+                    });
+
                     smokeyIcon.css(displayStyle);
                 }
             });

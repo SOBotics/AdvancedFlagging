@@ -832,8 +832,8 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             .attr('title', 'Reported by Smokey')
             .hide();
     }
-    function SetupNatoPage() {
-        $('.answer-hyperlink').each(function (index, item) {
+    function SetupAnswerLinks() {
+        $('a.answer-hyperlink').each(function (index, item) {
             var jqueryItem = $(item);
             var displayStyle = { 'display': 'inline-block' };
             var reportedIcon = getReportedIcon();
@@ -842,7 +842,8 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
             jqueryItem.after(smokeyIcon);
             jqueryItem.after(nattyIcon);
             jqueryItem.after(reportedIcon);
-            var postId = parseInt(jqueryItem.attr('href').split('#')[1], 10);
+            var hyperLink = jqueryItem.attr('href');
+            var postId = parseInt(hyperLink.split('#')[1], 10);
             var metaSmoke = new MetaSmokeyAPI_1.MetaSmokeyAPI(metaSmokeKey);
             var metaSmokeWasReported = metaSmoke.GetFeedback(postId, 'Answer');
             var natty = new NattyApi_1.NattyAPI();
@@ -875,7 +876,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
     $(function () {
         Caching_4.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
         SetupPostPage();
-        SetupNatoPage();
+        SetupAnswerLinks();
         setupStyles();
         document.body.appendChild(popup.get(0));
     });

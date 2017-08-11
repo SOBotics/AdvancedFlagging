@@ -367,8 +367,8 @@ function getSmokeyIcon() {
         .hide()
 }
 
-function SetupNatoPage() {
-    $('.answer-hyperlink').each((index, item) => {
+function SetupAnswerLinks() {
+    $('a.answer-hyperlink').each((index, item) => {
         const jqueryItem = $(item);
 
         const displayStyle = { 'display': 'inline-block' };
@@ -381,8 +381,8 @@ function SetupNatoPage() {
         jqueryItem.after(nattyIcon);
         jqueryItem.after(reportedIcon);
 
-
-        const postId = parseInt(jqueryItem.attr('href').split('#')[1], 10);
+        const hyperLink = jqueryItem.attr('href');
+        const postId = parseInt(hyperLink.split('#')[1], 10);
 
         const metaSmoke = new MetaSmokeyAPI(metaSmokeKey);
         const metaSmokeWasReported = metaSmoke.GetFeedback(postId, 'Answer');
@@ -423,7 +423,7 @@ $(function () {
     InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
 
     SetupPostPage();
-    SetupNatoPage();
+    SetupAnswerLinks();
 
     setupStyles();
     document.body.appendChild(popup.get(0));

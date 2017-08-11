@@ -16,23 +16,19 @@ export function InitializeCache(iframeUrl: string) {
     })
 }
 
-export function GetAndCache<T>(cacheKey: string, getterPromise: () => Promise<T>, expiresAt?: Date): Promise<T> {
-    const cachedItemPromise = GetFromCache<T>(cacheKey);
-    return new Promise(resolve => {
-        cachedItemPromise.then(cachedItem => {
-            if (cachedItem !== undefined) {
-                resolve(cachedItem);
-                return;
-            }
+export async function GetAndCache<T>(cacheKey: string, getterPromise: () => Promise<T>, expiresAt?: Date): Promise<T> {
+    const cachedItem = await GetFromCache<T>(cacheKey);
+    if (cachedItem !== undefined) {
+        return cachedItem;
+    }
 
-            const promise = getterPromise();
-            promise.then(result => { StoreInCache(cacheKey, result, expiresAt); });
-            promise.then(result => resolve(result));
-        });
-    });
+    const result = await getterPromise();
+    StoreInCache(cacheKey, result, expiresAt);
+    return result;
 }
 
-export function GetFromCache<T>(cacheKey: string): Promise<T | undefined> {
+export async function GetFromCache<T>(cacheKey: string): Promise<T | undefined> {
+    await xdLocalStorageInitialized;
     return new Promise<T | undefined>((resolve, reject) => {
         xdLocalStorageInitialized.then(() => {
             xdLocalStorage.getItem(cacheKey, (data: any) => {
@@ -48,9 +44,8 @@ export function GetFromCache<T>(cacheKey: string): Promise<T | undefined> {
     });
 }
 
-export function StoreInCache<T>(cacheKey: string, item: T, expiresAt?: Date) {
-    xdLocalStorageInitialized.then(() => {
-        const jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
-        xdLocalStorage.setItem(cacheKey, jsonStr);
-    });
+export async function StoreInCache<T>(cacheKey: string, item: T, expiresAt?: Date) {
+    await xdLocalStorageInitialized;
+    const jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
+    xdLocalStorage.setItem(cacheKey, jsonStr);
 }

@@ -49,40 +49,64 @@ define("libs/Caching", ["require", "exports"], function (require, exports) {
     }
     exports.InitializeCache = InitializeCache;
     function GetAndCache(cacheKey, getterPromise, expiresAt) {
-        var cachedItemPromise = GetFromCache(cacheKey);
-        return new Promise(function (resolve) {
-            cachedItemPromise.then(function (cachedItem) {
-                if (cachedItem !== undefined) {
-                    resolve(cachedItem);
-                    return;
+        return __awaiter(this, void 0, void 0, function () {
+            var cachedItem, result;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, GetFromCache(cacheKey)];
+                    case 1:
+                        cachedItem = _a.sent();
+                        if (cachedItem !== undefined) {
+                            return [2 /*return*/, cachedItem];
+                        }
+                        return [4 /*yield*/, getterPromise()];
+                    case 2:
+                        result = _a.sent();
+                        StoreInCache(cacheKey, result, expiresAt);
+                        return [2 /*return*/, result];
                 }
-                var promise = getterPromise();
-                promise.then(function (result) { StoreInCache(cacheKey, result, expiresAt); });
-                promise.then(function (result) { return resolve(result); });
             });
         });
     }
     exports.GetAndCache = GetAndCache;
     function GetFromCache(cacheKey) {
-        return new Promise(function (resolve, reject) {
-            xdLocalStorageInitialized.then(function () {
-                xdLocalStorage.getItem(cacheKey, function (data) {
-                    var actualItem = JSON.parse(data.value);
-                    if (!actualItem || (actualItem.Expires && actualItem.Expires < new Date())) {
-                        // It doesn't exist or is expired, so return nothing
-                        resolve();
-                        return;
-                    }
-                    return resolve(actualItem.Data);
-                });
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, xdLocalStorageInitialized];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/, new Promise(function (resolve, reject) {
+                                xdLocalStorageInitialized.then(function () {
+                                    xdLocalStorage.getItem(cacheKey, function (data) {
+                                        var actualItem = JSON.parse(data.value);
+                                        if (!actualItem || (actualItem.Expires && actualItem.Expires < new Date())) {
+                                            // It doesn't exist or is expired, so return nothing
+                                            resolve();
+                                            return;
+                                        }
+                                        return resolve(actualItem.Data);
+                                    });
+                                });
+                            })];
+                }
             });
         });
     }
     exports.GetFromCache = GetFromCache;
     function StoreInCache(cacheKey, item, expiresAt) {
-        xdLocalStorageInitialized.then(function () {
-            var jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
-            xdLocalStorage.setItem(cacheKey, jsonStr);
+        return __awaiter(this, void 0, void 0, function () {
+            var jsonStr;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, xdLocalStorageInitialized];
+                    case 1:
+                        _a.sent();
+                        jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
+                        xdLocalStorage.setItem(cacheKey, jsonStr);
+                        return [2 /*return*/];
+                }
+            });
         });
     }
     exports.StoreInCache = StoreInCache;

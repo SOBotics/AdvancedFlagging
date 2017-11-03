@@ -24,7 +24,9 @@ export class ChatApi {
                 });
         });
 
-        return GetAndCache(cachingKey, () => getterPromise);
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 1);
+        return GetAndCache(cachingKey, () => getterPromise, expiryDate);
     }
 
     public SendMessage(roomId: number, message: string, providedFkey?: string): Promise<void> {

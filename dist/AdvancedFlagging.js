@@ -483,7 +483,9 @@ define("libs/ChatApi", ["require", "exports", "libs/Caching"], function (require
                     onerror: function (data) { return reject(data); }
                 });
             });
-            return Caching_2.GetAndCache(cachingKey, function () { return getterPromise; });
+            var expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + 1);
+            return Caching_2.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate);
         };
         ChatApi.prototype.SendMessage = function (roomId, message, providedFkey) {
             var _this = this;
@@ -936,8 +938,13 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
         clearMetaSmokeConfig.click(function () {
             metaSmoke.Reset();
         });
+        var clearAllCachedInfo = $('<a />').text('Clear all cached info');
+        clearAllCachedInfo.click(function () {
+            Caching_4.ClearCache();
+        });
         optionsDiv.append(optionsList);
         optionsList.append($('<li>').append(clearMetaSmokeConfig));
+        optionsList.append($('<li>').append(clearAllCachedInfo));
     }
     $(function () {
         Caching_4.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');

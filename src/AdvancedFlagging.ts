@@ -475,8 +475,14 @@ function SetupAdminTools() {
         metaSmoke.Reset();
     });
 
+    const clearAllCachedInfo = $('<a />').text('Clear all cached info');
+    clearAllCachedInfo.click(() => {
+        ClearCache();
+    });
+
     optionsDiv.append(optionsList);
     optionsList.append($('<li>').append(clearMetaSmokeConfig));
+    optionsList.append($('<li>').append(clearAllCachedInfo));
 }
 
 $(function () {

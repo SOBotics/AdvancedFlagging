@@ -653,8 +653,12 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
     }
     var metaSmoke = new MetaSmokeyAPI_1.MetaSmokeyAPI(metaSmokeKey);
     var natty = new NattyApi_1.NattyAPI();
+    function DaysBetween(first, second) {
+        return Math.round((second - first) / (1000 * 60 * 60 * 24));
+    }
     function SetupPostPage() {
         var postMenus = $('.post-menu');
+        var questionTime = new Date($('.post-signature.owner .user-action-time .relativetime').attr('title'));
         postMenus.each(function (index, item) {
             var jqueryItem = $(item);
             var postType = jqueryItem.closest('.answercell').length > 0
@@ -773,6 +777,13 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                                 }
                             }
                             else if (naaFlag) {
+                                var answerTime = new Date(jqueryItem.closest('.answercell').find('.post-signature .user-action-time:contains("answered") .relativetime').attr('title'));
+                                var answerAge = DaysBetween(answerTime, new Date());
+                                var daysPostedAfterQuestion = DaysBetween(questionTime, answerTime);
+                                if (answerAge > 30 || daysPostedAfterQuestion < 30) {
+                                    displaySuccess('Won\'t report to Natty - doesn\'t meet time requirements');
+                                    return;
+                                }
                                 natty.Report(postId).then(function () { return displaySuccess('Reported to natty'); });
                             }
                         });

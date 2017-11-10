@@ -838,6 +838,9 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                 .then(function (wasReported) {
                 if (wasReported) {
                     nattyIcon.show();
+                    nattyIcon.click(function () {
+                        window.open("https://sentinel.erwaysoftware.com/posts/aid/" + postId, '_blank');
+                    });
                 }
             });
             var previousFlagPromise = Caching_4.GetFromCache("AdvancedFlagging.Flagged." + postId);
@@ -875,7 +878,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
     function getNattyIcon() {
         return $('<div>')
             .css({
-            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
+            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
             'background': 'url("https://i.stack.imgur.com/aMUMt.jpg?s=328&g=1"', 'background-size': '100%'
         })
             .attr('title', 'Reported by Natty')
@@ -936,6 +939,9 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                 .then(function (wasReported) {
                 if (wasReported) {
                     nattyIcon.css(displayStyle);
+                    nattyIcon.click(function () {
+                        window.open("https://sentinel.erwaysoftware.com/posts/aid/" + postId, '_blank');
+                    });
                 }
             });
         });

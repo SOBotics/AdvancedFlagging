@@ -353,6 +353,9 @@ function SetupPostPage() {
             .then(wasReported => {
                 if (wasReported) {
                     nattyIcon.show();
+                    nattyIcon.click(() => {
+                        window.open(`https://sentinel.erwaysoftware.com/posts/aid/${postId}`, '_blank');
+                    });
                 }
             });
 
@@ -397,7 +400,7 @@ function getReportedIcon() {
 function getNattyIcon() {
     return $('<div>')
         .css({
-            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom',
+            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
             'background': 'url("https://i.stack.imgur.com/aMUMt.jpg?s=328&g=1"', 'background-size': '100%'
         })
         .attr('title', 'Reported by Natty')
@@ -470,6 +473,9 @@ function SetupAnswerLinks() {
             .then(wasReported => {
                 if (wasReported) {
                     nattyIcon.css(displayStyle);
+                    nattyIcon.click(() => {
+                        window.open(`https://sentinel.erwaysoftware.com/posts/aid/${postId}`, '_blank');
+                    });
                 }
             });
     });

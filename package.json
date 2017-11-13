@@ -2,7 +2,7 @@
   "name": "testbed",
   "version": "1.0.0",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc && concat-cli -f src/UserScriptDeclaration.txt dist/out.js -o dist/AdvancedFlagging.user.js"
   },
   "author": "Robert Rudman <rjrudman@gmail.com> (https://github.com/rjrudman/TSLinq)",
   "license": "ISC"

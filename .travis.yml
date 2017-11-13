@@ -1,0 +1,8 @@
+language: node_js
+install:
+  - nvm install stable
+  - npm install -g concat-cli
+  - npm install -g typescript
+script:
+  - npm run build
+  - git diff --exit-code

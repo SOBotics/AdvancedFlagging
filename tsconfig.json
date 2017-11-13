@@ -10,7 +10,7 @@
     "experimentalDecorators": true,
     "downlevelIteration": true,
     "strict": true,
-    "outFile": "./dist/AdvancedFlagging.js",
+    "outFile": "./dist/out.js",
     "module": "amd",
     "target": "es5",
     "lib": [

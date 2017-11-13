@@ -1,3 +1,24 @@
+// ==UserScript==
+// @name         Advanced Flagging
+// @namespace    https://github.com/SOBotics
+// @version      0.1
+// @author       Robert Rudman
+// @match        *://*.stackexchange.com/*
+// @match        *://*.stackoverflow.com/*
+// @match        *://*.superuser.com/*
+// @match        *://*.serverfault.com/*
+// @match        *://*.askubuntu.com/*
+// @match        *://*.stackapps.com/*
+// @match        *://*.mathoverflow.net/*
+// @exclude      *://chat.stackexchange.com/*
+// @exclude      *://chat.meta.stackexchange.com/*
+// @exclude      *://chat.stackoverflow.com/*
+// @exclude      *://blog.stackoverflow.com/*
+// @exclude      *://*.area51.stackexchange.com/*
+// @require      https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js
+// @require      https://cdn.rawgit.com/ofirdagan/cross-domain-local-storage/d779a81a6383475a1bf88595a98b10a8bd5bb4ae/dist/scripts/xdLocalStorage.min.js
+// @grant        GM_xmlhttpRequest
+// ==/UserScript==
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -161,7 +182,7 @@ define("libs/MetaSmokeyAPI", ["require", "exports", "libs/Caching", "libs/Functi
     var MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
     var MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
     var MetaSmokeWasReportedConfig = 'MetaSmoke.WasReported';
-    var MetaSmokeyAPI = (function () {
+    var MetaSmokeyAPI = /** @class */ (function () {
         function MetaSmokeyAPI(appKey, codeGetter) {
             var _this = this;
             if (!codeGetter) {
@@ -464,7 +485,7 @@ define("FlagTypes", ["require", "exports"], function (require, exports) {
 define("libs/ChatApi", ["require", "exports", "libs/Caching"], function (require, exports, Caching_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var ChatApi = (function () {
+    var ChatApi = /** @class */ (function () {
         function ChatApi(chatUrl) {
             if (chatUrl === void 0) { chatUrl = 'http://chat.stackoverflow.com'; }
             this.chatRoomUrl = "" + chatUrl;
@@ -519,7 +540,7 @@ define("libs/NattyApi", ["require", "exports", "libs/Caching", "libs/ChatApi"], 
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
-    var NattyAPI = (function () {
+    var NattyAPI = /** @class */ (function () {
         function NattyAPI() {
             this.chat = new ChatApi_1.ChatApi();
         }
@@ -981,7 +1002,7 @@ define("libs/StackExchangeApi", ["require", "exports", "libs/Caching", "libs/Fun
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var stackExchangeApiURL = '//api.stackexchange.com/2.2';
-    var StackExchangeAPI = (function () {
+    var StackExchangeAPI = /** @class */ (function () {
         function StackExchangeAPI(clientId, key) {
             this.initializeAccessToken(clientId, key);
         }

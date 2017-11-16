@@ -137,9 +137,6 @@ async function displaySuccess(message: string) {
     }
 }
 
-const metaSmoke = new MetaSmokeyAPI(metaSmokeKey);
-const natty = new NattyAPI();
-
 function DaysBetween(first: Date, second: Date) {
     return Math.round((<any>second - <any>first) / (1000 * 60 * 60 * 24));
 }
@@ -191,6 +188,9 @@ function SetupPostPage() {
         if (comments.length === 0) {
             leaveCommentBox.prop('checked', true);
         }
+
+        const metaSmoke = new MetaSmokeyAPI(metaSmokeKey);
+        const natty = new NattyAPI();
 
         const metaSmokeWasReported = metaSmoke.GetFeedback(postId, postType);
         const nattyObservable = natty.Watch(postId);
@@ -382,8 +382,6 @@ function SetupPostPage() {
 
         jqueryItem.append(nattyIcon);
         jqueryItem.append(smokeyIcon);
-        // xdLocalStorage.clear(function (data) { /* callback */ });
-
     })
 }
 
@@ -418,7 +416,7 @@ function getSmokeyIcon() {
             'background': 'url("https://i.stack.imgur.com/WyV1l.png?s=128&g=1"', 'background-size': '100%'
         })
         .attr('title', 'Reported by Smokey')
-        .hide()
+        .hide();
 }
 
 function SetupAnswerLinks() {
@@ -494,11 +492,11 @@ function SetupAdminTools() {
     const optionsDiv = $('<div>').text('AdvancedFlagging Admin');
     bottomBox.after(optionsDiv);
 
-    var optionsList = $('<ul>').css({ 'list-style': 'none' });
+    const optionsList = $('<ul>').css({ 'list-style': 'none' });
 
     const clearMetaSmokeConfig = $('<a />').text('Clear Metasmoke Configuration');
     clearMetaSmokeConfig.click(() => {
-        metaSmoke.Reset();
+        MetaSmokeyAPI.Reset();
     });
 
     const clearAllCachedInfo = $('<a />').text('Clear all cached info');
@@ -513,11 +511,6 @@ function SetupAdminTools() {
 
 $(function () {
     InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
-
-    const parsedPage = parseCurrentPage();
-    if (parsedPage) {
-        console.log(parsedPage.Posts);
-    }
 
     SetupPostPage();
     SetupAnswerLinks();

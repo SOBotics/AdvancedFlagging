@@ -34,6 +34,11 @@ export class MetaSmokeyAPI {
     private codeGetter: (metaSmokeOAuthUrl: string) => Promise<string | undefined>;
     private appKey: string;
 
+    public static async Reset() {
+        await StoreInCache(MetaSmokeDisabledConfig, undefined);
+        await StoreInCache(MetaSmokeUserKeyConfig, undefined);
+    }
+
     private getUserKey() {
         return GetAndCache(MetaSmokeUserKeyConfig, () => new Promise<string>(async (resolve, reject) => {
             let prom = this.actualPromise;
@@ -89,11 +94,6 @@ export class MetaSmokeyAPI {
         this.appKey = appKey;
 
         this.getUserKey(); // Make sure we request it immediately
-    }
-
-    public async Reset() {
-        await StoreInCache(MetaSmokeDisabledConfig, undefined);
-        await StoreInCache(MetaSmokeUserKeyConfig, undefined);
     }
 
     public async IsDisabled() {

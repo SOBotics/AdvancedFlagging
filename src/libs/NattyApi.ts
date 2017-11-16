@@ -1,4 +1,4 @@
-declare const  $: JQueryStatic;
+declare const $: JQueryStatic;
 declare const GM_xmlhttpRequest: any;
 
 import { GetAndCache, StoreInCache } from './Caching';
@@ -25,14 +25,19 @@ export interface NattyFeedbackInfo {
 
 export class NattyAPI {
     private chat: ChatApi = new ChatApi();
-
+    private _answerId: number;
     private _subject: Subject<boolean>;
-    public Watch(answerId: number): Observable<boolean> {
+
+    constructor(answerId: number) {
+        this._answerId = answerId;
+    }
+
+    public Watch(): Observable<boolean> {
         this._subject = new Subject<boolean>();
-        GetAndCache(`NattyApi.Feedback.${answerId}`, () => new Promise<boolean>((resolve, reject) => {
+        GetAndCache(`NattyApi.Feedback.${this._answerId}`, () => new Promise<boolean>((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'GET',
-                url: `${nattyFeedbackUrl}/${answerId}`,
+                url: `${nattyFeedbackUrl}/${this._answerId}`,
                 onload: (response: any) => {
                     const nattyResult = JSON.parse(response.responseText);
                     if (nattyResult.items && nattyResult.items[0]) {
@@ -46,27 +51,40 @@ export class NattyAPI {
                 },
             });
         }))
-        .then(r => this._subject.next(r))
-        .catch(err => this._subject.error(err));
+            .then(r => this._subject.next(r))
+            .catch(err => this._subject.error(err));
 
         return this._subject;
     }
 
-    public Report(answerId: number) {
-        const promise = this.chat.SendMessage(111347, `@Natty report http://stackoverflow.com/a/${answerId}`);
-        promise.then(() => {
-            StoreInCache(`NattyApi.Feedback.${answerId}`, true);
-            this._subject.next(true);
-        });
-        return promise;
+    public async ReportNaa(answerDate: Date, questionDate: Date) {
+        if (await this.WasReported()) {
+            const promise = this.chat.SendMessage(111347, `@Natty report http://stackoverflow.com/a/${this._answerId}`);
+            await promise.then(() => {
+                StoreInCache(`NattyApi.Feedback.${this._answerId}`, true);
+                this._subject.next(true);
+            });
+        } else {
+            await this.chat.SendMessage(111347, `@Natty feedback http://stackoverflow.com/a/${this._answerId} tp`)
+        }
     }
-    public ReportTruePositive(answerId: number) {
-        return this.chat.SendMessage(111347, `@Natty feedback http://stackoverflow.com/a/${answerId} tp`);
+    public async ReportRedFlag() {
+        if (await this.WasReported) {
+            await this.chat.SendMessage(111347, `@Natty feedback http://stackoverflow.com/a/${this._answerId} tp`)
+        }
     }
-    public ReportNeedsEditing(answerId: number) {
-        return this.chat.SendMessage(111347, `@Natty feedback http://stackoverflow.com/a/${answerId} ne`);
+    public async ReportLooksFine() {
+        if (await this.WasReported) {
+            await this.chat.SendMessage(111347, `@Natty feedback http://stackoverflow.com/a/${this._answerId} fp`)
+        }
     }
-    public ReportFalsePositive(answerId: number) {
-        return this.chat.SendMessage(111347, `@Natty feedback http://stackoverflow.com/a/${answerId} fp`);
+    public async ReportNeedsEditing() {
+        if (await this.WasReported) {
+            return this.chat.SendMessage(111347, `@Natty feedback http://stackoverflow.com/a/${this._answerId} ne`);
+        }
+    }
+
+    private async WasReported() {
+        return await this._subject.toPromise();
     }
 }

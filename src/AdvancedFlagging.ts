@@ -190,10 +190,10 @@ function SetupPostPage() {
         }
 
         const metaSmoke = new MetaSmokeyAPI(metaSmokeKey);
-        const natty = new NattyAPI();
+        const natty = new NattyAPI(postId);
 
         const metaSmokeWasReported = metaSmoke.GetFeedback(postId, postType);
-        const nattyObservable = natty.Watch(postId);
+        const nattyObservable = natty.Watch();
 
         const performedActionIcon = getPerformedActionIcon();
         const reportedIcon = getReportedIcon();
@@ -270,7 +270,7 @@ function SetupPostPage() {
                         .then(wasReported => {
                             if (wasReported) {
                                 if (naaFlag || rudeFlag) {
-                                    natty.ReportTruePositive(postId).then(() => displaySuccess('Feedback sent to natty'));
+                                    natty.ReportTruePositive().then(() => displaySuccess('Feedback sent to natty'));
                                 } else if (noFlag) {
                                     if (needsEditing) {
                                         natty.ReportNeedsEditing(postId).then(() => displaySuccess('Feedback sent to natty'));

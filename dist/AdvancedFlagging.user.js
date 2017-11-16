@@ -82,7 +82,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 27);
+/******/ 	return __webpack_require__(__webpack_require__.s = 26);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -223,12 +223,12 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 
 "use strict";
 "use strict";
-var isArray_1 = __webpack_require__(19);
-var isObject_1 = __webpack_require__(20);
+var isArray_1 = __webpack_require__(18);
+var isObject_1 = __webpack_require__(19);
 var isFunction_1 = __webpack_require__(8);
-var tryCatch_1 = __webpack_require__(24);
+var tryCatch_1 = __webpack_require__(23);
 var errorObject_1 = __webpack_require__(7);
-var UnsubscriptionError_1 = __webpack_require__(18);
+var UnsubscriptionError_1 = __webpack_require__(17);
 /**
  * Represents a disposable resource, such as the execution of an Observable. A
  * Subscription has one important method, `unsubscribe`, that takes no argument
@@ -456,7 +456,7 @@ exports.root = _root;
     }
 })();
 //# sourceMappingURL=root.js.map
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(26)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(25)))
 
 /***/ },
 /* 4 */
@@ -1004,6 +1004,21 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             this.appKey = appKey;
             this.getUserKey(); // Make sure we request it immediately
         }
+        MetaSmokeyAPI.Reset = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, Caching_1.StoreInCache(MetaSmokeDisabledConfig, undefined)];
+                        case 1:
+                            _a.sent();
+                            return [4 /*yield*/, Caching_1.StoreInCache(MetaSmokeUserKeyConfig, undefined)];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/];
+                    }
+                });
+            });
+        };
         MetaSmokeyAPI.prototype.getUserKey = function () {
             var _this = this;
             return Caching_1.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
@@ -1028,21 +1043,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     }
                 });
             }); }); });
-        };
-        MetaSmokeyAPI.prototype.Reset = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, Caching_1.StoreInCache(MetaSmokeDisabledConfig, undefined)];
-                        case 1:
-                            _a.sent();
-                            return [4 /*yield*/, Caching_1.StoreInCache(MetaSmokeUserKeyConfig, undefined)];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/];
-                    }
-                });
-            });
         };
         MetaSmokeyAPI.prototype.IsDisabled = function () {
             return __awaiter(this, void 0, void 0, function () {
@@ -1157,21 +1157,58 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 /* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(25), __webpack_require__(14)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, Caching_1, ChatApi_1, Subject_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(24), __webpack_require__(13)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, Caching_1, ChatApi_1, Subject_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
+    var soboticsRoomId = 111347;
     var NattyAPI = /** @class */ (function () {
-        function NattyAPI() {
+        function NattyAPI(answerId) {
             this.chat = new ChatApi_1.ChatApi();
+            this._answerId = answerId;
         }
-        NattyAPI.prototype.Watch = function (answerId) {
+        NattyAPI.prototype.Watch = function () {
             var _this = this;
             this._subject = new Subject_1.Subject();
-            Caching_1.GetAndCache("NattyApi.Feedback." + answerId, function () { return new Promise(function (resolve, reject) {
+            Caching_1.GetAndCache("NattyApi.Feedback." + this._answerId, function () { return new Promise(function (resolve, reject) {
                 GM_xmlhttpRequest({
                     method: 'GET',
-                    url: nattyFeedbackUrl + "/" + answerId,
+                    url: nattyFeedbackUrl + "/" + _this._answerId,
                     onload: function (response) {
                         var nattyResult = JSON.parse(response.responseText);
                         if (nattyResult.items && nattyResult.items[0]) {
@@ -1190,23 +1227,94 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 .catch(function (err) { return _this._subject.error(err); });
             return this._subject;
         };
-        NattyAPI.prototype.Report = function (answerId) {
-            var _this = this;
-            var promise = this.chat.SendMessage(111347, "@Natty report http://stackoverflow.com/a/" + answerId);
-            promise.then(function () {
-                Caching_1.StoreInCache("NattyApi.Feedback." + answerId, true);
-                _this._subject.next(true);
+        NattyAPI.prototype.ReportNaa = function (answerDate, questionDate) {
+            return __awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                var answerAge, daysPostedAfterQuestion, promise;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.WasReported()];
+                        case 1:
+                            if (!_a.sent()) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this._answerId + " tp")];
+                        case 2:
+                            _a.sent();
+                            return [3 /*break*/, 5];
+                        case 3:
+                            answerAge = this.DaysBetween(answerDate, new Date());
+                            daysPostedAfterQuestion = this.DaysBetween(questionDate, answerDate);
+                            if (!(answerAge > 30 || daysPostedAfterQuestion < 30)) return [3 /*break*/, 5];
+                            promise = this.chat.SendMessage(soboticsRoomId, "@Natty report http://stackoverflow.com/a/" + this._answerId);
+                            return [4 /*yield*/, promise.then(function () {
+                                    Caching_1.StoreInCache("NattyApi.Feedback." + _this._answerId, true);
+                                    _this._subject.next(true);
+                                })];
+                        case 4:
+                            _a.sent();
+                            _a.label = 5;
+                        case 5: return [2 /*return*/];
+                    }
+                });
             });
-            return promise;
         };
-        NattyAPI.prototype.ReportTruePositive = function (answerId) {
-            return this.chat.SendMessage(111347, "@Natty feedback http://stackoverflow.com/a/" + answerId + " tp");
+        NattyAPI.prototype.ReportRedFlag = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.WasReported];
+                        case 1:
+                            if (!_a.sent()) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this._answerId + " tp")];
+                        case 2:
+                            _a.sent();
+                            _a.label = 3;
+                        case 3: return [2 /*return*/];
+                    }
+                });
+            });
         };
-        NattyAPI.prototype.ReportNeedsEditing = function (answerId) {
-            return this.chat.SendMessage(111347, "@Natty feedback http://stackoverflow.com/a/" + answerId + " ne");
+        NattyAPI.prototype.ReportLooksFine = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.WasReported];
+                        case 1:
+                            if (!_a.sent()) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this._answerId + " fp")];
+                        case 2:
+                            _a.sent();
+                            _a.label = 3;
+                        case 3: return [2 /*return*/];
+                    }
+                });
+            });
         };
-        NattyAPI.prototype.ReportFalsePositive = function (answerId) {
-            return this.chat.SendMessage(111347, "@Natty feedback http://stackoverflow.com/a/" + answerId + " fp");
+        NattyAPI.prototype.ReportNeedsEditing = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.WasReported];
+                        case 1:
+                            if (_a.sent()) {
+                                return [2 /*return*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this._answerId + " ne")];
+                            }
+                            return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        NattyAPI.prototype.WasReported = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this._subject.toPromise()];
+                        case 1: return [2 /*return*/, _a.sent()];
+                    }
+                });
+            });
+        };
+        NattyAPI.prototype.DaysBetween = function (first, second) {
+            return Math.round((second - first) / (1000 * 60 * 60 * 24));
         };
         return NattyAPI;
     }());
@@ -1218,211 +1326,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    function isNatoPage() {
-        return !!window.location.href.match(/\/new-answers-old-questions$/);
-    }
-    exports.isNatoPage = isNatoPage;
-    function parseNatoPage() {
-        var nodes = $('.answer-hyperlink').parent().parent();
-        var results = [];
-        for (var i = 0; i < nodes.length; i++) {
-            var node = $(nodes[i]);
-            var postId = parseInt(node.find('.answer-hyperlink').attr('href').split('#')[1], 10);
-            var answerTime = parseActionDate(node.find('.user-action-time'));
-            var questionTime = parseActionDate(node.find('td .relativetime'));
-            var authorReputation = parseReputation(node.find('.reputation-score'));
-            var _a = parseAuthorDetails(node.find('.user-details')), authorName = _a.authorName, authorId = _a.authorId;
-            results.push({
-                type: 'Answer',
-                element: node,
-                postId: postId,
-                answerTime: answerTime,
-                questionTime: questionTime,
-                authorReputation: authorReputation,
-                authorName: authorName,
-                authorId: authorId,
-            });
-        }
-        return results;
-    }
-    exports.parseNatoPage = parseNatoPage;
-    function isQuestionPage() {
-        return !!window.location.href.match(/\/questions\/\d+\/.*/);
-    }
-    exports.isQuestionPage = isQuestionPage;
-    function parseQuestionPage() {
-        var questionNode = $('.question');
-        var postId = parseInt(questionNode.attr('data-questionid'), 10);
-        function getPostDetails(node) {
-            var score = parseInt(node.find('.vote-count-post').text(), 10);
-            var authorReputation = parseReputation(node.find('.post-signature .reputation-score').last());
-            var _a = parseAuthorDetails(node.find('.post-signature .user-details').last()), authorName = _a.authorName, authorId = _a.authorId;
-            var postTime = parseActionDate(node.find('.post-signature .relativetime').last());
-            return { score: score, authorReputation: authorReputation, authorName: authorName, authorId: authorId, postTime: postTime };
-        }
-        var _a = getPostDetails(questionNode), score = _a.score, authorReputation = _a.authorReputation, authorName = _a.authorName, authorId = _a.authorId, postTime = _a.postTime;
-        var results = [];
-        var question = {
-            type: 'Question',
-            element: questionNode,
-            postId: postId,
-            postTime: postTime,
-            score: score,
-            authorReputation: authorReputation,
-            authorName: authorName,
-            authorId: authorId
-        };
-        results.push(question);
-        var answerNodes = $('.answer');
-        for (var i = 0; i < answerNodes.length; i++) {
-            var answerNode = $(answerNodes[i]);
-            var _b = getPostDetails(answerNode), score_1 = _b.score, authorReputation_1 = _b.authorReputation, authorName_1 = _b.authorName, authorId_1 = _b.authorId, postTime_1 = _b.postTime;
-            results.push({
-                type: 'Answer',
-                element: questionNode,
-                postId: postId,
-                question: question,
-                postTime: postTime_1,
-                score: score_1,
-                authorReputation: authorReputation_1,
-                authorName: authorName_1,
-                authorId: authorId_1
-            });
-        }
-        return results;
-    }
-    exports.parseQuestionPage = parseQuestionPage;
-    function isFlagsPage() {
-        return !!window.location.href.match(/\/users\/flag-summary\//);
-    }
-    exports.isFlagsPage = isFlagsPage;
-    function parseFlagsPage() {
-        var nodes = $('.flagged-post');
-        var results = [];
-        for (var i = 0; i < nodes.length; i++) {
-            var node = $(nodes[i]);
-            var type = node.find('.answer-hyperlink').length
-                ? 'Answer'
-                : 'Question';
-            var postId = parseInt(type === 'Answer'
-                ? node.find('.answer-hyperlink').attr('href').split('#')[1]
-                : node.find('.question-hyperlink').attr('href').split('/')[2], 10);
-            var score = parseInt(node.find('.answer-votes').text(), 10);
-            var _a = parseAuthorDetails(node.find('.post-user-info')), authorName = _a.authorName, authorId = _a.authorId;
-            var postTime = parseActionDate(node.find('.post-user-info .relativetime'));
-            var handledTime = parseActionDate(node.find('.mod-flag .relativetime'));
-            var fullHandledResult = node.find('.flag-outcome').text().trim().split(' - ');
-            var handledResult = fullHandledResult[0].trim();
-            var handledComment = fullHandledResult.slice(1).join(' - ').trim();
-            results.push({
-                type: type,
-                postId: postId,
-                score: score,
-                postTime: postTime,
-                handledTime: handledTime,
-                handledResult: handledResult,
-                handledComment: handledComment,
-                authorName: authorName,
-                authorId: authorId
-            });
-        }
-        return results;
-    }
-    exports.parseFlagsPage = parseFlagsPage;
-    function parseGenericPage() {
-        var questionNodes = $('.question-hyperlink');
-        var results = [];
-        for (var i = 0; i < questionNodes.length; i++) {
-            var questionNode = $(questionNodes[i]);
-            var fragment = questionNode.attr('href').split('/')[2];
-            if (fragment.indexOf('_') >= 0) {
-                fragment = fragment.split('_')[1];
-            }
-            var postId = parseInt(fragment, 10);
-            results.push({
-                type: 'Question',
-                element: questionNode,
-                postId: postId
-            });
-        }
-        var answerNodes = $('.answer-hyperlink');
-        for (var i = 0; i < answerNodes.length; i++) {
-            var answerNode = $(answerNodes[i]);
-            var fragment = answerNode.attr('href').split('#')[1];
-            if (fragment.indexOf('_') >= 0) {
-                fragment = fragment.split('_')[1];
-            }
-            var postId = parseInt(fragment, 10);
-            results.push({
-                type: 'Answer',
-                element: answerNode,
-                postId: postId
-            });
-        }
-        return results;
-    }
-    exports.parseGenericPage = parseGenericPage;
-    function parseCurrentPage() {
-        if (isNatoPage())
-            // We explicitly type the page, as it allows the typescript compiler to 
-            // figure out the type of posts if a user checks if. For example:
-            // const parsed = parseCurrentPage();
-            // if (parsed.Page === 'Nato') {
-            //     parsed.Posts is now properly typed as a nato post
-            // }
-            // If we don't do this, 'Page' is simply a string and doesn't give us any compiler hints
-            return { Page: 'NATO', Posts: parseNatoPage() };
-        if (isQuestionPage())
-            return { Page: 'Question', Posts: parseQuestionPage() };
-        if (isFlagsPage())
-            return { Page: 'Flags', Posts: parseFlagsPage() };
-        return { Page: 'Unknown', Posts: parseGenericPage() };
-    }
-    exports.parseCurrentPage = parseCurrentPage;
-    function parseReputation(reputationDiv) {
-        var reputationText = reputationDiv.text();
-        if (reputationText.indexOf('k') !== -1) {
-            reputationText = reputationDiv.attr('title').substr('reputation score '.length);
-        }
-        reputationText = reputationText.replace(',', '');
-        if (reputationText.trim() !== '')
-            return parseInt(reputationText, 10);
-        return undefined;
-    }
-    function parseAuthorDetails(authorDiv) {
-        var userLink = authorDiv.find('a');
-        var authorName = userLink.text();
-        var userLinkRef = userLink.attr('href');
-        var authorId;
-        // Users can be deleted, and thus have no link to their profile.
-        if (userLinkRef) {
-            authorId = parseInt(userLinkRef.split('/')[2], 10);
-        }
-        return { authorName: authorName, authorId: authorId };
-    }
-    function parseActionDate(actionDiv) {
-        if (!actionDiv.hasClass('relativetime')) {
-            actionDiv = actionDiv.find('.relativetime');
-        }
-        var answerTime = new Date(actionDiv.attr('title'));
-        return answerTime;
-    }
-}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
 "use strict";
 "use strict";
 var root_1 = __webpack_require__(3);
-var toSubscriber_1 = __webpack_require__(23);
-var observable_1 = __webpack_require__(16);
-var pipe_1 = __webpack_require__(22);
+var toSubscriber_1 = __webpack_require__(22);
+var observable_1 = __webpack_require__(15);
+var pipe_1 = __webpack_require__(21);
 /**
  * A representation of any set of values over any amount of time. This is the most basic building block
  * of RxJS.
@@ -1725,7 +1634,7 @@ exports.Observable = Observable;
 //# sourceMappingURL=Observable.js.map
 
 /***/ },
-/* 14 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1735,11 +1644,11 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var Observable_1 = __webpack_require__(13);
+var Observable_1 = __webpack_require__(12);
 var Subscriber_1 = __webpack_require__(6);
 var Subscription_1 = __webpack_require__(1);
-var ObjectUnsubscribedError_1 = __webpack_require__(17);
-var SubjectSubscription_1 = __webpack_require__(15);
+var ObjectUnsubscribedError_1 = __webpack_require__(16);
+var SubjectSubscription_1 = __webpack_require__(14);
 var rxSubscriber_1 = __webpack_require__(2);
 /**
  * @class SubjectSubscriber<T>
@@ -1899,7 +1808,7 @@ exports.AnonymousSubject = AnonymousSubject;
 //# sourceMappingURL=Subject.js.map
 
 /***/ },
-/* 15 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1945,7 +1854,7 @@ exports.SubjectSubscription = SubjectSubscription;
 //# sourceMappingURL=SubjectSubscription.js.map
 
 /***/ },
-/* 16 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1977,7 +1886,7 @@ exports.$$observable = exports.observable;
 //# sourceMappingURL=observable.js.map
 
 /***/ },
-/* 17 */
+/* 16 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -2010,7 +1919,7 @@ exports.ObjectUnsubscribedError = ObjectUnsubscribedError;
 //# sourceMappingURL=ObjectUnsubscribedError.js.map
 
 /***/ },
-/* 18 */
+/* 17 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -2041,7 +1950,7 @@ exports.UnsubscriptionError = UnsubscriptionError;
 //# sourceMappingURL=UnsubscriptionError.js.map
 
 /***/ },
-/* 19 */
+/* 18 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -2050,7 +1959,7 @@ exports.isArray = Array.isArray || (function (x) { return x && typeof x.length =
 //# sourceMappingURL=isArray.js.map
 
 /***/ },
-/* 20 */
+/* 19 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -2062,7 +1971,7 @@ exports.isObject = isObject;
 //# sourceMappingURL=isObject.js.map
 
 /***/ },
-/* 21 */
+/* 20 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -2073,12 +1982,12 @@ exports.noop = noop;
 //# sourceMappingURL=noop.js.map
 
 /***/ },
-/* 22 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
-var noop_1 = __webpack_require__(21);
+var noop_1 = __webpack_require__(20);
 /* tslint:enable:max-line-length */
 function pipe() {
     var fns = [];
@@ -2104,7 +2013,7 @@ exports.pipeFromArray = pipeFromArray;
 //# sourceMappingURL=pipe.js.map
 
 /***/ },
-/* 23 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2130,7 +2039,7 @@ exports.toSubscriber = toSubscriber;
 //# sourceMappingURL=toSubscriber.js.map
 
 /***/ },
-/* 24 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2155,7 +2064,7 @@ exports.tryCatch = tryCatch;
 //# sourceMappingURL=tryCatch.js.map
 
 /***/ },
-/* 25 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, Caching_1) {
@@ -2215,7 +2124,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ },
-/* 26 */
+/* 25 */
 /***/ function(module, exports) {
 
 var g;
@@ -2240,7 +2149,7 @@ module.exports = g;
 
 
 /***/ },
-/* 27 */
+/* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -2278,7 +2187,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(10), __webpack_require__(9), __webpack_require__(11), __webpack_require__(0), __webpack_require__(4), __webpack_require__(12)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, MetaSmokeyAPI_1, FlagTypes_1, NattyApi_1, Caching_1, FunctionUtils_1, StackExchangeWebParser_1) {
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(10), __webpack_require__(9), __webpack_require__(11), __webpack_require__(0), __webpack_require__(4)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, MetaSmokeyAPI_1, FlagTypes_1, NattyApi_1, Caching_1, FunctionUtils_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // tslint:disable-next-line:no-debugger
@@ -2366,11 +2275,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             });
         });
     }
-    var metaSmoke = new MetaSmokeyAPI_1.MetaSmokeyAPI(metaSmokeKey);
-    var natty = new NattyApi_1.NattyAPI();
-    function DaysBetween(first, second) {
-        return Math.round((second - first) / (1000 * 60 * 60 * 24));
-    }
     function SetupPostPage() {
         var postMenus = $('.post-menu');
         var questionTime = new Date($('.post-signature.owner .user-action-time .relativetime').attr('title'));
@@ -2409,8 +2313,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             if (comments.length === 0) {
                 leaveCommentBox.prop('checked', true);
             }
+            var metaSmoke = new MetaSmokeyAPI_1.MetaSmokeyAPI(metaSmokeKey);
+            var natty = new NattyApi_1.NattyAPI(postId);
             var metaSmokeWasReported = metaSmoke.GetFeedback(postId, postType);
-            var nattyObservable = natty.Watch(postId);
+            var nattyObservable = natty.Watch();
             var performedActionIcon = getPerformedActionIcon();
             var reportedIcon = getReportedIcon();
             var getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
@@ -2459,7 +2365,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                         }
                         var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
                         var naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
-                        var needsEditing = flagType.DisplayName === 'Needs Editing';
                         metaSmokeWasReported.then(function (responseItems) {
                             if (responseItems.length > 0) {
                                 var metaSmokeId = responseItems[0].id;
@@ -2477,32 +2382,21 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                 metaSmoke.Report(postId, postType).then(function () { return displaySuccess('Reported to MS'); });
                             }
                         });
-                        nattyObservable.toPromise()
-                            .then(function (wasReported) {
-                            if (wasReported) {
-                                if (naaFlag || rudeFlag) {
-                                    natty.ReportTruePositive(postId).then(function () { return displaySuccess('Feedback sent to natty'); });
-                                }
-                                else if (noFlag) {
-                                    if (needsEditing) {
-                                        natty.ReportNeedsEditing(postId).then(function () { return displaySuccess('Feedback sent to natty'); });
-                                    }
-                                    else {
-                                        natty.ReportFalsePositive(postId).then(function () { return displaySuccess('Feedback sent to natty'); });
-                                    }
-                                }
+                        var answerTime = new Date(jqueryItem.closest('.answercell').find('.post-signature .user-action-time:contains("answered") .relativetime').attr('title'));
+                        if (naaFlag) {
+                            natty.ReportNaa(answerTime, questionTime);
+                        }
+                        else if (rudeFlag) {
+                            natty.ReportRedFlag();
+                        }
+                        else if (noFlag) {
+                            if (flagType.DisplayName === 'Needs Editing') {
+                                natty.ReportNeedsEditing();
                             }
-                            else if (naaFlag) {
-                                var answerTime = new Date(jqueryItem.closest('.answercell').find('.post-signature .user-action-time:contains("answered") .relativetime').attr('title'));
-                                var answerAge = DaysBetween(answerTime, new Date());
-                                var daysPostedAfterQuestion = DaysBetween(questionTime, answerTime);
-                                if (answerAge > 30 || daysPostedAfterQuestion < 30) {
-                                    displaySuccess('Won\'t report to Natty - doesn\'t meet time requirements');
-                                    return;
-                                }
-                                natty.Report(postId).then(function () { return displaySuccess('Reported to natty'); });
+                            else {
+                                natty.ReportLooksFine();
                             }
-                        });
+                        }
                         dropDown.hide();
                     });
                     nattyLinkItem.text(flagType.DisplayName);
@@ -2578,7 +2472,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             });
             jqueryItem.append(nattyIcon);
             jqueryItem.append(smokeyIcon);
-            // xdLocalStorage.clear(function (data) { /* callback */ });
         });
     }
     function getPerformedActionIcon() {
@@ -2628,8 +2521,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             var postId = parseInt(hyperLink.split('#')[1], 10);
             var metaSmoke = new MetaSmokeyAPI_1.MetaSmokeyAPI(metaSmokeKey);
             var metaSmokeWasReported = metaSmoke.GetFeedback(postId, 'Answer');
-            var natty = new NattyApi_1.NattyAPI();
-            var nattyObservable = natty.Watch(postId);
+            var natty = new NattyApi_1.NattyAPI(postId);
+            var nattyObservable = natty.Watch();
             nattyIcon.click(function () {
                 window.open("https://sentinel.erwaysoftware.com/posts/aid/" + postId, '_blank');
             });
@@ -2675,7 +2568,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         var optionsList = $('<ul>').css({ 'list-style': 'none' });
         var clearMetaSmokeConfig = $('<a />').text('Clear Metasmoke Configuration');
         clearMetaSmokeConfig.click(function () {
-            metaSmoke.Reset();
+            MetaSmokeyAPI_1.MetaSmokeyAPI.Reset();
         });
         var clearAllCachedInfo = $('<a />').text('Clear all cached info');
         clearAllCachedInfo.click(function () {
@@ -2687,10 +2580,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
     $(function () {
         Caching_1.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
-        var parsedPage = StackExchangeWebParser_1.parseCurrentPage();
-        if (parsedPage) {
-            console.log(parsedPage.Posts);
-        }
         SetupPostPage();
         SetupAnswerLinks();
         SetupAdminTools();

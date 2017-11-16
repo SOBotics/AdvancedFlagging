@@ -137,9 +137,7 @@ async function displaySuccess(message: string) {
     }
 }
 
-function DaysBetween(first: Date, second: Date) {
-    return Math.round((<any>second - <any>first) / (1000 * 60 * 60 * 24));
-}
+
 
 function SetupPostPage() {
     const postMenus = $('.post-menu');
@@ -249,8 +247,6 @@ function SetupPostPage() {
                     const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
                     const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
 
-                    const needsEditing = flagType.DisplayName === 'Needs Editing'
-
                     metaSmokeWasReported.then(responseItems => {
                         if (responseItems.length > 0) {
                             const metaSmokeId = responseItems[0].id;
@@ -265,31 +261,19 @@ function SetupPostPage() {
                             metaSmoke.Report(postId, postType).then(() => displaySuccess('Reported to MS'));
                         }
                     });
+                    const answerTime = new Date(jqueryItem.closest('.answercell').find('.post-signature .user-action-time:contains("answered") .relativetime').attr('title'))
 
-                    nattyObservable.toPromise()
-                        .then(wasReported => {
-                            if (wasReported) {
-                                if (naaFlag || rudeFlag) {
-                                    natty.ReportTruePositive().then(() => displaySuccess('Feedback sent to natty'));
-                                } else if (noFlag) {
-                                    if (needsEditing) {
-                                        natty.ReportNeedsEditing(postId).then(() => displaySuccess('Feedback sent to natty'));
-                                    } else {
-                                        natty.ReportFalsePositive(postId).then(() => displaySuccess('Feedback sent to natty'));
-                                    }
-                                }
-                            } else if (naaFlag) {
-                                const answerTime = new Date(jqueryItem.closest('.answercell').find('.post-signature .user-action-time:contains("answered") .relativetime').attr('title'))
-                                const answerAge = DaysBetween(answerTime, new Date());
-                                const daysPostedAfterQuestion = DaysBetween(questionTime, answerTime);
-                                if (answerAge > 30 || daysPostedAfterQuestion < 30) {
-                                    displaySuccess('Won\'t report to Natty - doesn\'t meet time requirements');
-                                    return;
-                                }
-
-                                natty.Report(postId).then(() => displaySuccess('Reported to natty'));
-                            }
-                        });
+                    if (naaFlag) {
+                        natty.ReportNaa(answerTime, questionTime);
+                    } else if (rudeFlag) {
+                        natty.ReportRedFlag();
+                    } else if (noFlag) {
+                        if (flagType.DisplayName === 'Needs Editing') {
+                            natty.ReportNeedsEditing();
+                        } else {
+                            natty.ReportLooksFine();
+                        }
+                    }
 
                     dropDown.hide();
                 });
@@ -442,8 +426,8 @@ function SetupAnswerLinks() {
         const metaSmoke = new MetaSmokeyAPI(metaSmokeKey);
         const metaSmokeWasReported = metaSmoke.GetFeedback(postId, 'Answer');
 
-        const natty = new NattyAPI();
-        const nattyObservable = natty.Watch(postId);
+        const natty = new NattyAPI(postId);
+        const nattyObservable = natty.Watch();
         nattyIcon.click(() => {
             window.open(`https://sentinel.erwaysoftware.com/posts/aid/${postId}`, '_blank');
         });

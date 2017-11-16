@@ -1,6 +1,7 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "isolatedModules": true,
     "sourceMap": false,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -10,7 +11,7 @@
     "experimentalDecorators": true,
     "downlevelIteration": true,
     "strict": true,
-    "outFile": "./dist/out.js",
+    "outDir": "./dist",
     "module": "amd",
     "target": "es5",
     "lib": [

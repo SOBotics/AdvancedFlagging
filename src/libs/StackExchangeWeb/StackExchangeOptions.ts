@@ -13,8 +13,8 @@ export interface StackExchangeCommentUI {
     jDiv: JQuery;
     jPost: JQuery;
     postId: number;
-    addShow(a: boolean, b: boolean): void;
-    showComments(data: string, b: null, c: boolean, d: boolean): void;
+    addShow(noFocus: boolean, ensureInput: boolean): void;
+    showComments(html: string, submittedEditCommentId: number | null, noHighlighting: boolean, noScrolling: boolean): void;
 }
 
 export interface StackExchangeOptions {

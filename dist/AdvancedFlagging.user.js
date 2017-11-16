@@ -584,6 +584,10 @@ define("libs/NattyApi", ["require", "exports", "libs/Caching", "libs/ChatApi"], 
     }());
     exports.NattyAPI = NattyAPI;
 });
+define("libs/StackExchangeWeb/StackExchangeOptions", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+});
 define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTypes", "libs/NattyApi", "libs/Caching", "libs/FunctionUtils"], function (require, exports, MetaSmokeyAPI_1, FlagTypes_1, NattyApi_1, Caching_4, FunctionUtils_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -620,7 +624,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                     $.ajax({
                         url: "//stackoverflow.com/posts/" + postId + "/comments",
                         type: 'POST',
-                        data: { 'fkey': StackExchange.options.user.fkey, 'comment': commentText_1 }
+                        data: { 'fkey': StackExchangeGlobal.options.user.fkey, 'comment': commentText_1 }
                     }).done(function (data) {
                         resolve(data);
                     }).fail(function (jqXHR, textStatus, errorThrown) {
@@ -634,7 +638,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                 $.ajax({
                     url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
                     type: 'POST',
-                    data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
+                    data: { 'fkey': StackExchangeGlobal.options.user.fkey, 'otherText': '' }
                 }).done(function (data) {
                     resolve(data);
                 }).fail(function (jqXHR, textStatus, errorThrown) {
@@ -742,7 +746,7 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
                         var result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation);
                         if (result.CommentPromise) {
                             result.CommentPromise.then(function (data) {
-                                var commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
+                                var commentUI = StackExchangeGlobal.comments.uiForPost($('#comments-' + postId));
                                 commentUI.addShow(true, false);
                                 commentUI.showComments(data, null, false, true);
                                 $(document).trigger('comment', postId);
@@ -1100,4 +1104,74 @@ define("libs/StackExchangeApi", ["require", "exports", "libs/Caching", "libs/Fun
         return StackExchangeAPI;
     }());
     exports.StackExchangeAPI = StackExchangeAPI;
+});
+define("libs/StackExchangeWeb/StackExchangeWebParser", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function isNatoPage() {
+        return !!window.location.href.match(/\/new-answers-old-questions/);
+    }
+    exports.isNatoPage = isNatoPage;
+    function parseNatoPage() {
+        var nodes, i, node, postId, answerTime, questionTime, reputation, _a, authorName, authorId;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    nodes = $('.answer-hyperlink').parent().parent();
+                    i = 0;
+                    _b.label = 1;
+                case 1:
+                    if (!(i < nodes.length)) return [3 /*break*/, 4];
+                    node = $(nodes[i]);
+                    postId = parseInt(node.find('.answer-hyperlink').attr('href').split('#')[1], 10);
+                    answerTime = parseActionDate(node.find('.user-action-time'));
+                    questionTime = parseActionDate(node.find('td .relativetime'));
+                    reputation = parseReputation(node.find('.reputation-score'));
+                    _a = parseAuthorDetails(node.find('.user-details')), authorName = _a.authorName, authorId = _a.authorId;
+                    return [4 /*yield*/, {
+                            element: node,
+                            postId: postId,
+                            answerTime: answerTime,
+                            questionTime: questionTime,
+                            reputation: reputation,
+                            authorName: authorName,
+                            authorId: authorId,
+                        }];
+                case 2:
+                    _b.sent();
+                    _b.label = 3;
+                case 3:
+                    i++;
+                    return [3 /*break*/, 1];
+                case 4: return [2 /*return*/];
+            }
+        });
+    }
+    exports.parseNatoPage = parseNatoPage;
+    function parseReputation(reputationDiv) {
+        var reputationText = reputationDiv.text();
+        if (reputationText.indexOf('k') !== -1) {
+            reputationText = reputationDiv.attr('title').substr('reputation score '.length);
+        }
+        reputationText = reputationText.replace(',', '');
+        return parseInt(reputationText, 10);
+    }
+    function parseAuthorDetails(authorDiv) {
+        var userLink = authorDiv.find('a');
+        var authorName = userLink.text();
+        var userLinkRef = userLink.attr('href');
+        var authorId;
+        // Users can be deleted, and thus have no link to their profile.
+        if (userLinkRef) {
+            authorId = parseInt(userLinkRef.split('/')[2], 10);
+        }
+        return { authorName: authorName, authorId: authorId };
+    }
+    function parseActionDate(actionDiv) {
+        if (!actionDiv.hasClass('relativetime')) {
+            actionDiv = actionDiv.find('.relativetime');
+        }
+        var answerTime = new Date(actionDiv.attr('title'));
+        return answerTime;
+    }
 });

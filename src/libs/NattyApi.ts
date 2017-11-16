@@ -3,6 +3,8 @@ declare const GM_xmlhttpRequest: any;
 
 import { GetAndCache, StoreInCache } from './Caching';
 import { ChatApi } from './ChatApi';
+import { Observable } from 'rxjs/Observable'
+import { Subject } from 'rxjs/Subject'
 
 const nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
 
@@ -24,8 +26,10 @@ export interface NattyFeedbackInfo {
 export class NattyAPI {
     private chat: ChatApi = new ChatApi();
 
-    public WasReported(answerId: number): Promise<boolean> {
-        return GetAndCache(`NattyApi.Feedback.${answerId}`, () => new Promise<boolean>((resolve, reject) => {
+    private _subject: Subject<boolean>;
+    public Watch(answerId: number): Observable<boolean> {
+        this._subject = new Subject<boolean>();
+        GetAndCache(`NattyApi.Feedback.${answerId}`, () => new Promise<boolean>((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: `${nattyFeedbackUrl}/${answerId}`,
@@ -41,13 +45,18 @@ export class NattyAPI {
                     reject(response);
                 },
             });
-        }));
+        }))
+        .then(r => this._subject.next(r))
+        .catch(err => this._subject.error(err));
+
+        return this._subject;
     }
 
     public Report(answerId: number) {
         const promise = this.chat.SendMessage(111347, `@Natty report http://stackoverflow.com/a/${answerId}`);
         promise.then(() => {
-            StoreInCache(`NattyApi.Feedback.${answerId}`, undefined);
+            StoreInCache(`NattyApi.Feedback.${answerId}`, true);
+            this._subject.next(true);
         });
         return promise;
     }

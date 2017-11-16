@@ -4,12 +4,13 @@ import { FlagType, flagCategories } from './FlagTypes';
 import { NattyAPI } from './libs/NattyApi';
 import { ClearCache, GetAndCache, GetFromCache, InitializeCache, StoreInCache } from './libs/Caching';
 import { Delay } from './libs/FunctionUtils';
+import { StackExchangeGlobal } from './libs/StackExchangeWeb/StackExchangeOptions';
 // tslint:disable-next-line:no-debugger
 debugger;
 
 const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
 
-declare const StackExchange: any;
+declare const StackExchangeGlobal: StackExchangeGlobal;
 declare const unsafeWindow: any;
 
 function setupStyles() {
@@ -89,7 +90,7 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
                 $.ajax({
                     url: `//stackoverflow.com/posts/${postId}/comments`,
                     type: 'POST',
-                    data: { 'fkey': StackExchange.options.user.fkey, 'comment': commentText }
+                    data: { 'fkey': StackExchangeGlobal.options.user.fkey, 'comment': commentText }
                 }).done((data) => {
                     resolve(data);
                 }).fail(function (jqXHR, textStatus, errorThrown) {
@@ -104,7 +105,7 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
             $.ajax({
                 url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
                 type: 'POST',
-                data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
+                data: { 'fkey': StackExchangeGlobal.options.user.fkey, 'otherText': '' }
             }).done((data) => {
                 resolve(data);
             }).fail(function (jqXHR, textStatus, errorThrown) {
@@ -220,7 +221,7 @@ function SetupPostPage() {
                     const result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation)
                     if (result.CommentPromise) {
                         result.CommentPromise.then((data) => {
-                            const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
+                            const commentUI = StackExchangeGlobal.comments.uiForPost($('#comments-' + postId));
                             commentUI.addShow(true, false);
                             commentUI.showComments(data, null, false, true);
                             $(document).trigger('comment', postId);

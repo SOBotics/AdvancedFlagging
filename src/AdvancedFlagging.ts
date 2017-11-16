@@ -5,6 +5,7 @@ import { NattyAPI } from './libs/NattyApi';
 import { ClearCache, GetAndCache, GetFromCache, InitializeCache, StoreInCache } from './libs/Caching';
 import { Delay } from './libs/FunctionUtils';
 import { StackExchangeGlobal } from './libs/StackExchangeWeb/StackExchangeOptions';
+import { parseCurrentPage } from './libs/StackExchangeWeb/StackExchangeWebParser';
 // tslint:disable-next-line:no-debugger
 debugger;
 
@@ -506,6 +507,11 @@ function SetupAdminTools() {
 
 $(function () {
     InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
+
+    const parsedPage = parseCurrentPage();
+    if (parsedPage) {
+        console.log(parsedPage.Posts);
+    }
 
     SetupPostPage();
     SetupAnswerLinks();

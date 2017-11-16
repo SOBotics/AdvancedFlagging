@@ -588,7 +588,200 @@ define("libs/StackExchangeWeb/StackExchangeOptions", ["require", "exports"], fun
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
 });
-define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTypes", "libs/NattyApi", "libs/Caching", "libs/FunctionUtils"], function (require, exports, MetaSmokeyAPI_1, FlagTypes_1, NattyApi_1, Caching_4, FunctionUtils_2) {
+define("libs/StackExchangeWeb/StackExchangeWebParser", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function isNatoPage() {
+        return !!window.location.href.match(/\/new-answers-old-questions$/);
+    }
+    exports.isNatoPage = isNatoPage;
+    function parseNatoPage() {
+        var nodes = $('.answer-hyperlink').parent().parent();
+        var results = [];
+        for (var i = 0; i < nodes.length; i++) {
+            var node = $(nodes[i]);
+            var postId = parseInt(node.find('.answer-hyperlink').attr('href').split('#')[1], 10);
+            var answerTime = parseActionDate(node.find('.user-action-time'));
+            var questionTime = parseActionDate(node.find('td .relativetime'));
+            var authorReputation = parseReputation(node.find('.reputation-score'));
+            var _a = parseAuthorDetails(node.find('.user-details')), authorName = _a.authorName, authorId = _a.authorId;
+            results.push({
+                type: 'Answer',
+                element: node,
+                postId: postId,
+                answerTime: answerTime,
+                questionTime: questionTime,
+                authorReputation: authorReputation,
+                authorName: authorName,
+                authorId: authorId,
+            });
+        }
+        return results;
+    }
+    exports.parseNatoPage = parseNatoPage;
+    function isQuestionPage() {
+        return !!window.location.href.match(/\/questions\/\d+\/.*/);
+    }
+    exports.isQuestionPage = isQuestionPage;
+    function parseQuestionPage() {
+        var questionNode = $('.question');
+        var postId = parseInt(questionNode.attr('data-questionid'), 10);
+        function getPostDetails(node) {
+            var score = parseInt(node.find('.vote-count-post').text(), 10);
+            var authorReputation = parseReputation(node.find('.post-signature .reputation-score').last());
+            var _a = parseAuthorDetails(node.find('.post-signature .user-details').last()), authorName = _a.authorName, authorId = _a.authorId;
+            var postTime = parseActionDate(node.find('.post-signature .relativetime').last());
+            return { score: score, authorReputation: authorReputation, authorName: authorName, authorId: authorId, postTime: postTime };
+        }
+        var _a = getPostDetails(questionNode), score = _a.score, authorReputation = _a.authorReputation, authorName = _a.authorName, authorId = _a.authorId, postTime = _a.postTime;
+        var results = [];
+        var question = {
+            type: 'Question',
+            element: questionNode,
+            postId: postId,
+            postTime: postTime,
+            score: score,
+            authorReputation: authorReputation,
+            authorName: authorName,
+            authorId: authorId
+        };
+        results.push(question);
+        var answerNodes = $('.answer');
+        for (var i = 0; i < answerNodes.length; i++) {
+            var answerNode = $(answerNodes[i]);
+            var _b = getPostDetails(answerNode), score_1 = _b.score, authorReputation_1 = _b.authorReputation, authorName_1 = _b.authorName, authorId_1 = _b.authorId, postTime_1 = _b.postTime;
+            results.push({
+                type: 'Answer',
+                element: questionNode,
+                postId: postId,
+                question: question,
+                postTime: postTime_1,
+                score: score_1,
+                authorReputation: authorReputation_1,
+                authorName: authorName_1,
+                authorId: authorId_1
+            });
+        }
+        return results;
+    }
+    exports.parseQuestionPage = parseQuestionPage;
+    function isFlagsPage() {
+        return !!window.location.href.match(/\/users\/flag-summary\//);
+    }
+    exports.isFlagsPage = isFlagsPage;
+    function parseFlagsPage() {
+        var nodes = $('.flagged-post');
+        var results = [];
+        for (var i = 0; i < nodes.length; i++) {
+            var node = $(nodes[i]);
+            var type = node.find('.answer-hyperlink').length
+                ? 'Answer'
+                : 'Question';
+            var postId = parseInt(type === 'Answer'
+                ? node.find('.answer-hyperlink').attr('href').split('#')[1]
+                : node.find('.question-hyperlink').attr('href').split('/')[2], 10);
+            var score = parseInt(node.find('.answer-votes').text(), 10);
+            var _a = parseAuthorDetails(node.find('.post-user-info')), authorName = _a.authorName, authorId = _a.authorId;
+            var postTime = parseActionDate(node.find('.post-user-info .relativetime'));
+            var handledTime = parseActionDate(node.find('.mod-flag .relativetime'));
+            var fullHandledResult = node.find('.flag-outcome').text().trim().split(' - ');
+            var handledResult = fullHandledResult[0].trim();
+            var handledComment = fullHandledResult.slice(1).join(' - ').trim();
+            results.push({
+                type: type,
+                postId: postId,
+                score: score,
+                postTime: postTime,
+                handledTime: handledTime,
+                handledResult: handledResult,
+                handledComment: handledComment,
+                authorName: authorName,
+                authorId: authorId
+            });
+        }
+        return results;
+    }
+    exports.parseFlagsPage = parseFlagsPage;
+    function parseGenericPage() {
+        var questionNodes = $('.question-hyperlink');
+        var results = [];
+        for (var i = 0; i < questionNodes.length; i++) {
+            var questionNode = $(questionNodes[i]);
+            var fragment = questionNode.attr('href').split('/')[2];
+            if (fragment.indexOf('_') >= 0) {
+                fragment = fragment.split('_')[1];
+            }
+            var postId = parseInt(fragment, 10);
+            results.push({
+                type: 'Question',
+                element: questionNode,
+                postId: postId
+            });
+        }
+        var answerNodes = $('.answer-hyperlink');
+        for (var i = 0; i < answerNodes.length; i++) {
+            var answerNode = $(answerNodes[i]);
+            var fragment = answerNode.attr('href').split('#')[1];
+            if (fragment.indexOf('_') >= 0) {
+                fragment = fragment.split('_')[1];
+            }
+            var postId = parseInt(fragment, 10);
+            results.push({
+                type: 'Answer',
+                element: answerNode,
+                postId: postId
+            });
+        }
+        return results;
+    }
+    exports.parseGenericPage = parseGenericPage;
+    function parseCurrentPage() {
+        if (isNatoPage())
+            // We explicitly type the page, as it allows the typescript compiler to 
+            // figure out the type of posts if a user checks if. For example:
+            // const parsed = parseCurrentPage();
+            // if (parsed.Page === 'Nato') {
+            //     parsed.Posts is now properly typed as a nato post
+            // }
+            // If we don't do this, 'Page' is simply a string and doesn't give us any compiler hints
+            return { Page: 'NATO', Posts: parseNatoPage() };
+        if (isQuestionPage())
+            return { Page: 'Question', Posts: parseQuestionPage() };
+        if (isFlagsPage())
+            return { Page: 'Flags', Posts: parseFlagsPage() };
+        return { Page: 'Unknown', Posts: parseGenericPage() };
+    }
+    exports.parseCurrentPage = parseCurrentPage;
+    function parseReputation(reputationDiv) {
+        var reputationText = reputationDiv.text();
+        if (reputationText.indexOf('k') !== -1) {
+            reputationText = reputationDiv.attr('title').substr('reputation score '.length);
+        }
+        reputationText = reputationText.replace(',', '');
+        if (reputationText.trim() !== '')
+            return parseInt(reputationText, 10);
+        return undefined;
+    }
+    function parseAuthorDetails(authorDiv) {
+        var userLink = authorDiv.find('a');
+        var authorName = userLink.text();
+        var userLinkRef = userLink.attr('href');
+        var authorId;
+        // Users can be deleted, and thus have no link to their profile.
+        if (userLinkRef) {
+            authorId = parseInt(userLinkRef.split('/')[2], 10);
+        }
+        return { authorName: authorName, authorId: authorId };
+    }
+    function parseActionDate(actionDiv) {
+        if (!actionDiv.hasClass('relativetime')) {
+            actionDiv = actionDiv.find('.relativetime');
+        }
+        var answerTime = new Date(actionDiv.attr('title'));
+        return answerTime;
+    }
+});
+define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTypes", "libs/NattyApi", "libs/Caching", "libs/FunctionUtils", "libs/StackExchangeWeb/StackExchangeWebParser"], function (require, exports, MetaSmokeyAPI_1, FlagTypes_1, NattyApi_1, Caching_4, FunctionUtils_2, StackExchangeWebParser_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // tslint:disable-next-line:no-debugger
@@ -990,6 +1183,10 @@ define("AdvancedFlagging", ["require", "exports", "libs/MetaSmokeyAPI", "FlagTyp
     }
     $(function () {
         Caching_4.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
+        var parsedPage = StackExchangeWebParser_1.parseCurrentPage();
+        if (parsedPage) {
+            console.log(parsedPage.Posts);
+        }
         SetupPostPage();
         SetupAnswerLinks();
         SetupAdminTools();
@@ -1104,74 +1301,4 @@ define("libs/StackExchangeApi", ["require", "exports", "libs/Caching", "libs/Fun
         return StackExchangeAPI;
     }());
     exports.StackExchangeAPI = StackExchangeAPI;
-});
-define("libs/StackExchangeWeb/StackExchangeWebParser", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    function isNatoPage() {
-        return !!window.location.href.match(/\/new-answers-old-questions/);
-    }
-    exports.isNatoPage = isNatoPage;
-    function parseNatoPage() {
-        var nodes, i, node, postId, answerTime, questionTime, reputation, _a, authorName, authorId;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0:
-                    nodes = $('.answer-hyperlink').parent().parent();
-                    i = 0;
-                    _b.label = 1;
-                case 1:
-                    if (!(i < nodes.length)) return [3 /*break*/, 4];
-                    node = $(nodes[i]);
-                    postId = parseInt(node.find('.answer-hyperlink').attr('href').split('#')[1], 10);
-                    answerTime = parseActionDate(node.find('.user-action-time'));
-                    questionTime = parseActionDate(node.find('td .relativetime'));
-                    reputation = parseReputation(node.find('.reputation-score'));
-                    _a = parseAuthorDetails(node.find('.user-details')), authorName = _a.authorName, authorId = _a.authorId;
-                    return [4 /*yield*/, {
-                            element: node,
-                            postId: postId,
-                            answerTime: answerTime,
-                            questionTime: questionTime,
-                            reputation: reputation,
-                            authorName: authorName,
-                            authorId: authorId,
-                        }];
-                case 2:
-                    _b.sent();
-                    _b.label = 3;
-                case 3:
-                    i++;
-                    return [3 /*break*/, 1];
-                case 4: return [2 /*return*/];
-            }
-        });
-    }
-    exports.parseNatoPage = parseNatoPage;
-    function parseReputation(reputationDiv) {
-        var reputationText = reputationDiv.text();
-        if (reputationText.indexOf('k') !== -1) {
-            reputationText = reputationDiv.attr('title').substr('reputation score '.length);
-        }
-        reputationText = reputationText.replace(',', '');
-        return parseInt(reputationText, 10);
-    }
-    function parseAuthorDetails(authorDiv) {
-        var userLink = authorDiv.find('a');
-        var authorName = userLink.text();
-        var userLinkRef = userLink.attr('href');
-        var authorId;
-        // Users can be deleted, and thus have no link to their profile.
-        if (userLinkRef) {
-            authorId = parseInt(userLinkRef.split('/')[2], 10);
-        }
-        return { authorName: authorName, authorId: authorId };
-    }
-    function parseActionDate(actionDiv) {
-        if (!actionDiv.hasClass('relativetime')) {
-            actionDiv = actionDiv.find('.relativetime');
-        }
-        var answerTime = new Date(actionDiv.attr('title'));
-        return answerTime;
-    }
 });

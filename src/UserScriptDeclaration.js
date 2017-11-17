@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.2
+// @version      0.2.1
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*

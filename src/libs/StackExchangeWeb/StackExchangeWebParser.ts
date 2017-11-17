@@ -1,5 +1,5 @@
 export function isNatoPage() {
-    return !!window.location.href.match(/\/new-answers-old-questions$/);
+    return !!window.location.href.match(/\/tools\/new-answers-old-questions/);
 }
 export function parseNatoPage() {
     const nodes = $('.answer-hyperlink').parent().parent();

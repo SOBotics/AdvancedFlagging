@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.2
+// @version      0.2.1
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2112,7 +2112,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function isNatoPage() {
-        return !!window.location.href.match(/\/new-answers-old-questions$/);
+        return !!window.location.href.match(/\/tools\/new-answers-old-questions/);
     }
     exports.isNatoPage = isNatoPage;
     function parseNatoPage() {

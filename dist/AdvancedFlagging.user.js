@@ -82,7 +82,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 26);
+/******/ 	return __webpack_require__(__webpack_require__.s = 27);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -223,12 +223,12 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 
 "use strict";
 "use strict";
-var isArray_1 = __webpack_require__(18);
-var isObject_1 = __webpack_require__(19);
-var isFunction_1 = __webpack_require__(8);
-var tryCatch_1 = __webpack_require__(23);
-var errorObject_1 = __webpack_require__(7);
-var UnsubscriptionError_1 = __webpack_require__(17);
+var isArray_1 = __webpack_require__(19);
+var isObject_1 = __webpack_require__(20);
+var isFunction_1 = __webpack_require__(9);
+var tryCatch_1 = __webpack_require__(24);
+var errorObject_1 = __webpack_require__(8);
+var UnsubscriptionError_1 = __webpack_require__(18);
 /**
  * Represents a disposable resource, such as the execution of an Observable. A
  * Subscription has one important method, `unsubscribe`, that takes no argument
@@ -456,7 +456,7 @@ exports.root = _root;
     }
 })();
 //# sourceMappingURL=root.js.map
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(25)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(26)))
 
 /***/ },
 /* 4 */
@@ -519,7 +519,181 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var isFunction_1 = __webpack_require__(8);
+var Observable_1 = __webpack_require__(14);
+var Subscriber_1 = __webpack_require__(7);
+var Subscription_1 = __webpack_require__(1);
+var ObjectUnsubscribedError_1 = __webpack_require__(17);
+var SubjectSubscription_1 = __webpack_require__(15);
+var rxSubscriber_1 = __webpack_require__(2);
+/**
+ * @class SubjectSubscriber<T>
+ */
+var SubjectSubscriber = (function (_super) {
+    __extends(SubjectSubscriber, _super);
+    function SubjectSubscriber(destination) {
+        _super.call(this, destination);
+        this.destination = destination;
+    }
+    return SubjectSubscriber;
+}(Subscriber_1.Subscriber));
+exports.SubjectSubscriber = SubjectSubscriber;
+/**
+ * @class Subject<T>
+ */
+var Subject = (function (_super) {
+    __extends(Subject, _super);
+    function Subject() {
+        _super.call(this);
+        this.observers = [];
+        this.closed = false;
+        this.isStopped = false;
+        this.hasError = false;
+        this.thrownError = null;
+    }
+    Subject.prototype[rxSubscriber_1.rxSubscriber] = function () {
+        return new SubjectSubscriber(this);
+    };
+    Subject.prototype.lift = function (operator) {
+        var subject = new AnonymousSubject(this, this);
+        subject.operator = operator;
+        return subject;
+    };
+    Subject.prototype.next = function (value) {
+        if (this.closed) {
+            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+        }
+        if (!this.isStopped) {
+            var observers = this.observers;
+            var len = observers.length;
+            var copy = observers.slice();
+            for (var i = 0; i < len; i++) {
+                copy[i].next(value);
+            }
+        }
+    };
+    Subject.prototype.error = function (err) {
+        if (this.closed) {
+            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+        }
+        this.hasError = true;
+        this.thrownError = err;
+        this.isStopped = true;
+        var observers = this.observers;
+        var len = observers.length;
+        var copy = observers.slice();
+        for (var i = 0; i < len; i++) {
+            copy[i].error(err);
+        }
+        this.observers.length = 0;
+    };
+    Subject.prototype.complete = function () {
+        if (this.closed) {
+            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+        }
+        this.isStopped = true;
+        var observers = this.observers;
+        var len = observers.length;
+        var copy = observers.slice();
+        for (var i = 0; i < len; i++) {
+            copy[i].complete();
+        }
+        this.observers.length = 0;
+    };
+    Subject.prototype.unsubscribe = function () {
+        this.isStopped = true;
+        this.closed = true;
+        this.observers = null;
+    };
+    Subject.prototype._trySubscribe = function (subscriber) {
+        if (this.closed) {
+            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+        }
+        else {
+            return _super.prototype._trySubscribe.call(this, subscriber);
+        }
+    };
+    Subject.prototype._subscribe = function (subscriber) {
+        if (this.closed) {
+            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+        }
+        else if (this.hasError) {
+            subscriber.error(this.thrownError);
+            return Subscription_1.Subscription.EMPTY;
+        }
+        else if (this.isStopped) {
+            subscriber.complete();
+            return Subscription_1.Subscription.EMPTY;
+        }
+        else {
+            this.observers.push(subscriber);
+            return new SubjectSubscription_1.SubjectSubscription(this, subscriber);
+        }
+    };
+    Subject.prototype.asObservable = function () {
+        var observable = new Observable_1.Observable();
+        observable.source = this;
+        return observable;
+    };
+    Subject.create = function (destination, source) {
+        return new AnonymousSubject(destination, source);
+    };
+    return Subject;
+}(Observable_1.Observable));
+exports.Subject = Subject;
+/**
+ * @class AnonymousSubject<T>
+ */
+var AnonymousSubject = (function (_super) {
+    __extends(AnonymousSubject, _super);
+    function AnonymousSubject(destination, source) {
+        _super.call(this);
+        this.destination = destination;
+        this.source = source;
+    }
+    AnonymousSubject.prototype.next = function (value) {
+        var destination = this.destination;
+        if (destination && destination.next) {
+            destination.next(value);
+        }
+    };
+    AnonymousSubject.prototype.error = function (err) {
+        var destination = this.destination;
+        if (destination && destination.error) {
+            this.destination.error(err);
+        }
+    };
+    AnonymousSubject.prototype.complete = function () {
+        var destination = this.destination;
+        if (destination && destination.complete) {
+            this.destination.complete();
+        }
+    };
+    AnonymousSubject.prototype._subscribe = function (subscriber) {
+        var source = this.source;
+        if (source) {
+            return this.source.subscribe(subscriber);
+        }
+        else {
+            return Subscription_1.Subscription.EMPTY;
+        }
+    };
+    return AnonymousSubject;
+}(Subject));
+exports.AnonymousSubject = AnonymousSubject;
+//# sourceMappingURL=Subject.js.map
+
+/***/ },
+/* 7 */
+/***/ function(module, exports, __webpack_require__) {
+
+"use strict";
+"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var isFunction_1 = __webpack_require__(9);
 var Subscription_1 = __webpack_require__(1);
 var Observer_1 = __webpack_require__(5);
 var rxSubscriber_1 = __webpack_require__(2);
@@ -779,7 +953,7 @@ var SafeSubscriber = (function (_super) {
 //# sourceMappingURL=Subscriber.js.map
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -789,7 +963,7 @@ exports.errorObject = { e: {} };
 //# sourceMappingURL=errorObject.js.map
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -801,7 +975,7 @@ exports.isFunction = isFunction;
 //# sourceMappingURL=isFunction.js.map
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
@@ -908,7 +1082,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -946,21 +1120,81 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(4)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, Caching_1, FunctionUtils_1) {
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(4), __webpack_require__(6)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, Caching_1, FunctionUtils_1, Subject_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
     var MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
     var MetaSmokeWasReportedConfig = 'MetaSmoke.WasReported';
     var MetaSmokeyAPI = /** @class */ (function () {
-        function MetaSmokeyAPI(appKey, codeGetter) {
+        function MetaSmokeyAPI(postId, postType) {
+            this.postId = postId;
+            this.postType = postType;
+        }
+        MetaSmokeyAPI.Reset = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, Caching_1.StoreInCache(MetaSmokeDisabledConfig, undefined)];
+                        case 1:
+                            _a.sent();
+                            return [4 /*yield*/, Caching_1.StoreInCache(MetaSmokeUserKeyConfig, undefined)];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        MetaSmokeyAPI.IsDisabled = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                var cachedDisabled;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, Caching_1.GetFromCache(MetaSmokeDisabledConfig)];
+                        case 1:
+                            cachedDisabled = _a.sent();
+                            if (cachedDisabled === undefined) {
+                                return [2 /*return*/, false];
+                            }
+                            return [2 /*return*/, cachedDisabled];
+                    }
+                });
+            });
+        };
+        MetaSmokeyAPI.getUserKey = function () {
+            var _this = this;
+            return Caching_1.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
+                var prom, code;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            prom = MetaSmokeyAPI.actualPromise;
+                            if (prom === undefined) {
+                                prom = MetaSmokeyAPI.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + MetaSmokeyAPI.appKey);
+                                MetaSmokeyAPI.actualPromise = prom;
+                            }
+                            return [4 /*yield*/, prom];
+                        case 1:
+                            code = _a.sent();
+                            $.ajax({
+                                url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeyAPI.appKey + '&code=' + code,
+                                method: 'GET'
+                            }).done(function (data) { return resolve(data.token); })
+                                .fail(function (err) { return reject(err); });
+                            return [2 /*return*/];
+                    }
+                });
+            }); }); });
+        };
+        MetaSmokeyAPI.Setup = function (appKey, codeGetter) {
             var _this = this;
             if (!codeGetter) {
                 codeGetter = function (metaSmokeOAuthUrl) { return __awaiter(_this, void 0, void 0, function () {
                     var isDisabled, cachedUserKey, returnCode;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
-                            case 0: return [4 /*yield*/, this.IsDisabled()];
+                            case 0: return [4 /*yield*/, MetaSmokeyAPI.IsDisabled()];
                             case 1:
                                 isDisabled = _a.sent();
                                 if (isDisabled) {
@@ -1000,146 +1234,156 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     });
                 }); };
             }
-            this.codeGetter = codeGetter;
-            this.appKey = appKey;
-            this.getUserKey(); // Make sure we request it immediately
-        }
-        MetaSmokeyAPI.Reset = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, Caching_1.StoreInCache(MetaSmokeDisabledConfig, undefined)];
-                        case 1:
-                            _a.sent();
-                            return [4 /*yield*/, Caching_1.StoreInCache(MetaSmokeUserKeyConfig, undefined)];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/];
-                    }
-                });
-            });
+            MetaSmokeyAPI.codeGetter = codeGetter;
+            MetaSmokeyAPI.appKey = appKey;
+            MetaSmokeyAPI.getUserKey(); // Make sure we request it immediately
         };
-        MetaSmokeyAPI.prototype.getUserKey = function () {
+        MetaSmokeyAPI.prototype.QueryMetaSmokey = function () {
             var _this = this;
-            return Caching_1.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                var prom, code;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            prom = this.actualPromise;
-                            if (prom === undefined) {
-                                prom = this.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + this.appKey);
-                                this.actualPromise = prom;
-                            }
-                            return [4 /*yield*/, prom];
-                        case 1:
-                            code = _a.sent();
-                            $.ajax({
-                                url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + this.appKey + '&code=' + code,
-                                method: 'GET'
-                            }).done(function (data) { return resolve(data.token); })
-                                .fail(function (err) { return reject(err); });
-                            return [2 /*return*/];
+            var urlStr = this.postType === 'Answer'
+                ? "//" + window.location.hostname + "/a/" + this.postId
+                : "//" + window.location.hostname + "/questions/" + this.postId;
+            Caching_1.GetAndCache(MetaSmokeWasReportedConfig + "." + urlStr, function () { return new Promise(function (resolve, reject) {
+                MetaSmokeyAPI.IsDisabled().then(function (isDisabled) {
+                    if (isDisabled) {
+                        return;
                     }
+                    $.ajax({
+                        type: 'GET',
+                        url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
+                        data: {
+                            urls: urlStr,
+                            key: "" + MetaSmokeyAPI.appKey
+                        }
+                    }).done(function (metaSmokeResult) {
+                        if (metaSmokeResult.items.length > 0) {
+                            resolve(metaSmokeResult.items[0].id);
+                        }
+                        else {
+                            resolve(null);
+                        }
+                    }).fail(function (error) {
+                        reject(error);
+                    });
                 });
-            }); }); });
+            }); })
+                .then(function (r) { return _this.subject.next(r); })
+                .catch(function (err) { return _this.subject.error(err); });
         };
-        MetaSmokeyAPI.prototype.IsDisabled = function () {
+        MetaSmokeyAPI.prototype.Watch = function () {
+            this.subject = new Subject_1.Subject();
+            this.QueryMetaSmokey();
+            return this.subject;
+        };
+        MetaSmokeyAPI.prototype.ReportNaa = function (answerDate, questionDate) {
             return __awaiter(this, void 0, void 0, function () {
-                var cachedDisabled;
+                var smokeyid;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, Caching_1.GetFromCache(MetaSmokeDisabledConfig)];
+                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
                         case 1:
-                            cachedDisabled = _a.sent();
-                            if (cachedDisabled === undefined) {
-                                return [2 /*return*/, false];
+                            smokeyid = _a.sent();
+                            if (smokeyid != null) {
+                                this.SendFeedback(smokeyid, "naa-");
                             }
-                            return [2 /*return*/, cachedDisabled];
+                            return [2 /*return*/];
                     }
                 });
             });
         };
-        MetaSmokeyAPI.prototype.GetFeedback = function (postId, postType) {
+        MetaSmokeyAPI.prototype.ReportRedFlag = function () {
             return __awaiter(this, void 0, void 0, function () {
                 var _this = this;
-                var urlStr, isDisabled, result;
+                var smokeyid, urlStr_1, promise;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0:
-                            urlStr = postType === 'Answer'
-                                ? "//" + window.location.hostname + "/a/" + postId
-                                : "//" + window.location.hostname + "/questions/" + postId;
-                            return [4 /*yield*/, this.IsDisabled()];
+                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
                         case 1:
-                            isDisabled = _a.sent();
-                            if (isDisabled) {
-                                return [2 /*return*/, []];
-                            }
-                            return [4 /*yield*/, Caching_1.GetAndCache(MetaSmokeWasReportedConfig + "." + urlStr, function () { return new Promise(function (resolve, reject) {
-                                    $.ajax({
-                                        type: 'GET',
-                                        url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
-                                        data: {
-                                            urls: urlStr,
-                                            key: "" + _this.appKey
-                                        }
-                                    }).done(function (metaSmokeResult) {
-                                        resolve(metaSmokeResult.items);
-                                    }).fail(function (error) {
-                                        reject(error);
-                                    });
-                                }); })];
+                            smokeyid = _a.sent();
+                            if (!(smokeyid != null)) return [3 /*break*/, 2];
+                            this.SendFeedback(smokeyid, "tpu-");
+                            return [3 /*break*/, 4];
                         case 2:
-                            result = _a.sent();
-                            return [2 /*return*/, result];
+                            urlStr_1 = this.postType === 'Answer'
+                                ? "//" + window.location.hostname + "/a/" + this.postId
+                                : "//" + window.location.hostname + "/q/" + this.postId;
+                            promise = new Promise(function (resolve, reject) {
+                                MetaSmokeyAPI.getUserKey().then(function (userKey) {
+                                    $.ajax({
+                                        type: 'POST',
+                                        url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
+                                        data: {
+                                            post_link: urlStr_1,
+                                            key: MetaSmokeyAPI.appKey,
+                                            token: userKey
+                                        }
+                                    }).done(function () { return resolve(); })
+                                        .fail(function () { return reject(); });
+                                });
+                            });
+                            return [4 /*yield*/, promise.then(function () {
+                                    Caching_1.StoreInCache(MetaSmokeWasReportedConfig + "." + urlStr_1, undefined);
+                                    _this.QueryMetaSmokey();
+                                })];
+                        case 3:
+                            _a.sent();
+                            _a.label = 4;
+                        case 4: return [2 /*return*/];
                     }
                 });
             });
         };
-        MetaSmokeyAPI.prototype.Report = function (postId, postType) {
-            var _this = this;
-            var urlStr = postType === 'Answer'
-                ? "//" + window.location.hostname + "/a/" + postId
-                : "//" + window.location.hostname + "/q/" + postId;
-            var promise = new Promise(function (resolve, reject) {
-                _this.getUserKey().then(function (userKey) {
-                    $.ajax({
-                        type: 'POST',
-                        url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
-                        data: {
-                            post_link: urlStr,
-                            key: _this.appKey,
-                            token: userKey
-                        }
-                    }).done(function () { return resolve(); })
-                        .fail(function () { return reject(); });
+        MetaSmokeyAPI.prototype.ReportLooksFine = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                var smokeyid;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
+                        case 1:
+                            smokeyid = _a.sent();
+                            if (smokeyid != null) {
+                                this.SendFeedback(smokeyid, "fp-");
+                            }
+                            return [2 /*return*/];
+                    }
                 });
             });
-            promise.then(function () {
-                Caching_1.StoreInCache(MetaSmokeWasReportedConfig + "." + urlStr, undefined);
+        };
+        MetaSmokeyAPI.prototype.ReportNeedsEditing = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                var smokeyid;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
+                        case 1:
+                            smokeyid = _a.sent();
+                            if (smokeyid != null) {
+                                this.SendFeedback(smokeyid, "fp-");
+                            }
+                            return [2 /*return*/];
+                    }
+                });
             });
-            return promise;
         };
-        MetaSmokeyAPI.prototype.ReportTruePositive = function (metaSmokeId) {
-            return this.SendFeedback(metaSmokeId, 'tpu-');
-        };
-        MetaSmokeyAPI.prototype.ReportFalsePositive = function (metaSmokeId) {
-            return this.SendFeedback(metaSmokeId, 'fp-');
-        };
-        MetaSmokeyAPI.prototype.ReportNAA = function (metaSmokeId) {
-            return this.SendFeedback(metaSmokeId, 'naa-');
+        MetaSmokeyAPI.prototype.GetSmokeyId = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.subject.toPromise()];
+                        case 1: return [2 /*return*/, _a.sent()];
+                    }
+                });
+            });
         };
         MetaSmokeyAPI.prototype.SendFeedback = function (metaSmokeId, feedbackType) {
-            var _this = this;
             return new Promise(function (resolve, reject) {
-                _this.getUserKey().then(function (userKey) {
+                MetaSmokeyAPI.getUserKey().then(function (userKey) {
                     $.ajax({
                         type: 'POST',
                         url: 'https://metasmoke.erwaysoftware.com/api/w/post/' + metaSmokeId + '/feedback',
                         data: {
                             type: feedbackType,
-                            key: _this.appKey,
+                            key: MetaSmokeyAPI.appKey,
                             token: userKey
                         }
                     }).done(function () { return resolve(); })
@@ -1154,7 +1398,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -1192,7 +1436,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(24), __webpack_require__(13)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, Caching_1, ChatApi_1, Subject_1) {
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(25), __webpack_require__(6)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, Caching_1, ChatApi_1, Subject_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
@@ -1323,15 +1567,221 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 
 
 /***/ },
-/* 12 */
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function isNatoPage() {
+        return !!window.location.href.match(/\/new-answers-old-questions$/);
+    }
+    exports.isNatoPage = isNatoPage;
+    function parseNatoPage() {
+        var nodes = $('.answer-hyperlink').parent().parent();
+        var results = [];
+        for (var i = 0; i < nodes.length; i++) {
+            var node = $(nodes[i]);
+            var postId = parseInt(node.find('.answer-hyperlink').attr('href').split('#')[1], 10);
+            var answerTime = parseActionDate(node.find('.user-action-time'));
+            var questionTime = parseActionDate(node.find('td .relativetime'));
+            var authorReputation = parseReputation(node.find('.reputation-score'));
+            var _a = parseAuthorDetails(node.find('.user-details')), authorName = _a.authorName, authorId = _a.authorId;
+            results.push({
+                type: 'Answer',
+                element: node,
+                page: 'NATO',
+                postId: postId,
+                answerTime: answerTime,
+                questionTime: questionTime,
+                authorReputation: authorReputation,
+                authorName: authorName,
+                authorId: authorId,
+            });
+        }
+        return results;
+    }
+    exports.parseNatoPage = parseNatoPage;
+    function isQuestionPage() {
+        return !!window.location.href.match(/\/questions\/\d+\/.*/);
+    }
+    exports.isQuestionPage = isQuestionPage;
+    function parseQuestionPage() {
+        var questionNode = $('.question');
+        var postId = parseInt(questionNode.attr('data-questionid'), 10);
+        function getPostDetails(node) {
+            var score = parseInt(node.find('.vote-count-post').text(), 10);
+            var authorReputation = parseReputation(node.find('.post-signature .reputation-score').last());
+            var _a = parseAuthorDetails(node.find('.post-signature .user-details').last()), authorName = _a.authorName, authorId = _a.authorId;
+            var postTime = parseActionDate(node.find('.post-signature .relativetime').last());
+            return { score: score, authorReputation: authorReputation, authorName: authorName, authorId: authorId, postTime: postTime };
+        }
+        var _a = getPostDetails(questionNode), score = _a.score, authorReputation = _a.authorReputation, authorName = _a.authorName, authorId = _a.authorId, postTime = _a.postTime;
+        var results = [];
+        var question = {
+            type: 'Question',
+            element: questionNode,
+            page: 'Question',
+            postId: postId,
+            postTime: postTime,
+            score: score,
+            authorReputation: authorReputation,
+            authorName: authorName,
+            authorId: authorId
+        };
+        results.push(question);
+        var answerNodes = $('.answer');
+        for (var i = 0; i < answerNodes.length; i++) {
+            var answerNode = $(answerNodes[i]);
+            var _b = getPostDetails(answerNode), score_1 = _b.score, authorReputation_1 = _b.authorReputation, authorName_1 = _b.authorName, authorId_1 = _b.authorId, postTime_1 = _b.postTime;
+            results.push({
+                type: 'Answer',
+                element: answerNode,
+                page: 'Question',
+                postId: postId,
+                question: question,
+                postTime: postTime_1,
+                score: score_1,
+                authorReputation: authorReputation_1,
+                authorName: authorName_1,
+                authorId: authorId_1
+            });
+        }
+        return results;
+    }
+    exports.parseQuestionPage = parseQuestionPage;
+    function isFlagsPage() {
+        return !!window.location.href.match(/\/users\/flag-summary\//);
+    }
+    exports.isFlagsPage = isFlagsPage;
+    function parseFlagsPage() {
+        var nodes = $('.flagged-post');
+        var results = [];
+        for (var i = 0; i < nodes.length; i++) {
+            var node = $(nodes[i]);
+            var type = node.find('.answer-hyperlink').length
+                ? 'Answer'
+                : 'Question';
+            var postId = parseInt(type === 'Answer'
+                ? node.find('.answer-hyperlink').attr('href').split('#')[1]
+                : node.find('.question-hyperlink').attr('href').split('/')[2], 10);
+            var score = parseInt(node.find('.answer-votes').text(), 10);
+            var _a = parseAuthorDetails(node.find('.post-user-info')), authorName = _a.authorName, authorId = _a.authorId;
+            var postTime = parseActionDate(node.find('.post-user-info .relativetime'));
+            var handledTime = parseActionDate(node.find('.mod-flag .relativetime'));
+            var fullHandledResult = node.find('.flag-outcome').text().trim().split(' - ');
+            var handledResult = fullHandledResult[0].trim();
+            var handledComment = fullHandledResult.slice(1).join(' - ').trim();
+            results.push({
+                type: type,
+                element: node,
+                page: 'Flags',
+                postId: postId,
+                score: score,
+                postTime: postTime,
+                handledTime: handledTime,
+                handledResult: handledResult,
+                handledComment: handledComment,
+                authorName: authorName,
+                authorId: authorId
+            });
+        }
+        return results;
+    }
+    exports.parseFlagsPage = parseFlagsPage;
+    function parseGenericPage() {
+        var questionNodes = $('.question-hyperlink');
+        var results = [];
+        for (var i = 0; i < questionNodes.length; i++) {
+            var questionNode = $(questionNodes[i]);
+            var fragment = questionNode.attr('href').split('/')[2];
+            if (fragment.indexOf('_') >= 0) {
+                fragment = fragment.split('_')[1];
+            }
+            var postId = parseInt(fragment, 10);
+            results.push({
+                type: 'Question',
+                element: questionNode,
+                page: 'Unknown',
+                postId: postId
+            });
+        }
+        var answerNodes = $('.answer-hyperlink');
+        for (var i = 0; i < answerNodes.length; i++) {
+            var answerNode = $(answerNodes[i]);
+            var fragment = answerNode.attr('href').split('#')[1];
+            if (fragment.indexOf('_') >= 0) {
+                fragment = fragment.split('_')[1];
+            }
+            var postId = parseInt(fragment, 10);
+            results.push({
+                type: 'Answer',
+                element: answerNode,
+                page: 'Unknown',
+                postId: postId
+            });
+        }
+        return results;
+    }
+    exports.parseGenericPage = parseGenericPage;
+    function parseCurrentPage() {
+        if (isNatoPage())
+            // We explicitly type the page, as it allows the typescript compiler to 
+            // figure out the type of posts if a user checks if. For example:
+            // const parsed = parseCurrentPage();
+            // if (parsed.Page === 'Nato') {
+            //     parsed.Posts is now properly typed as a nato post
+            // }
+            // If we don't do this, 'Page' is simply a string and doesn't give us any compiler hints
+            return { Page: 'NATO', Posts: parseNatoPage() };
+        if (isQuestionPage())
+            return { Page: 'Question', Posts: parseQuestionPage() };
+        if (isFlagsPage())
+            return { Page: 'Flags', Posts: parseFlagsPage() };
+        return { Page: 'Unknown', Posts: parseGenericPage() };
+    }
+    exports.parseCurrentPage = parseCurrentPage;
+    function parseReputation(reputationDiv) {
+        var reputationText = reputationDiv.text();
+        if (reputationText.indexOf('k') !== -1) {
+            reputationText = reputationDiv.attr('title').substr('reputation score '.length);
+        }
+        reputationText = reputationText.replace(',', '');
+        if (reputationText.trim() !== '')
+            return parseInt(reputationText, 10);
+        return undefined;
+    }
+    function parseAuthorDetails(authorDiv) {
+        var userLink = authorDiv.find('a');
+        var authorName = userLink.text();
+        var userLinkRef = userLink.attr('href');
+        var authorId;
+        // Users can be deleted, and thus have no link to their profile.
+        if (userLinkRef) {
+            authorId = parseInt(userLinkRef.split('/')[2], 10);
+        }
+        return { authorName: authorName, authorId: authorId };
+    }
+    function parseActionDate(actionDiv) {
+        if (!actionDiv.hasClass('relativetime')) {
+            actionDiv = actionDiv.find('.relativetime');
+        }
+        var answerTime = new Date(actionDiv.attr('title'));
+        return answerTime;
+    }
+}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
 var root_1 = __webpack_require__(3);
-var toSubscriber_1 = __webpack_require__(22);
-var observable_1 = __webpack_require__(15);
-var pipe_1 = __webpack_require__(21);
+var toSubscriber_1 = __webpack_require__(23);
+var observable_1 = __webpack_require__(16);
+var pipe_1 = __webpack_require__(22);
 /**
  * A representation of any set of values over any amount of time. This is the most basic building block
  * of RxJS.
@@ -1634,181 +2084,7 @@ exports.Observable = Observable;
 //# sourceMappingURL=Observable.js.map
 
 /***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-var Observable_1 = __webpack_require__(12);
-var Subscriber_1 = __webpack_require__(6);
-var Subscription_1 = __webpack_require__(1);
-var ObjectUnsubscribedError_1 = __webpack_require__(16);
-var SubjectSubscription_1 = __webpack_require__(14);
-var rxSubscriber_1 = __webpack_require__(2);
-/**
- * @class SubjectSubscriber<T>
- */
-var SubjectSubscriber = (function (_super) {
-    __extends(SubjectSubscriber, _super);
-    function SubjectSubscriber(destination) {
-        _super.call(this, destination);
-        this.destination = destination;
-    }
-    return SubjectSubscriber;
-}(Subscriber_1.Subscriber));
-exports.SubjectSubscriber = SubjectSubscriber;
-/**
- * @class Subject<T>
- */
-var Subject = (function (_super) {
-    __extends(Subject, _super);
-    function Subject() {
-        _super.call(this);
-        this.observers = [];
-        this.closed = false;
-        this.isStopped = false;
-        this.hasError = false;
-        this.thrownError = null;
-    }
-    Subject.prototype[rxSubscriber_1.rxSubscriber] = function () {
-        return new SubjectSubscriber(this);
-    };
-    Subject.prototype.lift = function (operator) {
-        var subject = new AnonymousSubject(this, this);
-        subject.operator = operator;
-        return subject;
-    };
-    Subject.prototype.next = function (value) {
-        if (this.closed) {
-            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
-        }
-        if (!this.isStopped) {
-            var observers = this.observers;
-            var len = observers.length;
-            var copy = observers.slice();
-            for (var i = 0; i < len; i++) {
-                copy[i].next(value);
-            }
-        }
-    };
-    Subject.prototype.error = function (err) {
-        if (this.closed) {
-            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
-        }
-        this.hasError = true;
-        this.thrownError = err;
-        this.isStopped = true;
-        var observers = this.observers;
-        var len = observers.length;
-        var copy = observers.slice();
-        for (var i = 0; i < len; i++) {
-            copy[i].error(err);
-        }
-        this.observers.length = 0;
-    };
-    Subject.prototype.complete = function () {
-        if (this.closed) {
-            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
-        }
-        this.isStopped = true;
-        var observers = this.observers;
-        var len = observers.length;
-        var copy = observers.slice();
-        for (var i = 0; i < len; i++) {
-            copy[i].complete();
-        }
-        this.observers.length = 0;
-    };
-    Subject.prototype.unsubscribe = function () {
-        this.isStopped = true;
-        this.closed = true;
-        this.observers = null;
-    };
-    Subject.prototype._trySubscribe = function (subscriber) {
-        if (this.closed) {
-            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
-        }
-        else {
-            return _super.prototype._trySubscribe.call(this, subscriber);
-        }
-    };
-    Subject.prototype._subscribe = function (subscriber) {
-        if (this.closed) {
-            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
-        }
-        else if (this.hasError) {
-            subscriber.error(this.thrownError);
-            return Subscription_1.Subscription.EMPTY;
-        }
-        else if (this.isStopped) {
-            subscriber.complete();
-            return Subscription_1.Subscription.EMPTY;
-        }
-        else {
-            this.observers.push(subscriber);
-            return new SubjectSubscription_1.SubjectSubscription(this, subscriber);
-        }
-    };
-    Subject.prototype.asObservable = function () {
-        var observable = new Observable_1.Observable();
-        observable.source = this;
-        return observable;
-    };
-    Subject.create = function (destination, source) {
-        return new AnonymousSubject(destination, source);
-    };
-    return Subject;
-}(Observable_1.Observable));
-exports.Subject = Subject;
-/**
- * @class AnonymousSubject<T>
- */
-var AnonymousSubject = (function (_super) {
-    __extends(AnonymousSubject, _super);
-    function AnonymousSubject(destination, source) {
-        _super.call(this);
-        this.destination = destination;
-        this.source = source;
-    }
-    AnonymousSubject.prototype.next = function (value) {
-        var destination = this.destination;
-        if (destination && destination.next) {
-            destination.next(value);
-        }
-    };
-    AnonymousSubject.prototype.error = function (err) {
-        var destination = this.destination;
-        if (destination && destination.error) {
-            this.destination.error(err);
-        }
-    };
-    AnonymousSubject.prototype.complete = function () {
-        var destination = this.destination;
-        if (destination && destination.complete) {
-            this.destination.complete();
-        }
-    };
-    AnonymousSubject.prototype._subscribe = function (subscriber) {
-        var source = this.source;
-        if (source) {
-            return this.source.subscribe(subscriber);
-        }
-        else {
-            return Subscription_1.Subscription.EMPTY;
-        }
-    };
-    return AnonymousSubject;
-}(Subject));
-exports.AnonymousSubject = AnonymousSubject;
-//# sourceMappingURL=Subject.js.map
-
-/***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1854,7 +2130,7 @@ exports.SubjectSubscription = SubjectSubscription;
 //# sourceMappingURL=SubjectSubscription.js.map
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1886,7 +2162,7 @@ exports.$$observable = exports.observable;
 //# sourceMappingURL=observable.js.map
 
 /***/ },
-/* 16 */
+/* 17 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -1919,7 +2195,7 @@ exports.ObjectUnsubscribedError = ObjectUnsubscribedError;
 //# sourceMappingURL=ObjectUnsubscribedError.js.map
 
 /***/ },
-/* 17 */
+/* 18 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -1950,7 +2226,7 @@ exports.UnsubscriptionError = UnsubscriptionError;
 //# sourceMappingURL=UnsubscriptionError.js.map
 
 /***/ },
-/* 18 */
+/* 19 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -1959,7 +2235,7 @@ exports.isArray = Array.isArray || (function (x) { return x && typeof x.length =
 //# sourceMappingURL=isArray.js.map
 
 /***/ },
-/* 19 */
+/* 20 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -1971,7 +2247,7 @@ exports.isObject = isObject;
 //# sourceMappingURL=isObject.js.map
 
 /***/ },
-/* 20 */
+/* 21 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -1982,12 +2258,12 @@ exports.noop = noop;
 //# sourceMappingURL=noop.js.map
 
 /***/ },
-/* 21 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
-var noop_1 = __webpack_require__(20);
+var noop_1 = __webpack_require__(21);
 /* tslint:enable:max-line-length */
 function pipe() {
     var fns = [];
@@ -2013,12 +2289,12 @@ exports.pipeFromArray = pipeFromArray;
 //# sourceMappingURL=pipe.js.map
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
-var Subscriber_1 = __webpack_require__(6);
+var Subscriber_1 = __webpack_require__(7);
 var rxSubscriber_1 = __webpack_require__(2);
 var Observer_1 = __webpack_require__(5);
 function toSubscriber(nextOrObserver, error, complete) {
@@ -2039,12 +2315,12 @@ exports.toSubscriber = toSubscriber;
 //# sourceMappingURL=toSubscriber.js.map
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
-var errorObject_1 = __webpack_require__(7);
+var errorObject_1 = __webpack_require__(8);
 var tryCatchTarget;
 function tryCatcher() {
     try {
@@ -2064,7 +2340,7 @@ exports.tryCatch = tryCatch;
 //# sourceMappingURL=tryCatch.js.map
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, Caching_1) {
@@ -2124,7 +2400,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ },
-/* 25 */
+/* 26 */
 /***/ function(module, exports) {
 
 var g;
@@ -2149,7 +2425,7 @@ module.exports = g;
 
 
 /***/ },
-/* 26 */
+/* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -2187,7 +2463,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(10), __webpack_require__(9), __webpack_require__(11), __webpack_require__(0), __webpack_require__(4)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, MetaSmokeyAPI_1, FlagTypes_1, NattyApi_1, Caching_1, FunctionUtils_1) {
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(11), __webpack_require__(10), __webpack_require__(12), __webpack_require__(0), __webpack_require__(4), __webpack_require__(13)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, MetaSmokeyAPI_1, FlagTypes_1, NattyApi_1, Caching_1, FunctionUtils_1, StackExchangeWebParser_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // tslint:disable-next-line:no-debugger
@@ -2212,7 +2488,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 var comments = flag.Comments;
                 comments.sort(function (a, b) { return b.ReputationLimit - a.ReputationLimit; });
                 for (var i = 0; i < comments.length; i++) {
-                    if (comments[i].ReputationLimit <= userReputation) {
+                    if (userReputation === undefined || comments[i].ReputationLimit <= userReputation) {
                         commentText_1 = comments[i].Comment;
                         break;
                     }
@@ -2275,204 +2551,208 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             });
         });
     }
-    function SetupPostPage() {
-        var postMenus = $('.post-menu');
-        var questionTime = new Date($('.post-signature.owner .user-action-time .relativetime').attr('title'));
-        postMenus.each(function (index, item) {
-            var jqueryItem = $(item);
-            var postType = jqueryItem.closest('.answercell').length > 0
-                ? 'Answer'
-                : 'Question';
-            var postId = parseInt(jqueryItem.find('.flag-post-link').attr('data-postid'), 10);
-            var reputationDiv = jqueryItem.closest(postType === 'Answer' ? '.answercell' : '.postcell').find('.reputation-score');
-            var reputationText = reputationDiv.text();
-            if (reputationText.indexOf('k') !== -1) {
-                reputationText = reputationDiv.attr('title').substr('reputation score '.length);
+    function BuildFlaggingDialog(element, postId, postType, reputation, answerTime, questionTime, reportedIcon, performedActionIcon, reporters) {
+        var _this = this;
+        var getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
+        var linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
+        var dropDown = $('<dl />').css({
+            'margin': '0',
+            'z-index': '1',
+            'position': 'absolute',
+            'white-space': 'nowrap',
+            'background': '#FFF',
+            'padding': '5px',
+            'border': '1px solid #9fa6ad',
+            'box-shadow': '0 2px 4px rgba(36,39,41,0.3)',
+            'cursor': 'default'
+        }).hide();
+        var checkboxName = "comment_checkbox_" + postId;
+        var leaveCommentBox = $('<input />')
+            .attr('type', 'checkbox')
+            .attr('name', checkboxName);
+        var comments = element.find('.comment-body');
+        if (comments.length === 0) {
+            leaveCommentBox.prop('checked', true);
+        }
+        var hasCommentOptions = false;
+        var firstCategory = true;
+        FlagTypes_1.flagCategories.forEach(function (flagCategory) {
+            if (flagCategory.AppliesTo.indexOf(postType) === -1) {
+                return;
             }
-            reputationText = reputationText.replace(',', '');
-            var reputation = parseInt(reputationText, 10);
-            var advancedFlaggingLink = $('<a />').text('Advanced Flagging');
-            var dropDown = $('<dl />').css({
-                'margin': '0',
-                'z-index': '1',
-                'position': 'absolute',
-                'white-space': 'nowrap',
-                'background': '#FFF',
-                'padding': '5px',
-                'border': '1px solid #9fa6ad',
-                'box-shadow': '0 2px 4px rgba(36,39,41,0.3)',
-                'cursor': 'default'
-            }).hide();
-            var linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
-            var checkboxName = "comment_checkbox_" + postId;
-            var leaveCommentBox = $('<input />')
-                .attr('type', 'checkbox')
-                .attr('name', checkboxName);
-            var postDiv = jqueryItem.closest(postType === 'Answer' ? '.answer' : '.question');
-            var comments = postDiv.find('.comment-body');
-            if (comments.length === 0) {
-                leaveCommentBox.prop('checked', true);
+            if (!firstCategory) {
+                dropDown.append(getDivider());
             }
-            var metaSmoke = new MetaSmokeyAPI_1.MetaSmokeyAPI(metaSmokeKey);
-            var natty = new NattyApi_1.NattyAPI(postId);
-            var metaSmokeWasReported = metaSmoke.GetFeedback(postId, postType);
-            var nattyObservable = natty.Watch();
-            var performedActionIcon = getPerformedActionIcon();
-            var reportedIcon = getReportedIcon();
-            var getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
-            var hasCommentOptions = false;
-            var firstCategory = true;
-            FlagTypes_1.flagCategories.forEach(function (flagCategory) {
-                if (flagCategory.AppliesTo.indexOf(postType) === -1) {
-                    return;
+            flagCategory.FlagTypes.forEach(function (flagType) {
+                if (flagType.Comment || (flagType.Comments && flagType.Comments.length > 0)) {
+                    hasCommentOptions = true;
                 }
-                if (!firstCategory) {
-                    dropDown.append(getDivider());
+                var dropdownItem = $('<dd />');
+                if (flagCategory.BoxStyle) {
+                    dropdownItem.css(flagCategory.BoxStyle);
                 }
-                flagCategory.FlagTypes.forEach(function (flagType) {
-                    if (flagType.Comment || (flagType.Comments && flagType.Comments.length > 0)) {
-                        hasCommentOptions = true;
+                var nattyLinkItem = $('<a />').css(linkStyle);
+                nattyLinkItem.click(function () {
+                    var result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation);
+                    if (result.CommentPromise) {
+                        result.CommentPromise.then(function (data) {
+                            var commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
+                            commentUI.addShow(true, false);
+                            commentUI.showComments(data, null, false, true);
+                            $(document).trigger('comment', postId);
+                        });
                     }
-                    var dropdownItem = $('<dd />');
-                    if (flagCategory.BoxStyle) {
-                        dropdownItem.css(flagCategory.BoxStyle);
+                    if (result.FlagPromise) {
+                        result.FlagPromise.then(function () {
+                            Caching_1.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType);
+                            reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
+                            reportedIcon.show();
+                        });
                     }
-                    var nattyLinkItem = $('<a />').css(linkStyle);
-                    nattyLinkItem.click(function () {
-                        var result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation);
-                        if (result.CommentPromise) {
-                            result.CommentPromise.then(function (data) {
-                                var commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
-                                commentUI.addShow(true, false);
-                                commentUI.showComments(data, null, false, true);
-                                $(document).trigger('comment', postId);
-                            });
-                        }
-                        if (result.FlagPromise) {
-                            result.FlagPromise.then(function () {
-                                Caching_1.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType);
-                                reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
-                                reportedIcon.show();
-                            });
-                        }
-                        var noFlag = flagType.ReportType === 'NoFlag';
-                        if (noFlag && result.PerformedActionPromise) {
-                            result.PerformedActionPromise.then(function () {
-                                Caching_1.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType);
-                                performedActionIcon.attr('title', "Performed action: " + flagType.DisplayName);
-                                performedActionIcon.show();
-                            });
-                        }
-                        var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
-                        var naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
-                        metaSmokeWasReported.then(function (responseItems) {
-                            if (responseItems.length > 0) {
-                                var metaSmokeId = responseItems[0].id;
-                                if (rudeFlag) {
-                                    metaSmoke.ReportTruePositive(metaSmokeId).then(function () { return displaySuccess('Feedback sent to MS'); });
-                                }
-                                else if (naaFlag) {
-                                    metaSmoke.ReportNAA(metaSmokeId).then(function () { return displaySuccess('Feedback sent to MS'); });
-                                }
-                                else if (noFlag) {
-                                    metaSmoke.ReportFalsePositive(metaSmokeId).then(function () { return displaySuccess('Feedback sent to MS'); });
-                                }
-                            }
-                            else if (rudeFlag) {
-                                metaSmoke.Report(postId, postType).then(function () { return displaySuccess('Reported to MS'); });
+                    var noFlag = flagType.ReportType === 'NoFlag';
+                    if (noFlag && result.PerformedActionPromise) {
+                        result.PerformedActionPromise.then(function () {
+                            Caching_1.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType);
+                            performedActionIcon.attr('title', "Performed action: " + flagType.DisplayName);
+                            performedActionIcon.show();
+                        });
+                    }
+                    var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
+                    var naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
+                    reporters.forEach(function (r) { return __awaiter(_this, void 0, void 0, function () {
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    if (!rudeFlag) return [3 /*break*/, 2];
+                                    return [4 /*yield*/, r.ReportRedFlag()];
+                                case 1:
+                                    _a.sent();
+                                    displaySuccess("Feedback sent to " + r.name);
+                                    return [3 /*break*/, 8];
+                                case 2:
+                                    if (!naaFlag) return [3 /*break*/, 4];
+                                    return [4 /*yield*/, r.ReportNaa(answerTime, questionTime)];
+                                case 3:
+                                    _a.sent();
+                                    displaySuccess("Feedback sent to " + r.name);
+                                    return [3 /*break*/, 8];
+                                case 4:
+                                    if (!noFlag) return [3 /*break*/, 8];
+                                    if (!(flagType.DisplayName === 'Needs Editing')) return [3 /*break*/, 6];
+                                    return [4 /*yield*/, r.ReportNeedsEditing()];
+                                case 5:
+                                    _a.sent();
+                                    displaySuccess("Feedback sent to " + r.name);
+                                    return [3 /*break*/, 8];
+                                case 6: return [4 /*yield*/, r.ReportLooksFine()];
+                                case 7:
+                                    _a.sent();
+                                    displaySuccess("Feedback sent to " + r.name);
+                                    _a.label = 8;
+                                case 8: return [2 /*return*/];
                             }
                         });
-                        var answerTime = new Date(jqueryItem.closest('.answercell').find('.post-signature .user-action-time:contains("answered") .relativetime').attr('title'));
-                        if (naaFlag) {
-                            natty.ReportNaa(answerTime, questionTime);
-                        }
-                        else if (rudeFlag) {
-                            natty.ReportRedFlag();
-                        }
-                        else if (noFlag) {
-                            if (flagType.DisplayName === 'Needs Editing') {
-                                natty.ReportNeedsEditing();
-                            }
-                            else {
-                                natty.ReportLooksFine();
-                            }
-                        }
-                        dropDown.hide();
-                    });
-                    nattyLinkItem.text(flagType.DisplayName);
-                    dropdownItem.append(nattyLinkItem);
-                    dropDown.append(dropdownItem);
+                    }); });
+                    dropDown.hide();
                 });
-                firstCategory = false;
+                nattyLinkItem.text(flagType.DisplayName);
+                dropdownItem.append(nattyLinkItem);
+                dropDown.append(dropdownItem);
             });
-            if (hasCommentOptions) {
-                dropDown.append(getDivider());
-                var commentBoxLabel = $('<label />').text('Leave comment')
-                    .attr('for', checkboxName)
-                    .css({
-                    'margin-right': '5px',
-                    'margin-left': '4px',
+            firstCategory = false;
+        });
+        if (hasCommentOptions) {
+            dropDown.append(getDivider());
+            var commentBoxLabel = $('<label />').text('Leave comment')
+                .attr('for', checkboxName)
+                .css({
+                'margin-right': '5px',
+                'margin-left': '4px',
+            });
+            commentBoxLabel.click(function () { return leaveCommentBox.click(); });
+            var commentingRow = $('<dd />');
+            commentingRow.append(commentBoxLabel);
+            commentingRow.append(leaveCommentBox);
+            dropDown.append(commentingRow);
+        }
+        return dropDown;
+    }
+    function SetupPostPage() {
+        var results = StackExchangeWebParser_1.parseCurrentPage();
+        var _loop_1 = function () {
+            var post = results.Posts[i];
+            var iconLocation = void 0;
+            var advancedFlaggingLink = null;
+            var reporters = [];
+            if (post.type === 'Answer') {
+                var nattyApi = new NattyApi_1.NattyAPI(post.postId);
+                nattyApi.Watch()
+                    .subscribe(function (reported) {
+                    if (reported) {
+                        nattyIcon.show();
+                    }
+                    else {
+                        nattyIcon.hide();
+                    }
                 });
-                commentBoxLabel.click(function () { return leaveCommentBox.click(); });
-                var commentingRow = $('<dd />');
-                commentingRow.append(commentBoxLabel);
-                commentingRow.append(leaveCommentBox);
-                dropDown.append(commentingRow);
+                reporters.push(Object.assign({}, { name: 'Natty' }, nattyApi));
             }
-            advancedFlaggingLink.append(dropDown);
-            $(window).click(function () {
-                dropDown.hide();
-            });
-            advancedFlaggingLink.click(function (e) {
-                e.stopPropagation();
-                if (e.target === advancedFlaggingLink.get(0)) {
-                    dropDown.toggle();
-                }
-            });
-            jqueryItem.append(advancedFlaggingLink);
-            jqueryItem.append(performedActionIcon);
-            jqueryItem.append(reportedIcon);
-            var nattyIcon = getNattyIcon();
-            var smokeyIcon = getSmokeyIcon();
-            nattyIcon.click(function () {
-                window.open("https://sentinel.erwaysoftware.com/posts/aid/" + postId, '_blank');
-            });
-            metaSmokeWasReported
-                .then(function (responseItems) {
-                if (responseItems.length > 0) {
-                    var metaSmokeId_1 = responseItems[0].id;
-                    smokeyIcon.click(function () {
-                        window.open("https://metasmoke.erwaysoftware.com/post/" + metaSmokeId_1, '_blank');
-                    });
+            var metaSmoke = new MetaSmokeyAPI_1.MetaSmokeyAPI(post.postId, post.type);
+            metaSmoke.Watch()
+                .subscribe(function (id) {
+                if (id !== null) {
                     smokeyIcon.show();
                 }
+                else {
+                    smokeyIcon.hide();
+                }
             });
-            nattyObservable
-                .subscribe(function (wasReported) {
-                if (wasReported) {
-                    nattyIcon.show();
+            reporters.push(Object.assign({}, { name: 'Smokey' }, metaSmoke));
+            var performedActionIcon = getPerformedActionIcon();
+            var reportedIcon = getReportedIcon();
+            if (post.page === 'Question') {
+                // Now we setup the flagging dialog
+                iconLocation = post.element.find('.post-menu');
+                advancedFlaggingLink = $('<a />').text('Advanced Flagging');
+                var questionTime = void 0;
+                var answerTime = void 0;
+                if (post.type === 'Answer') {
+                    questionTime = post.question.postTime;
+                    answerTime = post.postTime;
                 }
                 else {
-                    nattyIcon.hide();
+                    questionTime = post.postTime;
+                    answerTime = post.postTime;
                 }
-            });
-            var previousFlagPromise = Caching_1.GetFromCache("AdvancedFlagging.Flagged." + postId);
-            previousFlagPromise.then(function (previousFlag) {
-                if (previousFlag) {
-                    reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
-                    reportedIcon.show();
-                }
-            });
-            var previousPerformedActionPromise = Caching_1.GetFromCache("AdvancedFlagging.PerformedAction." + postId);
-            previousPerformedActionPromise.then(function (previousAction) {
-                if (previousAction && previousAction.ReportType === 'NoFlag') {
-                    performedActionIcon.attr('title', "Previously performed action: " + previousAction.DisplayName);
-                    performedActionIcon.show();
-                }
-            });
-            jqueryItem.append(nattyIcon);
-            jqueryItem.append(smokeyIcon);
-        });
+                var dropDown_1 = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime, questionTime, performedActionIcon, reportedIcon, reporters);
+                advancedFlaggingLink.append(dropDown_1);
+                $(window).click(function () {
+                    dropDown_1.hide();
+                });
+                var link_1 = advancedFlaggingLink;
+                link_1.click(function (e) {
+                    e.stopPropagation();
+                    if (e.target === link_1.get(0)) {
+                        dropDown_1.toggle();
+                    }
+                });
+            }
+            else {
+                iconLocation = post.element;
+            }
+            var nattyIcon = getNattyIcon();
+            var smokeyIcon = getSmokeyIcon();
+            if (advancedFlaggingLink) {
+                iconLocation.append(advancedFlaggingLink);
+            }
+            iconLocation.append(performedActionIcon);
+            iconLocation.append(reportedIcon);
+            iconLocation.append(nattyIcon);
+            iconLocation.append(smokeyIcon);
+        };
+        for (var i = 0; i < results.Posts.length; i++) {
+            _loop_1();
+        }
     }
     function getPerformedActionIcon() {
         return $('<div>').addClass('comment-flag')
@@ -2505,61 +2785,18 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             .attr('title', 'Reported by Smokey')
             .hide();
     }
-    function SetupAnswerLinks() {
-        $('a.answer-hyperlink').each(function (index, item) {
-            var jqueryItem = $(item);
-            var displayStyle = { 'display': 'inline-block' };
-            var performedActionIcon = getPerformedActionIcon();
-            var reportedIcon = getReportedIcon();
-            var nattyIcon = getNattyIcon();
-            var smokeyIcon = getSmokeyIcon();
-            jqueryItem.after(smokeyIcon);
-            jqueryItem.after(nattyIcon);
-            jqueryItem.after(reportedIcon);
-            jqueryItem.after(performedActionIcon);
-            var hyperLink = jqueryItem.attr('href');
-            var postId = parseInt(hyperLink.split('#')[1], 10);
-            var metaSmoke = new MetaSmokeyAPI_1.MetaSmokeyAPI(metaSmokeKey);
-            var metaSmokeWasReported = metaSmoke.GetFeedback(postId, 'Answer');
-            var natty = new NattyApi_1.NattyAPI(postId);
-            var nattyObservable = natty.Watch();
-            nattyIcon.click(function () {
-                window.open("https://sentinel.erwaysoftware.com/posts/aid/" + postId, '_blank');
-            });
-            var previousFlagPromise = Caching_1.GetFromCache("AdvancedFlagging.Flagged." + postId);
-            previousFlagPromise.then(function (previousFlag) {
-                if (previousFlag) {
-                    reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
-                    reportedIcon.show();
-                }
-            });
-            var previousPerformedActionPromise = Caching_1.GetFromCache("AdvancedFlagging.PerformedAction." + postId);
-            previousPerformedActionPromise.then(function (previousAction) {
-                if (previousAction && previousAction.ReportType === 'NoFlag') {
-                    performedActionIcon.attr('title', "Previously performed action: " + previousAction.DisplayName);
-                    performedActionIcon.show();
-                }
-            });
-            metaSmokeWasReported
-                .then(function (responseItems) {
-                if (responseItems.length > 0) {
-                    var metaSmokeId_2 = responseItems[0].id;
-                    smokeyIcon.click(function () {
-                        window.open("https://metasmoke.erwaysoftware.com/post/" + metaSmokeId_2, '_blank');
-                    });
-                    smokeyIcon.css(displayStyle);
-                }
-            });
-            nattyObservable
-                .subscribe(function (wasReported) {
-                if (wasReported) {
-                    nattyIcon.css(displayStyle);
-                }
-                else {
-                    nattyIcon.hide();
-                }
-            });
-        });
+    function getDropdown() {
+        $('<dl />').css({
+            'margin': '0',
+            'z-index': '1',
+            'position': 'absolute',
+            'white-space': 'nowrap',
+            'background': '#FFF',
+            'padding': '5px',
+            'border': '1px solid #9fa6ad',
+            'box-shadow': '0 2px 4px rgba(36,39,41,0.3)',
+            'cursor': 'default'
+        }).hide();
     }
     function SetupAdminTools() {
         var bottomBox = $('.-copyright, text-right').children('.g-column').children('.-list');
@@ -2580,8 +2817,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
     $(function () {
         Caching_1.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
+        MetaSmokeyAPI_1.MetaSmokeyAPI.Setup(metaSmokeKey);
         SetupPostPage();
-        SetupAnswerLinks();
         SetupAdminTools();
         setupStyles();
         document.body.appendChild(popup.get(0));

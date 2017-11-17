@@ -18,6 +18,7 @@ export function parseNatoPage() {
         results.push({
             type: <'Answer'>'Answer',
             element: node,
+            page: <'NATO'>'NATO',
             postId,
             answerTime,
             questionTime,
@@ -52,6 +53,7 @@ export function parseQuestionPage() {
     const question = {
         type: <'Question'>'Question',
         element: questionNode,
+        page: <'Question'>'Question',
         postId,
         postTime,
 
@@ -71,7 +73,8 @@ export function parseQuestionPage() {
 
         results.push({
             type: <'Answer'>'Answer',
-            element: questionNode,
+            element: answerNode,
+            page: <'Question'>'Question',
             postId,
             question,
 
@@ -118,6 +121,8 @@ export function parseFlagsPage() {
 
         results.push({
             type: <'Answer' | 'Question'>type,
+            element: node,
+            page: <'Flags'>'Flags',
             postId,
             score,
             postTime,
@@ -145,6 +150,7 @@ export function parseGenericPage() {
         results.push({
             type: <'Question'>'Question',
             element: questionNode,
+            page: <'Unknown'>'Unknown',
             postId
         })
     }
@@ -160,6 +166,7 @@ export function parseGenericPage() {
         results.push({
             type: <'Answer'>'Answer',
             element: answerNode,
+            page: <'Unknown'>'Unknown',
             postId
         })
     }

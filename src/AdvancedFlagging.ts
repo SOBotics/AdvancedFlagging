@@ -64,7 +64,7 @@ function setupStyles() {
     target.appendChild(scriptNode);
 };
 
-function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: boolean, userReputation: number) {
+function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: boolean, userReputation?: number) {
     const result: {
         CommentPromise?: Promise<string>;
         FlagPromise?: Promise<string>;
@@ -79,7 +79,7 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
             const comments = flag.Comments;
             comments.sort((a, b) => b.ReputationLimit - a.ReputationLimit);
             for (let i = 0; i < comments.length; i++) {
-                if (comments[i].ReputationLimit <= userReputation) {
+                if (userReputation === undefined || comments[i].ReputationLimit <= userReputation) {
                     commentText = comments[i].Comment;
                     break;
                 }
@@ -137,236 +137,235 @@ async function displaySuccess(message: string) {
     }
 }
 
+interface Reporter {
+    name: string,
+    ReportNaa(answerDate: Date, questionDate: Date): Promise<void>;
+    ReportRedFlag(): Promise<void>;
+    ReportLooksFine(): Promise<void>;
+    ReportNeedsEditing(): Promise<void>;
+}
+function BuildFlaggingDialog(element: JQuery,
+    postId: number,
+    postType: 'Question' | 'Answer',
+    reputation: number | undefined,
+    answerTime: Date,
+    questionTime: Date,
+    reportedIcon: JQuery,
+    performedActionIcon: JQuery,
+    reporters: Reporter[]
+) {
+    const getDivider = () => $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' });
+    const linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
+    const dropDown = $('<dl />').css({
+        'margin': '0',
+        'z-index': '1',
+        'position': 'absolute',
+        'white-space': 'nowrap',
+        'background': '#FFF',
+        'padding': '5px',
+        'border': '1px solid #9fa6ad',
+        'box-shadow': '0 2px 4px rgba(36,39,41,0.3)',
+        'cursor': 'default'
+    }).hide();
 
+    const checkboxName = `comment_checkbox_${postId}`;
+    const leaveCommentBox = $('<input />')
+        .attr('type', 'checkbox')
+        .attr('name', checkboxName);
+
+    const comments = element.find('.comment-body');
+    if (comments.length === 0) {
+        leaveCommentBox.prop('checked', true);
+    }
+
+    let hasCommentOptions = false;
+    let firstCategory = true;
+    flagCategories.forEach(flagCategory => {
+        if (flagCategory.AppliesTo.indexOf(postType) === -1) {
+            return;
+        }
+        if (!firstCategory) {
+            dropDown.append(getDivider());
+        }
+        flagCategory.FlagTypes.forEach(flagType => {
+            if (flagType.Comment || (flagType.Comments && flagType.Comments.length > 0)) {
+                hasCommentOptions = true;
+            }
+            const dropdownItem = $('<dd />');
+            if (flagCategory.BoxStyle) {
+                dropdownItem.css(flagCategory.BoxStyle);
+            }
+
+            const nattyLinkItem = $('<a />').css(linkStyle);
+            nattyLinkItem.click(() => {
+                const result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation)
+                if (result.CommentPromise) {
+                    result.CommentPromise.then((data) => {
+                        const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
+                        commentUI.addShow(true, false);
+                        commentUI.showComments(data, null, false, true);
+                        $(document).trigger('comment', postId);
+                    })
+                }
+
+                if (result.FlagPromise) {
+                    result.FlagPromise.then(() => {
+                        StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType);
+                        reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`)
+                        reportedIcon.show();
+                    });
+                }
+
+                const noFlag = flagType.ReportType === 'NoFlag';
+                if (noFlag && result.PerformedActionPromise) {
+                    result.PerformedActionPromise.then(() => {
+                        StoreInCache(`AdvancedFlagging.PerformedAction.${postId}`, flagType);
+                        performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`)
+                        performedActionIcon.show();
+                    })
+                }
+
+                const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
+                const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
+
+                reporters.forEach(async r => {
+                    if (rudeFlag) {
+                        await r.ReportRedFlag();
+                        displaySuccess(`Feedback sent to ${r.name}`);
+                    } else if (naaFlag) {
+                        await r.ReportNaa(answerTime, questionTime);
+                        displaySuccess(`Feedback sent to ${r.name}`);
+                    } else if (noFlag) {
+                        if (flagType.DisplayName === 'Needs Editing') {
+                            await r.ReportNeedsEditing();
+                            displaySuccess(`Feedback sent to ${r.name}`);
+                        } else {
+                            await r.ReportLooksFine();
+                            displaySuccess(`Feedback sent to ${r.name}`);
+                        }
+                    }
+                });
+
+                dropDown.hide();
+            });
+
+            nattyLinkItem.text(flagType.DisplayName);
+            dropdownItem.append(nattyLinkItem);
+
+            dropDown.append(dropdownItem);
+        });
+        firstCategory = false;
+    });
+
+    if (hasCommentOptions) {
+        dropDown.append(getDivider());
+
+        const commentBoxLabel =
+            $('<label />').text('Leave comment')
+                .attr('for', checkboxName)
+                .css({
+                    'margin-right': '5px',
+                    'margin-left': '4px',
+                });
+
+        commentBoxLabel.click(() => leaveCommentBox.click());
+
+        const commentingRow = $('<dd />');
+        commentingRow.append(commentBoxLabel);
+        commentingRow.append(leaveCommentBox);
+
+        dropDown.append(commentingRow);
+    }
+    return dropDown;
+}
 
 function SetupPostPage() {
-    const postMenus = $('.post-menu');
-    const questionTime = new Date($('.post-signature.owner .user-action-time .relativetime').attr('title'));
+    const results = parseCurrentPage();
 
-    postMenus.each((index, item) => {
-        const jqueryItem = $(item);
+    for (var i = 0; i < results.Posts.length; i++) {
+        const post = results.Posts[i];
 
-        const postType = jqueryItem.closest('.answercell').length > 0
-            ? 'Answer'
-            : 'Question';
+        let iconLocation: JQuery;
+        let advancedFlaggingLink: JQuery | null = null;
 
-        const postId = parseInt(jqueryItem.find('.flag-post-link').attr('data-postid'), 10);
-        const reputationDiv = jqueryItem.closest(postType === 'Answer' ? '.answercell' : '.postcell').find('.reputation-score');
-
-        let reputationText = reputationDiv.text();
-        if (reputationText.indexOf('k') !== -1) {
-            reputationText = reputationDiv.attr('title').substr('reputation score '.length);
+        const reporters: Reporter[] = [];
+        if (post.type === 'Answer') {
+            const nattyApi = new NattyAPI(post.postId);
+            nattyApi.Watch()
+                .subscribe(reported => {
+                    if (reported) {
+                        nattyIcon.show();
+                    } else {
+                        nattyIcon.hide();
+                    }
+                });
+            reporters.push(
+                Object.assign({}, { name: 'Natty' }, nattyApi)
+            );
         }
-        reputationText = reputationText.replace(',', '');
-        const reputation = parseInt(reputationText, 10);
-
-        const advancedFlaggingLink = $('<a />').text('Advanced Flagging');
-
-        const dropDown = $('<dl />').css({
-            'margin': '0',
-            'z-index': '1',
-            'position': 'absolute',
-            'white-space': 'nowrap',
-            'background': '#FFF',
-            'padding': '5px',
-            'border': '1px solid #9fa6ad',
-            'box-shadow': '0 2px 4px rgba(36,39,41,0.3)',
-            'cursor': 'default'
-        }).hide();
-
-        const linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
-
-        const checkboxName = `comment_checkbox_${postId}`;
-        const leaveCommentBox = $('<input />')
-            .attr('type', 'checkbox')
-            .attr('name', checkboxName);
-
-        const postDiv = jqueryItem.closest(postType === 'Answer' ? '.answer' : '.question');
-        const comments = postDiv.find('.comment-body');
-        if (comments.length === 0) {
-            leaveCommentBox.prop('checked', true);
-        }
-
-        const metaSmoke = new MetaSmokeyAPI(metaSmokeKey);
-        const natty = new NattyAPI(postId);
-
-        const metaSmokeWasReported = metaSmoke.GetFeedback(postId, postType);
-        const nattyObservable = natty.Watch();
+        const metaSmoke = new MetaSmokeyAPI(post.postId, post.type);
+        metaSmoke.Watch()
+            .subscribe(id => {
+                if (id !== null) {
+                    smokeyIcon.show();
+                } else {
+                    smokeyIcon.hide();
+                }
+            });
+        reporters.push(
+            Object.assign({}, { name: 'Smokey' }, metaSmoke)
+        );
 
         const performedActionIcon = getPerformedActionIcon();
         const reportedIcon = getReportedIcon();
-        const getDivider = () => $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' });
 
-        let hasCommentOptions = false;
-        let firstCategory = true;
-        flagCategories.forEach(flagCategory => {
-            if (flagCategory.AppliesTo.indexOf(postType) === -1) {
-                return;
+        if (post.page === 'Question') {
+            // Now we setup the flagging dialog
+            iconLocation = post.element.find('.post-menu');
+            advancedFlaggingLink = $('<a />').text('Advanced Flagging');
+
+            let questionTime: Date;
+            let answerTime: Date;
+            if (post.type === 'Answer') {
+                questionTime = post.question.postTime;
+                answerTime = post.postTime;
+            } else {
+                questionTime = post.postTime;
+                answerTime = post.postTime;
             }
-            if (!firstCategory) {
-                dropDown.append(getDivider());
-            }
-            flagCategory.FlagTypes.forEach(flagType => {
-                if (flagType.Comment || (flagType.Comments && flagType.Comments.length > 0)) {
-                    hasCommentOptions = true;
-                }
-                const dropdownItem = $('<dd />');
-                if (flagCategory.BoxStyle) {
-                    dropdownItem.css(flagCategory.BoxStyle);
-                }
 
-                const nattyLinkItem = $('<a />').css(linkStyle);
-                nattyLinkItem.click(() => {
-                    const result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation)
-                    if (result.CommentPromise) {
-                        result.CommentPromise.then((data) => {
-                            const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
-                            commentUI.addShow(true, false);
-                            commentUI.showComments(data, null, false, true);
-                            $(document).trigger('comment', postId);
-                        })
-                    }
-                    if (result.FlagPromise) {
-                        result.FlagPromise.then(() => {
-                            StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType);
-                            reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`)
-                            reportedIcon.show();
-                        });
-                    }
+            const dropDown = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime, questionTime,
+                performedActionIcon,
+                reportedIcon,
+                reporters);
 
-                    const noFlag = flagType.ReportType === 'NoFlag';
+            advancedFlaggingLink.append(dropDown);
 
-                    if (noFlag && result.PerformedActionPromise) {
-                        result.PerformedActionPromise.then(() => {
-                            StoreInCache(`AdvancedFlagging.PerformedAction.${postId}`, flagType);
-                            performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`)
-                            performedActionIcon.show();
-                        })
-                    }
-
-                    const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
-                    const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
-
-                    metaSmokeWasReported.then(responseItems => {
-                        if (responseItems.length > 0) {
-                            const metaSmokeId = responseItems[0].id;
-                            if (rudeFlag) {
-                                metaSmoke.ReportTruePositive(metaSmokeId).then(() => displaySuccess('Feedback sent to MS'));
-                            } else if (naaFlag) {
-                                metaSmoke.ReportNAA(metaSmokeId).then(() => displaySuccess('Feedback sent to MS'));
-                            } else if (noFlag) {
-                                metaSmoke.ReportFalsePositive(metaSmokeId).then(() => displaySuccess('Feedback sent to MS'));
-                            }
-                        } else if (rudeFlag) {
-                            metaSmoke.Report(postId, postType).then(() => displaySuccess('Reported to MS'));
-                        }
-                    });
-                    const answerTime = new Date(jqueryItem.closest('.answercell').find('.post-signature .user-action-time:contains("answered") .relativetime').attr('title'))
-
-                    if (naaFlag) {
-                        natty.ReportNaa(answerTime, questionTime);
-                    } else if (rudeFlag) {
-                        natty.ReportRedFlag();
-                    } else if (noFlag) {
-                        if (flagType.DisplayName === 'Needs Editing') {
-                            natty.ReportNeedsEditing();
-                        } else {
-                            natty.ReportLooksFine();
-                        }
-                    }
-
-                    dropDown.hide();
-                });
-
-                nattyLinkItem.text(flagType.DisplayName);
-                dropdownItem.append(nattyLinkItem);
-
-                dropDown.append(dropdownItem);
+            $(window).click(function () {
+                dropDown.hide();
             });
-            firstCategory = false;
-        });
-
-        if (hasCommentOptions) {
-            dropDown.append(getDivider());
-
-            const commentBoxLabel =
-                $('<label />').text('Leave comment')
-                    .attr('for', checkboxName)
-                    .css({
-                        'margin-right': '5px',
-                        'margin-left': '4px',
-                    });
-
-            commentBoxLabel.click(() => leaveCommentBox.click());
-
-            const commentingRow = $('<dd />');
-            commentingRow.append(commentBoxLabel);
-            commentingRow.append(leaveCommentBox);
-
-            dropDown.append(commentingRow);
+            const link = advancedFlaggingLink;
+            link.click(e => {
+                e.stopPropagation();
+                if (e.target === link.get(0)) {
+                    dropDown.toggle()
+                }
+            });
+        } else {
+            iconLocation = post.element;
         }
-
-        advancedFlaggingLink.append(dropDown);
-        $(window).click(function () {
-            dropDown.hide();
-        });
-        advancedFlaggingLink.click(e => {
-            e.stopPropagation();
-            if (e.target === advancedFlaggingLink.get(0)) {
-                dropDown.toggle()
-            }
-        });
-
-        jqueryItem.append(advancedFlaggingLink);
-        jqueryItem.append(performedActionIcon);
-        jqueryItem.append(reportedIcon);
 
         const nattyIcon = getNattyIcon();
         const smokeyIcon = getSmokeyIcon();
-        nattyIcon.click(() => {
-            window.open(`https://sentinel.erwaysoftware.com/posts/aid/${postId}`, '_blank');
-        });
 
-        metaSmokeWasReported
-            .then(responseItems => {
-                if (responseItems.length > 0) {
-                    const metaSmokeId = responseItems[0].id;
-                    smokeyIcon.click(() => {
-                        window.open(`https://metasmoke.erwaysoftware.com/post/${metaSmokeId}`, '_blank');
-                    });
-
-                    smokeyIcon.show();
-                }
-            });
-
-        nattyObservable
-            .subscribe(wasReported => {
-                if (wasReported) {
-                    nattyIcon.show();
-                } else {
-                    nattyIcon.hide();
-                }
-            });
-
-        const previousFlagPromise = GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`);
-        previousFlagPromise.then(previousFlag => {
-            if (previousFlag) {
-                reportedIcon.attr('title', `Previously flagged as ${previousFlag.ReportType}`)
-                reportedIcon.show();
-            }
-        });
-
-        const previousPerformedActionPromise = GetFromCache<FlagType>(`AdvancedFlagging.PerformedAction.${postId}`);
-        previousPerformedActionPromise.then(previousAction => {
-            if (previousAction && previousAction.ReportType === 'NoFlag') {
-                performedActionIcon.attr('title', `Previously performed action: ${previousAction.DisplayName}`)
-                performedActionIcon.show();
-            }
-        });
-
-        jqueryItem.append(nattyIcon);
-        jqueryItem.append(smokeyIcon);
-    })
+        if (advancedFlaggingLink) {
+            iconLocation.append(advancedFlaggingLink);
+        }
+        iconLocation.append(performedActionIcon);
+        iconLocation.append(reportedIcon);
+        iconLocation.append(nattyIcon);
+        iconLocation.append(smokeyIcon);
+    }
 }
 
 function getPerformedActionIcon() {
@@ -403,72 +402,18 @@ function getSmokeyIcon() {
         .hide();
 }
 
-function SetupAnswerLinks() {
-    $('a.answer-hyperlink').each((index, item) => {
-        const jqueryItem = $(item);
-
-        const displayStyle = { 'display': 'inline-block' };
-
-        const performedActionIcon = getPerformedActionIcon();
-        const reportedIcon = getReportedIcon();
-        const nattyIcon = getNattyIcon();
-
-        const smokeyIcon = getSmokeyIcon();
-
-        jqueryItem.after(smokeyIcon);
-        jqueryItem.after(nattyIcon);
-        jqueryItem.after(reportedIcon);
-        jqueryItem.after(performedActionIcon);
-
-        const hyperLink = jqueryItem.attr('href');
-        const postId = parseInt(hyperLink.split('#')[1], 10);
-
-        const metaSmoke = new MetaSmokeyAPI(metaSmokeKey);
-        const metaSmokeWasReported = metaSmoke.GetFeedback(postId, 'Answer');
-
-        const natty = new NattyAPI(postId);
-        const nattyObservable = natty.Watch();
-        nattyIcon.click(() => {
-            window.open(`https://sentinel.erwaysoftware.com/posts/aid/${postId}`, '_blank');
-        });
-
-        const previousFlagPromise = GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`);
-        previousFlagPromise.then(previousFlag => {
-            if (previousFlag) {
-                reportedIcon.attr('title', `Previously flagged as ${previousFlag.ReportType}`)
-                reportedIcon.show();
-            }
-        });
-
-        const previousPerformedActionPromise = GetFromCache<FlagType>(`AdvancedFlagging.PerformedAction.${postId}`);
-        previousPerformedActionPromise.then(previousAction => {
-            if (previousAction && previousAction.ReportType === 'NoFlag') {
-                performedActionIcon.attr('title', `Previously performed action: ${previousAction.DisplayName}`)
-                performedActionIcon.show();
-            }
-        });
-
-        metaSmokeWasReported
-            .then(responseItems => {
-                if (responseItems.length > 0) {
-                    const metaSmokeId = responseItems[0].id;
-                    smokeyIcon.click(() => {
-                        window.open(`https://metasmoke.erwaysoftware.com/post/${metaSmokeId}`, '_blank');
-                    });
-
-                    smokeyIcon.css(displayStyle);
-                }
-            });
-
-        nattyObservable
-            .subscribe(wasReported => {
-                if (wasReported) {
-                    nattyIcon.css(displayStyle);
-                } else {
-                    nattyIcon.hide();
-                }
-            });
-    });
+function getDropdown() {
+    $('<dl />').css({
+        'margin': '0',
+        'z-index': '1',
+        'position': 'absolute',
+        'white-space': 'nowrap',
+        'background': '#FFF',
+        'padding': '5px',
+        'border': '1px solid #9fa6ad',
+        'box-shadow': '0 2px 4px rgba(36,39,41,0.3)',
+        'cursor': 'default'
+    }).hide();
 }
 
 function SetupAdminTools() {
@@ -495,9 +440,9 @@ function SetupAdminTools() {
 
 $(function () {
     InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
+    MetaSmokeyAPI.Setup(metaSmokeKey);
 
     SetupPostPage();
-    SetupAnswerLinks();
     SetupAdminTools();
 
     setupStyles();

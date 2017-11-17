@@ -1,5 +1,7 @@
 import { GetFromCache, StoreInCache, GetAndCache } from './Caching';
 import { Delay } from './FunctionUtils';
+import { Observable } from 'rxjs/Observable';
+import { Subject } from 'rxjs/Subject';
 const MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
 const MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
 const MetaSmokeWasReportedConfig = 'MetaSmoke.WasReported';
@@ -30,35 +32,48 @@ interface MetaSmokeApiWrapper {
 }
 
 export class MetaSmokeyAPI {
-    private actualPromise: Promise<string | undefined>;
-    private codeGetter: (metaSmokeOAuthUrl: string) => Promise<string | undefined>;
-    private appKey: string;
+    private static actualPromise: Promise<string | undefined>;
+    private static codeGetter: (metaSmokeOAuthUrl: string) => Promise<string | undefined>;
+    private static appKey: string;
+
+    private postId: number;
+    private postType: 'Question' | 'Answer';
+    private subject: Subject<number | null>;
 
     public static async Reset() {
         await StoreInCache(MetaSmokeDisabledConfig, undefined);
         await StoreInCache(MetaSmokeUserKeyConfig, undefined);
     }
 
-    private getUserKey() {
+    public static async IsDisabled() {
+        const cachedDisabled = await GetFromCache<boolean>(MetaSmokeDisabledConfig);
+        if (cachedDisabled === undefined) {
+            return false;
+        }
+
+        return cachedDisabled;
+    }
+
+    private static getUserKey() {
         return GetAndCache(MetaSmokeUserKeyConfig, () => new Promise<string>(async (resolve, reject) => {
-            let prom = this.actualPromise;
+            let prom = MetaSmokeyAPI.actualPromise;
             if (prom === undefined) {
-                prom = this.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${this.appKey}`);
-                this.actualPromise = prom;
+                prom = MetaSmokeyAPI.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeyAPI.appKey}`);
+                MetaSmokeyAPI.actualPromise = prom;
             }
             const code = await prom;
             $.ajax({
-                url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + this.appKey + '&code=' + code,
+                url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeyAPI.appKey + '&code=' + code,
                 method: 'GET'
             }).done(data => resolve(data.token))
                 .fail(err => reject(err))
         }));
     }
 
-    public constructor(appKey: string, codeGetter?: (metaSmokeOAuthUrl: string) => Promise<string | undefined>) {
+    public static Setup(appKey: string, codeGetter?: (metaSmokeOAuthUrl: string) => Promise<string | undefined>) {
         if (!codeGetter) {
             codeGetter = async (metaSmokeOAuthUrl: string | undefined) => {
-                const isDisabled = await this.IsDisabled();
+                const isDisabled = await MetaSmokeyAPI.IsDisabled();
                 if (isDisabled) {
                     return;
                 }
@@ -90,93 +105,122 @@ export class MetaSmokeyAPI {
                 return returnCode;
             }
         }
-        this.codeGetter = codeGetter;
-        this.appKey = appKey;
+        MetaSmokeyAPI.codeGetter = codeGetter;
+        MetaSmokeyAPI.appKey = appKey;
 
-        this.getUserKey(); // Make sure we request it immediately
+        MetaSmokeyAPI.getUserKey(); // Make sure we request it immediately
     }
 
-    public async IsDisabled() {
-        const cachedDisabled = await GetFromCache<boolean>(MetaSmokeDisabledConfig);
-        if (cachedDisabled === undefined) {
-            return false;
-        }
-
-        return cachedDisabled;
+    constructor(postId: number, postType: 'Answer' | 'Question') {
+        this.postId = postId;
+        this.postType = postType;
     }
-    public async GetFeedback(postId: number, postType: 'Answer' | 'Question'): Promise<MetaSmokeApiItem[]> {
+
+    private QueryMetaSmokey() {
         const urlStr =
-            postType === 'Answer'
-                ? `//${window.location.hostname}/a/${postId}`
-                : `//${window.location.hostname}/questions/${postId}`;
+            this.postType === 'Answer'
+                ? `//${window.location.hostname}/a/${this.postId}`
+                : `//${window.location.hostname}/questions/${this.postId}`;
 
-        const isDisabled = await this.IsDisabled();
-        if (isDisabled) {
-            return [];
-        }
-
-        const result = await GetAndCache<MetaSmokeApiItem[]>(`${MetaSmokeWasReportedConfig}.${urlStr}`, () => new Promise((resolve, reject) => {
-            $.ajax({
-                type: 'GET',
-                url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
-                data: {
-                    urls: urlStr,
-                    key: `${this.appKey}`
+        GetAndCache<number | null>(`${MetaSmokeWasReportedConfig}.${urlStr}`, () => new Promise((resolve, reject) => {
+            MetaSmokeyAPI.IsDisabled().then(isDisabled => {
+                if (isDisabled) {
+                    return;
                 }
-            }).done((metaSmokeResult: MetaSmokeApiWrapper) => {
-                resolve(metaSmokeResult.items);
-            }).fail(error => {
-                reject(error);
-            });
-        }));
-        return result;
-    }
-
-    public Report(postId: number, postType: 'Answer' | 'Question'): Promise<void> {
-        const urlStr =
-            postType === 'Answer'
-                ? `//${window.location.hostname}/a/${postId}`
-                : `//${window.location.hostname}/q/${postId}`;
-
-        const promise = new Promise<void>((resolve, reject) => {
-            this.getUserKey().then(userKey => {
                 $.ajax({
-                    type: 'POST',
-                    url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
+                    type: 'GET',
+                    url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
                     data: {
-                        post_link: urlStr,
-                        key: this.appKey,
-                        token: userKey
+                        urls: urlStr,
+                        key: `${MetaSmokeyAPI.appKey}`
                     }
-                }).done(() => resolve())
-                    .fail(() => reject());
-            });
-        });
+                }).done((metaSmokeResult: MetaSmokeApiWrapper) => {
+                    if (metaSmokeResult.items.length > 0) {
+                        resolve(metaSmokeResult.items[0].id);
+                    } else {
+                        resolve(null);
+                    }
+                }).fail(error => {
+                    reject(error);
+                });
+            })
+        }))
+            .then(r => this.subject.next(r))
+            .catch(err => this.subject.error(err));
+    }
 
-        promise.then(() => {
-            StoreInCache(`${MetaSmokeWasReportedConfig}.${urlStr}`, undefined);
-        });
-        return promise;
+    public Watch(): Observable<number | null> {
+        this.subject = new Subject<number | null>();
+
+        this.QueryMetaSmokey();
+
+        return this.subject;
     }
-    public ReportTruePositive(metaSmokeId: number): Promise<void> {
-        return this.SendFeedback(metaSmokeId, 'tpu-');
+
+
+    public async ReportNaa(answerDate: Date, questionDate: Date) {
+        const smokeyid = await this.GetSmokeyId();
+        if (smokeyid != null) {
+            this.SendFeedback(smokeyid, "naa-");
+        }
     }
-    public ReportFalsePositive(metaSmokeId: number): Promise<void> {
-        return this.SendFeedback(metaSmokeId, 'fp-');
+    public async ReportRedFlag() {
+        const smokeyid = await this.GetSmokeyId();
+        if (smokeyid != null) {
+            this.SendFeedback(smokeyid, "tpu-");
+        } else {
+            const urlStr =
+                this.postType === 'Answer'
+                    ? `//${window.location.hostname}/a/${this.postId}`
+                    : `//${window.location.hostname}/q/${this.postId}`;
+
+            const promise = new Promise<void>((resolve, reject) => {
+                MetaSmokeyAPI.getUserKey().then(userKey => {
+                    $.ajax({
+                        type: 'POST',
+                        url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
+                        data: {
+                            post_link: urlStr,
+                            key: MetaSmokeyAPI.appKey,
+                            token: userKey
+                        }
+                    }).done(() => resolve())
+                        .fail(() => reject());
+                });
+            });
+
+            await promise.then(() => {
+                StoreInCache(`${MetaSmokeWasReportedConfig}.${urlStr}`, undefined);
+                this.QueryMetaSmokey();
+            });
+        }
     }
-    public ReportNAA(metaSmokeId: number): Promise<void> {
-        return this.SendFeedback(metaSmokeId, 'naa-');
+    public async ReportLooksFine() {
+        const smokeyid = await this.GetSmokeyId();
+        if (smokeyid != null) {
+            this.SendFeedback(smokeyid, "fp-");
+        }
+    }
+    public async ReportNeedsEditing() {
+        const smokeyid = await this.GetSmokeyId();
+        if (smokeyid != null) {
+            this.SendFeedback(smokeyid, "fp-");
+        }
+    }
+
+    private async GetSmokeyId() {
+        return await this.subject.toPromise();
     }
 
     private SendFeedback(metaSmokeId: number, feedbackType: 'fp-' | 'tpu-' | 'naa-'): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            this.getUserKey().then(userKey => {
+            MetaSmokeyAPI.getUserKey().then(userKey => {
                 $.ajax({
                     type: 'POST',
                     url: 'https://metasmoke.erwaysoftware.com/api/w/post/' + metaSmokeId + '/feedback',
                     data: {
                         type: feedbackType,
-                        key: this.appKey,
+                        key: MetaSmokeyAPI.appKey,
                         token: userKey
                     }
                 }).done(() => resolve())

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.2.6
+// @version      0.2.7
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -420,9 +420,49 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function Delay(milliseconds) {
+        return new Promise(function (resolve) {
+            setTimeout(function () {
+                resolve();
+            }, milliseconds);
+        });
+    }
+    exports.Delay = Delay;
+    function GroupBy(collection, propertyGetter) {
+        return collection.reduce(function (previousValue, currentItem) {
+            (previousValue[propertyGetter(currentItem)] = previousValue[propertyGetter(currentItem)] || []).push(currentItem);
+            return previousValue;
+        }, {});
+    }
+    exports.GroupBy = GroupBy;
+    ;
+    function GetMembers(item) {
+        var members = [];
+        for (var key in item) {
+            if (item.hasOwnProperty(key)) {
+                members.push(key);
+            }
+        }
+        return members;
+    }
+    exports.GetMembers = GetMembers;
+    function IsStackOverflow() {
+        return window.location.href.match(/^https:\/\/stackoverflow.com/);
+    }
+    exports.IsStackOverflow = IsStackOverflow;
+}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
 "use strict";
 "use strict";
-var root_1 = __webpack_require__(4);
+var root_1 = __webpack_require__(5);
 var toSubscriber_1 = __webpack_require__(39);
 var observable_1 = __webpack_require__(32);
 var pipe_1 = __webpack_require__(38);
@@ -728,7 +768,7 @@ exports.Observable = Observable;
 //# sourceMappingURL=Observable.js.map
 
 /***/ },
-/* 3 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -741,7 +781,7 @@ var __extends = (this && this.__extends) || function (d, b) {
 var isFunction_1 = __webpack_require__(14);
 var Subscription_1 = __webpack_require__(0);
 var Observer_1 = __webpack_require__(8);
-var rxSubscriber_1 = __webpack_require__(6);
+var rxSubscriber_1 = __webpack_require__(7);
 /**
  * Implements the {@link Observer} interface and extends the
  * {@link Subscription} class. While the {@link Observer} is the public API for
@@ -998,7 +1038,7 @@ var SafeSubscriber = (function (_super) {
 //# sourceMappingURL=Subscriber.js.map
 
 /***/ },
-/* 4 */
+/* 5 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -1023,7 +1063,7 @@ exports.root = _root;
 //# sourceMappingURL=root.js.map
 
 /***/ },
-/* 5 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1033,12 +1073,12 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var Observable_1 = __webpack_require__(2);
-var Subscriber_1 = __webpack_require__(3);
+var Observable_1 = __webpack_require__(3);
+var Subscriber_1 = __webpack_require__(4);
 var Subscription_1 = __webpack_require__(0);
 var ObjectUnsubscribedError_1 = __webpack_require__(12);
 var SubjectSubscription_1 = __webpack_require__(10);
-var rxSubscriber_1 = __webpack_require__(6);
+var rxSubscriber_1 = __webpack_require__(7);
 /**
  * @class SubjectSubscriber<T>
  */
@@ -1197,12 +1237,12 @@ exports.AnonymousSubject = AnonymousSubject;
 //# sourceMappingURL=Subject.js.map
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
-var root_1 = __webpack_require__(4);
+var root_1 = __webpack_require__(5);
 var Symbol = root_1.root.Symbol;
 exports.rxSubscriber = (typeof Symbol === 'function' && typeof Symbol.for === 'function') ?
     Symbol.for('rxSubscriber') : '@@rxSubscriber';
@@ -1211,42 +1251,6 @@ exports.rxSubscriber = (typeof Symbol === 'function' && typeof Symbol.for === 'f
  */
 exports.$$rxSubscriber = exports.rxSubscriber;
 //# sourceMappingURL=rxSubscriber.js.map
-
-/***/ },
-/* 7 */
-/***/ function(module, exports, __webpack_require__) {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    function Delay(milliseconds) {
-        return new Promise(function (resolve) {
-            setTimeout(function () {
-                resolve();
-            }, milliseconds);
-        });
-    }
-    exports.Delay = Delay;
-    function GroupBy(collection, propertyGetter) {
-        return collection.reduce(function (previousValue, currentItem) {
-            (previousValue[propertyGetter(currentItem)] = previousValue[propertyGetter(currentItem)] || []).push(currentItem);
-            return previousValue;
-        }, {});
-    }
-    exports.GroupBy = GroupBy;
-    ;
-    function GetMembers(item) {
-        var members = [];
-        for (var key in item) {
-            if (item.hasOwnProperty(key)) {
-                members.push(key);
-            }
-        }
-        return members;
-    }
-    exports.GetMembers = GetMembers;
-}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
 
 /***/ },
 /* 8 */
@@ -1273,7 +1277,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var Subject_1 = __webpack_require__(5);
+var Subject_1 = __webpack_require__(6);
 var queue_1 = __webpack_require__(31);
 var Subscription_1 = __webpack_require__(0);
 var observeOn_1 = __webpack_require__(24);
@@ -1422,7 +1426,7 @@ exports.SubjectSubscription = SubjectSubscription;
 
 "use strict";
 "use strict";
-var Observable_1 = __webpack_require__(2);
+var Observable_1 = __webpack_require__(3);
 var take_1 = __webpack_require__(23);
 Observable_1.Observable.prototype.take = take_1.take;
 //# sourceMappingURL=take.js.map
@@ -1628,7 +1632,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, FunctionUtils_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var genericBotUrl = 'https://so.floern.com/api/trackpost.php';
@@ -1651,7 +1655,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         GenericBotAPI.prototype.makeTrackRequest = function () {
             var _this = this;
             var promise = new Promise(function (resolve, reject) {
-                if (!window.location.href.match(/^https:\/\/stackoverflow.com/)) {
+                if (!FunctionUtils_1.IsStackOverflow()) {
                     resolve(false);
                 }
                 if ($('#answer-' + _this.answerId + ' .post-text').length == 0) {
@@ -1768,7 +1772,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1), __webpack_require__(7), __webpack_require__(5), __webpack_require__(9), __webpack_require__(11)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, Caching_1, FunctionUtils_1, Subject_1, ReplaySubject_1) {
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1), __webpack_require__(2), __webpack_require__(6), __webpack_require__(9), __webpack_require__(11)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, Caching_1, FunctionUtils_1, Subject_1, ReplaySubject_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
@@ -2109,7 +2113,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1), __webpack_require__(41), __webpack_require__(5), __webpack_require__(9), __webpack_require__(11)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, Caching_1, ChatApi_1, Subject_1, ReplaySubject_1) {
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1), __webpack_require__(41), __webpack_require__(6), __webpack_require__(9), __webpack_require__(2), __webpack_require__(11)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, Caching_1, ChatApi_1, Subject_1, ReplaySubject_1, FunctionUtils_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
@@ -2124,26 +2128,28 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             this.subject = new Subject_1.Subject();
             this.replaySubject = new ReplaySubject_1.ReplaySubject(1);
             this.subject.subscribe(this.replaySubject);
-            Caching_1.GetAndCache("NattyApi.Feedback." + this.answerId, function () { return new Promise(function (resolve, reject) {
-                GM_xmlhttpRequest({
-                    method: 'GET',
-                    url: nattyFeedbackUrl + "/" + _this.answerId,
-                    onload: function (response) {
-                        var nattyResult = JSON.parse(response.responseText);
-                        if (nattyResult.items && nattyResult.items[0]) {
-                            resolve(true);
-                        }
-                        else {
-                            resolve(false);
-                        }
-                    },
-                    onerror: function (response) {
-                        reject(response);
-                    },
-                });
-            }); })
-                .then(function (r) { return _this.subject.next(r); })
-                .catch(function (err) { return _this.subject.error(err); });
+            if (FunctionUtils_1.IsStackOverflow()) {
+                Caching_1.GetAndCache("NattyApi.Feedback." + this.answerId, function () { return new Promise(function (resolve, reject) {
+                    GM_xmlhttpRequest({
+                        method: 'GET',
+                        url: nattyFeedbackUrl + "/" + _this.answerId,
+                        onload: function (response) {
+                            var nattyResult = JSON.parse(response.responseText);
+                            if (nattyResult.items && nattyResult.items[0]) {
+                                resolve(true);
+                            }
+                            else {
+                                resolve(false);
+                            }
+                        },
+                        onerror: function (response) {
+                            reject(response);
+                        },
+                    });
+                }); })
+                    .then(function (r) { return _this.subject.next(r); })
+                    .catch(function (err) { return _this.subject.error(err); });
+            }
             return this.subject;
         };
         NattyAPI.prototype.ReportNaa = function (answerDate, questionDate) {
@@ -2152,7 +2158,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 var answerAge, daysPostedAfterQuestion, promise;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.WasReported()];
+                        case 0:
+                            if (!FunctionUtils_1.IsStackOverflow()) {
+                                return [2 /*return*/, false];
+                            }
+                            return [4 /*yield*/, this.WasReported()];
                         case 1:
                             if (!_a.sent()) return [3 /*break*/, 3];
                             return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this.answerId + " tp")];
@@ -2181,7 +2191,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.WasReported()];
+                        case 0:
+                            if (!FunctionUtils_1.IsStackOverflow()) {
+                                return [2 /*return*/, false];
+                            }
+                            return [4 /*yield*/, this.WasReported()];
                         case 1:
                             if (!_a.sent()) return [3 /*break*/, 3];
                             return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this.answerId + " tp")];
@@ -2197,7 +2211,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.WasReported()];
+                        case 0:
+                            if (!FunctionUtils_1.IsStackOverflow()) {
+                                return [2 /*return*/, false];
+                            }
+                            return [4 /*yield*/, this.WasReported()];
                         case 1:
                             if (!_a.sent()) return [3 /*break*/, 3];
                             return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this.answerId + " fp")];
@@ -2213,7 +2231,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.WasReported()];
+                        case 0:
+                            if (!FunctionUtils_1.IsStackOverflow()) {
+                                return [2 /*return*/, false];
+                            }
+                            return [4 /*yield*/, this.WasReported()];
                         case 1:
                             if (!_a.sent()) return [3 /*break*/, 3];
                             return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this.answerId + " ne")];
@@ -2457,7 +2479,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 "use strict";
 "use strict";
-var Observable_1 = __webpack_require__(2);
+var Observable_1 = __webpack_require__(3);
 /**
  * Represents a push-based event or value that an {@link Observable} can emit.
  * This class is particularly useful for operators that manage notifications,
@@ -2650,7 +2672,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var Observable_1 = __webpack_require__(2);
+var Observable_1 = __webpack_require__(3);
 /**
  * We need this JSDoc comment for affecting ESDoc.
  * @extends {Ignored}
@@ -2783,7 +2805,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var Subscriber_1 = __webpack_require__(3);
+var Subscriber_1 = __webpack_require__(4);
 var Notification_1 = __webpack_require__(20);
 /**
  *
@@ -2904,7 +2926,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var Subscriber_1 = __webpack_require__(3);
+var Subscriber_1 = __webpack_require__(4);
 var ArgumentOutOfRangeError_1 = __webpack_require__(33);
 var EmptyObservable_1 = __webpack_require__(22);
 /**
@@ -3051,7 +3073,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var root_1 = __webpack_require__(4);
+var root_1 = __webpack_require__(5);
 var Action_1 = __webpack_require__(26);
 /**
  * We need this JSDoc comment for affecting ESDoc.
@@ -3400,7 +3422,7 @@ exports.queue = new QueueScheduler_1.QueueScheduler(QueueAction_1.QueueAction);
 
 "use strict";
 "use strict";
-var root_1 = __webpack_require__(4);
+var root_1 = __webpack_require__(5);
 function getSymbolObservable(context) {
     var $$observable;
     var Symbol = context.Symbol;
@@ -3560,8 +3582,8 @@ exports.pipeFromArray = pipeFromArray;
 
 "use strict";
 "use strict";
-var Subscriber_1 = __webpack_require__(3);
-var rxSubscriber_1 = __webpack_require__(6);
+var Subscriber_1 = __webpack_require__(4);
+var rxSubscriber_1 = __webpack_require__(7);
 var Observer_1 = __webpack_require__(8);
 function toSubscriber(nextOrObserver, error, complete) {
     if (nextOrObserver) {
@@ -3704,7 +3726,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(17), __webpack_require__(15), __webpack_require__(18), __webpack_require__(1), __webpack_require__(7), __webpack_require__(19), __webpack_require__(16)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, MetaSmokeAPI_1, FlagTypes_1, NattyApi_1, Caching_1, FunctionUtils_1, StackExchangeWebParser_1, GenericBotAPI_1) {
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(17), __webpack_require__(15), __webpack_require__(18), __webpack_require__(1), __webpack_require__(2), __webpack_require__(19), __webpack_require__(16)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, MetaSmokeAPI_1, FlagTypes_1, NattyApi_1, Caching_1, FunctionUtils_1, StackExchangeWebParser_1, GenericBotAPI_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // tslint:disable-next-line:no-debugger
@@ -3852,8 +3874,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         var leaveCommentBox = $('<input />')
             .attr('type', 'checkbox')
             .attr('name', checkboxName);
+        var isStackOverflow = FunctionUtils_1.IsStackOverflow();
         var comments = element.find('.comment-body');
-        if (comments.length === 0) {
+        if (comments.length === 0 && isStackOverflow) {
             leaveCommentBox.prop('checked', true);
         }
         var hasCommentOptions = false;
@@ -3950,6 +3973,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             });
             firstCategory = false;
         });
+        if (!isStackOverflow) {
+            hasCommentOptions = false;
+        }
         if (hasCommentOptions) {
             dropDown.append(getDivider());
             var commentBoxLabel = $('<label />').text('Leave comment')

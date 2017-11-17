@@ -7,6 +7,7 @@ import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { ReplaySubject } from 'rxjs/ReplaySubject';
 import 'rxjs/add/operator/take';
+import { IsStackOverflow } from './FunctionUtils';
 
 const nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
 
@@ -42,30 +43,35 @@ export class NattyAPI {
         this.replaySubject = new ReplaySubject<boolean>(1);
         this.subject.subscribe(this.replaySubject);
 
-        GetAndCache(`NattyApi.Feedback.${this.answerId}`, () => new Promise<boolean>((resolve, reject) => {
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url: `${nattyFeedbackUrl}/${this.answerId}`,
-                onload: (response: any) => {
-                    const nattyResult = JSON.parse(response.responseText);
-                    if (nattyResult.items && nattyResult.items[0]) {
-                        resolve(true);
-                    } else {
-                        resolve(false);
-                    }
-                },
-                onerror: (response: any) => {
-                    reject(response);
-                },
-            });
-        }))
-            .then(r => this.subject.next(r))
-            .catch(err => this.subject.error(err));
+        if (IsStackOverflow()) {
+            GetAndCache(`NattyApi.Feedback.${this.answerId}`, () => new Promise<boolean>((resolve, reject) => {
+                GM_xmlhttpRequest({
+                    method: 'GET',
+                    url: `${nattyFeedbackUrl}/${this.answerId}`,
+                    onload: (response: any) => {
+                        const nattyResult = JSON.parse(response.responseText);
+                        if (nattyResult.items && nattyResult.items[0]) {
+                            resolve(true);
+                        } else {
+                            resolve(false);
+                        }
+                    },
+                    onerror: (response: any) => {
+                        reject(response);
+                    },
+                });
+            }))
+                .then(r => this.subject.next(r))
+                .catch(err => this.subject.error(err));
+        }
 
         return this.subject;
     }
 
     public async ReportNaa(answerDate: Date, questionDate: Date) {
+        if (!IsStackOverflow()) {
+            return false;
+        }
         if (await this.WasReported()) {
             await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} tp`)
             return true;
@@ -75,7 +81,7 @@ export class NattyAPI {
             if (answerAge > 30 || daysPostedAfterQuestion < 30) {
                 return false;
             }
-            
+
             const promise = this.chat.SendMessage(soboticsRoomId, `@Natty report http://stackoverflow.com/a/${this.answerId}`);
             await promise.then(() => {
                 StoreInCache(`NattyApi.Feedback.${this.answerId}`, true);
@@ -85,6 +91,9 @@ export class NattyAPI {
         }
     }
     public async ReportRedFlag() {
+        if (!IsStackOverflow()) {
+            return false;
+        }
         if (await this.WasReported()) {
             await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} tp`)
             return true;
@@ -92,6 +101,9 @@ export class NattyAPI {
         return false;
     }
     public async ReportLooksFine() {
+        if (!IsStackOverflow()) {
+            return false;
+        }
         if (await this.WasReported()) {
             await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} fp`)
             return true;
@@ -99,6 +111,9 @@ export class NattyAPI {
         return false;
     }
     public async ReportNeedsEditing() {
+        if (!IsStackOverflow()) {
+            return false;
+        }
         if (await this.WasReported()) {
             await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} ne`);
             return true;

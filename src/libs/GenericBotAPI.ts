@@ -1,3 +1,5 @@
+import { IsStackOverflow } from "./FunctionUtils";
+
 declare const $: JQueryStatic;
 declare const GM_xmlhttpRequest: any;
 
@@ -25,7 +27,7 @@ export class GenericBotAPI {
 
     private makeTrackRequest() {
         const promise = new Promise<boolean>((resolve, reject) => {
-            if (!window.location.href.match(/^https:\/\/stackoverflow.com/)) {
+            if (!IsStackOverflow()) {
                 resolve(false);
             }
             if ($('#answer-' + this.answerId + ' .post-text').length == 0) {

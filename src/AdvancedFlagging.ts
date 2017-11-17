@@ -3,7 +3,7 @@ import { MetaSmokeAPI } from './libs/MetaSmokeAPI';
 import { FlagType, flagCategories } from './FlagTypes';
 import { NattyAPI } from './libs/NattyApi';
 import { ClearCache, GetAndCache, GetFromCache, InitializeCache, StoreInCache } from './libs/Caching';
-import { Delay } from './libs/FunctionUtils';
+import { Delay, IsStackOverflow } from './libs/FunctionUtils';
 import { StackExchangeGlobal } from './libs/StackExchangeWeb/StackExchangeOptions';
 import { parseCurrentPage } from './libs/StackExchangeWeb/StackExchangeWebParser';
 import { GenericBotAPI } from './libs/GenericBotAPI';
@@ -191,8 +191,10 @@ function BuildFlaggingDialog(element: JQuery,
         .attr('type', 'checkbox')
         .attr('name', checkboxName);
 
+    const isStackOverflow = IsStackOverflow();
+
     const comments = element.find('.comment-body');
-    if (comments.length === 0) {
+    if (comments.length === 0 && isStackOverflow) {
         leaveCommentBox.prop('checked', true);
     }
 
@@ -281,6 +283,10 @@ function BuildFlaggingDialog(element: JQuery,
         });
         firstCategory = false;
     });
+    
+    if (!isStackOverflow) {
+        hasCommentOptions = false;
+    }
 
     if (hasCommentOptions) {
         dropDown.append(getDivider());

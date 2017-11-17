@@ -22,3 +22,7 @@ export function GetMembers(item: any): string[] {
     }
     return members;
 }
+
+export function IsStackOverflow() {
+    return window.location.href.match(/^https:\/\/stackoverflow.com/);
+}

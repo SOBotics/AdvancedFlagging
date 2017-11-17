@@ -3795,20 +3795,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             commentingRow.append(leaveCommentBox);
             dropDown.append(commentingRow);
         }
-        var previousFlagPromise = Caching_1.GetFromCache("AdvancedFlagging.Flagged." + postId);
-        previousFlagPromise.then(function (previousFlag) {
-            if (previousFlag) {
-                reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
-                reportedIcon.show();
-            }
-        });
-        var previousPerformedActionPromise = Caching_1.GetFromCache("AdvancedFlagging.PerformedAction." + postId);
-        previousPerformedActionPromise.then(function (previousAction) {
-            if (previousAction && previousAction.ReportType === 'NoFlag') {
-                performedActionIcon.attr('title', "Previously performed action: " + previousAction.DisplayName);
-                performedActionIcon.show();
-            }
-        });
         return dropDown;
     }
     function SetupPostPage() {
@@ -3820,7 +3806,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             var nattyIcon = getNattyIcon().click(function () {
                 window.open("https://sentinel.erwaysoftware.com/posts/aid/" + post.postId, '_blank');
             });
-            ;
+            var showFunc = function (element) { return element.show(); };
             var smokeyIcon = getSmokeyIcon();
             var reporters = [];
             if (post.type === 'Answer') {
@@ -3828,7 +3814,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 nattyApi_1.Watch()
                     .subscribe(function (reported) {
                     if (reported) {
-                        nattyIcon.show();
+                        showFunc(nattyIcon);
                     }
                     else {
                         nattyIcon.hide();
@@ -3849,7 +3835,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     smokeyIcon.click(function () {
                         window.open("https://metasmoke.erwaysoftware.com/post/" + id, '_blank');
                     });
-                    smokeyIcon.show();
+                    showFunc(smokeyIcon);
                 }
                 else {
                     smokeyIcon.hide();
@@ -3890,17 +3876,36 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                         dropDown_1.toggle();
                     }
                 });
+                iconLocation.append(performedActionIcon);
+                iconLocation.append(reportedIcon);
+                iconLocation.append(nattyIcon);
+                iconLocation.append(smokeyIcon);
             }
             else {
-                iconLocation = post.element;
+                iconLocation = post.element.find('a.answer-hyperlink');
+                iconLocation.after(performedActionIcon);
+                iconLocation.after(reportedIcon);
+                iconLocation.after(nattyIcon);
+                iconLocation.after(smokeyIcon);
+                showFunc = function (element) { return element.css('display', 'inline-block'); };
             }
+            var previousFlagPromise = Caching_1.GetFromCache("AdvancedFlagging.Flagged." + post.postId);
+            previousFlagPromise.then(function (previousFlag) {
+                if (previousFlag) {
+                    reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
+                    showFunc(reportedIcon);
+                }
+            });
+            var previousPerformedActionPromise = Caching_1.GetFromCache("AdvancedFlagging.PerformedAction." + post.postId);
+            previousPerformedActionPromise.then(function (previousAction) {
+                if (previousAction && previousAction.ReportType === 'NoFlag') {
+                    performedActionIcon.attr('title', "Previously performed action: " + previousAction.DisplayName);
+                    showFunc(performedActionIcon);
+                }
+            });
             if (advancedFlaggingLink) {
                 iconLocation.append(advancedFlaggingLink);
             }
-            iconLocation.append(performedActionIcon);
-            iconLocation.append(reportedIcon);
-            iconLocation.append(nattyIcon);
-            iconLocation.append(smokeyIcon);
         };
         for (var i = 0; i < results.Posts.length; i++) {
             _loop_2();

@@ -120,15 +120,16 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
 }
 
 const popup = $('<div>').attr('id', 'snackbar');
-
+const popupDelay = 1500;
+const popupTimeGap = 500;
 let showingPromise: Promise<void> | null = null;
 async function displaySuccess(message: string) {
     if (!showingPromise) {
-        showingPromise = Delay(3500);
+        showingPromise = Delay(popupDelay + popupTimeGap);
         popup.css('background-color', '#00690c');
         popup.text(message);
         popup.addClass('show')
-        await Delay(3000);
+        await Delay(popupDelay);
         popup.removeClass('show');
         showingPromise = null;
     } else {
@@ -139,11 +140,11 @@ async function displaySuccess(message: string) {
 
 async function displayError(message: string) {
     if (!showingPromise) {
-        showingPromise = Delay(3500);
+        showingPromise = Delay(popupDelay + popupTimeGap);
         popup.css('background-color', '#ba1701');
         popup.text(message);
         popup.addClass('show')
-        await Delay(3000);
+        await Delay(popupDelay);
         popup.removeClass('show');
         showingPromise = null;
     } else {

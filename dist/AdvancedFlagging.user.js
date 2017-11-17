@@ -3763,6 +3763,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         return result;
     }
     var popup = $('<div>').attr('id', 'snackbar');
+    var popupDelay = 1500;
+    var popupTimeGap = 500;
     var showingPromise = null;
     function displaySuccess(message) {
         return __awaiter(this, void 0, void 0, function () {
@@ -3770,11 +3772,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 switch (_a.label) {
                     case 0:
                         if (!!showingPromise) return [3 /*break*/, 2];
-                        showingPromise = FunctionUtils_1.Delay(3500);
+                        showingPromise = FunctionUtils_1.Delay(popupDelay + popupTimeGap);
                         popup.css('background-color', '#00690c');
                         popup.text(message);
                         popup.addClass('show');
-                        return [4 /*yield*/, FunctionUtils_1.Delay(3000)];
+                        return [4 /*yield*/, FunctionUtils_1.Delay(popupDelay)];
                     case 1:
                         _a.sent();
                         popup.removeClass('show');
@@ -3796,11 +3798,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 switch (_a.label) {
                     case 0:
                         if (!!showingPromise) return [3 /*break*/, 2];
-                        showingPromise = FunctionUtils_1.Delay(3500);
+                        showingPromise = FunctionUtils_1.Delay(popupDelay + popupTimeGap);
                         popup.css('background-color', '#ba1701');
                         popup.text(message);
                         popup.addClass('show');
-                        return [4 /*yield*/, FunctionUtils_1.Delay(3000)];
+                        return [4 /*yield*/, FunctionUtils_1.Delay(popupDelay)];
                     case 1:
                         _a.sent();
                         popup.removeClass('show');

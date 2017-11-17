@@ -1651,6 +1651,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         GenericBotAPI.prototype.makeTrackRequest = function () {
             var _this = this;
             var promise = new Promise(function (resolve, reject) {
+                if (!window.location.href.match(/^https:\/\/stackoverflow.com/)) {
+                    resolve(false);
+                }
                 if ($('#answer-' + _this.answerId + ' .post-text').length == 0) {
                     resolve(false);
                 }
@@ -3906,7 +3909,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                 if (didReport) {
                                     displaySuccess("Feedback sent to " + reporter.name);
                                 }
-                            }).catch(function (error) { return displayError("Failed to send feedback to " + reporter.name + "."); });
+                            }).catch(function (error) {
+                                displayError("Failed to send feedback to " + reporter.name + ".");
+                                console.log(error);
+                            });
                         }
                     };
                     for (var i = 0; i < reporters.length; i++) {

@@ -25,6 +25,9 @@ export class GenericBotAPI {
 
     private makeTrackRequest() {
         const promise = new Promise<boolean>((resolve, reject) => {
+            if (!window.location.href.match(/^https:\/\/stackoverflow.com/)) {
+                resolve(false);
+            }
             if ($('#answer-' + this.answerId + ' .post-text').length == 0) {
                 resolve(false);
             }

@@ -261,7 +261,10 @@ function BuildFlaggingDialog(element: JQuery,
                             if (didReport) {
                                 displaySuccess(`Feedback sent to ${reporter.name}`);
                             }
-                        }).catch(error => displayError(`Failed to send feedback to ${reporter.name}.`));
+                        }).catch(error => {
+                            displayError(`Failed to send feedback to ${reporter.name}.`);
+                            console.log(error);
+                        });
                     }
                 }
 

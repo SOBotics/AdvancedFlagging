@@ -2041,7 +2041,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.WasReported];
+                        case 0: return [4 /*yield*/, this.WasReported()];
                         case 1:
                             if (!_a.sent()) return [3 /*break*/, 3];
                             return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this.answerId + " tp")];
@@ -2057,7 +2057,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.WasReported];
+                        case 0: return [4 /*yield*/, this.WasReported()];
                         case 1:
                             if (!_a.sent()) return [3 /*break*/, 3];
                             return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this.answerId + " fp")];
@@ -2073,7 +2073,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.WasReported];
+                        case 0: return [4 /*yield*/, this.WasReported()];
                         case 1:
                             if (!_a.sent()) return [3 /*break*/, 3];
                             return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this.answerId + " ne")];

@@ -85,21 +85,21 @@ export class NattyAPI {
         }
     }
     public async ReportRedFlag() {
-        if (await this.WasReported) {
+        if (await this.WasReported()) {
             await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} tp`)
             return true;
         }
         return false;
     }
     public async ReportLooksFine() {
-        if (await this.WasReported) {
+        if (await this.WasReported()) {
             await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} fp`)
             return true;
         }
         return false;
     }
     public async ReportNeedsEditing() {
-        if (await this.WasReported) {
+        if (await this.WasReported()) {
             await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} ne`);
             return true;
         }

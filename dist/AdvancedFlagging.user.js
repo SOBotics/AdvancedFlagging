@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.2.5
+// @version      0.2.6
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1774,12 +1774,12 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     var MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
     var MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
     var MetaSmokeWasReportedConfig = 'MetaSmoke.WasReported';
-    var MetaSmokeyAPI = /** @class */ (function () {
-        function MetaSmokeyAPI(postId, postType) {
+    var MetaSmokeAPI = /** @class */ (function () {
+        function MetaSmokeAPI(postId, postType) {
             this.postId = postId;
             this.postType = postType;
         }
-        MetaSmokeyAPI.Reset = function () {
+        MetaSmokeAPI.Reset = function () {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
@@ -1794,7 +1794,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 });
             });
         };
-        MetaSmokeyAPI.IsDisabled = function () {
+        MetaSmokeAPI.IsDisabled = function () {
             return __awaiter(this, void 0, void 0, function () {
                 var cachedDisabled;
                 return __generator(this, function (_a) {
@@ -1810,24 +1810,24 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 });
             });
         };
-        MetaSmokeyAPI.getUserKey = function () {
+        MetaSmokeAPI.getUserKey = function () {
             var _this = this;
             return Caching_1.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
                 var prom, code;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
-                            prom = MetaSmokeyAPI.actualPromise;
+                            prom = MetaSmokeAPI.actualPromise;
                             if (prom === undefined) {
-                                prom = MetaSmokeyAPI.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + MetaSmokeyAPI.appKey);
-                                MetaSmokeyAPI.actualPromise = prom;
+                                prom = MetaSmokeAPI.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + MetaSmokeAPI.appKey);
+                                MetaSmokeAPI.actualPromise = prom;
                             }
                             return [4 /*yield*/, prom];
                         case 1:
                             code = _a.sent();
                             if (code) {
                                 $.ajax({
-                                    url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeyAPI.appKey + '&code=' + code,
+                                    url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeAPI.appKey + '&code=' + code,
                                     method: 'GET'
                                 }).done(function (data) { return resolve(data.token); })
                                     .fail(function (err) { return reject(err); });
@@ -1837,7 +1837,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 });
             }); }); });
         };
-        MetaSmokeyAPI.Setup = function (appKey, codeGetter) {
+        MetaSmokeAPI.Setup = function (appKey, codeGetter) {
             return __awaiter(this, void 0, void 0, function () {
                 var _this = this;
                 return __generator(this, function (_a) {
@@ -1846,7 +1846,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                             var isDisabled, cachedUserKey, returnCode;
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
-                                    case 0: return [4 /*yield*/, MetaSmokeyAPI.IsDisabled()];
+                                    case 0: return [4 /*yield*/, MetaSmokeAPI.IsDisabled()];
                                     case 1:
                                         isDisabled = _a.sent();
                                         if (isDisabled) {
@@ -1886,20 +1886,20 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                             });
                         }); };
                     }
-                    MetaSmokeyAPI.codeGetter = codeGetter;
-                    MetaSmokeyAPI.appKey = appKey;
-                    MetaSmokeyAPI.getUserKey(); // Make sure we request it immediately
+                    MetaSmokeAPI.codeGetter = codeGetter;
+                    MetaSmokeAPI.appKey = appKey;
+                    MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
                     return [2 /*return*/];
                 });
             });
         };
-        MetaSmokeyAPI.prototype.QueryMetaSmokey = function () {
+        MetaSmokeAPI.prototype.QueryMetaSmokey = function () {
             var _this = this;
             var urlStr = this.postType === 'Answer'
                 ? "//" + window.location.hostname + "/a/" + this.postId
                 : "//" + window.location.hostname + "/questions/" + this.postId;
             var resultPromise = Caching_1.GetAndCache(MetaSmokeWasReportedConfig + "." + urlStr, function () { return new Promise(function (resolve, reject) {
-                MetaSmokeyAPI.IsDisabled().then(function (isDisabled) {
+                MetaSmokeAPI.IsDisabled().then(function (isDisabled) {
                     if (isDisabled) {
                         return;
                     }
@@ -1908,7 +1908,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                         url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
                         data: {
                             urls: urlStr,
-                            key: "" + MetaSmokeyAPI.appKey
+                            key: "" + MetaSmokeAPI.appKey
                         }
                     }).done(function (metaSmokeResult) {
                         if (metaSmokeResult.items.length > 0) {
@@ -1926,14 +1926,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 .then(function (r) { return _this.subject.next(r); })
                 .catch(function (err) { return _this.subject.error(err); });
         };
-        MetaSmokeyAPI.prototype.Watch = function () {
+        MetaSmokeAPI.prototype.Watch = function () {
             this.subject = new Subject_1.Subject();
             this.replaySubject = new ReplaySubject_1.ReplaySubject(1);
             this.subject.subscribe(this.replaySubject);
             this.QueryMetaSmokey();
             return this.subject;
         };
-        MetaSmokeyAPI.prototype.ReportNaa = function () {
+        MetaSmokeAPI.prototype.ReportNaa = function () {
             return __awaiter(this, void 0, void 0, function () {
                 var smokeyid;
                 return __generator(this, function (_a) {
@@ -1951,7 +1951,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 });
             });
         };
-        MetaSmokeyAPI.prototype.ReportRedFlag = function () {
+        MetaSmokeAPI.prototype.ReportRedFlag = function () {
             return __awaiter(this, void 0, void 0, function () {
                 var _this = this;
                 var smokeyid, urlStr_1, promise, result;
@@ -1970,14 +1970,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                 ? "//" + window.location.hostname + "/a/" + this.postId
                                 : "//" + window.location.hostname + "/q/" + this.postId;
                             promise = new Promise(function (resolve, reject) {
-                                MetaSmokeyAPI.getUserKey().then(function (userKey) {
+                                MetaSmokeAPI.getUserKey().then(function (userKey) {
                                     if (userKey) {
                                         $.ajax({
                                             type: 'POST',
                                             url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
                                             data: {
                                                 post_link: urlStr_1,
-                                                key: MetaSmokeyAPI.appKey,
+                                                key: MetaSmokeAPI.appKey,
                                                 token: userKey
                                             }
                                         }).done(function () { return resolve(); })
@@ -2002,7 +2002,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 });
             });
         };
-        MetaSmokeyAPI.prototype.ReportLooksFine = function () {
+        MetaSmokeAPI.prototype.ReportLooksFine = function () {
             return __awaiter(this, void 0, void 0, function () {
                 var smokeyid;
                 return __generator(this, function (_a) {
@@ -2020,7 +2020,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 });
             });
         };
-        MetaSmokeyAPI.prototype.ReportNeedsEditing = function () {
+        MetaSmokeAPI.prototype.ReportNeedsEditing = function () {
             return __awaiter(this, void 0, void 0, function () {
                 var smokeyid;
                 return __generator(this, function (_a) {
@@ -2038,7 +2038,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 });
             });
         };
-        MetaSmokeyAPI.prototype.GetSmokeyId = function () {
+        MetaSmokeAPI.prototype.GetSmokeyId = function () {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
@@ -2048,15 +2048,15 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 });
             });
         };
-        MetaSmokeyAPI.prototype.SendFeedback = function (metaSmokeId, feedbackType) {
+        MetaSmokeAPI.prototype.SendFeedback = function (metaSmokeId, feedbackType) {
             return new Promise(function (resolve, reject) {
-                MetaSmokeyAPI.getUserKey().then(function (userKey) {
+                MetaSmokeAPI.getUserKey().then(function (userKey) {
                     $.ajax({
                         type: 'POST',
-                        url: 'https://metasmoke.erwaysoftware.com/api/w/post/' + metaSmokeId + '/feedback',
+                        url: "https://metasmoke.erwaysoftware.com/api/w/post/" + metaSmokeId + "/feedback",
                         data: {
                             type: feedbackType,
-                            key: MetaSmokeyAPI.appKey,
+                            key: MetaSmokeAPI.appKey,
                             token: userKey
                         }
                     }).done(function () { return resolve(); })
@@ -2064,9 +2064,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 });
             });
         };
-        return MetaSmokeyAPI;
+        return MetaSmokeAPI;
     }());
-    exports.MetaSmokeyAPI = MetaSmokeyAPI;
+    exports.MetaSmokeAPI = MetaSmokeAPI;
 }.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
@@ -3704,7 +3704,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(17), __webpack_require__(15), __webpack_require__(18), __webpack_require__(1), __webpack_require__(7), __webpack_require__(19), __webpack_require__(16)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, MetaSmokeyAPI_1, FlagTypes_1, NattyApi_1, Caching_1, FunctionUtils_1, StackExchangeWebParser_1, GenericBotAPI_1) {
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(17), __webpack_require__(15), __webpack_require__(18), __webpack_require__(1), __webpack_require__(7), __webpack_require__(19), __webpack_require__(16)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, MetaSmokeAPI_1, FlagTypes_1, NattyApi_1, Caching_1, FunctionUtils_1, StackExchangeWebParser_1, GenericBotAPI_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // tslint:disable-next-line:no-debugger
@@ -4005,7 +4005,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     ReportNeedsEditing: function () { return genericBotAPI_1.ReportNeedsEditing(); }
                 });
             }
-            var metaSmoke = new MetaSmokeyAPI_1.MetaSmokeyAPI(post.postId, post.type);
+            var metaSmoke = new MetaSmokeAPI_1.MetaSmokeAPI(post.postId, post.type);
             metaSmoke.Watch()
                 .subscribe(function (id) {
                 if (id !== null) {
@@ -4138,7 +4138,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         var optionsList = $('<ul>').css({ 'list-style': 'none' });
         var clearMetaSmokeConfig = $('<a />').text('Clear Metasmoke Configuration');
         clearMetaSmokeConfig.click(function () {
-            MetaSmokeyAPI_1.MetaSmokeyAPI.Reset();
+            MetaSmokeAPI_1.MetaSmokeAPI.Reset();
             location.reload();
         });
         var clearAllCachedInfo = $('<a />').text('Clear all cached info');
@@ -4156,7 +4156,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 switch (_a.label) {
                     case 0:
                         Caching_1.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
-                        return [4 /*yield*/, MetaSmokeyAPI_1.MetaSmokeyAPI.Setup(metaSmokeKey)];
+                        return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(metaSmokeKey)];
                     case 1:
                         _a.sent();
                         SetupPostPage();

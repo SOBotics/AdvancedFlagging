@@ -48,7 +48,7 @@ The interface looks like this:
 
 'Leave Comment' is ticked by default if there are no comments beneath the post to avoid comment spam.
 
-'Looks Fine' reports a false positive to both Smokey and Natty if they reported the post. Needs editting reports to Natty if it was reported.
+'Looks Fine' reports a false positive to both Smokey and Natty if they reported the post. Needs editing reports to Natty if it was reported, and false positive to Smokey.
 
 These options add an additional icon to the post:
 

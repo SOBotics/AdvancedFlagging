@@ -1,5 +1,5 @@
 import * as jquery from 'jquery';
-import { MetaSmokeyAPI } from './libs/MetaSmokeyAPI';
+import { MetaSmokeAPI } from './libs/MetaSmokeAPI';
 import { FlagType, flagCategories } from './FlagTypes';
 import { NattyAPI } from './libs/NattyApi';
 import { ClearCache, GetAndCache, GetFromCache, InitializeCache, StoreInCache } from './libs/Caching';
@@ -350,7 +350,7 @@ function SetupPostPage() {
             });
 
         }
-        const metaSmoke = new MetaSmokeyAPI(post.postId, post.type);
+        const metaSmoke = new MetaSmokeAPI(post.postId, post.type);
         metaSmoke.Watch()
             .subscribe(id => {
                 if (id !== null) {
@@ -499,7 +499,7 @@ function SetupAdminTools() {
 
     const clearMetaSmokeConfig = $('<a />').text('Clear Metasmoke Configuration');
     clearMetaSmokeConfig.click(() => {
-        MetaSmokeyAPI.Reset();
+        MetaSmokeAPI.Reset();
         location.reload();
     });
 
@@ -516,7 +516,7 @@ function SetupAdminTools() {
 
 $(async function () {
     InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
-    await MetaSmokeyAPI.Setup(metaSmokeKey);
+    await MetaSmokeAPI.Setup(metaSmokeKey);
 
     SetupPostPage();
     SetupAdminTools();

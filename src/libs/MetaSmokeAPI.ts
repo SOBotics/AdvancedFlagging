@@ -16,7 +16,7 @@ interface MetaSmokeApiWrapper {
     items: MetaSmokeApiItem[];
 }
 
-export class MetaSmokeyAPI {
+export class MetaSmokeAPI {
     private static actualPromise: Promise<string | undefined>;
     private static codeGetter: (metaSmokeOAuthUrl: string) => Promise<string | undefined>;
     private static appKey: string;
@@ -42,15 +42,15 @@ export class MetaSmokeyAPI {
 
     private static getUserKey() {
         return GetAndCache(MetaSmokeUserKeyConfig, () => new Promise<string>(async (resolve, reject) => {
-            let prom = MetaSmokeyAPI.actualPromise;
+            let prom = MetaSmokeAPI.actualPromise;
             if (prom === undefined) {
-                prom = MetaSmokeyAPI.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeyAPI.appKey}`);
-                MetaSmokeyAPI.actualPromise = prom;
+                prom = MetaSmokeAPI.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeAPI.appKey}`);
+                MetaSmokeAPI.actualPromise = prom;
             }
             const code = await prom;
             if (code) {
                 $.ajax({
-                    url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeyAPI.appKey + '&code=' + code,
+                    url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeAPI.appKey + '&code=' + code,
                     method: 'GET'
                 }).done(data => resolve(data.token))
                     .fail(err => reject(err))
@@ -61,7 +61,7 @@ export class MetaSmokeyAPI {
     public static async Setup(appKey: string, codeGetter?: (metaSmokeOAuthUrl: string) => Promise<string | undefined>) {
         if (!codeGetter) {
             codeGetter = async (metaSmokeOAuthUrl: string | undefined) => {
-                const isDisabled = await MetaSmokeyAPI.IsDisabled();
+                const isDisabled = await MetaSmokeAPI.IsDisabled();
                 if (isDisabled) {
                     return;
                 }
@@ -93,10 +93,10 @@ export class MetaSmokeyAPI {
                 return returnCode;
             }
         }
-        MetaSmokeyAPI.codeGetter = codeGetter;
-        MetaSmokeyAPI.appKey = appKey;
+        MetaSmokeAPI.codeGetter = codeGetter;
+        MetaSmokeAPI.appKey = appKey;
 
-        MetaSmokeyAPI.getUserKey(); // Make sure we request it immediately
+        MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
     }
 
     constructor(postId: number, postType: 'Answer' | 'Question') {
@@ -111,7 +111,7 @@ export class MetaSmokeyAPI {
                 : `//${window.location.hostname}/questions/${this.postId}`;
 
         const resultPromise = GetAndCache<number | null>(`${MetaSmokeWasReportedConfig}.${urlStr}`, () => new Promise((resolve, reject) => {
-            MetaSmokeyAPI.IsDisabled().then(isDisabled => {
+            MetaSmokeAPI.IsDisabled().then(isDisabled => {
                 if (isDisabled) {
                     return;
                 }
@@ -120,7 +120,7 @@ export class MetaSmokeyAPI {
                     url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
                     data: {
                         urls: urlStr,
-                        key: `${MetaSmokeyAPI.appKey}`
+                        key: `${MetaSmokeAPI.appKey}`
                     }
                 }).done((metaSmokeResult: MetaSmokeApiWrapper) => {
                     if (metaSmokeResult.items.length > 0) {
@@ -169,14 +169,14 @@ export class MetaSmokeyAPI {
                     : `//${window.location.hostname}/q/${this.postId}`;
 
             const promise = new Promise<boolean>((resolve, reject) => {
-                MetaSmokeyAPI.getUserKey().then(userKey => {
+                MetaSmokeAPI.getUserKey().then(userKey => {
                     if (userKey) {
                         $.ajax({
                             type: 'POST',
                             url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
                             data: {
                                 post_link: urlStr,
-                                key: MetaSmokeyAPI.appKey,
+                                key: MetaSmokeAPI.appKey,
                                 token: userKey
                             }
                         }).done(() => resolve())
@@ -224,13 +224,13 @@ export class MetaSmokeyAPI {
 
     private SendFeedback(metaSmokeId: number, feedbackType: 'fp-' | 'tpu-' | 'naa-'): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            MetaSmokeyAPI.getUserKey().then(userKey => {
+            MetaSmokeAPI.getUserKey().then(userKey => {
                 $.ajax({
                     type: 'POST',
-                    url: 'https://metasmoke.erwaysoftware.com/api/w/post/' + metaSmokeId + '/feedback',
+                    url: `https://metasmoke.erwaysoftware.com/api/w/post/${metaSmokeId}/feedback`,
                     data: {
                         type: feedbackType,
-                        key: MetaSmokeyAPI.appKey,
+                        key: MetaSmokeAPI.appKey,
                         token: userKey
                     }
                 }).done(() => resolve())

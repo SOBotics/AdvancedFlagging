@@ -101,17 +101,21 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
     }
 
     if (flag.ReportType !== 'NoFlag') {
-        result.FlagPromise = new Promise((resolve, reject) => {
-            $.ajax({
-                url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
-                type: 'POST',
-                data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
-            }).done((data) => {
-                resolve(data);
-            }).fail(function (jqXHR, textStatus, errorThrown) {
-                reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
-            });
-        });
+        GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`).then(wasFlagged => {
+            if (!wasFlagged) {
+                result.FlagPromise = new Promise((resolve, reject) => {
+                    $.ajax({
+                        url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
+                        type: 'POST',
+                        data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
+                    }).done((data) => {
+                        resolve(data);
+                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                        reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                    });
+                });
+            }
+        })
     }
 
     return result;

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.2.3
+// @version      0.2.4
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -3750,16 +3750,20 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             }
         }
         if (flag.ReportType !== 'NoFlag') {
-            result.FlagPromise = new Promise(function (resolve, reject) {
-                $.ajax({
-                    url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
-                    type: 'POST',
-                    data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
-                }).done(function (data) {
-                    resolve(data);
-                }).fail(function (jqXHR, textStatus, errorThrown) {
-                    reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
-                });
+            Caching_1.GetFromCache("AdvancedFlagging.Flagged." + postId).then(function (wasFlagged) {
+                if (!wasFlagged) {
+                    result.FlagPromise = new Promise(function (resolve, reject) {
+                        $.ajax({
+                            url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
+                            type: 'POST',
+                            data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
+                        }).done(function (data) {
+                            resolve(data);
+                        }).fail(function (jqXHR, textStatus, errorThrown) {
+                            reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                        });
+                    });
+                }
             });
         }
         return result;

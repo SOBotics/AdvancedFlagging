@@ -22,7 +22,6 @@ function setupStyles() {
     visibility: hidden;
     min-width: 250px;
     margin-left: -125px;
-    background-color: #00690c;
     color: #fff;
     text-align: center;
     border-radius: 2px;
@@ -125,7 +124,7 @@ let showingPromise: Promise<void> | null = null;
 async function displaySuccess(message: string) {
     if (!showingPromise) {
         showingPromise = Delay(3500);
-
+        popup.css('background-color', '#00690c');
         popup.text(message);
         popup.addClass('show')
         await Delay(3000);
@@ -134,6 +133,21 @@ async function displaySuccess(message: string) {
     } else {
         await showingPromise;
         displaySuccess(message);
+    }
+}
+
+async function displayError(message: string) {
+    if (!showingPromise) {
+        showingPromise = Delay(3500);
+        popup.css('background-color', '#ba1701');
+        popup.text(message);
+        popup.addClass('show')
+        await Delay(3000);
+        popup.removeClass('show');
+        showingPromise = null;
+    } else {
+        await showingPromise;
+        displayError(message);
     }
 }
 
@@ -246,7 +260,7 @@ function BuildFlaggingDialog(element: JQuery,
                             if (didReport) {
                                 displaySuccess(`Feedback sent to ${reporter.name}`);
                             }
-                        });
+                        }).catch(error => displayError(`Failed to send feedback to ${reporter.name}.`));
                     }
                 }
 

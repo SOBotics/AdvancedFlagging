@@ -3573,7 +3573,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function setupStyles() {
         var scriptNode = document.createElement('style');
         scriptNode.type = 'text/css';
-        scriptNode.textContent = "\n#snackbar {\n    visibility: hidden;\n    min-width: 250px;\n    margin-left: -125px;\n    background-color: #00690c;\n    color: #fff;\n    text-align: center;\n    border-radius: 2px;\n    padding: 16px;\n    position: fixed;\n    z-index: 2000;\n    left: 50%;\n    top: 30px;\n    font-size: 17px;\n}\n\n#snackbar.show {\n    visibility: visible;\n    -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;\n    animation: fadein 0.5s, fadeout 0.5s 2.5s;\n}\n\n@-webkit-keyframes fadein {\n    from {top: 0; opacity: 0;}\n    to {top: 30px; opacity: 1;}\n}\n\n@keyframes fadein {\n    from {top: 0; opacity: 0;}\n    to {top: 30px; opacity: 1;}\n}\n\n@-webkit-keyframes fadeout {\n    from {top: 30px; opacity: 1;}\n    to {top: 0; opacity: 0;}\n}\n\n@keyframes fadeout {\n    from {top: 30px; opacity: 1;}\n    to {top: 0; opacity: 0;}\n}";
+        scriptNode.textContent = "\n#snackbar {\n    visibility: hidden;\n    min-width: 250px;\n    margin-left: -125px;\n    color: #fff;\n    text-align: center;\n    border-radius: 2px;\n    padding: 16px;\n    position: fixed;\n    z-index: 2000;\n    left: 50%;\n    top: 30px;\n    font-size: 17px;\n}\n\n#snackbar.show {\n    visibility: visible;\n    -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;\n    animation: fadein 0.5s, fadeout 0.5s 2.5s;\n}\n\n@-webkit-keyframes fadein {\n    from {top: 0; opacity: 0;}\n    to {top: 30px; opacity: 1;}\n}\n\n@keyframes fadein {\n    from {top: 0; opacity: 0;}\n    to {top: 30px; opacity: 1;}\n}\n\n@-webkit-keyframes fadeout {\n    from {top: 30px; opacity: 1;}\n    to {top: 0; opacity: 0;}\n}\n\n@keyframes fadeout {\n    from {top: 30px; opacity: 1;}\n    to {top: 0; opacity: 0;}\n}";
         var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
         target.appendChild(scriptNode);
     }
@@ -3634,6 +3634,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     case 0:
                         if (!!showingPromise) return [3 /*break*/, 2];
                         showingPromise = FunctionUtils_1.Delay(3500);
+                        popup.css('background-color', '#00690c');
                         popup.text(message);
                         popup.addClass('show');
                         return [4 /*yield*/, FunctionUtils_1.Delay(3000)];
@@ -3646,6 +3647,32 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     case 3:
                         _a.sent();
                         displaySuccess(message);
+                        _a.label = 4;
+                    case 4: return [2 /*return*/];
+                }
+            });
+        });
+    }
+    function displayError(message) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!!showingPromise) return [3 /*break*/, 2];
+                        showingPromise = FunctionUtils_1.Delay(3500);
+                        popup.css('background-color', '#ba1701');
+                        popup.text(message);
+                        popup.addClass('show');
+                        return [4 /*yield*/, FunctionUtils_1.Delay(3000)];
+                    case 1:
+                        _a.sent();
+                        popup.removeClass('show');
+                        showingPromise = null;
+                        return [3 /*break*/, 4];
+                    case 2: return [4 /*yield*/, showingPromise];
+                    case 3:
+                        _a.sent();
+                        displayError(message);
                         _a.label = 4;
                     case 4: return [2 /*return*/];
                 }
@@ -3741,7 +3768,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                 if (didReport) {
                                     displaySuccess("Feedback sent to " + reporter.name);
                                 }
-                            });
+                            }).catch(function (error) { return displayError("Failed to send feedback to " + reporter.name + "."); });
                         }
                     };
                     for (var i = 0; i < reporters.length; i++) {

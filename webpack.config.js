@@ -3,6 +3,7 @@ var UnminifiedWebpackPlugin = require('unminified-webpack-plugin');
 
 module.exports = {
     entry: "./src/AdvancedFlagging.ts",
+    target: "node",
     output: {
         filename: "./dist/out.min.js"
     },

@@ -82,7 +82,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 42);
+/******/ 	return __webpack_require__(__webpack_require__.s = 41);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -999,10 +999,10 @@ var SafeSubscriber = (function (_super) {
 
 /***/ },
 /* 4 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 "use strict";
-/* WEBPACK VAR INJECTION */(function(global) {"use strict";
+"use strict";
 // CommonJS / Node have global context exposed as "global" variable.
 // We don't want to include the whole node.d.ts this this compilation unit so we'll just fake
 // the global "global" var for now.
@@ -1021,7 +1021,6 @@ exports.root = _root;
     }
 })();
 //# sourceMappingURL=root.js.map
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(41)))
 
 /***/ },
 /* 5 */
@@ -3528,31 +3527,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 /***/ },
 /* 41 */
-/***/ function(module, exports) {
-
-var g;
-
-// This works in non-strict mode
-g = (function() { return this; })();
-
-try {
-	// This works if eval is allowed (see CSP)
-	g = g || Function("return this")() || (1,eval)("this");
-} catch(e) {
-	// This works if the window reference is available
-	if(typeof window === "object")
-		g = window;
-}
-
-// g can still be undefined, but nothing to do about it...
-// We return undefined, instead of nothing here, so it's
-// easier to handle this case. if(!global) { ...}
-
-module.exports = g;
-
-
-/***/ },
-/* 42 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -3876,6 +3850,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                         dropDown_1.toggle();
                     }
                 });
+                iconLocation.append(advancedFlaggingLink);
                 iconLocation.append(performedActionIcon);
                 iconLocation.append(reportedIcon);
                 iconLocation.append(nattyIcon);
@@ -3903,9 +3878,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     showFunc(performedActionIcon);
                 }
             });
-            if (advancedFlaggingLink) {
-                iconLocation.append(advancedFlaggingLink);
-            }
         };
         for (var i = 0; i < results.Posts.length; i++) {
             _loop_2();

@@ -1,7 +1,6 @@
 /dist/out.js
+/dist/out.min.js
+dist/packed.js
+
 /npm-debug.log
 /node_modules
-/dist/out.min.js
-tmp.js
-dist/packed.js
-bundle.js

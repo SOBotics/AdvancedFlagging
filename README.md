@@ -15,7 +15,12 @@ At the moment, these tools are bundled together within this repository. Going fo
 
 # Installation
 
-Simply navigate to https://raw.githubusercontent.com/SOBotics/AdvancedFlagging/master/dist/AdvancedFlagging.user.js and install it via your favourite UserScript addin. Currently, only TamperMonkey is officially supported
+Click one of the following links to install it via your favourite userscript tool:  
+
+- [Minified](https://raw.githubusercontent.com/SOBotics/AdvancedFlagging/master/dist/AdvancedFlagging.min.user.js)  
+- [Original](https://raw.githubusercontent.com/SOBotics/AdvancedFlagging/master/dist/AdvancedFlagging.user.js)
+
+Currently, only TamperMonkey is officially supported
 
 # What does it do?
 

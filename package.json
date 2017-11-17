@@ -1,5 +1,5 @@
 {
-  "name": "testbed",
+  "name": "advancedflagging",
   "version": "1.0.0",
   "scripts": {
     "build": "webpack && concat-cli -f src/UserScriptDeclaration.txt dist/out.js -o dist/AdvancedFlagging.user.js && concat-cli -f src/UserScriptDeclaration.txt dist/out.min.js -o dist/AdvancedFlagging.min.user.js"
@@ -8,8 +8,10 @@
   "license": "ISC",
   "devDependencies": {
     "concat-cli": "^4.0.0",
+    "rxjs": "^5.5.2",
+    "ts-loader": "^3.1.1",
     "typescript": "^2.6.1",
     "unminified-webpack-plugin": "^1.4.2",
-    "webpack": "2.1.0-beta.22"
+    "webpack": "^2.1.0-beta.22"
   }
 }

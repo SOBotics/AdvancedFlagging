@@ -6,6 +6,7 @@ import { ClearCache, GetAndCache, GetFromCache, InitializeCache, StoreInCache } 
 import { Delay } from './libs/FunctionUtils';
 import { StackExchangeGlobal } from './libs/StackExchangeWeb/StackExchangeOptions';
 import { parseCurrentPage } from './libs/StackExchangeWeb/StackExchangeWebParser';
+import { GenericBotAPI } from './libs/GenericBotAPI';
 // tslint:disable-next-line:no-debugger
 debugger;
 
@@ -311,7 +312,7 @@ function SetupPostPage() {
             window.open(`https://sentinel.erwaysoftware.com/posts/aid/${post.postId}`, '_blank');
         });
 
-        let showFunc = (element:JQuery) => element.show();
+        let showFunc = (element: JQuery) => element.show();
 
         const smokeyIcon = getSmokeyIcon();
         const reporters: Reporter[] = [];
@@ -332,6 +333,16 @@ function SetupPostPage() {
                 ReportLooksFine: () => nattyApi.ReportLooksFine(),
                 ReportNeedsEditing: () => nattyApi.ReportNeedsEditing()
             });
+
+            const genericBotAPI = new GenericBotAPI(post.postId);
+            reporters.push({
+                name: 'Generic Bot',
+                ReportNaa: (answerDate: Date, questionDate: Date) => genericBotAPI.ReportNaa(),
+                ReportRedFlag: () => genericBotAPI.ReportRedFlag(),
+                ReportLooksFine: () => genericBotAPI.ReportLooksFine(),
+                ReportNeedsEditing: () => genericBotAPI.ReportNeedsEditing()
+            });
+
         }
         const metaSmoke = new MetaSmokeyAPI(post.postId, post.type);
         metaSmoke.Watch()
@@ -402,7 +413,7 @@ function SetupPostPage() {
             iconLocation.after(nattyIcon);
             iconLocation.after(reportedIcon);
             iconLocation.after(performedActionIcon);
-            
+
             showFunc = (element: JQuery) => element.css('display', 'inline-block');
         }
 

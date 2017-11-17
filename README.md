@@ -18,7 +18,7 @@ At the moment, these tools are bundled together within this repository. Going fo
 This code uses different bits and pieces from the following sources:
 
 - [Natty Reporter](https://github.com/SOBotics/Userscripts/blob/master/Natty/NattyReporter.user.js)
-- [Flag Dialog Smokey Controls](chrome-extension://dhdgffkkebhmkfjojejmpbldmpobfkfo/ask.html?aid=28266818-f40f-410d-b597-411238144a63)
+- [Flag Dialog Smokey Controls](https://github.com/Charcoal-SE/userscripts/raw/master/fdsc/fdsc.user.js)
 - [Generic Bot (Userscript)](https://stackapps.com/questions/7337/generic-bot-a-moderation-chatbot)
 
 # Installation

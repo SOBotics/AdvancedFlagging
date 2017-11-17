@@ -13,6 +13,14 @@ AdvancedFlagging started as a set of modular typescript tools to aid with StackE
 
 At the moment, these tools are bundled together within this repository. Going forward, these tools will ideally be independant npm packages to be used independantly.
 
+# Credits
+
+This code uses different bits and pieces from the following sources:
+
+- [Natty Reporter](https://github.com/SOBotics/Userscripts/blob/master/Natty/NattyReporter.user.js)
+- [Flag Dialog Smokey Controls](chrome-extension://dhdgffkkebhmkfjojejmpbldmpobfkfo/ask.html?aid=28266818-f40f-410d-b597-411238144a63)
+- [Generic Bot (Userscript)](https://stackapps.com/questions/7337/generic-bot-a-moderation-chatbot)
+
 # Installation
 
 Click one of the following links to install it via your favourite userscript tool:  

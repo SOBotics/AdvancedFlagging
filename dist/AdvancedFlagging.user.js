@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.2.7
+// @version      0.2.8
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1546,12 +1546,25 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 {
                     DisplayName: 'Thanks',
                     ReportType: 'AnswerNotAnAnswer',
-                    Comment: 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
-                        'and can be perceived as noise by its future visitors. Once you [earn](http://meta.stackoverflow.com/q/146472) ' +
-                        'enough [reputation](http://stackoverflow.com/help/whats-reputation), you will gain privileges to ' +
-                        '[upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
-                        'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
-                        'See [Why is voting important](http://stackoverflow.com/help/why-vote).',
+                    Comments: [
+                        {
+                            ReputationLimit: 0,
+                            Comment: 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
+                                'and can be perceived as noise by its future visitors. Once you [earn](http://meta.stackoverflow.com/q/146472) ' +
+                                'enough [reputation](http://stackoverflow.com/help/whats-reputation), you will gain privileges to ' +
+                                '[upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
+                                'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
+                                'See [Why is voting important](http://stackoverflow.com/help/why-vote).'
+                        },
+                        {
+                            ReputationLimit: 15,
+                            Comment: 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
+                                'and can be perceived as noise by its future visitors. ' +
+                                'Instead, [upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
+                                'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
+                                'See [Why is voting important](http://stackoverflow.com/help/why-vote).'
+                        }
+                    ]
                 },
                 {
                     DisplayName: 'Me too',

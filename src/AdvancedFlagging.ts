@@ -64,7 +64,7 @@ function setupStyles() {
     target.appendChild(scriptNode);
 };
 
-function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: boolean, userReputation?: number) {
+async function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: boolean, userReputation?: number) {
     const result: {
         CommentPromise?: Promise<string>;
         FlagPromise?: Promise<string>;
@@ -101,21 +101,20 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
     }
 
     if (flag.ReportType !== 'NoFlag') {
-        GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`).then(wasFlagged => {
-            if (!wasFlagged) {
-                result.FlagPromise = new Promise((resolve, reject) => {
-                    $.ajax({
-                        url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
-                        type: 'POST',
-                        data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
-                    }).done((data) => {
-                        resolve(data);
-                    }).fail(function (jqXHR, textStatus, errorThrown) {
-                        reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
-                    });
+        const wasFlagged = await GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`)
+        if (!wasFlagged) {
+            result.FlagPromise = new Promise((resolve, reject) => {
+                $.ajax({
+                    url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
+                    type: 'POST',
+                    data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
+                }).done((data) => {
+                    resolve(data);
+                }).fail(function (jqXHR, textStatus, errorThrown) {
+                    reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
                 });
-            }
-        })
+            });
+        }
     }
 
     return result;
@@ -216,9 +215,9 @@ function BuildFlaggingDialog(element: JQuery,
             }
 
             const reportLink = $('<a />').css(linkStyle);
-            reportLink.click(() => {
+            reportLink.click(async () => {
                 if (!deleted) {
-                    const result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation)
+                    const result = await handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation)
                     if (result.CommentPromise) {
                         result.CommentPromise.then((data) => {
                             const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));

@@ -3719,54 +3719,63 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
     ;
     function handleFlagAndComment(postId, flag, commentRequired, userReputation) {
-        var result = {};
-        if (commentRequired) {
-            var commentText_1 = null;
-            if (flag.Comment) {
-                commentText_1 = flag.Comment;
-            }
-            else if (flag.Comments) {
-                var comments = flag.Comments;
-                comments.sort(function (a, b) { return b.ReputationLimit - a.ReputationLimit; });
-                for (var i = 0; i < comments.length; i++) {
-                    if (userReputation === undefined || comments[i].ReputationLimit <= userReputation) {
-                        commentText_1 = comments[i].Comment;
-                        break;
-                    }
-                }
-            }
-            if (commentText_1) {
-                result.CommentPromise = new Promise(function (resolve, reject) {
-                    $.ajax({
-                        url: "//stackoverflow.com/posts/" + postId + "/comments",
-                        type: 'POST',
-                        data: { 'fkey': StackExchange.options.user.fkey, 'comment': commentText_1 }
-                    }).done(function (data) {
-                        resolve(data);
-                    }).fail(function (jqXHR, textStatus, errorThrown) {
-                        reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
-                    });
-                });
-            }
-        }
-        if (flag.ReportType !== 'NoFlag') {
-            Caching_1.GetFromCache("AdvancedFlagging.Flagged." + postId).then(function (wasFlagged) {
-                if (!wasFlagged) {
-                    result.FlagPromise = new Promise(function (resolve, reject) {
-                        $.ajax({
-                            url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
-                            type: 'POST',
-                            data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
-                        }).done(function (data) {
-                            resolve(data);
-                        }).fail(function (jqXHR, textStatus, errorThrown) {
-                            reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
-                        });
-                    });
+        return __awaiter(this, void 0, void 0, function () {
+            var result, commentText_1, comments, i, wasFlagged;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        result = {};
+                        if (commentRequired) {
+                            commentText_1 = null;
+                            if (flag.Comment) {
+                                commentText_1 = flag.Comment;
+                            }
+                            else if (flag.Comments) {
+                                comments = flag.Comments;
+                                comments.sort(function (a, b) { return b.ReputationLimit - a.ReputationLimit; });
+                                for (i = 0; i < comments.length; i++) {
+                                    if (userReputation === undefined || comments[i].ReputationLimit <= userReputation) {
+                                        commentText_1 = comments[i].Comment;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (commentText_1) {
+                                result.CommentPromise = new Promise(function (resolve, reject) {
+                                    $.ajax({
+                                        url: "//stackoverflow.com/posts/" + postId + "/comments",
+                                        type: 'POST',
+                                        data: { 'fkey': StackExchange.options.user.fkey, 'comment': commentText_1 }
+                                    }).done(function (data) {
+                                        resolve(data);
+                                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                                        reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                                    });
+                                });
+                            }
+                        }
+                        if (!(flag.ReportType !== 'NoFlag')) return [3 /*break*/, 2];
+                        return [4 /*yield*/, Caching_1.GetFromCache("AdvancedFlagging.Flagged." + postId)];
+                    case 1:
+                        wasFlagged = _a.sent();
+                        if (!wasFlagged) {
+                            result.FlagPromise = new Promise(function (resolve, reject) {
+                                $.ajax({
+                                    url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
+                                    type: 'POST',
+                                    data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
+                                }).done(function (data) {
+                                    resolve(data);
+                                }).fail(function (jqXHR, textStatus, errorThrown) {
+                                    reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                                });
+                            });
+                        }
+                        _a.label = 2;
+                    case 2: return [2 /*return*/, result];
                 }
             });
-        }
-        return result;
+        });
     }
     var popup = $('<div>').attr('id', 'snackbar');
     var popupDelay = 1500;
@@ -3825,6 +3834,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         });
     }
     function BuildFlaggingDialog(element, postId, postType, reputation, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters) {
+        var _this = this;
         var getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
         var linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
         var dropDown = $('<dl />').css({
@@ -3864,66 +3874,76 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     dropdownItem.css(flagCategory.BoxStyle);
                 }
                 var reportLink = $('<a />').css(linkStyle);
-                reportLink.click(function () {
-                    if (!deleted) {
-                        var result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation);
-                        if (result.CommentPromise) {
-                            result.CommentPromise.then(function (data) {
-                                var commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
-                                commentUI.addShow(true, false);
-                                commentUI.showComments(data, null, false, true);
-                                $(document).trigger('comment', postId);
-                            });
-                        }
-                        if (result.FlagPromise) {
-                            result.FlagPromise.then(function () {
-                                Caching_1.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType);
-                                reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
-                                reportedIcon.show();
-                            });
-                        }
-                    }
-                    var noFlag = flagType.ReportType === 'NoFlag';
-                    if (noFlag) {
-                        Caching_1.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType);
-                        performedActionIcon.attr('title', "Performed action: " + flagType.DisplayName);
-                        performedActionIcon.show();
-                    }
-                    var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
-                    var naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
-                    var _loop_1 = function () {
-                        var reporter = reporters[i];
-                        var promise = null;
-                        if (rudeFlag) {
-                            promise = reporter.ReportRedFlag();
-                        }
-                        else if (naaFlag) {
-                            promise = reporter.ReportNaa(answerTime, questionTime);
-                        }
-                        else if (noFlag) {
-                            if (flagType.DisplayName === 'Needs Editing') {
-                                promise = reporter.ReportNeedsEditing();
-                            }
-                            else {
-                                promise = reporter.ReportLooksFine();
-                            }
-                        }
-                        if (promise) {
-                            promise.then(function (didReport) {
-                                if (didReport) {
-                                    displaySuccess("Feedback sent to " + reporter.name);
+                reportLink.click(function () { return __awaiter(_this, void 0, void 0, function () {
+                    var result, noFlag, rudeFlag, naaFlag, _loop_1, i;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                if (!!deleted) return [3 /*break*/, 2];
+                                return [4 /*yield*/, handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation)];
+                            case 1:
+                                result = _a.sent();
+                                if (result.CommentPromise) {
+                                    result.CommentPromise.then(function (data) {
+                                        var commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
+                                        commentUI.addShow(true, false);
+                                        commentUI.showComments(data, null, false, true);
+                                        $(document).trigger('comment', postId);
+                                    });
                                 }
-                            }).catch(function (error) {
-                                displayError("Failed to send feedback to " + reporter.name + ".");
-                                console.log(error);
-                            });
+                                if (result.FlagPromise) {
+                                    result.FlagPromise.then(function () {
+                                        Caching_1.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType);
+                                        reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
+                                        reportedIcon.show();
+                                    });
+                                }
+                                _a.label = 2;
+                            case 2:
+                                noFlag = flagType.ReportType === 'NoFlag';
+                                if (noFlag) {
+                                    Caching_1.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType);
+                                    performedActionIcon.attr('title', "Performed action: " + flagType.DisplayName);
+                                    performedActionIcon.show();
+                                }
+                                rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
+                                naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
+                                _loop_1 = function () {
+                                    var reporter = reporters[i];
+                                    var promise = null;
+                                    if (rudeFlag) {
+                                        promise = reporter.ReportRedFlag();
+                                    }
+                                    else if (naaFlag) {
+                                        promise = reporter.ReportNaa(answerTime, questionTime);
+                                    }
+                                    else if (noFlag) {
+                                        if (flagType.DisplayName === 'Needs Editing') {
+                                            promise = reporter.ReportNeedsEditing();
+                                        }
+                                        else {
+                                            promise = reporter.ReportLooksFine();
+                                        }
+                                    }
+                                    if (promise) {
+                                        promise.then(function (didReport) {
+                                            if (didReport) {
+                                                displaySuccess("Feedback sent to " + reporter.name);
+                                            }
+                                        }).catch(function (error) {
+                                            displayError("Failed to send feedback to " + reporter.name + ".");
+                                            console.log(error);
+                                        });
+                                    }
+                                };
+                                for (i = 0; i < reporters.length; i++) {
+                                    _loop_1();
+                                }
+                                dropDown.hide();
+                                return [2 /*return*/];
                         }
-                    };
-                    for (var i = 0; i < reporters.length; i++) {
-                        _loop_1();
-                    }
-                    dropDown.hide();
-                });
+                    });
+                }); });
                 reportLink.text(flagType.DisplayName);
                 dropdownItem.append(reportLink);
                 dropDown.append(dropdownItem);

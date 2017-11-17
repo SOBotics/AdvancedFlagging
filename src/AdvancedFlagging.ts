@@ -68,7 +68,6 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
     const result: {
         CommentPromise?: Promise<string>;
         FlagPromise?: Promise<string>;
-        PerformedActionPromise?: Promise<void>
     } = {};
 
     if (commentRequired) {
@@ -114,7 +113,6 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
             });
         });
     }
-    result.PerformedActionPromise = Promise.resolve();
 
     return result;
 }
@@ -166,6 +164,7 @@ function BuildFlaggingDialog(element: JQuery,
     reputation: number | undefined,
     answerTime: Date,
     questionTime: Date,
+    deleted: boolean,
     reportedIcon: JQuery,
     performedActionIcon: JQuery,
     reporters: Reporter[]
@@ -212,33 +211,33 @@ function BuildFlaggingDialog(element: JQuery,
                 dropdownItem.css(flagCategory.BoxStyle);
             }
 
-            const nattyLinkItem = $('<a />').css(linkStyle);
-            nattyLinkItem.click(() => {
-                const result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation)
-                if (result.CommentPromise) {
-                    result.CommentPromise.then((data) => {
-                        const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
-                        commentUI.addShow(true, false);
-                        commentUI.showComments(data, null, false, true);
-                        $(document).trigger('comment', postId);
-                    })
-                }
+            const reportLink = $('<a />').css(linkStyle);
+            reportLink.click(() => {
+                if (!deleted) {
+                    const result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation)
+                    if (result.CommentPromise) {
+                        result.CommentPromise.then((data) => {
+                            const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
+                            commentUI.addShow(true, false);
+                            commentUI.showComments(data, null, false, true);
+                            $(document).trigger('comment', postId);
+                        })
+                    }
 
-                if (result.FlagPromise) {
-                    result.FlagPromise.then(() => {
-                        StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType);
-                        reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`)
-                        reportedIcon.show();
-                    });
+                    if (result.FlagPromise) {
+                        result.FlagPromise.then(() => {
+                            StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType);
+                            reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`)
+                            reportedIcon.show();
+                        });
+                    }
                 }
 
                 const noFlag = flagType.ReportType === 'NoFlag';
-                if (noFlag && result.PerformedActionPromise) {
-                    result.PerformedActionPromise.then(() => {
-                        StoreInCache(`AdvancedFlagging.PerformedAction.${postId}`, flagType);
-                        performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`)
-                        performedActionIcon.show();
-                    })
+                if (noFlag) {
+                    StoreInCache(`AdvancedFlagging.PerformedAction.${postId}`, flagType);
+                    performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`)
+                    performedActionIcon.show();
                 }
 
                 const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
@@ -269,8 +268,8 @@ function BuildFlaggingDialog(element: JQuery,
                 dropDown.hide();
             });
 
-            nattyLinkItem.text(flagType.DisplayName);
-            dropdownItem.append(nattyLinkItem);
+            reportLink.text(flagType.DisplayName);
+            dropdownItem.append(reportLink);
 
             dropDown.append(dropdownItem);
         });
@@ -382,8 +381,9 @@ function SetupPostPage() {
                 questionTime = post.postTime;
                 answerTime = post.postTime;
             }
-
+            const deleted = post.element.hasClass('deleted-answer');
             const dropDown = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime, questionTime,
+                deleted,
                 reportedIcon,
                 performedActionIcon,
                 reporters);

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.2.2
+// @version      0.2.3
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2278,7 +2278,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     exports.parseNatoPage = parseNatoPage;
     function isQuestionPage() {
-        return !!window.location.href.match(/\/questions\/\d+\/.*/);
+        return !!window.location.href.match(/\/questions\/\d+.*/);
     }
     exports.isQuestionPage = isQuestionPage;
     function parseQuestionPage() {
@@ -3759,7 +3759,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 });
             });
         }
-        result.PerformedActionPromise = Promise.resolve();
         return result;
     }
     var popup = $('<div>').attr('id', 'snackbar');
@@ -3818,7 +3817,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             });
         });
     }
-    function BuildFlaggingDialog(element, postId, postType, reputation, answerTime, questionTime, reportedIcon, performedActionIcon, reporters) {
+    function BuildFlaggingDialog(element, postId, postType, reputation, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters) {
         var getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
         var linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
         var dropDown = $('<dl />').css({
@@ -3857,31 +3856,31 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 if (flagCategory.BoxStyle) {
                     dropdownItem.css(flagCategory.BoxStyle);
                 }
-                var nattyLinkItem = $('<a />').css(linkStyle);
-                nattyLinkItem.click(function () {
-                    var result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation);
-                    if (result.CommentPromise) {
-                        result.CommentPromise.then(function (data) {
-                            var commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
-                            commentUI.addShow(true, false);
-                            commentUI.showComments(data, null, false, true);
-                            $(document).trigger('comment', postId);
-                        });
-                    }
-                    if (result.FlagPromise) {
-                        result.FlagPromise.then(function () {
-                            Caching_1.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType);
-                            reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
-                            reportedIcon.show();
-                        });
+                var reportLink = $('<a />').css(linkStyle);
+                reportLink.click(function () {
+                    if (!deleted) {
+                        var result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation);
+                        if (result.CommentPromise) {
+                            result.CommentPromise.then(function (data) {
+                                var commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
+                                commentUI.addShow(true, false);
+                                commentUI.showComments(data, null, false, true);
+                                $(document).trigger('comment', postId);
+                            });
+                        }
+                        if (result.FlagPromise) {
+                            result.FlagPromise.then(function () {
+                                Caching_1.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType);
+                                reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
+                                reportedIcon.show();
+                            });
+                        }
                     }
                     var noFlag = flagType.ReportType === 'NoFlag';
-                    if (noFlag && result.PerformedActionPromise) {
-                        result.PerformedActionPromise.then(function () {
-                            Caching_1.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType);
-                            performedActionIcon.attr('title', "Performed action: " + flagType.DisplayName);
-                            performedActionIcon.show();
-                        });
+                    if (noFlag) {
+                        Caching_1.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType);
+                        performedActionIcon.attr('title', "Performed action: " + flagType.DisplayName);
+                        performedActionIcon.show();
                     }
                     var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
                     var naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
@@ -3915,8 +3914,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     }
                     dropDown.hide();
                 });
-                nattyLinkItem.text(flagType.DisplayName);
-                dropdownItem.append(nattyLinkItem);
+                reportLink.text(flagType.DisplayName);
+                dropdownItem.append(reportLink);
                 dropDown.append(dropdownItem);
             });
             firstCategory = false;
@@ -4012,7 +4011,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     questionTime = post.postTime;
                     answerTime = post.postTime;
                 }
-                var dropDown_1 = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime, questionTime, reportedIcon, performedActionIcon, reporters);
+                var deleted = post.element.hasClass('deleted-answer');
+                var dropDown_1 = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters);
                 advancedFlaggingLink.append(dropDown_1);
                 $(window).click(function () {
                     dropDown_1.hide();

@@ -31,7 +31,7 @@ export function parseNatoPage() {
 }
 
 export function isQuestionPage() {
-    return !!window.location.href.match(/\/questions\/\d+\/.*/);
+    return !!window.location.href.match(/\/questions\/\d+.*/);
 }
 export function parseQuestionPage() {
     const questionNode = $('.question');

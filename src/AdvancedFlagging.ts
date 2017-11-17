@@ -398,11 +398,11 @@ function SetupPostPage() {
         } else {
             iconLocation = post.element.find('a.answer-hyperlink');
 
-            iconLocation.after(performedActionIcon);
-            iconLocation.after(reportedIcon);
-            iconLocation.after(nattyIcon);
             iconLocation.after(smokeyIcon);
-
+            iconLocation.after(nattyIcon);
+            iconLocation.after(reportedIcon);
+            iconLocation.after(performedActionIcon);
+            
             showFunc = (element: JQuery) => element.css('display', 'inline-block');
         }
 

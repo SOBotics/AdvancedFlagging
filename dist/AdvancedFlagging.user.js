@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.1
+// @version      0.2
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -3885,10 +3885,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             }
             else {
                 iconLocation = post.element.find('a.answer-hyperlink');
-                iconLocation.after(performedActionIcon);
-                iconLocation.after(reportedIcon);
-                iconLocation.after(nattyIcon);
                 iconLocation.after(smokeyIcon);
+                iconLocation.after(nattyIcon);
+                iconLocation.after(reportedIcon);
+                iconLocation.after(performedActionIcon);
                 showFunc = function (element) { return element.css('display', 'inline-block'); };
             }
             var previousFlagPromise = Caching_1.GetFromCache("AdvancedFlagging.Flagged." + post.postId);

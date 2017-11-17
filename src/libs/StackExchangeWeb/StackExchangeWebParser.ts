@@ -68,6 +68,7 @@ export function parseQuestionPage() {
     const answerNodes = $('.answer');
     for (var i = 0; i < answerNodes.length; i++) {
         const answerNode = $(answerNodes[i]);
+        const answerId = parseInt(answerNode.attr('data-answerid'), 10);
 
         const { score, authorReputation, authorName, authorId, postTime } = getPostDetails(answerNode);
 
@@ -75,7 +76,7 @@ export function parseQuestionPage() {
             type: <'Answer'>'Answer',
             element: answerNode,
             page: <'Question'>'Question',
-            postId,
+            postId: answerId,
             question,
 
             postTime,

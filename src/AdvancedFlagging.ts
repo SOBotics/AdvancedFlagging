@@ -139,10 +139,10 @@ async function displaySuccess(message: string) {
 
 interface Reporter {
     name: string,
-    ReportNaa(answerDate: Date, questionDate: Date): Promise<void>;
-    ReportRedFlag(): Promise<void>;
-    ReportLooksFine(): Promise<void>;
-    ReportNeedsEditing(): Promise<void>;
+    ReportNaa(answerDate: Date, questionDate: Date): Promise<boolean>;
+    ReportRedFlag(): Promise<boolean>;
+    ReportLooksFine(): Promise<boolean>;
+    ReportNeedsEditing(): Promise<boolean>;
 }
 function BuildFlaggingDialog(element: JQuery,
     postId: number,
@@ -227,24 +227,28 @@ function BuildFlaggingDialog(element: JQuery,
 
                 const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
                 const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
-
-                reporters.forEach(async r => {
+                for (var i = 0; i < reporters.length; i++) {
+                    const reporter = reporters[i];
+                    let promise: Promise<boolean> | null = null;
                     if (rudeFlag) {
-                        await r.ReportRedFlag();
-                        displaySuccess(`Feedback sent to ${r.name}`);
+                        promise = reporter.ReportRedFlag();
                     } else if (naaFlag) {
-                        await r.ReportNaa(answerTime, questionTime);
-                        displaySuccess(`Feedback sent to ${r.name}`);
+                        promise = reporter.ReportNaa(answerTime, questionTime);
                     } else if (noFlag) {
                         if (flagType.DisplayName === 'Needs Editing') {
-                            await r.ReportNeedsEditing();
-                            displaySuccess(`Feedback sent to ${r.name}`);
+                            promise = reporter.ReportNeedsEditing();
                         } else {
-                            await r.ReportLooksFine();
-                            displaySuccess(`Feedback sent to ${r.name}`);
+                            promise = reporter.ReportLooksFine();
                         }
                     }
-                });
+                    if (promise) {
+                        promise.then((didReport) => {
+                            if (didReport) {
+                                displaySuccess(`Feedback sent to ${reporter.name}`);
+                            }
+                        });
+                    }
+                }
 
                 dropDown.hide();
             });
@@ -276,6 +280,23 @@ function BuildFlaggingDialog(element: JQuery,
 
         dropDown.append(commentingRow);
     }
+
+    const previousFlagPromise = GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`);
+    previousFlagPromise.then(previousFlag => {
+        if (previousFlag) {
+            reportedIcon.attr('title', `Previously flagged as ${previousFlag.ReportType}`)
+            reportedIcon.show();
+        }
+    });
+
+    const previousPerformedActionPromise = GetFromCache<FlagType>(`AdvancedFlagging.PerformedAction.${postId}`);
+    previousPerformedActionPromise.then(previousAction => {
+        if (previousAction && previousAction.ReportType === 'NoFlag') {
+            performedActionIcon.attr('title', `Previously performed action: ${previousAction.DisplayName}`)
+            performedActionIcon.show();
+        }
+    });
+
     return dropDown;
 }
 
@@ -288,6 +309,11 @@ function SetupPostPage() {
         let iconLocation: JQuery;
         let advancedFlaggingLink: JQuery | null = null;
 
+        const nattyIcon = getNattyIcon().click(() => {
+            window.open(`https://sentinel.erwaysoftware.com/posts/aid/${post.postId}`, '_blank');
+        });;
+        const smokeyIcon = getSmokeyIcon();
+
         const reporters: Reporter[] = [];
         if (post.type === 'Answer') {
             const nattyApi = new NattyAPI(post.postId);
@@ -299,22 +325,33 @@ function SetupPostPage() {
                         nattyIcon.hide();
                     }
                 });
-            reporters.push(
-                Object.assign({}, { name: 'Natty' }, nattyApi)
-            );
+            reporters.push({
+                name: 'Natty',
+                ReportNaa: (answerDate: Date, questionDate: Date) => nattyApi.ReportNaa(answerDate, questionDate),
+                ReportRedFlag: () => nattyApi.ReportRedFlag(),
+                ReportLooksFine: () => nattyApi.ReportLooksFine(),
+                ReportNeedsEditing: () => nattyApi.ReportNeedsEditing()
+            });
         }
         const metaSmoke = new MetaSmokeyAPI(post.postId, post.type);
         metaSmoke.Watch()
             .subscribe(id => {
                 if (id !== null) {
+                    smokeyIcon.click(() => {
+                        window.open(`https://metasmoke.erwaysoftware.com/post/${id}`, '_blank');
+                    });
                     smokeyIcon.show();
                 } else {
                     smokeyIcon.hide();
                 }
             });
-        reporters.push(
-            Object.assign({}, { name: 'Smokey' }, metaSmoke)
-        );
+        reporters.push({
+            name: 'Smokey',
+            ReportNaa: (answerDate: Date, questionDate: Date) => metaSmoke.ReportNaa(),
+            ReportRedFlag: () => metaSmoke.ReportRedFlag(),
+            ReportLooksFine: () => metaSmoke.ReportLooksFine(),
+            ReportNeedsEditing: () => metaSmoke.ReportNeedsEditing()
+        });
 
         const performedActionIcon = getPerformedActionIcon();
         const reportedIcon = getReportedIcon();
@@ -335,8 +372,8 @@ function SetupPostPage() {
             }
 
             const dropDown = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime, questionTime,
-                performedActionIcon,
                 reportedIcon,
+                performedActionIcon,
                 reporters);
 
             advancedFlaggingLink.append(dropDown);
@@ -354,9 +391,6 @@ function SetupPostPage() {
         } else {
             iconLocation = post.element;
         }
-
-        const nattyIcon = getNattyIcon();
-        const smokeyIcon = getSmokeyIcon();
 
         if (advancedFlaggingLink) {
             iconLocation.append(advancedFlaggingLink);
@@ -426,11 +460,13 @@ function SetupAdminTools() {
     const clearMetaSmokeConfig = $('<a />').text('Clear Metasmoke Configuration');
     clearMetaSmokeConfig.click(() => {
         MetaSmokeyAPI.Reset();
+        location.reload();
     });
 
     const clearAllCachedInfo = $('<a />').text('Clear all cached info');
     clearAllCachedInfo.click(() => {
         ClearCache();
+        location.reload();
     });
 
     optionsDiv.append(optionsList);
@@ -438,9 +474,9 @@ function SetupAdminTools() {
     optionsList.append($('<li>').append(clearAllCachedInfo));
 }
 
-$(function () {
+$(async function () {
     InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
-    MetaSmokeyAPI.Setup(metaSmokeKey);
+    await MetaSmokeyAPI.Setup(metaSmokeKey);
 
     SetupPostPage();
     SetupAdminTools();

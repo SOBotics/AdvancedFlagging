@@ -2,33 +2,18 @@ import { GetFromCache, StoreInCache, GetAndCache } from './Caching';
 import { Delay } from './FunctionUtils';
 import { Observable } from 'rxjs/Observable';
 import { Subject } from 'rxjs/Subject';
+import { ReplaySubject } from 'rxjs/ReplaySubject';
+import 'rxjs/add/operator/take';
+
 const MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
 const MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
 const MetaSmokeWasReportedConfig = 'MetaSmoke.WasReported';
 
 interface MetaSmokeApiItem {
     id: number;
-    title: string;
-    body: string;
-    link: string;
-    post_creation_date?: Date;
-    created_at: Date;
-    updated_at?: Date;
-    site_id: number;
-    user_link: string;
-    username: string;
-    why: string;
-    user_reputation: number;
-    score?: number;
-    upvote_count?: number;
-    downvote_count?: number;
-    stack_exchange_user_id: string;
-    is_tp: boolean;
-    is_fp: boolean;
 }
 interface MetaSmokeApiWrapper {
     items: MetaSmokeApiItem[];
-    has_more: boolean;
 }
 
 export class MetaSmokeyAPI {
@@ -39,6 +24,7 @@ export class MetaSmokeyAPI {
     private postId: number;
     private postType: 'Question' | 'Answer';
     private subject: Subject<number | null>;
+    private replaySubject: ReplaySubject<number | null>;
 
     public static async Reset() {
         await StoreInCache(MetaSmokeDisabledConfig, undefined);
@@ -62,15 +48,17 @@ export class MetaSmokeyAPI {
                 MetaSmokeyAPI.actualPromise = prom;
             }
             const code = await prom;
-            $.ajax({
-                url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeyAPI.appKey + '&code=' + code,
-                method: 'GET'
-            }).done(data => resolve(data.token))
-                .fail(err => reject(err))
+            if (code) {
+                $.ajax({
+                    url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeyAPI.appKey + '&code=' + code,
+                    method: 'GET'
+                }).done(data => resolve(data.token))
+                    .fail(err => reject(err))
+            }
         }));
     }
 
-    public static Setup(appKey: string, codeGetter?: (metaSmokeOAuthUrl: string) => Promise<string | undefined>) {
+    public static async Setup(appKey: string, codeGetter?: (metaSmokeOAuthUrl: string) => Promise<string | undefined>) {
         if (!codeGetter) {
             codeGetter = async (metaSmokeOAuthUrl: string | undefined) => {
                 const isDisabled = await MetaSmokeyAPI.IsDisabled();
@@ -122,7 +110,7 @@ export class MetaSmokeyAPI {
                 ? `//${window.location.hostname}/a/${this.postId}`
                 : `//${window.location.hostname}/questions/${this.postId}`;
 
-        GetAndCache<number | null>(`${MetaSmokeWasReportedConfig}.${urlStr}`, () => new Promise((resolve, reject) => {
+        const resultPromise = GetAndCache<number | null>(`${MetaSmokeWasReportedConfig}.${urlStr}`, () => new Promise((resolve, reject) => {
             MetaSmokeyAPI.IsDisabled().then(isDisabled => {
                 if (isDisabled) {
                     return;
@@ -144,72 +132,94 @@ export class MetaSmokeyAPI {
                     reject(error);
                 });
             })
-        }))
+        }));
+
+        resultPromise
             .then(r => this.subject.next(r))
             .catch(err => this.subject.error(err));
     }
 
     public Watch(): Observable<number | null> {
         this.subject = new Subject<number | null>();
+        this.replaySubject = new ReplaySubject<number | null>(1);
+        this.subject.subscribe(this.replaySubject);
 
         this.QueryMetaSmokey();
 
         return this.subject;
     }
 
-
-    public async ReportNaa(answerDate: Date, questionDate: Date) {
+    public async ReportNaa() {
         const smokeyid = await this.GetSmokeyId();
         if (smokeyid != null) {
-            this.SendFeedback(smokeyid, "naa-");
+            await this.SendFeedback(smokeyid, "naa-");
+            return true;
         }
+        return false;
     }
     public async ReportRedFlag() {
         const smokeyid = await this.GetSmokeyId();
         if (smokeyid != null) {
-            this.SendFeedback(smokeyid, "tpu-");
+            await this.SendFeedback(smokeyid, "tpu-");
+            return true;
         } else {
             const urlStr =
                 this.postType === 'Answer'
                     ? `//${window.location.hostname}/a/${this.postId}`
                     : `//${window.location.hostname}/q/${this.postId}`;
 
-            const promise = new Promise<void>((resolve, reject) => {
+            const promise = new Promise<boolean>((resolve, reject) => {
                 MetaSmokeyAPI.getUserKey().then(userKey => {
-                    $.ajax({
-                        type: 'POST',
-                        url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
-                        data: {
-                            post_link: urlStr,
-                            key: MetaSmokeyAPI.appKey,
-                            token: userKey
-                        }
-                    }).done(() => resolve())
+                    if (userKey) {
+                        $.ajax({
+                            type: 'POST',
+                            url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
+                            data: {
+                                post_link: urlStr,
+                                key: MetaSmokeyAPI.appKey,
+                                token: userKey
+                            }
+                        }).done(() => resolve())
                         .fail(() => reject());
+
+                        return true;
+                    }
+                    return false;
                 });
             });
 
-            await promise.then(() => {
-                StoreInCache(`${MetaSmokeWasReportedConfig}.${urlStr}`, undefined);
+            const result = await promise.then((result) => {
+                const queryUrlStr =
+                    this.postType === 'Answer'
+                        ? `//${window.location.hostname}/a/${this.postId}`
+                        : `//${window.location.hostname}/questions/${this.postId}`;
+
+                StoreInCache(`${MetaSmokeWasReportedConfig}.${queryUrlStr}`, undefined);
                 this.QueryMetaSmokey();
+                return result;
             });
+            return result;
         }
     }
     public async ReportLooksFine() {
         const smokeyid = await this.GetSmokeyId();
         if (smokeyid != null) {
-            this.SendFeedback(smokeyid, "fp-");
+            await this.SendFeedback(smokeyid, "fp-");
+            return true;
         }
+        return false;
     }
     public async ReportNeedsEditing() {
         const smokeyid = await this.GetSmokeyId();
         if (smokeyid != null) {
-            this.SendFeedback(smokeyid, "fp-");
+            await this.SendFeedback(smokeyid, "fp-");
+            return true;
         }
+        return false;
     }
 
     private async GetSmokeyId() {
-        return await this.subject.toPromise();
+        return await this.replaySubject.take(1).toPromise();
     }
 
     private SendFeedback(metaSmokeId: number, feedbackType: 'fp-' | 'tpu-' | 'naa-'): Promise<void> {

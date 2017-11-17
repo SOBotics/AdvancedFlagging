@@ -5,6 +5,8 @@ import { GetAndCache, StoreInCache } from './Caching';
 import { ChatApi } from './ChatApi';
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
+import { ReplaySubject } from 'rxjs/ReplaySubject';
+import 'rxjs/add/operator/take';
 
 const nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
 
@@ -27,19 +29,23 @@ const soboticsRoomId = 111347;
 
 export class NattyAPI {
     private chat: ChatApi = new ChatApi();
-    private _answerId: number;
-    private _subject: Subject<boolean>;
+    private answerId: number;
+    private subject: Subject<boolean>;
+    private replaySubject: ReplaySubject<boolean>;
 
     constructor(answerId: number) {
-        this._answerId = answerId;
+        this.answerId = answerId;
     }
 
     public Watch(): Observable<boolean> {
-        this._subject = new Subject<boolean>();
-        GetAndCache(`NattyApi.Feedback.${this._answerId}`, () => new Promise<boolean>((resolve, reject) => {
+        this.subject = new Subject<boolean>();
+        this.replaySubject = new ReplaySubject<boolean>(1);
+        this.subject.subscribe(this.replaySubject);
+
+        GetAndCache(`NattyApi.Feedback.${this.answerId}`, () => new Promise<boolean>((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'GET',
-                url: `${nattyFeedbackUrl}/${this._answerId}`,
+                url: `${nattyFeedbackUrl}/${this.answerId}`,
                 onload: (response: any) => {
                     const nattyResult = JSON.parse(response.responseText);
                     if (nattyResult.items && nattyResult.items[0]) {
@@ -53,45 +59,55 @@ export class NattyAPI {
                 },
             });
         }))
-            .then(r => this._subject.next(r))
-            .catch(err => this._subject.error(err));
+            .then(r => this.subject.next(r))
+            .catch(err => this.subject.error(err));
 
-        return this._subject;
+        return this.subject;
     }
 
     public async ReportNaa(answerDate: Date, questionDate: Date) {
         if (await this.WasReported()) {
-            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this._answerId} tp`)
+            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} tp`)
+            return true;
         } else {
             const answerAge = this.DaysBetween(answerDate, new Date());
             const daysPostedAfterQuestion = this.DaysBetween(questionDate, answerDate);
             if (answerAge > 30 || daysPostedAfterQuestion < 30) {
-                const promise = this.chat.SendMessage(soboticsRoomId, `@Natty report http://stackoverflow.com/a/${this._answerId}`);
-                await promise.then(() => {
-                    StoreInCache(`NattyApi.Feedback.${this._answerId}`, true);
-                    this._subject.next(true);
-                });
+                return false;
             }
+            
+            const promise = this.chat.SendMessage(soboticsRoomId, `@Natty report http://stackoverflow.com/a/${this.answerId}`);
+            await promise.then(() => {
+                StoreInCache(`NattyApi.Feedback.${this.answerId}`, true);
+                this.subject.next(true);
+            });
+            return true;
         }
     }
     public async ReportRedFlag() {
         if (await this.WasReported) {
-            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this._answerId} tp`)
+            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} tp`)
+            return true;
         }
+        return false;
     }
     public async ReportLooksFine() {
         if (await this.WasReported) {
-            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this._answerId} fp`)
+            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} fp`)
+            return true;
         }
+        return false;
     }
     public async ReportNeedsEditing() {
         if (await this.WasReported) {
-            return this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this._answerId} ne`);
+            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} ne`);
+            return true;
         }
+        return false;
     }
 
     private async WasReported() {
-        return await this._subject.toPromise();
+        return await this.replaySubject.take(1).toPromise();
     }
 
     private DaysBetween(first: Date, second: Date) {

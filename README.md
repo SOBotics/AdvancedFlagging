@@ -32,7 +32,7 @@ Currently, only TamperMonkey is officially supported
 
 # What does it do?
 
-AdvancedFlagging adds icons from Smokey and Natty to posts which have been reported. In addition, flags made through the AdvancedFlagging interface are reported to both Natty and Smokey (coming soon: GenericBot) if required.
+AdvancedFlagging adds icons from Smokey and Natty to posts which have been reported. In addition, flags made through the AdvancedFlagging interface are reported to Natty, Smokey and GenericBot if required.
 
 ## Smokey reports
 ![Smokey reported and flagged](https://i.imgur.com/BIsyUue.png)  

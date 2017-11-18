@@ -4,9 +4,9 @@
 
 AdvancedFlagging started as a set of modular typescript tools to aid with StackExchange UserScripts. It has support for:
 
-- Natty
-- MetaSmoke
-- Sentinal
+- Smokey / MetaSmoke
+- Natty / Sentinal
+- GenericBot
 - Chat
 - Stack Exchange API
 - Cross domain caching
@@ -32,7 +32,7 @@ Currently, only TamperMonkey is officially supported
 
 # What does it do?
 
-AdvancedFlagging adds icons from Smokey and Natty to posts which have been reported. In addition, flags made through the AdvancedFlagging interface are reported to both Natty and Smokey (coming soon: GenericBot) if required.
+AdvancedFlagging adds icons from Smokey and Natty to posts which have been reported. In addition, flags made through the AdvancedFlagging interface are reported to Natty, Smokey and GenericBot if required.
 
 ## Smokey reports
 ![Smokey reported and flagged](https://i.imgur.com/BIsyUue.png)  
@@ -83,5 +83,5 @@ At present, it only handles clearing out the cache (queries to Smokey and Natty 
 
     npm run build
     
-The distributable file is found under /dist/AdvancedFlagging.user.js and can be pasted directly into tamper monkey.
+The distributable file is found under `/dist/AdvancedFlagging.user.js` or `/dist/AdvancedFlagging.min.user.js` and can be pasted directly into tamper monkey.
 

@@ -4,9 +4,9 @@
 
 AdvancedFlagging started as a set of modular typescript tools to aid with StackExchange UserScripts. It has support for:
 
-- Natty
-- MetaSmoke
-- Sentinal
+- Smokey / MetaSmoke
+- Natty / Sentinal
+- GenericBot
 - Chat
 - Stack Exchange API
 - Cross domain caching
@@ -83,5 +83,5 @@ At present, it only handles clearing out the cache (queries to Smokey and Natty 
 
     npm run build
     
-The distributable file is found under /dist/AdvancedFlagging.user.js and can be pasted directly into tamper monkey.
+The distributable file is found under `/dist/AdvancedFlagging.user.js` or `/dist/AdvancedFlagging.min.user.js` and can be pasted directly into tamper monkey.
 

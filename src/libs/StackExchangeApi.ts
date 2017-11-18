@@ -5,7 +5,7 @@ import { GetMembers, GroupBy } from './FunctionUtils';
 declare const $: JQueryStatic;
 declare const SE: any;
 
-const stackExchangeApiURL = '//api.stackexchange.com/2.2'
+const stackExchangeApiURL = '//api.stackexchange.com/2.2';
 
 export class StackExchangeAPI {
     private getAccessTokenPromise: () => Promise<string>;
@@ -16,6 +16,19 @@ export class StackExchangeAPI {
         this.initializeAccessToken(clientId, key);
     }
 
+    public Answers_GetComments(answerIds: number[], skipCache = false, site: string = 'stackoverflow', filter?: string): Promise<SEApiComment[]> {
+        return this.MakeRequest<SEApiComment>(
+            objectId => `StackExchange.Api.AnswerComments.${objectId}`,
+            objectIds => `${stackExchangeApiURL}/answers/${objectIds.join(';')}/comments`,
+            comment => comment.post_id,
+            answerIds,
+            skipCache,
+            site,
+            true,
+            filter
+        );
+    }
+
     private initializeAccessToken(clientId?: number | string, key?: string) {
         if (typeof clientId === 'string') {
             this.getAccessTokenPromise = () => Promise.resolve(clientId);
@@ -23,7 +36,7 @@ export class StackExchangeAPI {
         }
 
         if (!clientId || !key) {
-            this.getAccessTokenPromise = () => { throw Error('Access token not available. StackExchangeAPI class must be passed either an access token, or a clientId and a key.') };
+            this.getAccessTokenPromise = () => { throw Error('Access token not available. StackExchangeAPI class must be passed either an access token, or a clientId and a key.'); };
             return;
         }
 
@@ -47,19 +60,6 @@ export class StackExchangeAPI {
         });
     }
 
-    public Answers_GetComments(answerIds: number[], skipCache = false, site: string = 'stackoverflow', filter?: string): Promise<SEApiComment[]> {
-        return this.MakeRequest<SEApiComment>(
-            objectId => `StackExchange.Api.AnswerComments.${objectId}`,
-            objectIds => `${stackExchangeApiURL}/answers/${objectIds.join(';')}/comments`,
-            comment => comment.post_id,
-            answerIds,
-            skipCache,
-            site,
-            true,
-            filter
-        );
-    }
-
     private MakeRequest<TResultType>(
         cacheKey: (objectId: number) => string,
         apiUrl: (objectIds: number[]) => string,
@@ -76,25 +76,25 @@ export class StackExchangeAPI {
             if (objectIds.length > 0) {
                 let url = apiUrl(objectIds) + `?site=${site}`;
                 if (filter) {
-                    url += `?filter=${filter}`
-                };
+                    url += `?filter=${filter}`;
+                }
                 $.ajax({
                     url,
                     type: 'GET',
                 }).done((data: SEApiWrapper<TResultType>, textStatus: string, jqXHR: JQueryXHR) => {
-                    const returnItems = <TResultType[]>(data.items || []);
+                    const returnItems = (data.items || []) as TResultType[];
                     const grouping = GroupBy(returnItems, uniqueIdentifier);
                     GetMembers(grouping).forEach(key => StoreInCache(cacheKey(parseInt(key, 10)), grouping[key]));
 
                     cachedResultsPromise.then(cachedResults => {
                         cachedResults.forEach(result => {
                             returnItems.push(result);
-                        })
+                        });
                         resolve(returnItems);
                     });
                 }).fail((jqXHR: JQueryXHR, textStatus: string, errorThrown: string) => {
                     reject({ jqXHR, textStatus, errorThrown });
-                })
+                });
             } else {
                 cachedResultsPromise.then(cachedResults => resolve(cachedResults));
             }
@@ -124,8 +124,8 @@ export class StackExchangeAPI {
         }
         return new Promise(resolve => {
             Promise.all(promises).then(() => {
-                resolve(cachedResults)
+                resolve(cachedResults);
             });
-        })
+        });
     }
 }

@@ -326,6 +326,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
+    // tslint:disable-next-line:no-empty
     var xdLocalStorageInitializedResolver = function () { };
     var xdLocalStorageInitialized = new Promise(function (resolve, reject) { return xdLocalStorageInitializedResolver = resolve; });
     function InitializeCache(iframeUrl) {
@@ -438,7 +439,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }, {});
     }
     exports.GroupBy = GroupBy;
-    ;
     function GetMembers(item) {
         var members = [];
         for (var key in item) {
@@ -1654,52 +1654,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         function GenericBotAPI(answerId) {
             this.answerId = answerId;
         }
-        GenericBotAPI.prototype.computeContentHash = function (postContent) {
-            if (!postContent) {
-                return 0;
-            }
-            var hash = 0;
-            for (var i = 0; i < postContent.length; ++i) {
-                hash = ((hash << 5) - hash) + postContent.charCodeAt(i);
-                hash = hash & hash;
-            }
-            return hash;
-        };
-        GenericBotAPI.prototype.makeTrackRequest = function () {
-            var _this = this;
-            var promise = new Promise(function (resolve, reject) {
-                if (!FunctionUtils_1.IsStackOverflow()) {
-                    resolve(false);
-                }
-                if ($('#answer-' + _this.answerId + ' .post-text').length == 0) {
-                    resolve(false);
-                }
-                if ($('.top-bar .my-profile .gravatar-wrapper-24').length == 0) {
-                    reject('Flag Tracker: Could not find username.');
-                }
-                var flaggerName = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
-                var contentHash = _this.computeContentHash($('#answer-' + _this.answerId + ' .post-text').html().trim());
-                GM_xmlhttpRequest({
-                    method: 'POST',
-                    url: 'https://so.floern.com/api/trackpost.php',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    data: "key=" + genericBotKey
-                        + '&postId=' + _this.answerId
-                        + '&contentHash=' + contentHash
-                        + '&flagger=' + encodeURIComponent(flaggerName),
-                    onload: function (response) {
-                        if (response.status !== 200) {
-                            reject('Flag Tracker Error: Status ' + response.status);
-                        }
-                        resolve(true);
-                    },
-                    onerror: function (response) {
-                        reject('Flag Tracker Error: ' + response.responseText);
-                    }
-                });
-            });
-            return promise;
-        };
         GenericBotAPI.prototype.ReportNaa = function () {
             return __awaiter(this, void 0, void 0, function () {
                 var response;
@@ -1739,6 +1693,52 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     return [2 /*return*/, false];
                 });
             });
+        };
+        GenericBotAPI.prototype.computeContentHash = function (postContent) {
+            if (!postContent) {
+                return 0;
+            }
+            var hash = 0;
+            for (var i = 0; i < postContent.length; ++i) {
+                hash = ((hash << 5) - hash) + postContent.charCodeAt(i);
+                hash = hash & hash;
+            }
+            return hash;
+        };
+        GenericBotAPI.prototype.makeTrackRequest = function () {
+            var _this = this;
+            var promise = new Promise(function (resolve, reject) {
+                if (!FunctionUtils_1.IsStackOverflow()) {
+                    resolve(false);
+                }
+                if ($('#answer-' + _this.answerId + ' .post-text').length === 0) {
+                    resolve(false);
+                }
+                if ($('.top-bar .my-profile .gravatar-wrapper-24').length === 0) {
+                    reject('Flag Tracker: Could not find username.');
+                }
+                var flaggerName = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
+                var contentHash = _this.computeContentHash($('#answer-' + _this.answerId + ' .post-text').html().trim());
+                GM_xmlhttpRequest({
+                    method: 'POST',
+                    url: 'https://so.floern.com/api/trackpost.php',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    data: "key=" + genericBotKey
+                        + '&postId=' + _this.answerId
+                        + '&contentHash=' + contentHash
+                        + '&flagger=' + encodeURIComponent(flaggerName),
+                    onload: function (response) {
+                        if (response.status !== 200) {
+                            reject('Flag Tracker Error: Status ' + response.status);
+                        }
+                        resolve(true);
+                    },
+                    onerror: function (response) {
+                        reject('Flag Tracker Error: ' + response.responseText);
+                    }
+                });
+            });
+            return promise;
         };
         return GenericBotAPI;
     }());
@@ -1827,33 +1827,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 });
             });
         };
-        MetaSmokeAPI.getUserKey = function () {
-            var _this = this;
-            return Caching_1.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                var prom, code;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            prom = MetaSmokeAPI.actualPromise;
-                            if (prom === undefined) {
-                                prom = MetaSmokeAPI.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + MetaSmokeAPI.appKey);
-                                MetaSmokeAPI.actualPromise = prom;
-                            }
-                            return [4 /*yield*/, prom];
-                        case 1:
-                            code = _a.sent();
-                            if (code) {
-                                $.ajax({
-                                    url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeAPI.appKey + '&code=' + code,
-                                    method: 'GET'
-                                }).done(function (data) { return resolve(data.token); })
-                                    .fail(function (err) { return reject(err); });
-                            }
-                            return [2 /*return*/];
-                    }
-                });
-            }); }); });
-        };
         MetaSmokeAPI.Setup = function (appKey, codeGetter) {
             return __awaiter(this, void 0, void 0, function () {
                 var _this = this;
@@ -1910,6 +1883,145 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 });
             });
         };
+        MetaSmokeAPI.getUserKey = function () {
+            var _this = this;
+            return Caching_1.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
+                var prom, code;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            prom = MetaSmokeAPI.actualPromise;
+                            if (prom === undefined) {
+                                prom = MetaSmokeAPI.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + MetaSmokeAPI.appKey);
+                                MetaSmokeAPI.actualPromise = prom;
+                            }
+                            return [4 /*yield*/, prom];
+                        case 1:
+                            code = _a.sent();
+                            if (code) {
+                                $.ajax({
+                                    url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeAPI.appKey + '&code=' + code,
+                                    method: 'GET'
+                                }).done(function (data) { return resolve(data.token); })
+                                    .fail(function (err) { return reject(err); });
+                            }
+                            return [2 /*return*/];
+                    }
+                });
+            }); }); });
+        };
+        MetaSmokeAPI.prototype.Watch = function () {
+            this.subject = new Subject_1.Subject();
+            this.replaySubject = new ReplaySubject_1.ReplaySubject(1);
+            this.subject.subscribe(this.replaySubject);
+            this.QueryMetaSmokey();
+            return this.subject;
+        };
+        MetaSmokeAPI.prototype.ReportNaa = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                var smokeyid;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
+                        case 1:
+                            smokeyid = _a.sent();
+                            if (!(smokeyid != null)) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.SendFeedback(smokeyid, 'naa-')];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/, true];
+                        case 3: return [2 /*return*/, false];
+                    }
+                });
+            });
+        };
+        MetaSmokeAPI.prototype.ReportRedFlag = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                var smokeyid, urlStr_1, promise, result;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
+                        case 1:
+                            smokeyid = _a.sent();
+                            if (!(smokeyid != null)) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.SendFeedback(smokeyid, 'tpu-')];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/, true];
+                        case 3:
+                            urlStr_1 = this.postType === 'Answer'
+                                ? "//" + window.location.hostname + "/a/" + this.postId
+                                : "//" + window.location.hostname + "/q/" + this.postId;
+                            promise = new Promise(function (resolve, reject) {
+                                MetaSmokeAPI.getUserKey().then(function (userKey) {
+                                    if (userKey) {
+                                        $.ajax({
+                                            type: 'POST',
+                                            url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
+                                            data: {
+                                                post_link: urlStr_1,
+                                                key: MetaSmokeAPI.appKey,
+                                                token: userKey
+                                            }
+                                        }).done(function () { return resolve(); })
+                                            .fail(function () { return reject(); });
+                                        return true;
+                                    }
+                                    return false;
+                                });
+                            });
+                            return [4 /*yield*/, promise.then(function (r) {
+                                    var queryUrlStr = _this.postType === 'Answer'
+                                        ? "//" + window.location.hostname + "/a/" + _this.postId
+                                        : "//" + window.location.hostname + "/questions/" + _this.postId;
+                                    Caching_1.StoreInCache(MetaSmokeWasReportedConfig + "." + queryUrlStr, undefined);
+                                    _this.QueryMetaSmokey();
+                                    return r;
+                                })];
+                        case 4:
+                            result = _a.sent();
+                            return [2 /*return*/, result];
+                    }
+                });
+            });
+        };
+        MetaSmokeAPI.prototype.ReportLooksFine = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                var smokeyid;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
+                        case 1:
+                            smokeyid = _a.sent();
+                            if (!(smokeyid != null)) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.SendFeedback(smokeyid, 'fp-')];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/, true];
+                        case 3: return [2 /*return*/, false];
+                    }
+                });
+            });
+        };
+        MetaSmokeAPI.prototype.ReportNeedsEditing = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                var smokeyid;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
+                        case 1:
+                            smokeyid = _a.sent();
+                            if (!(smokeyid != null)) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.SendFeedback(smokeyid, 'fp-')];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/, true];
+                        case 3: return [2 /*return*/, false];
+                    }
+                });
+            });
+        };
         MetaSmokeAPI.prototype.QueryMetaSmokey = function () {
             var _this = this;
             var urlStr = this.postType === 'Answer'
@@ -1943,125 +2055,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 .then(function (r) { return _this.subject.next(r); })
                 .catch(function (err) { return _this.subject.error(err); });
         };
-        MetaSmokeAPI.prototype.Watch = function () {
-            this.subject = new Subject_1.Subject();
-            this.replaySubject = new ReplaySubject_1.ReplaySubject(1);
-            this.subject.subscribe(this.replaySubject);
-            this.QueryMetaSmokey();
-            return this.subject;
-        };
-        MetaSmokeAPI.prototype.ReportNaa = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                var smokeyid;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
-                        case 1:
-                            smokeyid = _a.sent();
-                            if (!(smokeyid != null)) return [3 /*break*/, 3];
-                            return [4 /*yield*/, this.SendFeedback(smokeyid, "naa-")];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/, true];
-                        case 3: return [2 /*return*/, false];
-                    }
-                });
-            });
-        };
-        MetaSmokeAPI.prototype.ReportRedFlag = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                var _this = this;
-                var smokeyid, urlStr_1, promise, result;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
-                        case 1:
-                            smokeyid = _a.sent();
-                            if (!(smokeyid != null)) return [3 /*break*/, 3];
-                            return [4 /*yield*/, this.SendFeedback(smokeyid, "tpu-")];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/, true];
-                        case 3:
-                            urlStr_1 = this.postType === 'Answer'
-                                ? "//" + window.location.hostname + "/a/" + this.postId
-                                : "//" + window.location.hostname + "/q/" + this.postId;
-                            promise = new Promise(function (resolve, reject) {
-                                MetaSmokeAPI.getUserKey().then(function (userKey) {
-                                    if (userKey) {
-                                        $.ajax({
-                                            type: 'POST',
-                                            url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
-                                            data: {
-                                                post_link: urlStr_1,
-                                                key: MetaSmokeAPI.appKey,
-                                                token: userKey
-                                            }
-                                        }).done(function () { return resolve(); })
-                                            .fail(function () { return reject(); });
-                                        return true;
-                                    }
-                                    return false;
-                                });
-                            });
-                            return [4 /*yield*/, promise.then(function (result) {
-                                    var queryUrlStr = _this.postType === 'Answer'
-                                        ? "//" + window.location.hostname + "/a/" + _this.postId
-                                        : "//" + window.location.hostname + "/questions/" + _this.postId;
-                                    Caching_1.StoreInCache(MetaSmokeWasReportedConfig + "." + queryUrlStr, undefined);
-                                    _this.QueryMetaSmokey();
-                                    return result;
-                                })];
-                        case 4:
-                            result = _a.sent();
-                            return [2 /*return*/, result];
-                    }
-                });
-            });
-        };
-        MetaSmokeAPI.prototype.ReportLooksFine = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                var smokeyid;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
-                        case 1:
-                            smokeyid = _a.sent();
-                            if (!(smokeyid != null)) return [3 /*break*/, 3];
-                            return [4 /*yield*/, this.SendFeedback(smokeyid, "fp-")];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/, true];
-                        case 3: return [2 /*return*/, false];
-                    }
-                });
-            });
-        };
-        MetaSmokeAPI.prototype.ReportNeedsEditing = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                var smokeyid;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
-                        case 1:
-                            smokeyid = _a.sent();
-                            if (!(smokeyid != null)) return [3 /*break*/, 3];
-                            return [4 /*yield*/, this.SendFeedback(smokeyid, "fp-")];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/, true];
-                        case 3: return [2 /*return*/, false];
-                    }
-                });
-            });
-        };
         MetaSmokeAPI.prototype.GetSmokeyId = function () {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.replaySubject.take(1).toPromise()];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
+                    return [2 /*return*/, this.replaySubject.take(1).toPromise()];
                 });
             });
         };
@@ -2263,10 +2260,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         NattyAPI.prototype.WasReported = function () {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.replaySubject.take(1).toPromise()];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
+                    return [2 /*return*/, this.replaySubject.take(1).toPromise()];
                 });
             });
         };
@@ -2329,36 +2323,36 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             var postTime = parseActionDate(node.find('.post-signature .relativetime').last());
             return { score: score, authorReputation: authorReputation, authorName: authorName, authorId: authorId, postTime: postTime };
         }
-        var _a = getPostDetails(questionNode), score = _a.score, authorReputation = _a.authorReputation, authorName = _a.authorName, authorId = _a.authorId, postTime = _a.postTime;
+        var postDetails = getPostDetails(questionNode);
         var results = [];
         var question = {
             type: 'Question',
             element: questionNode,
             page: 'Question',
             postId: postId,
-            postTime: postTime,
-            score: score,
-            authorReputation: authorReputation,
-            authorName: authorName,
-            authorId: authorId
+            postTime: postDetails.postTime,
+            score: postDetails.score,
+            authorReputation: postDetails.authorReputation,
+            authorName: postDetails.authorName,
+            authorId: postDetails.authorId
         };
         results.push(question);
         var answerNodes = $('.answer');
         for (var i = 0; i < answerNodes.length; i++) {
             var answerNode = $(answerNodes[i]);
             var answerId = parseInt(answerNode.attr('data-answerid'), 10);
-            var _b = getPostDetails(answerNode), score_1 = _b.score, authorReputation_1 = _b.authorReputation, authorName_1 = _b.authorName, authorId_1 = _b.authorId, postTime_1 = _b.postTime;
+            postDetails = getPostDetails(answerNode);
             results.push({
                 type: 'Answer',
                 element: answerNode,
                 page: 'Question',
                 postId: answerId,
                 question: question,
-                postTime: postTime_1,
-                score: score_1,
-                authorReputation: authorReputation_1,
-                authorName: authorName_1,
-                authorId: authorId_1
+                postTime: postDetails.postTime,
+                score: postDetails.score,
+                authorReputation: postDetails.authorReputation,
+                authorName: postDetails.authorName,
+                authorId: postDetails.authorId
             });
         }
         return results;
@@ -2439,8 +2433,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     exports.parseGenericPage = parseGenericPage;
     function parseCurrentPage() {
-        if (isNatoPage())
-            // We explicitly type the page, as it allows the typescript compiler to 
+        if (isNatoPage()) {
+            // We explicitly type the page, as it allows the typescript compiler to
             // figure out the type of posts if a user checks if. For example:
             // const parsed = parseCurrentPage();
             // if (parsed.Page === 'Nato') {
@@ -2448,10 +2442,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             // }
             // If we don't do this, 'Page' is simply a string and doesn't give us any compiler hints
             return { Page: 'NATO', Posts: parseNatoPage() };
-        if (isQuestionPage())
+        }
+        if (isQuestionPage()) {
             return { Page: 'Question', Posts: parseQuestionPage() };
-        if (isFlagsPage())
+        }
+        if (isFlagsPage()) {
             return { Page: 'Flags', Posts: parseFlagsPage() };
+        }
         return { Page: 'Unknown', Posts: parseGenericPage() };
     }
     exports.parseCurrentPage = parseCurrentPage;
@@ -2461,8 +2458,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             reputationText = reputationDiv.attr('title').substr('reputation score '.length);
         }
         reputationText = reputationText.replace(',', '');
-        if (reputationText.trim() !== '')
+        if (reputationText.trim() !== '') {
             return parseInt(reputationText, 10);
+        }
         return undefined;
     }
     function parseAuthorDetails(authorDiv) {
@@ -3672,13 +3670,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         };
         ChatApi.prototype.SendMessage = function (roomId, message, providedFkey) {
             var _this = this;
-            var fkeyPromise;
-            if (!providedFkey) {
-                fkeyPromise = this.GetChannelFKey(roomId);
-            }
-            else {
-                fkeyPromise = Promise.resolve(providedFkey);
-            }
+            var fkeyPromise = providedFkey
+                ? Promise.resolve(providedFkey)
+                : this.GetChannelFKey(roomId);
             return fkeyPromise.then(function (fKey) {
                 return new Promise(function (resolve, reject) {
                     GM_xmlhttpRequest({
@@ -3741,6 +3735,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(17), __webpack_require__(15), __webpack_require__(18), __webpack_require__(1), __webpack_require__(2), __webpack_require__(19), __webpack_require__(16)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, MetaSmokeAPI_1, FlagTypes_1, NattyApi_1, Caching_1, FunctionUtils_1, StackExchangeWebParser_1, GenericBotAPI_1) {
     "use strict";
+    var _this = this;
     Object.defineProperty(exports, "__esModule", { value: true });
     // tslint:disable-next-line:no-debugger
     debugger;
@@ -3752,7 +3747,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
         target.appendChild(scriptNode);
     }
-    ;
     function handleFlagAndComment(postId, flag, commentRequired, userReputation) {
         return __awaiter(this, void 0, void 0, function () {
             var result, commentText_1, comments, i, wasFlagged;
@@ -3780,7 +3774,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                     $.ajax({
                                         url: "//stackoverflow.com/posts/" + postId + "/comments",
                                         type: 'POST',
-                                        data: { 'fkey': StackExchange.options.user.fkey, 'comment': commentText_1 }
+                                        data: { fkey: StackExchange.options.user.fkey, comment: commentText_1 }
                                     }).done(function (data) {
                                         resolve(data);
                                     }).fail(function (jqXHR, textStatus, errorThrown) {
@@ -3798,7 +3792,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                 $.ajax({
                                     url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
                                     type: 'POST',
-                                    data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
+                                    data: { fkey: StackExchange.options.user.fkey, otherText: '' }
                                 }).done(function (data) {
                                     resolve(data);
                                 }).fail(function (jqXHR, textStatus, errorThrown) {
@@ -3944,7 +3938,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                 }
                                 rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
                                 naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
-                                _loop_1 = function () {
+                                _loop_1 = function (i) {
                                     var reporter = reporters[i];
                                     var promise = null;
                                     if (rudeFlag) {
@@ -3954,12 +3948,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                         promise = reporter.ReportNaa(answerTime, questionTime);
                                     }
                                     else if (noFlag) {
-                                        if (flagType.DisplayName === 'Needs Editing') {
-                                            promise = reporter.ReportNeedsEditing();
-                                        }
-                                        else {
-                                            promise = reporter.ReportLooksFine();
-                                        }
+                                        promise =
+                                            flagType.DisplayName === 'Needs Editing'
+                                                ? reporter.ReportNeedsEditing()
+                                                : reporter.ReportLooksFine();
                                     }
                                     if (promise) {
                                         promise.then(function (didReport) {
@@ -3968,12 +3960,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                             }
                                         }).catch(function (error) {
                                             displayError("Failed to send feedback to " + reporter.name + ".");
-                                            console.log(error);
                                         });
                                     }
                                 };
                                 for (i = 0; i < reporters.length; i++) {
-                                    _loop_1();
+                                    _loop_1(i);
                                 }
                                 dropDown.hide();
                                 return [2 /*return*/];
@@ -4007,7 +3998,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
     function SetupPostPage() {
         var results = StackExchangeWebParser_1.parseCurrentPage();
-        var _loop_2 = function () {
+        var _loop_2 = function (i) {
             var post = results.Posts[i];
             var iconLocation = void 0;
             var advancedFlaggingLink = null;
@@ -4123,20 +4114,20 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             });
         };
         for (var i = 0; i < results.Posts.length; i++) {
-            _loop_2();
+            _loop_2(i);
         }
     }
     function getPerformedActionIcon() {
         return $('<div>').addClass('comment-flag')
             .css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' })
             .css({ 'width': '15px', 'height': '15px', 'background-position': '-20px -320px' })
-            .css({ 'cursor': 'default' })
+            .css({ cursor: 'default' })
             .hide();
     }
     function getReportedIcon() {
         return $('<div>').addClass('comment-flag')
             .css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' })
-            .css({ 'cursor': 'default' })
+            .css({ cursor: 'default' })
             .hide();
     }
     function getNattyIcon() {
@@ -4189,24 +4180,22 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         optionsList.append($('<li>').append(clearMetaSmokeConfig));
         optionsList.append($('<li>').append(clearAllCachedInfo));
     }
-    $(function () {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        Caching_1.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
-                        return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(metaSmokeKey)];
-                    case 1:
-                        _a.sent();
-                        SetupPostPage();
-                        SetupAdminTools();
-                        setupStyles();
-                        document.body.appendChild(popup.get(0));
-                        return [2 /*return*/];
-                }
-            });
+    $(function () { return __awaiter(_this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    Caching_1.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
+                    return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(metaSmokeKey)];
+                case 1:
+                    _a.sent();
+                    SetupPostPage();
+                    SetupAdminTools();
+                    setupStyles();
+                    document.body.appendChild(popup.get(0));
+                    return [2 /*return*/];
+            }
         });
-    });
+    }); });
 }.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 

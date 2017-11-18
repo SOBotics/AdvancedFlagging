@@ -62,7 +62,7 @@ function setupStyles() {
 
     const target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
     target.appendChild(scriptNode);
-};
+}
 
 async function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: boolean, userReputation?: number) {
     const result: {
@@ -90,28 +90,28 @@ async function handleFlagAndComment(postId: number, flag: FlagType, commentRequi
                 $.ajax({
                     url: `//stackoverflow.com/posts/${postId}/comments`,
                     type: 'POST',
-                    data: { 'fkey': StackExchange.options.user.fkey, 'comment': commentText }
+                    data: { fkey: StackExchange.options.user.fkey, comment: commentText }
                 }).done((data) => {
                     resolve(data);
-                }).fail(function (jqXHR, textStatus, errorThrown) {
-                    reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                }).fail((jqXHR, textStatus, errorThrown) => {
+                    reject({ jqXHR, textStatus, errorThrown });
                 });
-            })
+            });
         }
     }
 
     if (flag.ReportType !== 'NoFlag') {
-        const wasFlagged = await GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`)
+        const wasFlagged = await GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`);
         if (!wasFlagged) {
             result.FlagPromise = new Promise((resolve, reject) => {
                 $.ajax({
                     url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
                     type: 'POST',
-                    data: { 'fkey': StackExchange.options.user.fkey, 'otherText': '' }
+                    data: { fkey: StackExchange.options.user.fkey, otherText: '' }
                 }).done((data) => {
                     resolve(data);
-                }).fail(function (jqXHR, textStatus, errorThrown) {
-                    reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                }).fail((jqXHR, textStatus, errorThrown) => {
+                    reject({ jqXHR, textStatus, errorThrown });
                 });
             });
         }
@@ -129,7 +129,7 @@ async function displaySuccess(message: string) {
         showingPromise = Delay(popupDelay + popupTimeGap);
         popup.css('background-color', '#00690c');
         popup.text(message);
-        popup.addClass('show')
+        popup.addClass('show');
         await Delay(popupDelay);
         popup.removeClass('show');
         showingPromise = null;
@@ -144,7 +144,7 @@ async function displayError(message: string) {
         showingPromise = Delay(popupDelay + popupTimeGap);
         popup.css('background-color', '#ba1701');
         popup.text(message);
-        popup.addClass('show')
+        popup.addClass('show');
         await Delay(popupDelay);
         popup.removeClass('show');
         showingPromise = null;
@@ -155,7 +155,7 @@ async function displayError(message: string) {
 }
 
 interface Reporter {
-    name: string,
+    name: string;
     ReportNaa(answerDate: Date, questionDate: Date): Promise<boolean>;
     ReportRedFlag(): Promise<boolean>;
     ReportLooksFine(): Promise<boolean>;
@@ -219,20 +219,20 @@ function BuildFlaggingDialog(element: JQuery,
             const reportLink = $('<a />').css(linkStyle);
             reportLink.click(async () => {
                 if (!deleted) {
-                    const result = await handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation)
+                    const result = await handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation);
                     if (result.CommentPromise) {
                         result.CommentPromise.then((data) => {
                             const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
                             commentUI.addShow(true, false);
                             commentUI.showComments(data, null, false, true);
                             $(document).trigger('comment', postId);
-                        })
+                        });
                     }
 
                     if (result.FlagPromise) {
                         result.FlagPromise.then(() => {
                             StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType);
-                            reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`)
+                            reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
                             reportedIcon.show();
                         });
                     }
@@ -241,13 +241,13 @@ function BuildFlaggingDialog(element: JQuery,
                 const noFlag = flagType.ReportType === 'NoFlag';
                 if (noFlag) {
                     StoreInCache(`AdvancedFlagging.PerformedAction.${postId}`, flagType);
-                    performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`)
+                    performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
                     performedActionIcon.show();
                 }
 
                 const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
                 const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
-                for (var i = 0; i < reporters.length; i++) {
+                for (let i = 0; i < reporters.length; i++) {
                     const reporter = reporters[i];
                     let promise: Promise<boolean> | null = null;
                     if (rudeFlag) {
@@ -255,11 +255,10 @@ function BuildFlaggingDialog(element: JQuery,
                     } else if (naaFlag) {
                         promise = reporter.ReportNaa(answerTime, questionTime);
                     } else if (noFlag) {
-                        if (flagType.DisplayName === 'Needs Editing') {
-                            promise = reporter.ReportNeedsEditing();
-                        } else {
-                            promise = reporter.ReportLooksFine();
-                        }
+                        promise =
+                            flagType.DisplayName === 'Needs Editing'
+                                ? reporter.ReportNeedsEditing()
+                                : reporter.ReportLooksFine();
                     }
                     if (promise) {
                         promise.then((didReport) => {
@@ -268,7 +267,6 @@ function BuildFlaggingDialog(element: JQuery,
                             }
                         }).catch(error => {
                             displayError(`Failed to send feedback to ${reporter.name}.`);
-                            console.log(error);
                         });
                     }
                 }
@@ -283,7 +281,7 @@ function BuildFlaggingDialog(element: JQuery,
         });
         firstCategory = false;
     });
-    
+
     if (!isStackOverflow) {
         hasCommentOptions = false;
     }
@@ -314,7 +312,7 @@ function BuildFlaggingDialog(element: JQuery,
 function SetupPostPage() {
     const results = parseCurrentPage();
 
-    for (var i = 0; i < results.Posts.length; i++) {
+    for (let i = 0; i < results.Posts.length; i++) {
         const post = results.Posts[i];
 
         let iconLocation: JQuery;
@@ -402,14 +400,14 @@ function SetupPostPage() {
 
             advancedFlaggingLink.append(dropDown);
 
-            $(window).click(function () {
+            $(window).click(() => {
                 dropDown.hide();
             });
             const link = advancedFlaggingLink;
             link.click(e => {
                 e.stopPropagation();
                 if (e.target === link.get(0)) {
-                    dropDown.toggle()
+                    dropDown.toggle();
                 }
             });
 
@@ -433,7 +431,7 @@ function SetupPostPage() {
         const previousFlagPromise = GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${post.postId}`);
         previousFlagPromise.then(previousFlag => {
             if (previousFlag) {
-                reportedIcon.attr('title', `Previously flagged as ${previousFlag.ReportType}`)
+                reportedIcon.attr('title', `Previously flagged as ${previousFlag.ReportType}`);
                 showFunc(reportedIcon);
             }
         });
@@ -441,7 +439,7 @@ function SetupPostPage() {
         const previousPerformedActionPromise = GetFromCache<FlagType>(`AdvancedFlagging.PerformedAction.${post.postId}`);
         previousPerformedActionPromise.then(previousAction => {
             if (previousAction && previousAction.ReportType === 'NoFlag') {
-                performedActionIcon.attr('title', `Previously performed action: ${previousAction.DisplayName}`)
+                performedActionIcon.attr('title', `Previously performed action: ${previousAction.DisplayName}`);
                 showFunc(performedActionIcon);
             }
         });
@@ -452,14 +450,14 @@ function getPerformedActionIcon() {
     return $('<div>').addClass('comment-flag')
         .css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' })
         .css({ 'width': '15px', 'height': '15px', 'background-position': '-20px -320px' })
-        .css({ 'cursor': 'default' })
+        .css({ cursor: 'default' })
         .hide();
 }
 
 function getReportedIcon() {
     return $('<div>').addClass('comment-flag')
         .css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' })
-        .css({ 'cursor': 'default' })
+        .css({ cursor: 'default' })
         .hide();
 }
 
@@ -520,7 +518,7 @@ function SetupAdminTools() {
     optionsList.append($('<li>').append(clearAllCachedInfo));
 }
 
-$(async function () {
+$(async () => {
     InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
     await MetaSmokeAPI.Setup(metaSmokeKey);
 

@@ -4,10 +4,10 @@ export function isNatoPage() {
 export function parseNatoPage() {
     const nodes = $('.answer-hyperlink').parent().parent();
     const results = [];
-    for (var i = 0; i < nodes.length; i++) {
+    for (let i = 0; i < nodes.length; i++) {
         const node = $(nodes[i]);
 
-        const postId = parseInt(node.find('.answer-hyperlink').attr('href').split('#')[1], 10)
+        const postId = parseInt(node.find('.answer-hyperlink').attr('href').split('#')[1], 10);
 
         const answerTime = parseActionDate(node.find('.user-action-time'));
         const questionTime = parseActionDate(node.find('td .relativetime'));
@@ -16,16 +16,16 @@ export function parseNatoPage() {
         const { authorName, authorId } = parseAuthorDetails(node.find('.user-details'));
 
         results.push({
-            type: <'Answer'>'Answer',
+            type: 'Answer' as 'Answer',
             element: node,
-            page: <'NATO'>'NATO',
+            page: 'NATO' as 'NATO',
             postId,
             answerTime,
             questionTime,
             authorReputation,
             authorName,
             authorId,
-        })
+        });
     }
     return results;
 }
@@ -47,45 +47,45 @@ export function parseQuestionPage() {
         const postTime = parseActionDate(node.find('.post-signature .relativetime').last());
         return { score, authorReputation, authorName, authorId, postTime };
     }
-    const { score, authorReputation, authorName, authorId, postTime } = getPostDetails(questionNode);
+    let postDetails =  getPostDetails(questionNode);
 
     const results = [];
     const question = {
-        type: <'Question'>'Question',
+        type: 'Question' as 'Question',
         element: questionNode,
-        page: <'Question'>'Question',
+        page: 'Question' as 'Question',
         postId,
-        postTime,
+        postTime: postDetails.postTime,
 
-        score: score,
+        score: postDetails.score,
 
-        authorReputation,
-        authorName,
-        authorId
+        authorReputation: postDetails.authorReputation,
+        authorName: postDetails.authorName,
+        authorId: postDetails.authorId
     };
     results.push(question);
 
     const answerNodes = $('.answer');
-    for (var i = 0; i < answerNodes.length; i++) {
+    for (let i = 0; i < answerNodes.length; i++) {
         const answerNode = $(answerNodes[i]);
         const answerId = parseInt(answerNode.attr('data-answerid'), 10);
 
-        const { score, authorReputation, authorName, authorId, postTime } = getPostDetails(answerNode);
+        postDetails = getPostDetails(answerNode);
 
         results.push({
-            type: <'Answer'>'Answer',
+            type: 'Answer' as 'Answer',
             element: answerNode,
-            page: <'Question'>'Question',
+            page: 'Question' as 'Question',
             postId: answerId,
             question,
 
-            postTime,
+            postTime: postDetails.postTime,
 
-            score: score,
+            score: postDetails.score,
 
-            authorReputation,
-            authorName,
-            authorId
+            authorReputation: postDetails.authorReputation,
+            authorName: postDetails.authorName,
+            authorId: postDetails.authorId
         });
     }
     return results;
@@ -97,7 +97,7 @@ export function isFlagsPage() {
 export function parseFlagsPage() {
     const nodes = $('.flagged-post');
     const results = [];
-    for (var i = 0; i < nodes.length; i++) {
+    for (let i = 0; i < nodes.length; i++) {
         const node = $(nodes[i]);
 
         const type = node.find('.answer-hyperlink').length
@@ -121,9 +121,9 @@ export function parseFlagsPage() {
         const handledComment = fullHandledResult.slice(1).join(' - ').trim();
 
         results.push({
-            type: <'Answer' | 'Question'>type,
+            type: type as 'Answer' | 'Question',
             element: node,
-            page: <'Flags'>'Flags',
+            page: 'Flags' as 'Flags',
             postId,
             score,
             postTime,
@@ -132,7 +132,7 @@ export function parseFlagsPage() {
             handledComment,
             authorName,
             authorId
-        })
+        });
     }
     return results;
 }
@@ -140,7 +140,7 @@ export function parseFlagsPage() {
 export function parseGenericPage() {
     const questionNodes = $('.question-hyperlink');
     const results = [];
-    for (var i = 0; i < questionNodes.length; i++) {
+    for (let i = 0; i < questionNodes.length; i++) {
         const questionNode = $(questionNodes[i]);
         let fragment = questionNode.attr('href').split('/')[2];
         if (fragment.indexOf('_') >= 0) {
@@ -149,14 +149,14 @@ export function parseGenericPage() {
         const postId = parseInt(fragment, 10);
 
         results.push({
-            type: <'Question'>'Question',
+            type: 'Question' as 'Question',
             element: questionNode,
-            page: <'Unknown'>'Unknown',
+            page: 'Unknown' as 'Unknown',
             postId
-        })
+        });
     }
     const answerNodes = $('.answer-hyperlink');
-    for (var i = 0; i < answerNodes.length; i++) {
+    for (let i = 0; i < answerNodes.length; i++) {
         const answerNode = $(answerNodes[i]);
         let fragment = answerNode.attr('href').split('#')[1];
         if (fragment.indexOf('_') >= 0) {
@@ -165,32 +165,35 @@ export function parseGenericPage() {
         const postId = parseInt(fragment, 10);
 
         results.push({
-            type: <'Answer'>'Answer',
+            type: 'Answer' as 'Answer',
             element: answerNode,
-            page: <'Unknown'>'Unknown',
+            page: 'Unknown' as 'Unknown',
             postId
-        })
+        });
     }
     return results;
 }
 
 export function parseCurrentPage() {
-    if (isNatoPage())
-        // We explicitly type the page, as it allows the typescript compiler to 
+    if (isNatoPage()) {
+        // We explicitly type the page, as it allows the typescript compiler to
         // figure out the type of posts if a user checks if. For example:
         // const parsed = parseCurrentPage();
         // if (parsed.Page === 'Nato') {
         //     parsed.Posts is now properly typed as a nato post
         // }
         // If we don't do this, 'Page' is simply a string and doesn't give us any compiler hints
-        return { Page: <'NATO'>'NATO', Posts: parseNatoPage() };
-    if (isQuestionPage())
-        return { Page: <'Question'>'Question', Posts: parseQuestionPage() };
+        return { Page: 'NATO' as 'NATO', Posts: parseNatoPage() };
+    }
+    if (isQuestionPage()) {
+        return { Page: 'Question' as 'Question', Posts: parseQuestionPage() };
+    }
 
-    if (isFlagsPage())
-        return { Page: <'Flags'>'Flags', Posts: parseFlagsPage() };
+    if (isFlagsPage()) {
+        return { Page: 'Flags' as 'Flags', Posts: parseFlagsPage() };
+    }
 
-    return { Page: <'Unknown'>'Unknown', Posts: parseGenericPage() };
+    return { Page: 'Unknown' as 'Unknown', Posts: parseGenericPage() };
 }
 
 function parseReputation(reputationDiv: JQuery) {
@@ -199,8 +202,9 @@ function parseReputation(reputationDiv: JQuery) {
         reputationText = reputationDiv.attr('title').substr('reputation score '.length);
     }
     reputationText = reputationText.replace(',', '');
-    if (reputationText.trim() !== '')
+    if (reputationText.trim() !== '') {
         return parseInt(reputationText, 10);
+    }
     return undefined;
 }
 function parseAuthorDetails(authorDiv: JQuery) {

@@ -2,7 +2,7 @@
   "name": "advancedflagging",
   "version": "1.0.0",
   "scripts": {
-    "build": "webpack && concat-cli -f src/UserScriptDeclaration.js dist/out.js -o dist/AdvancedFlagging.user.js && concat-cli -f src/UserScriptDeclaration.js dist/out.min.js -o dist/AdvancedFlagging.min.user.js"
+    "build": "tslint src/**/*.ts{,x} && webpack && concat-cli -f src/UserScriptDeclaration.js dist/out.js -o dist/AdvancedFlagging.user.js && concat-cli -f src/UserScriptDeclaration.js dist/out.min.js -o dist/AdvancedFlagging.min.user.js"
   },
   "author": "Robert Rudman <rjrudman@gmail.com> (https://github.com/rjrudman)",
   "license": "ISC",
@@ -10,6 +10,7 @@
     "concat-cli": "^4.0.0",
     "rxjs": "^5.5.2",
     "ts-loader": "^3.1.1",
+    "tslint": "^5.8.0",
     "typescript": "^2.6.1",
     "unminified-webpack-plugin": "^1.4.2",
     "webpack": "^2.1.0-beta.22"

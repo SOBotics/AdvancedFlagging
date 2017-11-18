@@ -1,4 +1,4 @@
-declare var $: JQueryStatic;
+declare const $: JQueryStatic;
 declare const GM_xmlhttpRequest: any;
 
 import { GetAndCache } from './Caching';
@@ -30,12 +30,9 @@ export class ChatApi {
     }
 
     public SendMessage(roomId: number, message: string, providedFkey?: string): Promise<void> {
-        let fkeyPromise: Promise<string>;
-        if (!providedFkey) {
-            fkeyPromise = this.GetChannelFKey(roomId);
-        } else {
-            fkeyPromise = Promise.resolve(providedFkey);
-        }
+        const fkeyPromise = providedFkey
+            ? Promise.resolve(providedFkey)
+            : this.GetChannelFKey(roomId);
 
         return fkeyPromise.then((fKey) => {
             return new Promise<void>((resolve, reject) => {
@@ -50,6 +47,6 @@ export class ChatApi {
                     },
                 });
             });
-        })
+        });
     }
 }

@@ -1,19 +1,20 @@
 declare const xdLocalStorage: any;
 
+// tslint:disable-next-line:no-empty
 let xdLocalStorageInitializedResolver = () => { };
-const xdLocalStorageInitialized = new Promise<void>((resolve, reject) => xdLocalStorageInitializedResolver = resolve)
+const xdLocalStorageInitialized = new Promise<void>((resolve, reject) => xdLocalStorageInitializedResolver = resolve);
 
 interface ExpiryingCacheItem<T> {
     Data: T;
-    Expires?: Date
+    Expires?: Date;
 }
 export function InitializeCache(iframeUrl: string) {
     xdLocalStorage.init({
-        iframeUrl: iframeUrl,
-        initCallback: function () {
+        iframeUrl,
+        initCallback: () => {
             xdLocalStorageInitializedResolver();
         }
-    })
+    });
 }
 
 export async function GetAndCache<T>(cacheKey: string, getterPromise: () => Promise<T>, expiresAt?: Date): Promise<T> {
@@ -37,15 +38,15 @@ export async function GetFromCache<T>(cacheKey: string): Promise<T | undefined> 
     return new Promise<T | undefined>((resolve, reject) => {
         xdLocalStorageInitialized.then(() => {
             xdLocalStorage.getItem(cacheKey, (data: any) => {
-                const actualItem = <ExpiryingCacheItem<T>>JSON.parse(data.value);
+                const actualItem = JSON.parse(data.value) as ExpiryingCacheItem<T>;
                 if (!actualItem || (actualItem.Expires && actualItem.Expires < new Date())) {
                     // It doesn't exist or is expired, so return nothing
                     resolve();
                     return;
                 }
                 return resolve(actualItem.Data);
-            })
-        })
+            });
+        });
     });
 }
 

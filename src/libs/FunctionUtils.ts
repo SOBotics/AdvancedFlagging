@@ -7,11 +7,11 @@ export function Delay(milliseconds: number): Promise<void> {
 }
 
 export function GroupBy<T>(collection: T[], propertyGetter: (item: T) => any) {
-    return collection.reduce(function (previousValue: any, currentItem: T) {
+    return collection.reduce((previousValue: any, currentItem: T) => {
         (previousValue[propertyGetter(currentItem)] = previousValue[propertyGetter(currentItem)] || []).push(currentItem);
         return previousValue;
     }, {});
-};
+}
 
 export function GetMembers(item: any): string[] {
     const members = [];

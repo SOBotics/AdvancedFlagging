@@ -3,8 +3,8 @@ declare const GM_xmlhttpRequest: any;
 
 import { GetAndCache, StoreInCache } from './Caching';
 import { ChatApi } from './ChatApi';
-import { Observable } from 'rxjs/Observable'
-import { Subject } from 'rxjs/Subject'
+import { Observable } from 'rxjs/Observable';
+import { Subject } from 'rxjs/Subject';
 import { ReplaySubject } from 'rxjs/ReplaySubject';
 import 'rxjs/add/operator/take';
 import { IsStackOverflow } from './FunctionUtils';
@@ -19,11 +19,11 @@ export interface NattyFeedbackItemInfo {
     reasons: { reasonName: string }[];
     link: string;
     name: string;
-    type: 'None' | 'True Positive' | 'False Positive' | 'Needs Editing'
+    type: 'None' | 'True Positive' | 'False Positive' | 'Needs Editing';
 }
 export interface NattyFeedbackInfo {
     items: [null] | NattyFeedbackItemInfo[];
-    message: 'success'
+    message: 'success';
 }
 
 const soboticsRoomId = 111347;
@@ -73,7 +73,7 @@ export class NattyAPI {
             return false;
         }
         if (await this.WasReported()) {
-            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} tp`)
+            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} tp`);
             return true;
         } else {
             const answerAge = this.DaysBetween(answerDate, new Date());
@@ -95,7 +95,7 @@ export class NattyAPI {
             return false;
         }
         if (await this.WasReported()) {
-            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} tp`)
+            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} tp`);
             return true;
         }
         return false;
@@ -105,7 +105,7 @@ export class NattyAPI {
             return false;
         }
         if (await this.WasReported()) {
-            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} fp`)
+            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} fp`);
             return true;
         }
         return false;
@@ -122,10 +122,10 @@ export class NattyAPI {
     }
 
     private async WasReported() {
-        return await this.replaySubject.take(1).toPromise();
+        return this.replaySubject.take(1).toPromise();
     }
 
     private DaysBetween(first: Date, second: Date) {
-        return Math.round((<any>second - <any>first) / (1000 * 60 * 60 * 24));
+        return Math.round(((second as any) - (first as any)) / (1000 * 60 * 60 * 24));
     }
 }

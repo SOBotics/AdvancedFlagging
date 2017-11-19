@@ -15,7 +15,7 @@ export class SimpleCache {
         return result;
     }
 
-    public static async ClearCache() {
+    public static ClearCache() {
         localStorage.clear();
     }
 
@@ -32,7 +32,7 @@ export class SimpleCache {
         return dataItem.Data;
     }
 
-    public static async StoreInCache<T>(cacheKey: string, item: T, expiresAt?: Date) {
+    public static StoreInCache<T>(cacheKey: string, item: T, expiresAt?: Date) {
         const jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
         localStorage.setItem(cacheKey, jsonStr);
     }

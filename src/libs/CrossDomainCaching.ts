@@ -34,9 +34,11 @@ export class CrossDomainCaching {
         return new Promise<T | undefined>((resolve, reject) => {
             CrossDomainCaching.xdLocalStorageInitialized.then(() => {
                 xdLocalStorage.getItem(cacheKey, (data: any) => {
+                    if (!data.value) {
+                        resolve();
+                    }
                     const actualItem = JSON.parse(data.value) as ExpiryingCacheItem<T>;
-                    if (!actualItem || (actualItem.Expires && actualItem.Expires < new Date())) {
-                        // It doesn't exist or is expired, so return nothing
+                    if (actualItem.Expires && actualItem.Expires < new Date()) {
                         resolve();
                         return;
                     }

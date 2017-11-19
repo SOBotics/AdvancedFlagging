@@ -6,7 +6,7 @@ interface ExpiryingCacheItem<T> {
 export class SimpleCache {
     public static async GetAndCache<T>(cacheKey: string, getterPromise: () => Promise<T>, expiresAt?: Date): Promise<T> {
         const cachedItem = SimpleCache.GetFromCache<T>(cacheKey);
-        if (cachedItem !== null) {
+        if (cachedItem !== undefined) {
             return cachedItem;
         }
 
@@ -19,15 +19,14 @@ export class SimpleCache {
         localStorage.clear();
     }
 
-    public static GetFromCache<T>(cacheKey: string): T | null {
+    public static GetFromCache<T>(cacheKey: string): T | undefined {
         const jsonItem = localStorage.getItem(cacheKey);
-        if (jsonItem === null) {
-            return null;
+        if (!jsonItem) {
+            return undefined;
         }
         const dataItem = JSON.parse(jsonItem) as ExpiryingCacheItem<T>;
         if ((dataItem.Expires && dataItem.Expires < new Date())) {
-            // It doesn't exist or is expired, so return nothing
-            return null;
+            return undefined;
         }
         return dataItem.Data;
     }

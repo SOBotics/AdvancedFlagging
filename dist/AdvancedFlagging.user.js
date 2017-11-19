@@ -3740,10 +3740,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     // tslint:disable-next-line:no-debugger
     debugger;
     var metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
-    function setupStyles() {
+    function SetupStyles() {
         var scriptNode = document.createElement('style');
         scriptNode.type = 'text/css';
-        scriptNode.textContent = "\n#snackbar {\n    visibility: hidden;\n    min-width: 250px;\n    margin-left: -125px;\n    color: #fff;\n    text-align: center;\n    border-radius: 2px;\n    padding: 16px;\n    position: fixed;\n    z-index: 2000;\n    left: 50%;\n    top: 30px;\n    font-size: 17px;\n}\n\n#snackbar.show {\n    visibility: visible;\n    -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;\n    animation: fadein 0.5s, fadeout 0.5s 2.5s;\n}\n\n@-webkit-keyframes fadein {\n    from {top: 0; opacity: 0;}\n    to {top: 30px; opacity: 1;}\n}\n\n@keyframes fadein {\n    from {top: 0; opacity: 0;}\n    to {top: 30px; opacity: 1;}\n}\n\n@-webkit-keyframes fadeout {\n    from {top: 30px; opacity: 1;}\n    to {top: 0; opacity: 0;}\n}\n\n@keyframes fadeout {\n    from {top: 30px; opacity: 1;}\n    to {top: 0; opacity: 0;}\n}";
+        scriptNode.textContent = "\n#snackbar {\n    min-width: 250px;\n    margin-left: -125px;\n    color: #fff;\n    text-align: center;\n    border-radius: 2px;\n    padding: 16px;\n    position: fixed;\n    z-index: 2000;\n    left: 50%;\n    top: 30px;\n    font-size: 17px;\n}\n\n#snackbar.show {\n    opacity: 1;\n    transition: opacity 1s ease-out;\n    -ms-transition: opacity 1s ease-out;\n    -moz-transition: opacity 1s ease-out;\n    -webkit-transition: opacity 1s ease-out;\n}\n\n#snackbar.hide {\n    opacity: 0;\n    transition: opacity 1s ease-in;\n    -ms-transition: opacity 1s ease-in;\n    -moz-transition: opacity 1s ease-in;\n    -webkit-transition: opacity 1s ease-in;\n}\n";
         var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
         target.appendChild(scriptNode);
     }
@@ -3806,61 +3806,38 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             });
         });
     }
-    var popup = $('<div>').attr('id', 'snackbar');
-    var popupDelay = 1500;
-    var popupTimeGap = 500;
-    var showingPromise = null;
+    var popupWrapper = $('<div>').addClass('hide').attr('id', 'snackbar');
+    var popupDelay = 2000;
+    var toasterTimeout = null;
+    var toasterFadeTimeout = null;
+    function displayToaster(message, colour) {
+        var div = $('<div>')
+            .css({
+            'background-color': colour,
+            'padding': '10px'
+        })
+            .text(message);
+        popupWrapper.append(div);
+        popupWrapper.removeClass('hide').addClass('show');
+        function hidePopup() {
+            popupWrapper.removeClass('show').addClass('hide');
+            toasterFadeTimeout = setTimeout(function () {
+                popupWrapper.empty();
+            }, 1000);
+        }
+        if (toasterFadeTimeout) {
+            clearTimeout(toasterFadeTimeout);
+        }
+        if (toasterTimeout) {
+            clearTimeout(toasterTimeout);
+        }
+        toasterTimeout = setTimeout(hidePopup, popupDelay);
+    }
     function displaySuccess(message) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        if (!!showingPromise) return [3 /*break*/, 2];
-                        showingPromise = FunctionUtils_1.Delay(popupDelay + popupTimeGap);
-                        popup.css('background-color', '#00690c');
-                        popup.text(message);
-                        popup.addClass('show');
-                        return [4 /*yield*/, FunctionUtils_1.Delay(popupDelay)];
-                    case 1:
-                        _a.sent();
-                        popup.removeClass('show');
-                        showingPromise = null;
-                        return [3 /*break*/, 4];
-                    case 2: return [4 /*yield*/, showingPromise];
-                    case 3:
-                        _a.sent();
-                        displaySuccess(message);
-                        _a.label = 4;
-                    case 4: return [2 /*return*/];
-                }
-            });
-        });
+        displayToaster(message, '#00690c');
     }
     function displayError(message) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        if (!!showingPromise) return [3 /*break*/, 2];
-                        showingPromise = FunctionUtils_1.Delay(popupDelay + popupTimeGap);
-                        popup.css('background-color', '#ba1701');
-                        popup.text(message);
-                        popup.addClass('show');
-                        return [4 /*yield*/, FunctionUtils_1.Delay(popupDelay)];
-                    case 1:
-                        _a.sent();
-                        popup.removeClass('show');
-                        showingPromise = null;
-                        return [3 /*break*/, 4];
-                    case 2: return [4 /*yield*/, showingPromise];
-                    case 3:
-                        _a.sent();
-                        displayError(message);
-                        _a.label = 4;
-                    case 4: return [2 /*return*/];
-                }
-            });
-        });
+        displayToaster(message, '#ba1701');
     }
     function BuildFlaggingDialog(element, postId, postType, reputation, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters) {
         var _this = this;
@@ -3905,13 +3882,16 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 }
                 var reportLink = $('<a />').css(linkStyle);
                 reportLink.click(function () { return __awaiter(_this, void 0, void 0, function () {
-                    var result, noFlag, rudeFlag, naaFlag, _loop_1, i;
+                    var result, err_1, noFlag, rudeFlag, naaFlag, _loop_1, i;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
-                                if (!!deleted) return [3 /*break*/, 2];
-                                return [4 /*yield*/, handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation)];
+                                if (!!deleted) return [3 /*break*/, 4];
+                                _a.label = 1;
                             case 1:
+                                _a.trys.push([1, 3, , 4]);
+                                return [4 /*yield*/, handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation)];
+                            case 2:
                                 result = _a.sent();
                                 if (result.CommentPromise) {
                                     result.CommentPromise.then(function (data) {
@@ -3919,17 +3899,21 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                         commentUI.addShow(true, false);
                                         commentUI.showComments(data, null, false, true);
                                         $(document).trigger('comment', postId);
-                                    });
+                                    }).catch(function (err) { return displayError('Failed to comment on post'); });
                                 }
                                 if (result.FlagPromise) {
                                     result.FlagPromise.then(function () {
                                         Caching_1.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType);
                                         reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
                                         reportedIcon.show();
-                                    });
+                                    }).catch(function (err) { return displayError('Failed to flag post'); });
                                 }
-                                _a.label = 2;
-                            case 2:
+                                return [3 /*break*/, 4];
+                            case 3:
+                                err_1 = _a.sent();
+                                displayError(err_1);
+                                return [3 /*break*/, 4];
+                            case 4:
                                 noFlag = flagType.ReportType === 'NoFlag';
                                 if (noFlag) {
                                     Caching_1.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType);
@@ -4190,8 +4174,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     _a.sent();
                     SetupPostPage();
                     SetupAdminTools();
-                    setupStyles();
-                    document.body.appendChild(popup.get(0));
+                    SetupStyles();
+                    document.body.appendChild(popupWrapper.get(0));
                     return [2 /*return*/];
             }
         });

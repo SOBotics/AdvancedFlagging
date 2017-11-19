@@ -15,12 +15,11 @@ const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2e
 declare const StackExchange: StackExchangeGlobal;
 declare const unsafeWindow: any;
 
-function setupStyles() {
+function SetupStyles() {
     const scriptNode = document.createElement('style');
     scriptNode.type = 'text/css';
     scriptNode.textContent = `
 #snackbar {
-    visibility: hidden;
     min-width: 250px;
     margin-left: -125px;
     color: #fff;
@@ -35,30 +34,21 @@ function setupStyles() {
 }
 
 #snackbar.show {
-    visibility: visible;
-    -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
-    animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    opacity: 1;
+    transition: opacity 1s ease-out;
+    -ms-transition: opacity 1s ease-out;
+    -moz-transition: opacity 1s ease-out;
+    -webkit-transition: opacity 1s ease-out;
 }
 
-@-webkit-keyframes fadein {
-    from {top: 0; opacity: 0;}
-    to {top: 30px; opacity: 1;}
+#snackbar.hide {
+    opacity: 0;
+    transition: opacity 1s ease-in;
+    -ms-transition: opacity 1s ease-in;
+    -moz-transition: opacity 1s ease-in;
+    -webkit-transition: opacity 1s ease-in;
 }
-
-@keyframes fadein {
-    from {top: 0; opacity: 0;}
-    to {top: 30px; opacity: 1;}
-}
-
-@-webkit-keyframes fadeout {
-    from {top: 30px; opacity: 1;}
-    to {top: 0; opacity: 0;}
-}
-
-@keyframes fadeout {
-    from {top: 30px; opacity: 1;}
-    to {top: 0; opacity: 0;}
-}`;
+`;
 
     const target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
     target.appendChild(scriptNode);
@@ -120,38 +110,42 @@ async function handleFlagAndComment(postId: number, flag: FlagType, commentRequi
     return result;
 }
 
-const popup = $('<div>').attr('id', 'snackbar');
-const popupDelay = 1500;
-const popupTimeGap = 500;
-let showingPromise: Promise<void> | null = null;
-async function displaySuccess(message: string) {
-    if (!showingPromise) {
-        showingPromise = Delay(popupDelay + popupTimeGap);
-        popup.css('background-color', '#00690c');
-        popup.text(message);
-        popup.addClass('show');
-        await Delay(popupDelay);
-        popup.removeClass('show');
-        showingPromise = null;
-    } else {
-        await showingPromise;
-        displaySuccess(message);
+const popupWrapper = $('<div>').addClass('hide').attr('id', 'snackbar');
+const popupDelay = 2000;
+let toasterTimeout: number | null = null;
+let toasterFadeTimeout: number | null = null;
+function displayToaster(message: string, colour: string) {
+    const div = $('<div>')
+        .css({
+            'background-color': colour,
+            'padding': '10px'
+        })
+        .text(message);
+
+    popupWrapper.append(div);
+    popupWrapper.removeClass('hide').addClass('show');
+
+    function hidePopup() {
+        popupWrapper.removeClass('show').addClass('hide');
+        toasterFadeTimeout = setTimeout(() => {
+            popupWrapper.empty();
+        }, 1000);
     }
+
+    if (toasterFadeTimeout) {
+        clearTimeout(toasterFadeTimeout);
+    }
+    if (toasterTimeout) {
+        clearTimeout(toasterTimeout);
+    }
+    toasterTimeout = setTimeout(hidePopup, popupDelay);
+}
+function displaySuccess(message: string) {
+    displayToaster(message, '#00690c');
 }
 
-async function displayError(message: string) {
-    if (!showingPromise) {
-        showingPromise = Delay(popupDelay + popupTimeGap);
-        popup.css('background-color', '#ba1701');
-        popup.text(message);
-        popup.addClass('show');
-        await Delay(popupDelay);
-        popup.removeClass('show');
-        showingPromise = null;
-    } else {
-        await showingPromise;
-        displayError(message);
-    }
+function displayError(message: string) {
+    displayToaster(message, '#ba1701');
 }
 
 interface Reporter {
@@ -219,23 +213,25 @@ function BuildFlaggingDialog(element: JQuery,
             const reportLink = $('<a />').css(linkStyle);
             reportLink.click(async () => {
                 if (!deleted) {
-                    const result = await handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation);
-                    if (result.CommentPromise) {
-                        result.CommentPromise.then((data) => {
-                            const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
-                            commentUI.addShow(true, false);
-                            commentUI.showComments(data, null, false, true);
-                            $(document).trigger('comment', postId);
-                        });
-                    }
+                    try {
+                        const result = await handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation);
+                        if (result.CommentPromise) {
+                            result.CommentPromise.then((data) => {
+                                const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
+                                commentUI.addShow(true, false);
+                                commentUI.showComments(data, null, false, true);
+                                $(document).trigger('comment', postId);
+                            }).catch(err => displayError('Failed to comment on post'));
+                        }
 
-                    if (result.FlagPromise) {
-                        result.FlagPromise.then(() => {
-                            StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType);
-                            reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
-                            reportedIcon.show();
-                        });
-                    }
+                        if (result.FlagPromise) {
+                            result.FlagPromise.then(() => {
+                                StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType);
+                                reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
+                                reportedIcon.show();
+                            }).catch(err => displayError('Failed to flag post'));
+                        }
+                    } catch (err) { displayError(err); }
                 }
 
                 const noFlag = flagType.ReportType === 'NoFlag';
@@ -525,6 +521,6 @@ $(async () => {
     SetupPostPage();
     SetupAdminTools();
 
-    setupStyles();
-    document.body.appendChild(popup.get(0));
+    SetupStyles();
+    document.body.appendChild(popupWrapper.get(0));
 });

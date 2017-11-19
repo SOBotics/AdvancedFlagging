@@ -1,9 +1,10 @@
-import { GetFromCache, StoreInCache, GetAndCache } from './Caching';
 import { Delay } from './FunctionUtils';
 import { Observable } from 'rxjs/Observable';
 import { Subject } from 'rxjs/Subject';
 import { ReplaySubject } from 'rxjs/ReplaySubject';
 import 'rxjs/add/operator/take';
+import { CrossDomainCaching } from './CrossDomainCaching';
+import { SimpleCache } from './SimpleCache';
 
 const MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
 const MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
@@ -18,12 +19,12 @@ interface MetaSmokeApiWrapper {
 
 export class MetaSmokeAPI {
     public static async Reset() {
-        await StoreInCache(MetaSmokeDisabledConfig, undefined);
-        await StoreInCache(MetaSmokeUserKeyConfig, undefined);
+        await CrossDomainCaching.StoreInCache(MetaSmokeDisabledConfig, undefined);
+        await CrossDomainCaching.StoreInCache(MetaSmokeUserKeyConfig, undefined);
     }
 
     public static async IsDisabled() {
-        const cachedDisabled = await GetFromCache<boolean>(MetaSmokeDisabledConfig);
+        const cachedDisabled = await CrossDomainCaching.GetFromCache<boolean>(MetaSmokeDisabledConfig);
         if (cachedDisabled === undefined) {
             return false;
         }
@@ -39,13 +40,13 @@ export class MetaSmokeAPI {
                     return;
                 }
 
-                const cachedUserKey = await GetFromCache<string>(MetaSmokeUserKeyConfig);
+                const cachedUserKey = await CrossDomainCaching.GetFromCache<string>(MetaSmokeUserKeyConfig);
                 if (cachedUserKey) {
                     return cachedUserKey;
                 }
 
                 if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, see footer of Stack Overflow.')) {
-                    StoreInCache(MetaSmokeDisabledConfig, true);
+                    CrossDomainCaching.StoreInCache(MetaSmokeDisabledConfig, true);
                     return;
                 }
 
@@ -77,7 +78,7 @@ export class MetaSmokeAPI {
     private static appKey: string;
 
     private static getUserKey() {
-        return GetAndCache(MetaSmokeUserKeyConfig, () => new Promise<string>(async (resolve, reject) => {
+        return CrossDomainCaching.GetAndCache(MetaSmokeUserKeyConfig, () => new Promise<string>(async (resolve, reject) => {
             let prom = MetaSmokeAPI.actualPromise;
             if (prom === undefined) {
                 prom = MetaSmokeAPI.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeAPI.appKey}`);
@@ -159,7 +160,7 @@ export class MetaSmokeAPI {
                         ? `//${window.location.hostname}/a/${this.postId}`
                         : `//${window.location.hostname}/questions/${this.postId}`;
 
-                StoreInCache(`${MetaSmokeWasReportedConfig}.${queryUrlStr}`, undefined);
+                SimpleCache.StoreInCache(`${MetaSmokeWasReportedConfig}.${queryUrlStr}`, undefined);
                 this.QueryMetaSmokey();
                 return r;
             });
@@ -189,7 +190,7 @@ export class MetaSmokeAPI {
                 ? `//${window.location.hostname}/a/${this.postId}`
                 : `//${window.location.hostname}/questions/${this.postId}`;
 
-        const resultPromise = GetAndCache<number | null>(`${MetaSmokeWasReportedConfig}.${urlStr}`, () => new Promise((resolve, reject) => {
+        const resultPromise = SimpleCache.GetAndCache<number | null>(`${MetaSmokeWasReportedConfig}.${urlStr}`, () => new Promise((resolve, reject) => {
             MetaSmokeAPI.IsDisabled().then(isDisabled => {
                 if (isDisabled) {
                     return;

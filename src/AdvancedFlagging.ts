@@ -2,11 +2,13 @@ import * as jquery from 'jquery';
 import { MetaSmokeAPI } from './libs/MetaSmokeAPI';
 import { FlagType, flagCategories } from './FlagTypes';
 import { NattyAPI } from './libs/NattyApi';
-import { ClearCache, GetAndCache, GetFromCache, InitializeCache, StoreInCache } from './libs/Caching';
+
 import { Delay, IsStackOverflow } from './libs/FunctionUtils';
 import { StackExchangeGlobal } from './libs/StackExchangeWeb/StackExchangeOptions';
 import { parseCurrentPage } from './libs/StackExchangeWeb/StackExchangeWebParser';
 import { GenericBotAPI } from './libs/GenericBotAPI';
+import { CrossDomainCaching } from './libs/CrossDomainCaching';
+import { SimpleCache } from './libs/SimpleCache';
 // tslint:disable-next-line:no-debugger
 debugger;
 
@@ -54,7 +56,7 @@ function SetupStyles() {
     target.appendChild(scriptNode);
 }
 
-async function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: boolean, userReputation?: number) {
+function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: boolean, userReputation?: number) {
     const result: {
         CommentPromise?: Promise<string>;
         FlagPromise?: Promise<string>;
@@ -91,7 +93,7 @@ async function handleFlagAndComment(postId: number, flag: FlagType, commentRequi
     }
 
     if (flag.ReportType !== 'NoFlag') {
-        const wasFlagged = await GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`);
+        const wasFlagged = SimpleCache.GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`);
         if (!wasFlagged) {
             result.FlagPromise = new Promise((resolve, reject) => {
                 $.ajax({
@@ -211,10 +213,10 @@ function BuildFlaggingDialog(element: JQuery,
             }
 
             const reportLink = $('<a />').css(linkStyle);
-            reportLink.click(async () => {
+            reportLink.click(() => {
                 if (!deleted) {
                     try {
-                        const result = await handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation);
+                        const result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation);
                         if (result.CommentPromise) {
                             result.CommentPromise.then((data) => {
                                 const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
@@ -226,7 +228,7 @@ function BuildFlaggingDialog(element: JQuery,
 
                         if (result.FlagPromise) {
                             result.FlagPromise.then(() => {
-                                StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType);
+                                SimpleCache.StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType);
                                 reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
                                 reportedIcon.show();
                             }).catch(err => displayError('Failed to flag post'));
@@ -236,7 +238,7 @@ function BuildFlaggingDialog(element: JQuery,
 
                 const noFlag = flagType.ReportType === 'NoFlag';
                 if (noFlag) {
-                    StoreInCache(`AdvancedFlagging.PerformedAction.${postId}`, flagType);
+                    SimpleCache.StoreInCache(`AdvancedFlagging.PerformedAction.${postId}`, flagType);
                     performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
                     performedActionIcon.show();
                 }
@@ -424,21 +426,17 @@ function SetupPostPage() {
             showFunc = (element: JQuery) => element.css('display', 'inline-block');
         }
 
-        const previousFlagPromise = GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${post.postId}`);
-        previousFlagPromise.then(previousFlag => {
-            if (previousFlag) {
-                reportedIcon.attr('title', `Previously flagged as ${previousFlag.ReportType}`);
-                showFunc(reportedIcon);
-            }
-        });
+        const previousFlag = SimpleCache.GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${post.postId}`);
+        if (previousFlag) {
+            reportedIcon.attr('title', `Previously flagged as ${previousFlag.ReportType}`);
+            showFunc(reportedIcon);
+        }
 
-        const previousPerformedActionPromise = GetFromCache<FlagType>(`AdvancedFlagging.PerformedAction.${post.postId}`);
-        previousPerformedActionPromise.then(previousAction => {
-            if (previousAction && previousAction.ReportType === 'NoFlag') {
-                performedActionIcon.attr('title', `Previously performed action: ${previousAction.DisplayName}`);
-                showFunc(performedActionIcon);
-            }
-        });
+        const previousAction = SimpleCache.GetFromCache<FlagType>(`AdvancedFlagging.PerformedAction.${post.postId}`);
+        if (previousAction && previousAction.ReportType === 'NoFlag') {
+            performedActionIcon.attr('title', `Previously performed action: ${previousAction.DisplayName}`);
+            showFunc(performedActionIcon);
+        }
     }
 }
 
@@ -503,19 +501,12 @@ function SetupAdminTools() {
         location.reload();
     });
 
-    const clearAllCachedInfo = $('<a />').text('Clear all cached info');
-    clearAllCachedInfo.click(() => {
-        ClearCache();
-        location.reload();
-    });
-
     optionsDiv.append(optionsList);
     optionsList.append($('<li>').append(clearMetaSmokeConfig));
-    optionsList.append($('<li>').append(clearAllCachedInfo));
 }
 
 $(async () => {
-    InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
+    CrossDomainCaching.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
     await MetaSmokeAPI.Setup(metaSmokeKey);
 
     SetupPostPage();

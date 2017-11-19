@@ -1,6 +1,6 @@
-import { GetFromCache, StoreInCache } from './Caching';
 import { SEApiWrapper, SEApiComment } from './StackExchangeApi.Interfaces';
 import { GetMembers, GroupBy } from './FunctionUtils';
+import { SimpleCache } from './SimpleCache';
 
 declare const $: JQueryStatic;
 declare const SE: any;
@@ -84,7 +84,7 @@ export class StackExchangeAPI {
                 }).done((data: SEApiWrapper<TResultType>, textStatus: string, jqXHR: JQueryXHR) => {
                     const returnItems = (data.items || []) as TResultType[];
                     const grouping = GroupBy(returnItems, uniqueIdentifier);
-                    GetMembers(grouping).forEach(key => StoreInCache(cacheKey(parseInt(key, 10)), grouping[key]));
+                    GetMembers(grouping).forEach(key => SimpleCache.StoreInCache(cacheKey(parseInt(key, 10)), grouping[key]));
 
                     cachedResultsPromise.then(cachedResults => {
                         cachedResults.forEach(result => {
@@ -106,18 +106,16 @@ export class StackExchangeAPI {
         const promises: Promise<void>[] = [];
         if (!skipCache) {
             objectIds.forEach(objectId => {
-                const cachedResultPromise = GetFromCache<TResultType[]>(cacheKey(objectId));
+                const cachedResult = SimpleCache.GetFromCache<TResultType[]>(cacheKey(objectId));
                 const tempPromise = new Promise<void>(resolve => {
-                    cachedResultPromise.then(cachedResult => {
-                        if (cachedResult) {
-                            const itemIndex = objectIds.indexOf(objectId);
-                            if (itemIndex > -1) {
-                                objectIds.splice(itemIndex, 1);
-                            }
-                            cachedResult.forEach(r => cachedResults.push(r));
+                    if (cachedResult) {
+                        const itemIndex = objectIds.indexOf(objectId);
+                        if (itemIndex > -1) {
+                            objectIds.splice(itemIndex, 1);
                         }
-                        resolve();
-                    });
+                        cachedResult.forEach(r => cachedResults.push(r));
+                    }
+                    resolve();
                 });
                 promises.push(tempPromise);
             });

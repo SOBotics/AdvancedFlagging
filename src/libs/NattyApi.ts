@@ -1,13 +1,13 @@
 declare const $: JQueryStatic;
 declare const GM_xmlhttpRequest: any;
 
-import { GetAndCache, StoreInCache } from './Caching';
 import { ChatApi } from './ChatApi';
 import { Observable } from 'rxjs/Observable';
 import { Subject } from 'rxjs/Subject';
 import { ReplaySubject } from 'rxjs/ReplaySubject';
 import 'rxjs/add/operator/take';
 import { IsStackOverflow } from './FunctionUtils';
+import { SimpleCache } from './SimpleCache';
 
 const nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
 
@@ -44,7 +44,7 @@ export class NattyAPI {
         this.subject.subscribe(this.replaySubject);
 
         if (IsStackOverflow()) {
-            GetAndCache(`NattyApi.Feedback.${this.answerId}`, () => new Promise<boolean>((resolve, reject) => {
+            SimpleCache.GetAndCache(`NattyApi.Feedback.${this.answerId}`, () => new Promise<boolean>((resolve, reject) => {
                 GM_xmlhttpRequest({
                     method: 'GET',
                     url: `${nattyFeedbackUrl}/${this.answerId}`,
@@ -84,7 +84,7 @@ export class NattyAPI {
 
             const promise = this.chat.SendMessage(soboticsRoomId, `@Natty report http://stackoverflow.com/a/${this.answerId}`);
             await promise.then(() => {
-                StoreInCache(`NattyApi.Feedback.${this.answerId}`, true);
+                SimpleCache.StoreInCache(`NattyApi.Feedback.${this.answerId}`, true);
                 this.subject.next(true);
             });
             return true;

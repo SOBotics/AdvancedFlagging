@@ -1,7 +1,7 @@
+import { SimpleCache } from './SimpleCache';
+
 declare const $: JQueryStatic;
 declare const GM_xmlhttpRequest: any;
-
-import { GetAndCache } from './Caching';
 
 export class ChatApi {
     private chatRoomUrl: string;
@@ -26,7 +26,7 @@ export class ChatApi {
 
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 1);
-        return GetAndCache(cachingKey, () => getterPromise, expiryDate);
+        return SimpleCache.GetAndCache(cachingKey, () => getterPromise, expiryDate);
     }
 
     public SendMessage(roomId: number, message: string, providedFkey?: string): Promise<void> {

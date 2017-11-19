@@ -82,7 +82,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 42);
+/******/ 	return __webpack_require__(__webpack_require__.s = 43);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -91,12 +91,12 @@
 
 "use strict";
 "use strict";
-var isArray_1 = __webpack_require__(35);
-var isObject_1 = __webpack_require__(36);
-var isFunction_1 = __webpack_require__(14);
-var tryCatch_1 = __webpack_require__(40);
-var errorObject_1 = __webpack_require__(13);
-var UnsubscriptionError_1 = __webpack_require__(34);
+var isArray_1 = __webpack_require__(36);
+var isObject_1 = __webpack_require__(37);
+var isFunction_1 = __webpack_require__(15);
+var tryCatch_1 = __webpack_require__(41);
+var errorObject_1 = __webpack_require__(14);
+var UnsubscriptionError_1 = __webpack_require__(35);
 /**
  * Represents a disposable resource, such as the execution of an Observable. A
  * Subscription has one important method, `unsubscribe`, that takes no argument
@@ -288,6 +288,45 @@ function flattenUnsubscriptionErrors(errors) {
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function Delay(milliseconds) {
+        return new Promise(function (resolve) {
+            setTimeout(function () {
+                resolve();
+            }, milliseconds);
+        });
+    }
+    exports.Delay = Delay;
+    function GroupBy(collection, propertyGetter) {
+        return collection.reduce(function (previousValue, currentItem) {
+            (previousValue[propertyGetter(currentItem)] = previousValue[propertyGetter(currentItem)] || []).push(currentItem);
+            return previousValue;
+        }, {});
+    }
+    exports.GroupBy = GroupBy;
+    function GetMembers(item) {
+        var members = [];
+        for (var key in item) {
+            if (item.hasOwnProperty(key)) {
+                members.push(key);
+            }
+        }
+        return members;
+    }
+    exports.GetMembers = GetMembers;
+    function IsStackOverflow() {
+        return window.location.href.match(/^https:\/\/stackoverflow.com/);
+    }
+    exports.IsStackOverflow = IsStackOverflow;
+}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 2 */
+/***/ function(module, exports, __webpack_require__) {
+
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -326,133 +365,61 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    // tslint:disable-next-line:no-empty
-    var xdLocalStorageInitializedResolver = function () { };
-    var xdLocalStorageInitialized = new Promise(function (resolve, reject) { return xdLocalStorageInitializedResolver = resolve; });
-    function InitializeCache(iframeUrl) {
-        xdLocalStorage.init({
-            iframeUrl: iframeUrl,
-            initCallback: function () {
-                xdLocalStorageInitializedResolver();
-            }
-        });
-    }
-    exports.InitializeCache = InitializeCache;
-    function GetAndCache(cacheKey, getterPromise, expiresAt) {
-        return __awaiter(this, void 0, void 0, function () {
-            var cachedItem, result;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, GetFromCache(cacheKey)];
-                    case 1:
-                        cachedItem = _a.sent();
-                        if (cachedItem !== undefined) {
-                            return [2 /*return*/, cachedItem];
-                        }
-                        return [4 /*yield*/, getterPromise()];
-                    case 2:
-                        result = _a.sent();
-                        StoreInCache(cacheKey, result, expiresAt);
-                        return [2 /*return*/, result];
-                }
-            });
-        });
-    }
-    exports.GetAndCache = GetAndCache;
-    function ClearCache() {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, xdLocalStorageInitialized];
-                    case 1:
-                        _a.sent();
-                        xdLocalStorage.clear();
-                        return [2 /*return*/];
-                }
-            });
-        });
-    }
-    exports.ClearCache = ClearCache;
-    function GetFromCache(cacheKey) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, xdLocalStorageInitialized];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/, new Promise(function (resolve, reject) {
-                                xdLocalStorageInitialized.then(function () {
-                                    xdLocalStorage.getItem(cacheKey, function (data) {
-                                        var actualItem = JSON.parse(data.value);
-                                        if (!actualItem || (actualItem.Expires && actualItem.Expires < new Date())) {
-                                            // It doesn't exist or is expired, so return nothing
-                                            resolve();
-                                            return;
-                                        }
-                                        return resolve(actualItem.Data);
-                                    });
-                                });
-                            })];
-                }
-            });
-        });
-    }
-    exports.GetFromCache = GetFromCache;
-    function StoreInCache(cacheKey, item, expiresAt) {
-        return __awaiter(this, void 0, void 0, function () {
-            var jsonStr;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, xdLocalStorageInitialized];
-                    case 1:
-                        _a.sent();
-                        jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
-                        xdLocalStorage.setItem(cacheKey, jsonStr);
-                        return [2 /*return*/];
-                }
-            });
-        });
-    }
-    exports.StoreInCache = StoreInCache;
-}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ },
-/* 2 */
-/***/ function(module, exports, __webpack_require__) {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    function Delay(milliseconds) {
-        return new Promise(function (resolve) {
-            setTimeout(function () {
-                resolve();
-            }, milliseconds);
-        });
-    }
-    exports.Delay = Delay;
-    function GroupBy(collection, propertyGetter) {
-        return collection.reduce(function (previousValue, currentItem) {
-            (previousValue[propertyGetter(currentItem)] = previousValue[propertyGetter(currentItem)] || []).push(currentItem);
-            return previousValue;
-        }, {});
-    }
-    exports.GroupBy = GroupBy;
-    function GetMembers(item) {
-        var members = [];
-        for (var key in item) {
-            if (item.hasOwnProperty(key)) {
-                members.push(key);
-            }
+    var SimpleCache = /** @class */ (function () {
+        function SimpleCache() {
         }
-        return members;
-    }
-    exports.GetMembers = GetMembers;
-    function IsStackOverflow() {
-        return window.location.href.match(/^https:\/\/stackoverflow.com/);
-    }
-    exports.IsStackOverflow = IsStackOverflow;
+        SimpleCache.GetAndCache = function (cacheKey, getterPromise, expiresAt) {
+            return __awaiter(this, void 0, void 0, function () {
+                var cachedItem, result;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            cachedItem = SimpleCache.GetFromCache(cacheKey);
+                            if (cachedItem !== null) {
+                                return [2 /*return*/, cachedItem];
+                            }
+                            return [4 /*yield*/, getterPromise()];
+                        case 1:
+                            result = _a.sent();
+                            SimpleCache.StoreInCache(cacheKey, result, expiresAt);
+                            return [2 /*return*/, result];
+                    }
+                });
+            });
+        };
+        SimpleCache.ClearCache = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    localStorage.clear();
+                    return [2 /*return*/];
+                });
+            });
+        };
+        SimpleCache.GetFromCache = function (cacheKey) {
+            var jsonItem = localStorage.getItem(cacheKey);
+            if (jsonItem === null) {
+                return null;
+            }
+            var dataItem = JSON.parse(jsonItem);
+            if ((dataItem.Expires && dataItem.Expires < new Date())) {
+                // It doesn't exist or is expired, so return nothing
+                return null;
+            }
+            return dataItem.Data;
+        };
+        SimpleCache.StoreInCache = function (cacheKey, item, expiresAt) {
+            return __awaiter(this, void 0, void 0, function () {
+                var jsonStr;
+                return __generator(this, function (_a) {
+                    jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
+                    localStorage.setItem(cacheKey, jsonStr);
+                    return [2 /*return*/];
+                });
+            });
+        };
+        return SimpleCache;
+    }());
+    exports.SimpleCache = SimpleCache;
 }.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
@@ -463,9 +430,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 "use strict";
 "use strict";
 var root_1 = __webpack_require__(5);
-var toSubscriber_1 = __webpack_require__(39);
-var observable_1 = __webpack_require__(32);
-var pipe_1 = __webpack_require__(38);
+var toSubscriber_1 = __webpack_require__(40);
+var observable_1 = __webpack_require__(33);
+var pipe_1 = __webpack_require__(39);
 /**
  * A representation of any set of values over any amount of time. This is the most basic building block
  * of RxJS.
@@ -778,9 +745,9 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var isFunction_1 = __webpack_require__(14);
+var isFunction_1 = __webpack_require__(15);
 var Subscription_1 = __webpack_require__(0);
-var Observer_1 = __webpack_require__(8);
+var Observer_1 = __webpack_require__(9);
 var rxSubscriber_1 = __webpack_require__(7);
 /**
  * Implements the {@link Observer} interface and extends the
@@ -1076,8 +1043,8 @@ var __extends = (this && this.__extends) || function (d, b) {
 var Observable_1 = __webpack_require__(3);
 var Subscriber_1 = __webpack_require__(4);
 var Subscription_1 = __webpack_require__(0);
-var ObjectUnsubscribedError_1 = __webpack_require__(12);
-var SubjectSubscription_1 = __webpack_require__(10);
+var ObjectUnsubscribedError_1 = __webpack_require__(13);
+var SubjectSubscription_1 = __webpack_require__(11);
 var rxSubscriber_1 = __webpack_require__(7);
 /**
  * @class SubjectSubscriber<T>
@@ -1254,6 +1221,140 @@ exports.$$rxSubscriber = exports.rxSubscriber;
 
 /***/ },
 /* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var CrossDomainCaching = /** @class */ (function () {
+        function CrossDomainCaching() {
+        }
+        CrossDomainCaching.InitializeCache = function (iframeUrl) {
+            xdLocalStorage.init({
+                iframeUrl: iframeUrl,
+                initCallback: function () {
+                    CrossDomainCaching.xdLocalStorageInitializedResolver();
+                }
+            });
+        };
+        CrossDomainCaching.GetAndCache = function (cacheKey, getterPromise, expiresAt) {
+            return __awaiter(this, void 0, void 0, function () {
+                var cachedItem, result;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.GetFromCache(cacheKey)];
+                        case 1:
+                            cachedItem = _a.sent();
+                            if (cachedItem !== undefined) {
+                                return [2 /*return*/, cachedItem];
+                            }
+                            return [4 /*yield*/, getterPromise()];
+                        case 2:
+                            result = _a.sent();
+                            this.StoreInCache(cacheKey, result, expiresAt);
+                            return [2 /*return*/, result];
+                    }
+                });
+            });
+        };
+        CrossDomainCaching.ClearCache = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, CrossDomainCaching.xdLocalStorageInitialized];
+                        case 1:
+                            _a.sent();
+                            xdLocalStorage.clear();
+                            return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        CrossDomainCaching.GetFromCache = function (cacheKey) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, CrossDomainCaching.xdLocalStorageInitialized];
+                        case 1:
+                            _a.sent();
+                            return [2 /*return*/, new Promise(function (resolve, reject) {
+                                    CrossDomainCaching.xdLocalStorageInitialized.then(function () {
+                                        xdLocalStorage.getItem(cacheKey, function (data) {
+                                            var actualItem = JSON.parse(data.value);
+                                            if (!actualItem || (actualItem.Expires && actualItem.Expires < new Date())) {
+                                                // It doesn't exist or is expired, so return nothing
+                                                resolve();
+                                                return;
+                                            }
+                                            return resolve(actualItem.Data);
+                                        });
+                                    });
+                                })];
+                    }
+                });
+            });
+        };
+        CrossDomainCaching.StoreInCache = function (cacheKey, item, expiresAt) {
+            return __awaiter(this, void 0, void 0, function () {
+                var jsonStr;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, CrossDomainCaching.xdLocalStorageInitialized];
+                        case 1:
+                            _a.sent();
+                            jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
+                            xdLocalStorage.setItem(cacheKey, jsonStr);
+                            return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        CrossDomainCaching.xdLocalStorageInitialized = new Promise(function (resolve, reject) { return CrossDomainCaching.xdLocalStorageInitializedResolver = resolve; });
+        // tslint:disable-next-line:no-empty
+        CrossDomainCaching.xdLocalStorageInitializedResolver = function () { };
+        return CrossDomainCaching;
+    }());
+    exports.CrossDomainCaching = CrossDomainCaching;
+}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 9 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -1267,7 +1368,7 @@ exports.empty = {
 //# sourceMappingURL=Observer.js.map
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1278,11 +1379,11 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var Subject_1 = __webpack_require__(6);
-var queue_1 = __webpack_require__(31);
+var queue_1 = __webpack_require__(32);
 var Subscription_1 = __webpack_require__(0);
-var observeOn_1 = __webpack_require__(24);
-var ObjectUnsubscribedError_1 = __webpack_require__(12);
-var SubjectSubscription_1 = __webpack_require__(10);
+var observeOn_1 = __webpack_require__(25);
+var ObjectUnsubscribedError_1 = __webpack_require__(13);
+var SubjectSubscription_1 = __webpack_require__(11);
 /**
  * @class ReplaySubject<T>
  */
@@ -1375,7 +1476,7 @@ var ReplayEvent = (function () {
 //# sourceMappingURL=ReplaySubject.js.map
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1421,18 +1522,18 @@ exports.SubjectSubscription = SubjectSubscription;
 //# sourceMappingURL=SubjectSubscription.js.map
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
 var Observable_1 = __webpack_require__(3);
-var take_1 = __webpack_require__(23);
+var take_1 = __webpack_require__(24);
 Observable_1.Observable.prototype.take = take_1.take;
 //# sourceMappingURL=take.js.map
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -1465,7 +1566,7 @@ exports.ObjectUnsubscribedError = ObjectUnsubscribedError;
 //# sourceMappingURL=ObjectUnsubscribedError.js.map
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -1475,7 +1576,7 @@ exports.errorObject = { e: {} };
 //# sourceMappingURL=errorObject.js.map
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -1487,7 +1588,7 @@ exports.isFunction = isFunction;
 //# sourceMappingURL=isFunction.js.map
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
@@ -1607,7 +1708,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ },
-/* 16 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -1645,7 +1746,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, FunctionUtils_1) {
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, FunctionUtils_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var genericBotUrl = 'https://so.floern.com/api/trackpost.php';
@@ -1747,7 +1848,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 
 
 /***/ },
-/* 17 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -1785,7 +1886,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1), __webpack_require__(2), __webpack_require__(6), __webpack_require__(9), __webpack_require__(11)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, Caching_1, FunctionUtils_1, Subject_1, ReplaySubject_1) {
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1), __webpack_require__(6), __webpack_require__(10), __webpack_require__(8), __webpack_require__(2), __webpack_require__(12)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, FunctionUtils_1, Subject_1, ReplaySubject_1, CrossDomainCaching_1, SimpleCache_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
@@ -1800,10 +1901,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, Caching_1.StoreInCache(MetaSmokeDisabledConfig, undefined)];
+                        case 0: return [4 /*yield*/, CrossDomainCaching_1.CrossDomainCaching.StoreInCache(MetaSmokeDisabledConfig, undefined)];
                         case 1:
                             _a.sent();
-                            return [4 /*yield*/, Caching_1.StoreInCache(MetaSmokeUserKeyConfig, undefined)];
+                            return [4 /*yield*/, CrossDomainCaching_1.CrossDomainCaching.StoreInCache(MetaSmokeUserKeyConfig, undefined)];
                         case 2:
                             _a.sent();
                             return [2 /*return*/];
@@ -1816,7 +1917,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 var cachedDisabled;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, Caching_1.GetFromCache(MetaSmokeDisabledConfig)];
+                        case 0: return [4 /*yield*/, CrossDomainCaching_1.CrossDomainCaching.GetFromCache(MetaSmokeDisabledConfig)];
                         case 1:
                             cachedDisabled = _a.sent();
                             if (cachedDisabled === undefined) {
@@ -1842,14 +1943,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                         if (isDisabled) {
                                             return [2 /*return*/];
                                         }
-                                        return [4 /*yield*/, Caching_1.GetFromCache(MetaSmokeUserKeyConfig)];
+                                        return [4 /*yield*/, CrossDomainCaching_1.CrossDomainCaching.GetFromCache(MetaSmokeUserKeyConfig)];
                                     case 2:
                                         cachedUserKey = _a.sent();
                                         if (cachedUserKey) {
                                             return [2 /*return*/, cachedUserKey];
                                         }
                                         if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, see footer of Stack Overflow.')) {
-                                            Caching_1.StoreInCache(MetaSmokeDisabledConfig, true);
+                                            CrossDomainCaching_1.CrossDomainCaching.StoreInCache(MetaSmokeDisabledConfig, true);
                                             return [2 /*return*/];
                                         }
                                         window.open(metaSmokeOAuthUrl, '_blank');
@@ -1885,7 +1986,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         };
         MetaSmokeAPI.getUserKey = function () {
             var _this = this;
-            return Caching_1.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
+            return CrossDomainCaching_1.CrossDomainCaching.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
                 var prom, code;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
@@ -1975,7 +2076,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                     var queryUrlStr = _this.postType === 'Answer'
                                         ? "//" + window.location.hostname + "/a/" + _this.postId
                                         : "//" + window.location.hostname + "/questions/" + _this.postId;
-                                    Caching_1.StoreInCache(MetaSmokeWasReportedConfig + "." + queryUrlStr, undefined);
+                                    SimpleCache_1.SimpleCache.StoreInCache(MetaSmokeWasReportedConfig + "." + queryUrlStr, undefined);
                                     _this.QueryMetaSmokey();
                                     return r;
                                 })];
@@ -2027,7 +2128,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             var urlStr = this.postType === 'Answer'
                 ? "//" + window.location.hostname + "/a/" + this.postId
                 : "//" + window.location.hostname + "/questions/" + this.postId;
-            var resultPromise = Caching_1.GetAndCache(MetaSmokeWasReportedConfig + "." + urlStr, function () { return new Promise(function (resolve, reject) {
+            var resultPromise = SimpleCache_1.SimpleCache.GetAndCache(MetaSmokeWasReportedConfig + "." + urlStr, function () { return new Promise(function (resolve, reject) {
                 MetaSmokeAPI.IsDisabled().then(function (isDisabled) {
                     if (isDisabled) {
                         return;
@@ -2085,7 +2186,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 
 
 /***/ },
-/* 18 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -2123,7 +2224,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1), __webpack_require__(41), __webpack_require__(6), __webpack_require__(9), __webpack_require__(2), __webpack_require__(11)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, Caching_1, ChatApi_1, Subject_1, ReplaySubject_1, FunctionUtils_1) {
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(42), __webpack_require__(6), __webpack_require__(10), __webpack_require__(1), __webpack_require__(2), __webpack_require__(12)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, ChatApi_1, Subject_1, ReplaySubject_1, FunctionUtils_1, SimpleCache_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
@@ -2139,7 +2240,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             this.replaySubject = new ReplaySubject_1.ReplaySubject(1);
             this.subject.subscribe(this.replaySubject);
             if (FunctionUtils_1.IsStackOverflow()) {
-                Caching_1.GetAndCache("NattyApi.Feedback." + this.answerId, function () { return new Promise(function (resolve, reject) {
+                SimpleCache_1.SimpleCache.GetAndCache("NattyApi.Feedback." + this.answerId, function () { return new Promise(function (resolve, reject) {
                     GM_xmlhttpRequest({
                         method: 'GET',
                         url: nattyFeedbackUrl + "/" + _this.answerId,
@@ -2187,7 +2288,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                             }
                             promise = this.chat.SendMessage(soboticsRoomId, "@Natty report http://stackoverflow.com/a/" + this.answerId);
                             return [4 /*yield*/, promise.then(function () {
-                                    Caching_1.StoreInCache("NattyApi.Feedback." + _this.answerId, true);
+                                    SimpleCache_1.SimpleCache.StoreInCache("NattyApi.Feedback." + _this.answerId, true);
                                     _this.subject.next(true);
                                 })];
                         case 4:
@@ -2274,7 +2375,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 
 
 /***/ },
-/* 19 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
@@ -2485,7 +2586,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ },
-/* 20 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2618,7 +2719,7 @@ exports.Notification = Notification;
 //# sourceMappingURL=Notification.js.map
 
 /***/ },
-/* 21 */
+/* 22 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -2673,7 +2774,7 @@ exports.Scheduler = Scheduler;
 //# sourceMappingURL=Scheduler.js.map
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2760,12 +2861,12 @@ exports.EmptyObservable = EmptyObservable;
 //# sourceMappingURL=EmptyObservable.js.map
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
-var take_1 = __webpack_require__(25);
+var take_1 = __webpack_require__(26);
 /**
  * Emits only the first `count` values emitted by the source Observable.
  *
@@ -2806,7 +2907,7 @@ exports.take = take;
 //# sourceMappingURL=take.js.map
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2817,7 +2918,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var Subscriber_1 = __webpack_require__(4);
-var Notification_1 = __webpack_require__(20);
+var Notification_1 = __webpack_require__(21);
 /**
  *
  * Re-emits all notifications from source Observable with specified scheduler.
@@ -2927,7 +3028,7 @@ exports.ObserveOnMessage = ObserveOnMessage;
 //# sourceMappingURL=observeOn.js.map
 
 /***/ },
-/* 25 */
+/* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2938,8 +3039,8 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var Subscriber_1 = __webpack_require__(4);
-var ArgumentOutOfRangeError_1 = __webpack_require__(33);
-var EmptyObservable_1 = __webpack_require__(22);
+var ArgumentOutOfRangeError_1 = __webpack_require__(34);
+var EmptyObservable_1 = __webpack_require__(23);
 /**
  * Emits only the first `count` values emitted by the source Observable.
  *
@@ -3024,7 +3125,7 @@ var TakeSubscriber = (function (_super) {
 //# sourceMappingURL=take.js.map
 
 /***/ },
-/* 26 */
+/* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3074,7 +3175,7 @@ exports.Action = Action;
 //# sourceMappingURL=Action.js.map
 
 /***/ },
-/* 27 */
+/* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3085,7 +3186,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var root_1 = __webpack_require__(5);
-var Action_1 = __webpack_require__(26);
+var Action_1 = __webpack_require__(27);
 /**
  * We need this JSDoc comment for affecting ESDoc.
  * @ignore
@@ -3222,7 +3323,7 @@ exports.AsyncAction = AsyncAction;
 //# sourceMappingURL=AsyncAction.js.map
 
 /***/ },
-/* 28 */
+/* 29 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3232,7 +3333,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var Scheduler_1 = __webpack_require__(21);
+var Scheduler_1 = __webpack_require__(22);
 var AsyncScheduler = (function (_super) {
     __extends(AsyncScheduler, _super);
     function AsyncScheduler() {
@@ -3279,7 +3380,7 @@ exports.AsyncScheduler = AsyncScheduler;
 //# sourceMappingURL=AsyncScheduler.js.map
 
 /***/ },
-/* 29 */
+/* 30 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3289,7 +3390,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var AsyncAction_1 = __webpack_require__(27);
+var AsyncAction_1 = __webpack_require__(28);
 /**
  * We need this JSDoc comment for affecting ESDoc.
  * @ignore
@@ -3334,7 +3435,7 @@ exports.QueueAction = QueueAction;
 //# sourceMappingURL=QueueAction.js.map
 
 /***/ },
-/* 30 */
+/* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3344,7 +3445,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var AsyncScheduler_1 = __webpack_require__(28);
+var AsyncScheduler_1 = __webpack_require__(29);
 var QueueScheduler = (function (_super) {
     __extends(QueueScheduler, _super);
     function QueueScheduler() {
@@ -3356,13 +3457,13 @@ exports.QueueScheduler = QueueScheduler;
 //# sourceMappingURL=QueueScheduler.js.map
 
 /***/ },
-/* 31 */
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
-var QueueAction_1 = __webpack_require__(29);
-var QueueScheduler_1 = __webpack_require__(30);
+var QueueAction_1 = __webpack_require__(30);
+var QueueScheduler_1 = __webpack_require__(31);
 /**
  *
  * Queue Scheduler
@@ -3428,7 +3529,7 @@ exports.queue = new QueueScheduler_1.QueueScheduler(QueueAction_1.QueueAction);
 //# sourceMappingURL=queue.js.map
 
 /***/ },
-/* 32 */
+/* 33 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3460,7 +3561,7 @@ exports.$$observable = exports.observable;
 //# sourceMappingURL=observable.js.map
 
 /***/ },
-/* 33 */
+/* 34 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -3494,7 +3595,7 @@ exports.ArgumentOutOfRangeError = ArgumentOutOfRangeError;
 //# sourceMappingURL=ArgumentOutOfRangeError.js.map
 
 /***/ },
-/* 34 */
+/* 35 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -3525,7 +3626,7 @@ exports.UnsubscriptionError = UnsubscriptionError;
 //# sourceMappingURL=UnsubscriptionError.js.map
 
 /***/ },
-/* 35 */
+/* 36 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -3534,7 +3635,7 @@ exports.isArray = Array.isArray || (function (x) { return x && typeof x.length =
 //# sourceMappingURL=isArray.js.map
 
 /***/ },
-/* 36 */
+/* 37 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -3546,7 +3647,7 @@ exports.isObject = isObject;
 //# sourceMappingURL=isObject.js.map
 
 /***/ },
-/* 37 */
+/* 38 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -3557,12 +3658,12 @@ exports.noop = noop;
 //# sourceMappingURL=noop.js.map
 
 /***/ },
-/* 38 */
+/* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
-var noop_1 = __webpack_require__(37);
+var noop_1 = __webpack_require__(38);
 /* tslint:enable:max-line-length */
 function pipe() {
     var fns = [];
@@ -3588,14 +3689,14 @@ exports.pipeFromArray = pipeFromArray;
 //# sourceMappingURL=pipe.js.map
 
 /***/ },
-/* 39 */
+/* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
 var Subscriber_1 = __webpack_require__(4);
 var rxSubscriber_1 = __webpack_require__(7);
-var Observer_1 = __webpack_require__(8);
+var Observer_1 = __webpack_require__(9);
 function toSubscriber(nextOrObserver, error, complete) {
     if (nextOrObserver) {
         if (nextOrObserver instanceof Subscriber_1.Subscriber) {
@@ -3614,12 +3715,12 @@ exports.toSubscriber = toSubscriber;
 //# sourceMappingURL=toSubscriber.js.map
 
 /***/ },
-/* 40 */
+/* 41 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
-var errorObject_1 = __webpack_require__(13);
+var errorObject_1 = __webpack_require__(14);
 var tryCatchTarget;
 function tryCatcher() {
     try {
@@ -3639,10 +3740,10 @@ exports.tryCatch = tryCatch;
 //# sourceMappingURL=tryCatch.js.map
 
 /***/ },
-/* 41 */
+/* 42 */
 /***/ function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, Caching_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, SimpleCache_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var ChatApi = /** @class */ (function () {
@@ -3666,7 +3767,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
             var expiryDate = new Date();
             expiryDate.setDate(expiryDate.getDate() + 1);
-            return Caching_1.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate);
+            return SimpleCache_1.SimpleCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate);
         };
         ChatApi.prototype.SendMessage = function (roomId, message, providedFkey) {
             var _this = this;
@@ -3695,7 +3796,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ },
-/* 42 */
+/* 43 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -3733,7 +3834,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(17), __webpack_require__(15), __webpack_require__(18), __webpack_require__(1), __webpack_require__(2), __webpack_require__(19), __webpack_require__(16)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, MetaSmokeAPI_1, FlagTypes_1, NattyApi_1, Caching_1, FunctionUtils_1, StackExchangeWebParser_1, GenericBotAPI_1) {
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(18), __webpack_require__(16), __webpack_require__(19), __webpack_require__(1), __webpack_require__(20), __webpack_require__(17), __webpack_require__(8), __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, MetaSmokeAPI_1, FlagTypes_1, NattyApi_1, FunctionUtils_1, StackExchangeWebParser_1, GenericBotAPI_1, CrossDomainCaching_1, SimpleCache_1) {
     "use strict";
     var _this = this;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -3748,63 +3849,53 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         target.appendChild(scriptNode);
     }
     function handleFlagAndComment(postId, flag, commentRequired, userReputation) {
-        return __awaiter(this, void 0, void 0, function () {
-            var result, commentText_1, comments, i, wasFlagged;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        result = {};
-                        if (commentRequired) {
-                            commentText_1 = null;
-                            if (flag.Comment) {
-                                commentText_1 = flag.Comment;
-                            }
-                            else if (flag.Comments) {
-                                comments = flag.Comments;
-                                comments.sort(function (a, b) { return b.ReputationLimit - a.ReputationLimit; });
-                                for (i = 0; i < comments.length; i++) {
-                                    if (userReputation === undefined || comments[i].ReputationLimit <= userReputation) {
-                                        commentText_1 = comments[i].Comment;
-                                        break;
-                                    }
-                                }
-                            }
-                            if (commentText_1) {
-                                result.CommentPromise = new Promise(function (resolve, reject) {
-                                    $.ajax({
-                                        url: "//stackoverflow.com/posts/" + postId + "/comments",
-                                        type: 'POST',
-                                        data: { fkey: StackExchange.options.user.fkey, comment: commentText_1 }
-                                    }).done(function (data) {
-                                        resolve(data);
-                                    }).fail(function (jqXHR, textStatus, errorThrown) {
-                                        reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
-                                    });
-                                });
-                            }
-                        }
-                        if (!(flag.ReportType !== 'NoFlag')) return [3 /*break*/, 2];
-                        return [4 /*yield*/, Caching_1.GetFromCache("AdvancedFlagging.Flagged." + postId)];
-                    case 1:
-                        wasFlagged = _a.sent();
-                        if (!wasFlagged) {
-                            result.FlagPromise = new Promise(function (resolve, reject) {
-                                $.ajax({
-                                    url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
-                                    type: 'POST',
-                                    data: { fkey: StackExchange.options.user.fkey, otherText: '' }
-                                }).done(function (data) {
-                                    resolve(data);
-                                }).fail(function (jqXHR, textStatus, errorThrown) {
-                                    reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
-                                });
-                            });
-                        }
-                        _a.label = 2;
-                    case 2: return [2 /*return*/, result];
+        var result = {};
+        if (commentRequired) {
+            var commentText_1 = null;
+            if (flag.Comment) {
+                commentText_1 = flag.Comment;
+            }
+            else if (flag.Comments) {
+                var comments = flag.Comments;
+                comments.sort(function (a, b) { return b.ReputationLimit - a.ReputationLimit; });
+                for (var i = 0; i < comments.length; i++) {
+                    if (userReputation === undefined || comments[i].ReputationLimit <= userReputation) {
+                        commentText_1 = comments[i].Comment;
+                        break;
+                    }
                 }
-            });
-        });
+            }
+            if (commentText_1) {
+                result.CommentPromise = new Promise(function (resolve, reject) {
+                    $.ajax({
+                        url: "//stackoverflow.com/posts/" + postId + "/comments",
+                        type: 'POST',
+                        data: { fkey: StackExchange.options.user.fkey, comment: commentText_1 }
+                    }).done(function (data) {
+                        resolve(data);
+                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                        reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                    });
+                });
+            }
+        }
+        if (flag.ReportType !== 'NoFlag') {
+            var wasFlagged = SimpleCache_1.SimpleCache.GetFromCache("AdvancedFlagging.Flagged." + postId);
+            if (!wasFlagged) {
+                result.FlagPromise = new Promise(function (resolve, reject) {
+                    $.ajax({
+                        url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
+                        type: 'POST',
+                        data: { fkey: StackExchange.options.user.fkey, otherText: '' }
+                    }).done(function (data) {
+                        resolve(data);
+                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                        reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                    });
+                });
+            }
+        }
+        return result;
     }
     var popupWrapper = $('<div>').addClass('hide').attr('id', 'snackbar');
     var popupDelay = 2000;
@@ -3840,7 +3931,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         displayToaster(message, '#ba1701');
     }
     function BuildFlaggingDialog(element, postId, postType, reputation, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters) {
-        var _this = this;
         var getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
         var linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
         var dropDown = $('<dl />').css({
@@ -3881,80 +3971,68 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     dropdownItem.css(flagCategory.BoxStyle);
                 }
                 var reportLink = $('<a />').css(linkStyle);
-                reportLink.click(function () { return __awaiter(_this, void 0, void 0, function () {
-                    var result, err_1, noFlag, rudeFlag, naaFlag, _loop_1, i;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                if (!!deleted) return [3 /*break*/, 4];
-                                _a.label = 1;
-                            case 1:
-                                _a.trys.push([1, 3, , 4]);
-                                return [4 /*yield*/, handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation)];
-                            case 2:
-                                result = _a.sent();
-                                if (result.CommentPromise) {
-                                    result.CommentPromise.then(function (data) {
-                                        var commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
-                                        commentUI.addShow(true, false);
-                                        commentUI.showComments(data, null, false, true);
-                                        $(document).trigger('comment', postId);
-                                    }).catch(function (err) { return displayError('Failed to comment on post'); });
-                                }
-                                if (result.FlagPromise) {
-                                    result.FlagPromise.then(function () {
-                                        Caching_1.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType);
-                                        reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
-                                        reportedIcon.show();
-                                    }).catch(function (err) { return displayError('Failed to flag post'); });
-                                }
-                                return [3 /*break*/, 4];
-                            case 3:
-                                err_1 = _a.sent();
-                                displayError(err_1);
-                                return [3 /*break*/, 4];
-                            case 4:
-                                noFlag = flagType.ReportType === 'NoFlag';
-                                if (noFlag) {
-                                    Caching_1.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType);
-                                    performedActionIcon.attr('title', "Performed action: " + flagType.DisplayName);
-                                    performedActionIcon.show();
-                                }
-                                rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
-                                naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
-                                _loop_1 = function (i) {
-                                    var reporter = reporters[i];
-                                    var promise = null;
-                                    if (rudeFlag) {
-                                        promise = reporter.ReportRedFlag();
-                                    }
-                                    else if (naaFlag) {
-                                        promise = reporter.ReportNaa(answerTime, questionTime);
-                                    }
-                                    else if (noFlag) {
-                                        promise =
-                                            flagType.DisplayName === 'Needs Editing'
-                                                ? reporter.ReportNeedsEditing()
-                                                : reporter.ReportLooksFine();
-                                    }
-                                    if (promise) {
-                                        promise.then(function (didReport) {
-                                            if (didReport) {
-                                                displaySuccess("Feedback sent to " + reporter.name);
-                                            }
-                                        }).catch(function (error) {
-                                            displayError("Failed to send feedback to " + reporter.name + ".");
-                                        });
-                                    }
-                                };
-                                for (i = 0; i < reporters.length; i++) {
-                                    _loop_1(i);
-                                }
-                                dropDown.hide();
-                                return [2 /*return*/];
+                reportLink.click(function () {
+                    if (!deleted) {
+                        try {
+                            var result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation);
+                            if (result.CommentPromise) {
+                                result.CommentPromise.then(function (data) {
+                                    var commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
+                                    commentUI.addShow(true, false);
+                                    commentUI.showComments(data, null, false, true);
+                                    $(document).trigger('comment', postId);
+                                }).catch(function (err) { return displayError('Failed to comment on post'); });
+                            }
+                            if (result.FlagPromise) {
+                                result.FlagPromise.then(function () {
+                                    SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType);
+                                    reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
+                                    reportedIcon.show();
+                                }).catch(function (err) { return displayError('Failed to flag post'); });
+                            }
                         }
-                    });
-                }); });
+                        catch (err) {
+                            displayError(err);
+                        }
+                    }
+                    var noFlag = flagType.ReportType === 'NoFlag';
+                    if (noFlag) {
+                        SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType);
+                        performedActionIcon.attr('title', "Performed action: " + flagType.DisplayName);
+                        performedActionIcon.show();
+                    }
+                    var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
+                    var naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
+                    var _loop_1 = function (i) {
+                        var reporter = reporters[i];
+                        var promise = null;
+                        if (rudeFlag) {
+                            promise = reporter.ReportRedFlag();
+                        }
+                        else if (naaFlag) {
+                            promise = reporter.ReportNaa(answerTime, questionTime);
+                        }
+                        else if (noFlag) {
+                            promise =
+                                flagType.DisplayName === 'Needs Editing'
+                                    ? reporter.ReportNeedsEditing()
+                                    : reporter.ReportLooksFine();
+                        }
+                        if (promise) {
+                            promise.then(function (didReport) {
+                                if (didReport) {
+                                    displaySuccess("Feedback sent to " + reporter.name);
+                                }
+                            }).catch(function (error) {
+                                displayError("Failed to send feedback to " + reporter.name + ".");
+                            });
+                        }
+                    };
+                    for (var i = 0; i < reporters.length; i++) {
+                        _loop_1(i);
+                    }
+                    dropDown.hide();
+                });
                 reportLink.text(flagType.DisplayName);
                 dropdownItem.append(reportLink);
                 dropDown.append(dropdownItem);
@@ -4082,20 +4160,16 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 iconLocation.after(performedActionIcon);
                 showFunc = function (element) { return element.css('display', 'inline-block'); };
             }
-            var previousFlagPromise = Caching_1.GetFromCache("AdvancedFlagging.Flagged." + post.postId);
-            previousFlagPromise.then(function (previousFlag) {
-                if (previousFlag) {
-                    reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
-                    showFunc(reportedIcon);
-                }
-            });
-            var previousPerformedActionPromise = Caching_1.GetFromCache("AdvancedFlagging.PerformedAction." + post.postId);
-            previousPerformedActionPromise.then(function (previousAction) {
-                if (previousAction && previousAction.ReportType === 'NoFlag') {
-                    performedActionIcon.attr('title', "Previously performed action: " + previousAction.DisplayName);
-                    showFunc(performedActionIcon);
-                }
-            });
+            var previousFlag = SimpleCache_1.SimpleCache.GetFromCache("AdvancedFlagging.Flagged." + post.postId);
+            if (previousFlag) {
+                reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
+                showFunc(reportedIcon);
+            }
+            var previousAction = SimpleCache_1.SimpleCache.GetFromCache("AdvancedFlagging.PerformedAction." + post.postId);
+            if (previousAction && previousAction.ReportType === 'NoFlag') {
+                performedActionIcon.attr('title', "Previously performed action: " + previousAction.DisplayName);
+                showFunc(performedActionIcon);
+            }
         };
         for (var i = 0; i < results.Posts.length; i++) {
             _loop_2(i);
@@ -4155,20 +4229,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             MetaSmokeAPI_1.MetaSmokeAPI.Reset();
             location.reload();
         });
-        var clearAllCachedInfo = $('<a />').text('Clear all cached info');
-        clearAllCachedInfo.click(function () {
-            Caching_1.ClearCache();
-            location.reload();
-        });
         optionsDiv.append(optionsList);
         optionsList.append($('<li>').append(clearMetaSmokeConfig));
-        optionsList.append($('<li>').append(clearAllCachedInfo));
     }
     $(function () { return __awaiter(_this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    Caching_1.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
+                    CrossDomainCaching_1.CrossDomainCaching.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
                     return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(metaSmokeKey)];
                 case 1:
                     _a.sent();

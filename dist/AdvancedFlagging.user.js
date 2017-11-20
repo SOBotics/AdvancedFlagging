@@ -3772,7 +3772,7 @@ exports.tryCatch = tryCatch;
 /* 43 */
 /***/ function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(18), __webpack_require__(20), __webpack_require__(19), __webpack_require__(6), __webpack_require__(17), __webpack_require__(9), __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, metasmokeapi_1, FlagTypes_1, nattyapi_1, sotools_1, genericbotapi_1, CrossDomainCache_1, SimpleCache_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(18), __webpack_require__(20), __webpack_require__(19), __webpack_require__(6), __webpack_require__(17), __webpack_require__(9), __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, MetaSmokeApi_1, FlagTypes_1, NattyAPI_1, sotools_1, GenericBotAPI_1, CrossDomainCache_1, SimpleCache_1) {
     "use strict";
     var _this = this;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -4009,7 +4009,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             var smokeyIcon = getSmokeyIcon();
             var reporters = [];
             if (post.type === 'Answer') {
-                var nattyApi_1 = new nattyapi_1.NattyAPI(post.postId);
+                var nattyApi_1 = new NattyAPI_1.NattyAPI(post.postId);
                 nattyApi_1.Watch()
                     .subscribe(function (reported) {
                     if (reported) {
@@ -4026,7 +4026,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     ReportLooksFine: function () { return nattyApi_1.ReportLooksFine(); },
                     ReportNeedsEditing: function () { return nattyApi_1.ReportNeedsEditing(); }
                 });
-                var genericBotAPI_1 = new genericbotapi_1.GenericBotAPI(post.postId);
+                var genericBotAPI_1 = new GenericBotAPI_1.GenericBotAPI(post.postId);
                 reporters.push({
                     name: 'Generic Bot',
                     ReportNaa: function (answerDate, questionDate) { return genericBotAPI_1.ReportNaa(); },
@@ -4035,7 +4035,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     ReportNeedsEditing: function () { return genericBotAPI_1.ReportNeedsEditing(); }
                 });
             }
-            var metaSmoke = new metasmokeapi_1.MetaSmokeAPI(post.postId, post.type);
+            var metaSmoke = new MetaSmokeApi_1.MetaSmokeAPI(post.postId, post.type);
             metaSmoke.Watch()
                 .subscribe(function (id) {
                 if (id !== null) {
@@ -4164,7 +4164,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         var optionsList = $('<ul>').css({ 'list-style': 'none' });
         var clearMetaSmokeConfig = $('<a />').text('Clear Metasmoke Configuration');
         clearMetaSmokeConfig.click(function () {
-            metasmokeapi_1.MetaSmokeAPI.Reset();
+            MetaSmokeApi_1.MetaSmokeAPI.Reset();
             location.reload();
         });
         optionsDiv.append(optionsList);
@@ -4175,7 +4175,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             switch (_a.label) {
                 case 0:
                     CrossDomainCache_1.CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
-                    return [4 /*yield*/, metasmokeapi_1.MetaSmokeAPI.Setup(metaSmokeKey)];
+                    return [4 /*yield*/, MetaSmokeApi_1.MetaSmokeAPI.Setup(metaSmokeKey)];
                 case 1:
                     _a.sent();
                     SetupPostPage();

@@ -2154,7 +2154,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         MetaSmokeAPI.prototype.ReportRedFlag = function () {
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 var _this = this;
-                var smokeyid, urlStr_1, promise, result;
+                var smokeyid, urlStr_1, promise, result, queryUrlStr;
                 return tslib_1.__generator(this, function (_a) {
                     switch (_a.label) {
                         case 0: return [4 /*yield*/, this.GetSmokeyId()];
@@ -2169,34 +2169,38 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             urlStr_1 = this.postType === 'Answer'
                                 ? "//" + window.location.hostname + "/a/" + this.postId
                                 : "//" + window.location.hostname + "/q/" + this.postId;
-                            promise = new Promise(function (resolve, reject) {
-                                MetaSmokeAPI.getUserKey().then(function (userKey) {
-                                    if (userKey) {
-                                        $.ajax({
-                                            type: 'POST',
-                                            url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
-                                            data: {
-                                                post_link: urlStr_1,
-                                                key: MetaSmokeAPI.appKey,
-                                                token: userKey
+                            promise = new Promise(function (resolve, reject) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+                                var userKey;
+                                return tslib_1.__generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0: return [4 /*yield*/, MetaSmokeAPI.getUserKey()];
+                                        case 1:
+                                            userKey = _a.sent();
+                                            if (userKey) {
+                                                $.ajax({
+                                                    type: 'POST',
+                                                    url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
+                                                    data: {
+                                                        post_link: urlStr_1,
+                                                        key: MetaSmokeAPI.appKey,
+                                                        token: userKey
+                                                    }
+                                                }).done(function () { return resolve(true); })
+                                                    .fail(function () { return reject(); });
                                             }
-                                        }).done(function () { return resolve(); })
-                                            .fail(function () { return reject(); });
-                                        return true;
+                                            return [2 /*return*/];
                                     }
-                                    return false;
                                 });
-                            });
-                            return [4 /*yield*/, promise.then(function (r) {
-                                    var queryUrlStr = _this.postType === 'Answer'
-                                        ? "//" + window.location.hostname + "/a/" + _this.postId
-                                        : "//" + window.location.hostname + "/questions/" + _this.postId;
-                                    SimpleCache_1.SimpleCache.StoreInCache(MetaSmokeWasReportedConfig + "." + queryUrlStr, undefined);
-                                    _this.QueryMetaSmokey();
-                                    return r;
-                                })];
+                            }); });
+                            return [4 /*yield*/, promise];
                         case 4:
                             result = _a.sent();
+                            queryUrlStr = this.GetQueryUrl();
+                            SimpleCache_1.SimpleCache.StoreInCache(MetaSmokeWasReportedConfig + "." + queryUrlStr, undefined);
+                            return [4 /*yield*/, Delay(1000)];
+                        case 5:
+                            _a.sent();
+                            this.QueryMetaSmokey();
                             return [2 /*return*/, result];
                     }
                 });
@@ -2256,11 +2260,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
             });
         };
-        MetaSmokeAPI.prototype.QueryMetaSmokey = function () {
-            var _this = this;
-            var urlStr = this.postType === 'Answer'
+        MetaSmokeAPI.prototype.GetQueryUrl = function () {
+            return this.postType === 'Answer'
                 ? "//" + window.location.hostname + "/a/" + this.postId
                 : "//" + window.location.hostname + "/questions/" + this.postId;
+        };
+        MetaSmokeAPI.prototype.QueryMetaSmokey = function () {
+            var _this = this;
+            var urlStr = this.GetQueryUrl();
             var resultPromise = SimpleCache_1.SimpleCache.GetAndCache(MetaSmokeWasReportedConfig + "." + urlStr, function () { return new Promise(function (resolve, reject) {
                 MetaSmokeAPI.IsDisabled().then(function (isDisabled) {
                     if (isDisabled) {

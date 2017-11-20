@@ -1,7 +1,7 @@
 import * as jquery from 'jquery';
-import { MetaSmokeAPI } from '@sobotics/metasmokeapi/dist/MetaSmokeApi';
+import { MetaSmokeAPI } from '@sobotics/metasmokeapi/dist/MetaSmokeAPI';
 import { FlagType, flagCategories } from './FlagTypes';
-import { NattyAPI } from '@sobotics/nattyapi/dist/NattyAPI';
+import { NattyAPI } from '@sobotics/nattyapi/dist/NattyApi';
 
 import { IsStackOverflow, parseQuestionsAndAnswers } from '@sobotics/sotools/dist/sotools';
 import { StackExchangeGlobal } from '@sobotics/sotools/dist/StackExchangeConfiguration';

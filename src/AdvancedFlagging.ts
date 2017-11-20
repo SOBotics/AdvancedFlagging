@@ -7,7 +7,7 @@ import { Delay, IsStackOverflow } from './libs/FunctionUtils';
 import { StackExchangeGlobal } from './libs/StackExchangeWeb/StackExchangeOptions';
 import { parseCurrentPage } from './libs/StackExchangeWeb/StackExchangeWebParser';
 import { GenericBotAPI } from './libs/GenericBotAPI';
-import { CrossDomainCaching } from './libs/CrossDomainCaching';
+import { CrossDomainCache } from './libs/CrossDomainCache';
 import { SimpleCache } from './libs/SimpleCache';
 // tslint:disable-next-line:no-debugger
 debugger;
@@ -506,7 +506,7 @@ function SetupAdminTools() {
 }
 
 $(async () => {
-    CrossDomainCaching.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
+    CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
     await MetaSmokeAPI.Setup(metaSmokeKey);
 
     SetupPostPage();

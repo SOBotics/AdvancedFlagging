@@ -375,7 +375,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     switch (_a.label) {
                         case 0:
                             cachedItem = SimpleCache.GetFromCache(cacheKey);
-                            if (cachedItem !== null) {
+                            if (cachedItem !== undefined) {
                                 return [2 /*return*/, cachedItem];
                             }
                             return [4 /*yield*/, getterPromise()];
@@ -388,34 +388,22 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             });
         };
         SimpleCache.ClearCache = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    localStorage.clear();
-                    return [2 /*return*/];
-                });
-            });
+            localStorage.clear();
         };
         SimpleCache.GetFromCache = function (cacheKey) {
             var jsonItem = localStorage.getItem(cacheKey);
-            if (jsonItem === null) {
-                return null;
+            if (!jsonItem) {
+                return undefined;
             }
             var dataItem = JSON.parse(jsonItem);
             if ((dataItem.Expires && dataItem.Expires < new Date())) {
-                // It doesn't exist or is expired, so return nothing
-                return null;
+                return undefined;
             }
             return dataItem.Data;
         };
         SimpleCache.StoreInCache = function (cacheKey, item, expiresAt) {
-            return __awaiter(this, void 0, void 0, function () {
-                var jsonStr;
-                return __generator(this, function (_a) {
-                    jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
-                    localStorage.setItem(cacheKey, jsonStr);
-                    return [2 /*return*/];
-                });
-            });
+            var jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
+            localStorage.setItem(cacheKey, jsonStr);
         };
         return SimpleCache;
     }());
@@ -1261,18 +1249,18 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var CrossDomainCaching = /** @class */ (function () {
-        function CrossDomainCaching() {
+    var CrossDomainCache = /** @class */ (function () {
+        function CrossDomainCache() {
         }
-        CrossDomainCaching.InitializeCache = function (iframeUrl) {
+        CrossDomainCache.InitializeCache = function (iframeUrl) {
             xdLocalStorage.init({
                 iframeUrl: iframeUrl,
                 initCallback: function () {
-                    CrossDomainCaching.xdLocalStorageInitializedResolver();
+                    CrossDomainCache.xdLocalStorageInitializedResolver();
                 }
             });
         };
-        CrossDomainCaching.GetAndCache = function (cacheKey, getterPromise, expiresAt) {
+        CrossDomainCache.GetAndCache = function (cacheKey, getterPromise, expiresAt) {
             return __awaiter(this, void 0, void 0, function () {
                 var cachedItem, result;
                 return __generator(this, function (_a) {
@@ -1292,11 +1280,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 });
             });
         };
-        CrossDomainCaching.ClearCache = function () {
+        CrossDomainCache.ClearCache = function () {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCaching.xdLocalStorageInitialized];
+                        case 0: return [4 /*yield*/, CrossDomainCache.xdLocalStorageInitialized];
                         case 1:
                             _a.sent();
                             xdLocalStorage.clear();
@@ -1305,19 +1293,21 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 });
             });
         };
-        CrossDomainCaching.GetFromCache = function (cacheKey) {
+        CrossDomainCache.GetFromCache = function (cacheKey) {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCaching.xdLocalStorageInitialized];
+                        case 0: return [4 /*yield*/, CrossDomainCache.xdLocalStorageInitialized];
                         case 1:
                             _a.sent();
                             return [2 /*return*/, new Promise(function (resolve, reject) {
-                                    CrossDomainCaching.xdLocalStorageInitialized.then(function () {
+                                    CrossDomainCache.xdLocalStorageInitialized.then(function () {
                                         xdLocalStorage.getItem(cacheKey, function (data) {
+                                            if (!data.value) {
+                                                resolve();
+                                            }
                                             var actualItem = JSON.parse(data.value);
-                                            if (!actualItem || (actualItem.Expires && actualItem.Expires < new Date())) {
-                                                // It doesn't exist or is expired, so return nothing
+                                            if (actualItem.Expires && actualItem.Expires < new Date()) {
                                                 resolve();
                                                 return;
                                             }
@@ -1329,12 +1319,12 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 });
             });
         };
-        CrossDomainCaching.StoreInCache = function (cacheKey, item, expiresAt) {
+        CrossDomainCache.StoreInCache = function (cacheKey, item, expiresAt) {
             return __awaiter(this, void 0, void 0, function () {
                 var jsonStr;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCaching.xdLocalStorageInitialized];
+                        case 0: return [4 /*yield*/, CrossDomainCache.xdLocalStorageInitialized];
                         case 1:
                             _a.sent();
                             jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
@@ -1344,12 +1334,12 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 });
             });
         };
-        CrossDomainCaching.xdLocalStorageInitialized = new Promise(function (resolve, reject) { return CrossDomainCaching.xdLocalStorageInitializedResolver = resolve; });
+        CrossDomainCache.xdLocalStorageInitialized = new Promise(function (resolve, reject) { return CrossDomainCache.xdLocalStorageInitializedResolver = resolve; });
         // tslint:disable-next-line:no-empty
-        CrossDomainCaching.xdLocalStorageInitializedResolver = function () { };
-        return CrossDomainCaching;
+        CrossDomainCache.xdLocalStorageInitializedResolver = function () { };
+        return CrossDomainCache;
     }());
-    exports.CrossDomainCaching = CrossDomainCaching;
+    exports.CrossDomainCache = CrossDomainCache;
 }.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
@@ -1886,7 +1876,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1), __webpack_require__(6), __webpack_require__(10), __webpack_require__(8), __webpack_require__(2), __webpack_require__(12)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, FunctionUtils_1, Subject_1, ReplaySubject_1, CrossDomainCaching_1, SimpleCache_1) {
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1), __webpack_require__(6), __webpack_require__(10), __webpack_require__(8), __webpack_require__(2), __webpack_require__(12)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, FunctionUtils_1, Subject_1, ReplaySubject_1, CrossDomainCache_1, SimpleCache_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
@@ -1901,10 +1891,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCaching_1.CrossDomainCaching.StoreInCache(MetaSmokeDisabledConfig, undefined)];
+                        case 0: return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.StoreInCache(MetaSmokeDisabledConfig, undefined)];
                         case 1:
                             _a.sent();
-                            return [4 /*yield*/, CrossDomainCaching_1.CrossDomainCaching.StoreInCache(MetaSmokeUserKeyConfig, undefined)];
+                            return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.StoreInCache(MetaSmokeUserKeyConfig, undefined)];
                         case 2:
                             _a.sent();
                             return [2 /*return*/];
@@ -1917,7 +1907,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 var cachedDisabled;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCaching_1.CrossDomainCaching.GetFromCache(MetaSmokeDisabledConfig)];
+                        case 0: return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.GetFromCache(MetaSmokeDisabledConfig)];
                         case 1:
                             cachedDisabled = _a.sent();
                             if (cachedDisabled === undefined) {
@@ -1943,14 +1933,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                         if (isDisabled) {
                                             return [2 /*return*/];
                                         }
-                                        return [4 /*yield*/, CrossDomainCaching_1.CrossDomainCaching.GetFromCache(MetaSmokeUserKeyConfig)];
+                                        return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.GetFromCache(MetaSmokeUserKeyConfig)];
                                     case 2:
                                         cachedUserKey = _a.sent();
                                         if (cachedUserKey) {
                                             return [2 /*return*/, cachedUserKey];
                                         }
                                         if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, see footer of Stack Overflow.')) {
-                                            CrossDomainCaching_1.CrossDomainCaching.StoreInCache(MetaSmokeDisabledConfig, true);
+                                            CrossDomainCache_1.CrossDomainCache.StoreInCache(MetaSmokeDisabledConfig, true);
                                             return [2 /*return*/];
                                         }
                                         window.open(metaSmokeOAuthUrl, '_blank');
@@ -1986,7 +1976,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         };
         MetaSmokeAPI.getUserKey = function () {
             var _this = this;
-            return CrossDomainCaching_1.CrossDomainCaching.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
+            return CrossDomainCache_1.CrossDomainCache.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
                 var prom, code;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
@@ -3834,7 +3824,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(18), __webpack_require__(16), __webpack_require__(19), __webpack_require__(1), __webpack_require__(20), __webpack_require__(17), __webpack_require__(8), __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, MetaSmokeAPI_1, FlagTypes_1, NattyApi_1, FunctionUtils_1, StackExchangeWebParser_1, GenericBotAPI_1, CrossDomainCaching_1, SimpleCache_1) {
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(18), __webpack_require__(16), __webpack_require__(19), __webpack_require__(1), __webpack_require__(20), __webpack_require__(17), __webpack_require__(8), __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, MetaSmokeAPI_1, FlagTypes_1, NattyApi_1, FunctionUtils_1, StackExchangeWebParser_1, GenericBotAPI_1, CrossDomainCache_1, SimpleCache_1) {
     "use strict";
     var _this = this;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -4236,7 +4226,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    CrossDomainCaching_1.CrossDomainCaching.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
+                    CrossDomainCache_1.CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
                     return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(metaSmokeKey)];
                 case 1:
                     _a.sent();

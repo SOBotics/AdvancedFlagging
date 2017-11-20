@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.3.0
+// @version      0.3.1
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -16,7 +16,6 @@
 // @exclude      *://blog.stackoverflow.com/*
 // @exclude      *://*.area51.stackexchange.com/*
 // @require      https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js
-// @require      https://cdn.rawgit.com/ofirdagan/cross-domain-local-storage/d779a81a6383475a1bf88595a98b10a8bd5bb4ae/dist/scripts/xdLocalStorage.min.js
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
 /******/ (function(modules) { // webpackBootstrap
@@ -82,7 +81,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 43);
+/******/ 	return __webpack_require__(__webpack_require__.s = 44);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -281,12 +280,12 @@ function __makeTemplateObject(cooked, raw) {
 
 "use strict";
 "use strict";
-var isArray_1 = __webpack_require__(37);
-var isObject_1 = __webpack_require__(38);
+var isArray_1 = __webpack_require__(38);
+var isObject_1 = __webpack_require__(39);
 var isFunction_1 = __webpack_require__(16);
-var tryCatch_1 = __webpack_require__(42);
+var tryCatch_1 = __webpack_require__(43);
 var errorObject_1 = __webpack_require__(15);
-var UnsubscriptionError_1 = __webpack_require__(36);
+var UnsubscriptionError_1 = __webpack_require__(37);
 /**
  * Represents a disposable resource, such as the execution of an Observable. A
  * Subscription has one important method, `unsubscribe`, that takes no argument
@@ -534,9 +533,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 "use strict";
 "use strict";
 var root_1 = __webpack_require__(5);
-var toSubscriber_1 = __webpack_require__(41);
-var observable_1 = __webpack_require__(34);
-var pipe_1 = __webpack_require__(40);
+var toSubscriber_1 = __webpack_require__(42);
+var observable_1 = __webpack_require__(35);
+var pipe_1 = __webpack_require__(41);
 /**
  * A representation of any set of values over any amount of time. This is the most basic building block
  * of RxJS.
@@ -1538,18 +1537,20 @@ exports.$$rxSubscriber = exports.rxSubscriber;
 /* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(21)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, XdLocalStorage_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var CrossDomainCache = /** @class */ (function () {
         function CrossDomainCache() {
         }
         CrossDomainCache.InitializeCache = function (iframeUrl) {
-            xdLocalStorage.init({
-                iframeUrl: iframeUrl,
-                initCallback: function () {
-                    CrossDomainCache.xdLocalStorageInitializedResolver();
-                }
+            CrossDomainCache.xdLocalStorageInitialized = new Promise(function (resolve, reject) {
+                XdLocalStorage_1.XdLocalStorage.init({
+                    iframeUrl: iframeUrl,
+                    initCallback: function () {
+                        resolve();
+                    }
+                });
             });
         };
         CrossDomainCache.GetAndCache = function (cacheKey, getterPromise, expiresAt) {
@@ -1576,10 +1577,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 return tslib_1.__generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCache.xdLocalStorageInitialized];
+                        case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
                         case 1:
                             _a.sent();
-                            xdLocalStorage.clear();
+                            XdLocalStorage_1.XdLocalStorage.clear();
                             return [2 /*return*/];
                     }
                 });
@@ -1589,22 +1590,20 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 return tslib_1.__generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCache.xdLocalStorageInitialized];
+                        case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
                         case 1:
                             _a.sent();
                             return [2 /*return*/, new Promise(function (resolve, reject) {
-                                    CrossDomainCache.xdLocalStorageInitialized.then(function () {
-                                        xdLocalStorage.getItem(cacheKey, function (data) {
-                                            if (!data.value) {
-                                                resolve();
-                                            }
-                                            var actualItem = JSON.parse(data.value);
-                                            if (actualItem.Expires && actualItem.Expires < new Date()) {
-                                                resolve();
-                                                return;
-                                            }
-                                            return resolve(actualItem.Data);
-                                        });
+                                    XdLocalStorage_1.XdLocalStorage.getItem(cacheKey, function (data) {
+                                        if (data.value === undefined) {
+                                            resolve();
+                                        }
+                                        var actualItem = JSON.parse(data.value);
+                                        if (actualItem === null || actualItem.Expires && actualItem.Expires < new Date()) {
+                                            resolve();
+                                            return;
+                                        }
+                                        return resolve(actualItem.Data);
                                     });
                                 })];
                     }
@@ -1616,19 +1615,32 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 var jsonStr;
                 return tslib_1.__generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCache.xdLocalStorageInitialized];
+                        case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
                         case 1:
                             _a.sent();
                             jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
-                            xdLocalStorage.setItem(cacheKey, jsonStr);
+                            XdLocalStorage_1.XdLocalStorage.setItem(cacheKey, jsonStr);
                             return [2 /*return*/];
                     }
                 });
             });
         };
-        CrossDomainCache.xdLocalStorageInitialized = new Promise(function (resolve, reject) { return CrossDomainCache.xdLocalStorageInitializedResolver = resolve; });
-        // tslint:disable-next-line:no-empty
-        CrossDomainCache.xdLocalStorageInitializedResolver = function () { };
+        CrossDomainCache.AwaitInitialization = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            if (CrossDomainCache.xdLocalStorageInitialized === null) {
+                                throw Error('Cache must be initialized before use');
+                            }
+                            return [4 /*yield*/, CrossDomainCache.xdLocalStorageInitialized];
+                        case 1:
+                            _a.sent();
+                            return [2 /*return*/];
+                    }
+                });
+            });
+        };
         return CrossDomainCache;
     }());
     exports.CrossDomainCache = CrossDomainCache;
@@ -1661,9 +1673,9 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var Subject_1 = __webpack_require__(7);
-var queue_1 = __webpack_require__(33);
+var queue_1 = __webpack_require__(34);
 var Subscription_1 = __webpack_require__(1);
-var observeOn_1 = __webpack_require__(26);
+var observeOn_1 = __webpack_require__(27);
 var ObjectUnsubscribedError_1 = __webpack_require__(14);
 var SubjectSubscription_1 = __webpack_require__(12);
 /**
@@ -1810,7 +1822,7 @@ exports.SubjectSubscription = SubjectSubscription;
 "use strict";
 "use strict";
 var Observable_1 = __webpack_require__(3);
-var take_1 = __webpack_require__(25);
+var take_1 = __webpack_require__(26);
 Observable_1.Observable.prototype.take = take_1.take;
 //# sourceMappingURL=take.js.map
 
@@ -2288,7 +2300,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(7), __webpack_require__(11), __webpack_require__(6), __webpack_require__(2), __webpack_require__(21), __webpack_require__(13)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, Subject_1, ReplaySubject_1, sotools_1, SimpleCache_1, ChatApi_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(7), __webpack_require__(11), __webpack_require__(6), __webpack_require__(2), __webpack_require__(22), __webpack_require__(13)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, Subject_1, ReplaySubject_1, sotools_1, SimpleCache_1, ChatApi_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
@@ -2562,6 +2574,182 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
+ * xdLocalStorage is a port of https://github.com/ofirdagan/cross-domain-local-storage to typescript using modules
+ */
+/**
+ * Created by dagan on 07/04/2014.
+ */
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var XdLocalStorage = /** @class */ (function () {
+        function XdLocalStorage() {
+        }
+        XdLocalStorage.init = function (customOptions) {
+            if (!customOptions.iframeUrl) {
+                throw Error('You must specify iframeUrl');
+            }
+            var validatedOptions = {
+                iframeId: customOptions.iframeId,
+                iframeUrl: customOptions.iframeUrl,
+                initCallback: customOptions.initCallback
+            };
+            if (XdLocalStorage.wasInitFlag) {
+                return;
+            }
+            XdLocalStorage.wasInitFlag = true;
+            if (XdLocalStorage.isDomReady()) {
+                XdLocalStorage.internalInit(validatedOptions);
+            }
+            else {
+                if (document.addEventListener) {
+                    // All browsers expect IE < 9
+                    document.addEventListener('readystatechange', function () {
+                        if (XdLocalStorage.isDomReady()) {
+                            XdLocalStorage.internalInit(validatedOptions);
+                        }
+                    });
+                }
+                else {
+                    // IE < 9
+                    document.attachEvent('readystatechange', function () {
+                        if (XdLocalStorage.isDomReady()) {
+                            XdLocalStorage.internalInit(validatedOptions);
+                        }
+                    });
+                }
+            }
+        };
+        XdLocalStorage.setItem = function (key, value, callback) {
+            if (!XdLocalStorage.isApiReady()) {
+                return;
+            }
+            XdLocalStorage.buildMessage('set', key, value, callback);
+        };
+        XdLocalStorage.getItem = function (key, callback) {
+            if (!XdLocalStorage.isApiReady()) {
+                return;
+            }
+            XdLocalStorage.buildMessage('get', key, null, callback);
+        };
+        XdLocalStorage.removeItem = function (key, callback) {
+            if (!XdLocalStorage.isApiReady()) {
+                return;
+            }
+            XdLocalStorage.buildMessage('remove', key, null, callback);
+        };
+        XdLocalStorage.key = function (index, callback) {
+            if (!XdLocalStorage.isApiReady()) {
+                return;
+            }
+            XdLocalStorage.buildMessage('key', index, null, callback);
+        };
+        XdLocalStorage.getSize = function (callback) {
+            if (!XdLocalStorage.isApiReady()) {
+                return;
+            }
+            XdLocalStorage.buildMessage('size', null, null, callback);
+        };
+        XdLocalStorage.getLength = function (callback) {
+            if (!XdLocalStorage.isApiReady()) {
+                return;
+            }
+            XdLocalStorage.buildMessage('length', null, null, callback);
+        };
+        XdLocalStorage.clear = function (callback) {
+            if (!XdLocalStorage.isApiReady()) {
+                return;
+            }
+            XdLocalStorage.buildMessage('clear', null, null, callback);
+        };
+        XdLocalStorage.wasInit = function () {
+            return XdLocalStorage.wasInitFlag;
+        };
+        XdLocalStorage.applyCallback = function (data) {
+            if (XdLocalStorage.requests[data.id]) {
+                XdLocalStorage.requests[data.id](data);
+                delete XdLocalStorage.requests[data.id];
+            }
+        };
+        XdLocalStorage.receiveMessage = function (event) {
+            var data;
+            try {
+                data = JSON.parse(event.data);
+            }
+            catch (err) {
+                // not our message, can ignore
+            }
+            if (data && data.namespace === XdLocalStorage.MESSAGE_NAMESPACE) {
+                if (data.id === 'iframe-ready') {
+                    XdLocalStorage.iframeReady = true;
+                    XdLocalStorage.options.initCallback();
+                }
+                else {
+                    XdLocalStorage.applyCallback(data);
+                }
+            }
+        };
+        XdLocalStorage.buildMessage = function (action, key, value, callback) {
+            XdLocalStorage.requestId++;
+            XdLocalStorage.requests[XdLocalStorage.requestId] = callback;
+            var data = {
+                namespace: XdLocalStorage.MESSAGE_NAMESPACE,
+                id: XdLocalStorage.requestId,
+                action: action,
+                key: key,
+                value: value
+            };
+            XdLocalStorage.iframe.contentWindow.postMessage(JSON.stringify(data), '*');
+        };
+        XdLocalStorage.internalInit = function (customOptions) {
+            XdLocalStorage.options = tslib_1.__assign({}, XdLocalStorage.defaultOptions, customOptions);
+            var temp = document.createElement('div');
+            if (window.addEventListener) {
+                window.addEventListener('message', XdLocalStorage.receiveMessage, false);
+            }
+            else {
+                window.attachEvent('onmessage', XdLocalStorage.receiveMessage);
+            }
+            temp.innerHTML = '<iframe id="' + XdLocalStorage.options.iframeId + '" src=' + XdLocalStorage.options.iframeUrl + ' style="display: none;"></iframe>';
+            document.body.appendChild(temp);
+            var element = document.getElementById(XdLocalStorage.options.iframeId);
+            if (element) {
+                XdLocalStorage.iframe = element;
+            }
+        };
+        XdLocalStorage.isApiReady = function () {
+            if (!XdLocalStorage.wasInitFlag) {
+                return false;
+            }
+            if (!XdLocalStorage.iframeReady) {
+                return false;
+            }
+            return true;
+        };
+        XdLocalStorage.isDomReady = function () {
+            return (document.readyState === 'complete');
+        };
+        XdLocalStorage.MESSAGE_NAMESPACE = 'cross-domain-local-message';
+        XdLocalStorage.defaultOptions = {
+            iframeId: 'cross-domain-iframe',
+            // tslint:disable-next-line:no-empty
+            initCallback: function () { }
+        };
+        XdLocalStorage.requestId = 1;
+        XdLocalStorage.requests = {};
+        XdLocalStorage.wasInitFlag = false;
+        XdLocalStorage.iframeReady = true;
+        return XdLocalStorage;
+    }());
+    exports.XdLocalStorage = XdLocalStorage;
+}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, SimpleCache_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -2615,7 +2803,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2748,7 +2936,7 @@ exports.Notification = Notification;
 //# sourceMappingURL=Notification.js.map
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -2803,7 +2991,7 @@ exports.Scheduler = Scheduler;
 //# sourceMappingURL=Scheduler.js.map
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2890,12 +3078,12 @@ exports.EmptyObservable = EmptyObservable;
 //# sourceMappingURL=EmptyObservable.js.map
 
 /***/ },
-/* 25 */
+/* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
-var take_1 = __webpack_require__(27);
+var take_1 = __webpack_require__(28);
 /**
  * Emits only the first `count` values emitted by the source Observable.
  *
@@ -2936,7 +3124,7 @@ exports.take = take;
 //# sourceMappingURL=take.js.map
 
 /***/ },
-/* 26 */
+/* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2947,7 +3135,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var Subscriber_1 = __webpack_require__(4);
-var Notification_1 = __webpack_require__(22);
+var Notification_1 = __webpack_require__(23);
 /**
  *
  * Re-emits all notifications from source Observable with specified scheduler.
@@ -3057,7 +3245,7 @@ exports.ObserveOnMessage = ObserveOnMessage;
 //# sourceMappingURL=observeOn.js.map
 
 /***/ },
-/* 27 */
+/* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3068,8 +3256,8 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var Subscriber_1 = __webpack_require__(4);
-var ArgumentOutOfRangeError_1 = __webpack_require__(35);
-var EmptyObservable_1 = __webpack_require__(24);
+var ArgumentOutOfRangeError_1 = __webpack_require__(36);
+var EmptyObservable_1 = __webpack_require__(25);
 /**
  * Emits only the first `count` values emitted by the source Observable.
  *
@@ -3154,7 +3342,7 @@ var TakeSubscriber = (function (_super) {
 //# sourceMappingURL=take.js.map
 
 /***/ },
-/* 28 */
+/* 29 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3204,7 +3392,7 @@ exports.Action = Action;
 //# sourceMappingURL=Action.js.map
 
 /***/ },
-/* 29 */
+/* 30 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3215,7 +3403,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var root_1 = __webpack_require__(5);
-var Action_1 = __webpack_require__(28);
+var Action_1 = __webpack_require__(29);
 /**
  * We need this JSDoc comment for affecting ESDoc.
  * @ignore
@@ -3352,7 +3540,7 @@ exports.AsyncAction = AsyncAction;
 //# sourceMappingURL=AsyncAction.js.map
 
 /***/ },
-/* 30 */
+/* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3362,7 +3550,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var Scheduler_1 = __webpack_require__(23);
+var Scheduler_1 = __webpack_require__(24);
 var AsyncScheduler = (function (_super) {
     __extends(AsyncScheduler, _super);
     function AsyncScheduler() {
@@ -3409,7 +3597,7 @@ exports.AsyncScheduler = AsyncScheduler;
 //# sourceMappingURL=AsyncScheduler.js.map
 
 /***/ },
-/* 31 */
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3419,7 +3607,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var AsyncAction_1 = __webpack_require__(29);
+var AsyncAction_1 = __webpack_require__(30);
 /**
  * We need this JSDoc comment for affecting ESDoc.
  * @ignore
@@ -3464,7 +3652,7 @@ exports.QueueAction = QueueAction;
 //# sourceMappingURL=QueueAction.js.map
 
 /***/ },
-/* 32 */
+/* 33 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3474,7 +3662,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var AsyncScheduler_1 = __webpack_require__(30);
+var AsyncScheduler_1 = __webpack_require__(31);
 var QueueScheduler = (function (_super) {
     __extends(QueueScheduler, _super);
     function QueueScheduler() {
@@ -3486,13 +3674,13 @@ exports.QueueScheduler = QueueScheduler;
 //# sourceMappingURL=QueueScheduler.js.map
 
 /***/ },
-/* 33 */
+/* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
-var QueueAction_1 = __webpack_require__(31);
-var QueueScheduler_1 = __webpack_require__(32);
+var QueueAction_1 = __webpack_require__(32);
+var QueueScheduler_1 = __webpack_require__(33);
 /**
  *
  * Queue Scheduler
@@ -3558,7 +3746,7 @@ exports.queue = new QueueScheduler_1.QueueScheduler(QueueAction_1.QueueAction);
 //# sourceMappingURL=queue.js.map
 
 /***/ },
-/* 34 */
+/* 35 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3590,7 +3778,7 @@ exports.$$observable = exports.observable;
 //# sourceMappingURL=observable.js.map
 
 /***/ },
-/* 35 */
+/* 36 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -3624,7 +3812,7 @@ exports.ArgumentOutOfRangeError = ArgumentOutOfRangeError;
 //# sourceMappingURL=ArgumentOutOfRangeError.js.map
 
 /***/ },
-/* 36 */
+/* 37 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -3655,7 +3843,7 @@ exports.UnsubscriptionError = UnsubscriptionError;
 //# sourceMappingURL=UnsubscriptionError.js.map
 
 /***/ },
-/* 37 */
+/* 38 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -3664,7 +3852,7 @@ exports.isArray = Array.isArray || (function (x) { return x && typeof x.length =
 //# sourceMappingURL=isArray.js.map
 
 /***/ },
-/* 38 */
+/* 39 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -3676,7 +3864,7 @@ exports.isObject = isObject;
 //# sourceMappingURL=isObject.js.map
 
 /***/ },
-/* 39 */
+/* 40 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -3687,12 +3875,12 @@ exports.noop = noop;
 //# sourceMappingURL=noop.js.map
 
 /***/ },
-/* 40 */
+/* 41 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
-var noop_1 = __webpack_require__(39);
+var noop_1 = __webpack_require__(40);
 /* tslint:enable:max-line-length */
 function pipe() {
     var fns = [];
@@ -3718,7 +3906,7 @@ exports.pipeFromArray = pipeFromArray;
 //# sourceMappingURL=pipe.js.map
 
 /***/ },
-/* 41 */
+/* 42 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3744,7 +3932,7 @@ exports.toSubscriber = toSubscriber;
 //# sourceMappingURL=toSubscriber.js.map
 
 /***/ },
-/* 42 */
+/* 43 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3769,7 +3957,7 @@ exports.tryCatch = tryCatch;
 //# sourceMappingURL=tryCatch.js.map
 
 /***/ },
-/* 43 */
+/* 44 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(18), __webpack_require__(20), __webpack_require__(19), __webpack_require__(6), __webpack_require__(17), __webpack_require__(9), __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, MetaSmokeAPI_1, FlagTypes_1, NattyApi_1, sotools_1, GenericBotAPI_1, CrossDomainCache_1, SimpleCache_1) {

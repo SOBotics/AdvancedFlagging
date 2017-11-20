@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.3.1
+// @version      0.3.2
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2234,6 +2234,24 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
             });
         };
+        MetaSmokeAPI.prototype.ReportVandalism = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var smokeyid;
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
+                        case 1:
+                            smokeyid = _a.sent();
+                            if (!(smokeyid != null)) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.SendFeedback(smokeyid, 'tp-')];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/, true];
+                        case 3: return [2 /*return*/, false];
+                    }
+                });
+            });
+        };
         MetaSmokeAPI.prototype.QueryMetaSmokey = function () {
             var _this = this;
             var urlStr = this.postType === 'Answer'
@@ -2562,6 +2580,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 },
                 {
                     DisplayName: 'Needs Editing',
+                    ReportType: 'NoFlag'
+                },
+                {
+                    DisplayName: 'Vandalism',
                     ReportType: 'NoFlag'
                 }
             ]
@@ -4139,10 +4161,17 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             promise = reporter.ReportNaa(answerTime, questionTime);
                         }
                         else if (noFlag) {
-                            promise =
-                                flagType.DisplayName === 'Needs Editing'
-                                    ? reporter.ReportNeedsEditing()
-                                    : reporter.ReportLooksFine();
+                            switch (flagType.DisplayName) {
+                                case 'Needs Editing':
+                                    promise = reporter.ReportNeedsEditing();
+                                    break;
+                                case 'Vandalism':
+                                    promise = reporter.ReportVandalism();
+                                    break;
+                                default:
+                                    promise = reporter.ReportLooksFine();
+                                    break;
+                            }
                         }
                         if (promise) {
                             promise.then(function (didReport) {
@@ -4212,7 +4241,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     ReportNaa: function (answerDate, questionDate) { return nattyApi_1.ReportNaa(answerDate, questionDate); },
                     ReportRedFlag: function () { return nattyApi_1.ReportRedFlag(); },
                     ReportLooksFine: function () { return nattyApi_1.ReportLooksFine(); },
-                    ReportNeedsEditing: function () { return nattyApi_1.ReportNeedsEditing(); }
+                    ReportNeedsEditing: function () { return nattyApi_1.ReportNeedsEditing(); },
+                    ReportVandalism: function () { return Promise.resolve(false); }
                 });
                 var genericBotAPI_1 = new GenericBotAPI_1.GenericBotAPI(post.postId);
                 reporters.push({
@@ -4220,7 +4250,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     ReportNaa: function (answerDate, questionDate) { return genericBotAPI_1.ReportNaa(); },
                     ReportRedFlag: function () { return genericBotAPI_1.ReportRedFlag(); },
                     ReportLooksFine: function () { return genericBotAPI_1.ReportLooksFine(); },
-                    ReportNeedsEditing: function () { return genericBotAPI_1.ReportNeedsEditing(); }
+                    ReportNeedsEditing: function () { return genericBotAPI_1.ReportNeedsEditing(); },
+                    ReportVandalism: function () { return Promise.resolve(true); }
                 });
             }
             var metaSmoke = new MetaSmokeAPI_1.MetaSmokeAPI(post.postId, post.type);
@@ -4241,7 +4272,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 ReportNaa: function (answerDate, questionDate) { return metaSmoke.ReportNaa(); },
                 ReportRedFlag: function () { return metaSmoke.ReportRedFlag(); },
                 ReportLooksFine: function () { return metaSmoke.ReportLooksFine(); },
-                ReportNeedsEditing: function () { return metaSmoke.ReportNeedsEditing(); }
+                ReportNeedsEditing: function () { return metaSmoke.ReportNeedsEditing(); },
+                ReportVandalism: function () { return metaSmoke.ReportVandalism(); }
             });
             var performedActionIcon = getPerformedActionIcon();
             var reportedIcon = getReportedIcon();

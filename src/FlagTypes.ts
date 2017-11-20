@@ -81,10 +81,10 @@ export const flagCategories: FlagCategory[] = [
                     {
                         ReputationLimit: 15,
                         Comment: 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
-                        'and can be perceived as noise by its future visitors. ' +
-                        'Instead, [upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
-                        'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
-                        'See [Why is voting important](http://stackoverflow.com/help/why-vote).'
+                            'and can be perceived as noise by its future visitors. ' +
+                            'Instead, [upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
+                            'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
+                            'See [Why is voting important](http://stackoverflow.com/help/why-vote).'
                     }
                 ]
 
@@ -121,6 +121,10 @@ export const flagCategories: FlagCategory[] = [
             },
             {
                 DisplayName: 'Needs Editing',
+                ReportType: 'NoFlag'
+            },
+            {
+                DisplayName: 'Vandalism',
                 ReportType: 'NoFlag'
             }
         ]

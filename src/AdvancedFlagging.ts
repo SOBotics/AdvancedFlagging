@@ -156,6 +156,7 @@ interface Reporter {
     ReportRedFlag(): Promise<boolean>;
     ReportLooksFine(): Promise<boolean>;
     ReportNeedsEditing(): Promise<boolean>;
+    ReportVandalism(): Promise<boolean>;
 }
 function BuildFlaggingDialog(element: JQuery,
     postId: number,
@@ -253,10 +254,17 @@ function BuildFlaggingDialog(element: JQuery,
                     } else if (naaFlag) {
                         promise = reporter.ReportNaa(answerTime, questionTime);
                     } else if (noFlag) {
-                        promise =
-                            flagType.DisplayName === 'Needs Editing'
-                                ? reporter.ReportNeedsEditing()
-                                : reporter.ReportLooksFine();
+                        switch (flagType.DisplayName) {
+                            case 'Needs Editing':
+                                promise = reporter.ReportNeedsEditing();
+                                break;
+                            case 'Vandalism':
+                                promise = reporter.ReportVandalism();
+                                break;
+                            default:
+                                promise = reporter.ReportLooksFine();
+                                break;
+                        }
                     }
                     if (promise) {
                         promise.then((didReport) => {
@@ -339,7 +347,8 @@ function SetupPostPage() {
                 ReportNaa: (answerDate: Date, questionDate: Date) => nattyApi.ReportNaa(answerDate, questionDate),
                 ReportRedFlag: () => nattyApi.ReportRedFlag(),
                 ReportLooksFine: () => nattyApi.ReportLooksFine(),
-                ReportNeedsEditing: () => nattyApi.ReportNeedsEditing()
+                ReportNeedsEditing: () => nattyApi.ReportNeedsEditing(),
+                ReportVandalism: () => Promise.resolve(false)
             });
 
             const genericBotAPI = new GenericBotAPI(post.postId);
@@ -348,7 +357,8 @@ function SetupPostPage() {
                 ReportNaa: (answerDate: Date, questionDate: Date) => genericBotAPI.ReportNaa(),
                 ReportRedFlag: () => genericBotAPI.ReportRedFlag(),
                 ReportLooksFine: () => genericBotAPI.ReportLooksFine(),
-                ReportNeedsEditing: () => genericBotAPI.ReportNeedsEditing()
+                ReportNeedsEditing: () => genericBotAPI.ReportNeedsEditing(),
+                ReportVandalism: () => Promise.resolve(true)
             });
 
         }
@@ -369,7 +379,8 @@ function SetupPostPage() {
             ReportNaa: (answerDate: Date, questionDate: Date) => metaSmoke.ReportNaa(),
             ReportRedFlag: () => metaSmoke.ReportRedFlag(),
             ReportLooksFine: () => metaSmoke.ReportLooksFine(),
-            ReportNeedsEditing: () => metaSmoke.ReportNeedsEditing()
+            ReportNeedsEditing: () => metaSmoke.ReportNeedsEditing(),
+            ReportVandalism: () => metaSmoke.ReportVandalism()
         });
 
         const performedActionIcon = getPerformedActionIcon();

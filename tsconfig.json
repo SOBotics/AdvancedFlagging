@@ -1,6 +1,7 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "importHelpers": true,
     "isolatedModules": true,
     "sourceMap": false,
     "noImplicitAny": true,

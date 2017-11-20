@@ -1,14 +1,14 @@
 import * as jquery from 'jquery';
-import { MetaSmokeAPI } from './libs/MetaSmokeAPI';
+import { MetaSmokeAPI } from '@sobotics/metasmokeapi/dist/metasmokeapi';
 import { FlagType, flagCategories } from './FlagTypes';
-import { NattyAPI } from './libs/NattyApi';
+import { NattyAPI } from '@sobotics/nattyapi/dist/nattyapi';
 
-import { Delay, IsStackOverflow } from './libs/FunctionUtils';
-import { StackExchangeGlobal } from './libs/StackExchangeWeb/StackExchangeOptions';
-import { parseCurrentPage } from './libs/StackExchangeWeb/StackExchangeWebParser';
-import { GenericBotAPI } from './libs/GenericBotAPI';
-import { CrossDomainCache } from './libs/CrossDomainCache';
-import { SimpleCache } from './libs/SimpleCache';
+import { IsStackOverflow, parseQuestionsAndAnswers } from '@sobotics/sotools/dist/sotools';
+import { StackExchangeGlobal } from '@sobotics/sotools/dist/StackExchangeConfiguration';
+
+import { GenericBotAPI } from '@sobotics/genericbotapi/dist/genericbotapi';
+import { CrossDomainCache } from '@sobotics/caching/dist/CrossDomainCache';
+import { SimpleCache } from '@sobotics/caching/dist/SimpleCache';
 // tslint:disable-next-line:no-debugger
 debugger;
 
@@ -308,7 +308,7 @@ function BuildFlaggingDialog(element: JQuery,
 }
 
 function SetupPostPage() {
-    const results = parseCurrentPage();
+    const results = parseQuestionsAndAnswers();
 
     for (let i = 0; i < results.Posts.length; i++) {
         const post = results.Posts[i];

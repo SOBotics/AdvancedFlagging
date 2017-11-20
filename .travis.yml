@@ -6,4 +6,3 @@ install:
   - npm install
 script:
   - npm run build
-  - git diff --exit-code dist

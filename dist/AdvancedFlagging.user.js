@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.3.2
+// @version      0.3.3
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2018,6 +2018,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.StoreInCache(MetaSmokeUserKeyConfig, undefined)];
                         case 2:
                             _a.sent();
+                            SimpleCache_1.SimpleCache.StoreInCache(MetaSmokeDisabledConfig, undefined);
+                            SimpleCache_1.SimpleCache.StoreInCache(MetaSmokeUserKeyConfig, undefined);
                             return [2 /*return*/];
                     }
                 });
@@ -2054,7 +2056,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                         if (isDisabled) {
                                             return [2 /*return*/];
                                         }
-                                        return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.GetFromCache(MetaSmokeUserKeyConfig)];
+                                        return [4 /*yield*/, MetaSmokeAPI.getUserKey()];
                                     case 2:
                                         cachedUserKey = _a.sent();
                                         if (cachedUserKey) {
@@ -2097,30 +2099,32 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         };
         MetaSmokeAPI.getUserKey = function () {
             var _this = this;
-            return CrossDomainCache_1.CrossDomainCache.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-                var prom, code;
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            prom = MetaSmokeAPI.actualPromise;
-                            if (prom === undefined) {
-                                prom = MetaSmokeAPI.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + MetaSmokeAPI.appKey);
-                                MetaSmokeAPI.actualPromise = prom;
-                            }
-                            return [4 /*yield*/, prom];
-                        case 1:
-                            code = _a.sent();
-                            if (code) {
-                                $.ajax({
-                                    url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeAPI.appKey + '&code=' + code,
-                                    method: 'GET'
-                                }).done(function (data) { return resolve(data.token); })
-                                    .fail(function (err) { return reject(err); });
-                            }
-                            return [2 /*return*/];
-                    }
-                });
-            }); }); });
+            return SimpleCache_1.SimpleCache.GetAndCache(MetaSmokeUserKeyConfig, function () {
+                return CrossDomainCache_1.CrossDomainCache.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+                    var prom, code;
+                    return tslib_1.__generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                prom = MetaSmokeAPI.actualPromise;
+                                if (prom === undefined) {
+                                    prom = MetaSmokeAPI.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + MetaSmokeAPI.appKey);
+                                    MetaSmokeAPI.actualPromise = prom;
+                                }
+                                return [4 /*yield*/, prom];
+                            case 1:
+                                code = _a.sent();
+                                if (code) {
+                                    $.ajax({
+                                        url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeAPI.appKey + '&code=' + code,
+                                        method: 'GET'
+                                    }).done(function (data) { return resolve(data.token); })
+                                        .fail(function (err) { return reject(err); });
+                                }
+                                return [2 /*return*/];
+                        }
+                    });
+                }); }); });
+            });
         };
         MetaSmokeAPI.prototype.Watch = function () {
             this.subject = new Subject_1.Subject();

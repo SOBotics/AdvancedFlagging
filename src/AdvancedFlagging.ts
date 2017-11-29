@@ -112,7 +112,7 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
     return result;
 }
 
-const popupWrapper = $('<div>').addClass('hide').attr('id', 'snackbar');
+const popupWrapper = $('<div>').addClass('hide').hide().attr('id', 'snackbar');
 const popupDelay = 2000;
 let toasterTimeout: number | null = null;
 let toasterFadeTimeout: number | null = null;
@@ -125,12 +125,12 @@ function displayToaster(message: string, colour: string) {
         .text(message);
 
     popupWrapper.append(div);
-    popupWrapper.removeClass('hide').addClass('show');
+    popupWrapper.removeClass('hide').addClass('show').show();
 
     function hidePopup() {
         popupWrapper.removeClass('show').addClass('hide');
         toasterFadeTimeout = setTimeout(() => {
-            popupWrapper.empty();
+            popupWrapper.empty().hide();
         }, 1000);
     }
 

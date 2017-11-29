@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.3.4
+// @version      0.3.5
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -4056,7 +4056,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         return result;
     }
-    var popupWrapper = $('<div>').addClass('hide').attr('id', 'snackbar');
+    var popupWrapper = $('<div>').addClass('hide').hide().attr('id', 'snackbar');
     var popupDelay = 2000;
     var toasterTimeout = null;
     var toasterFadeTimeout = null;
@@ -4068,11 +4068,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         })
             .text(message);
         popupWrapper.append(div);
-        popupWrapper.removeClass('hide').addClass('show');
+        popupWrapper.removeClass('hide').addClass('show').show();
         function hidePopup() {
             popupWrapper.removeClass('show').addClass('hide');
             toasterFadeTimeout = setTimeout(function () {
-                popupWrapper.empty();
+                popupWrapper.empty().hide();
             }, 1000);
         }
         if (toasterFadeTimeout) {

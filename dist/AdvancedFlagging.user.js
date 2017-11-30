@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.3.5
+// @version      0.3.6
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2788,7 +2788,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     Object.defineProperty(exports, "__esModule", { value: true });
     var ChatApi = /** @class */ (function () {
         function ChatApi(chatUrl) {
-            if (chatUrl === void 0) { chatUrl = 'http://chat.stackoverflow.com'; }
+            if (chatUrl === void 0) { chatUrl = 'https://chat.stackoverflow.com'; }
             this.chatRoomUrl = "" + chatUrl;
         }
         ChatApi.prototype.GetChannelFKey = function (roomId) {

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.3.6
+// @version      0.3.7
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2799,8 +2799,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     method: 'GET',
                     url: _this.chatRoomUrl + "/rooms/" + roomId,
                     onload: function (response) {
-                        var fkey = response.responseText.match(/hidden" value="([\dabcdef]{32})/)[1];
-                        resolve(fkey);
+                        if (response.status !== 200) {
+                            reject(response.statusText);
+                        }
+                        else {
+                            var fkey = response.responseText.match(/hidden" value="([\dabcdef]{32})/)[1];
+                            resolve(fkey);
+                        }
                     },
                     onerror: function (data) { return reject(data); }
                 });
@@ -2821,7 +2826,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         url: _this.chatRoomUrl + "/chats/" + roomId + "/messages/new",
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         data: 'text=' + encodeURIComponent(message) + '&fkey=' + fKey,
-                        onload: function () { return resolve(); },
+                        onload: function (response) {
+                            if (response.status !== 200) {
+                                reject(response.statusText);
+                            }
+                            else {
+                                resolve();
+                            }
+                        },
                         onerror: function (response) {
                             reject(response);
                         },

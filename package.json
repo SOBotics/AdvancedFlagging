@@ -10,7 +10,7 @@
     "@sobotics/caching": "^1.1.7",
     "@sobotics/genericbotapi": "^1.1.0",
     "@sobotics/metasmokeapi": "^1.1.4",
-    "@sobotics/nattyapi": "^1.1.1",
+    "@sobotics/nattyapi": "^1.1.2",
     "@sobotics/sotools": "^1.1.0",
     "concat-cli": "^4.0.0",
     "rxjs": "^5.5.2",

@@ -1537,20 +1537,18 @@ exports.$$rxSubscriber = exports.rxSubscriber;
 /* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(21)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, XdLocalStorage_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(21)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, xdLocalStorage_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var CrossDomainCache = /** @class */ (function () {
         function CrossDomainCache() {
         }
         CrossDomainCache.InitializeCache = function (iframeUrl) {
-            CrossDomainCache.xdLocalStorageInitialized = new Promise(function (resolve, reject) {
-                XdLocalStorage_1.XdLocalStorage.init({
-                    iframeUrl: iframeUrl,
-                    initCallback: function () {
-                        resolve();
-                    }
-                });
+            xdLocalStorage_1.xdLocalStorage.init({
+                iframeUrl: iframeUrl,
+                initCallback: function () {
+                    CrossDomainCache.xdLocalStorageInitializedResolver();
+                }
             });
         };
         CrossDomainCache.GetAndCache = function (cacheKey, getterPromise, expiresAt) {
@@ -1577,10 +1575,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 return tslib_1.__generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
+                        case 0: return [4 /*yield*/, CrossDomainCache.xdLocalStorageInitialized];
                         case 1:
                             _a.sent();
-                            XdLocalStorage_1.XdLocalStorage.clear();
+                            xdLocalStorage_1.xdLocalStorage.clear();
                             return [2 /*return*/];
                     }
                 });
@@ -1590,20 +1588,22 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 return tslib_1.__generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
+                        case 0: return [4 /*yield*/, CrossDomainCache.xdLocalStorageInitialized];
                         case 1:
                             _a.sent();
                             return [2 /*return*/, new Promise(function (resolve, reject) {
-                                    XdLocalStorage_1.XdLocalStorage.getItem(cacheKey, function (data) {
-                                        if (data.value === undefined) {
-                                            resolve();
-                                        }
-                                        var actualItem = JSON.parse(data.value);
-                                        if (actualItem === null || actualItem.Expires && actualItem.Expires < new Date()) {
-                                            resolve();
-                                            return;
-                                        }
-                                        return resolve(actualItem.Data);
+                                    CrossDomainCache.xdLocalStorageInitialized.then(function () {
+                                        xdLocalStorage_1.xdLocalStorage.getItem(cacheKey, function (data) {
+                                            if (!data.value) {
+                                                resolve();
+                                            }
+                                            var actualItem = JSON.parse(data.value);
+                                            if (actualItem.Expires && actualItem.Expires < new Date()) {
+                                                resolve();
+                                                return;
+                                            }
+                                            return resolve(actualItem.Data);
+                                        });
                                     });
                                 })];
                     }
@@ -1615,32 +1615,19 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 var jsonStr;
                 return tslib_1.__generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
+                        case 0: return [4 /*yield*/, CrossDomainCache.xdLocalStorageInitialized];
                         case 1:
                             _a.sent();
                             jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
-                            XdLocalStorage_1.XdLocalStorage.setItem(cacheKey, jsonStr);
+                            xdLocalStorage_1.xdLocalStorage.setItem(cacheKey, jsonStr);
                             return [2 /*return*/];
                     }
                 });
             });
         };
-        CrossDomainCache.AwaitInitialization = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            if (CrossDomainCache.xdLocalStorageInitialized === null) {
-                                throw Error('Cache must be initialized before use');
-                            }
-                            return [4 /*yield*/, CrossDomainCache.xdLocalStorageInitialized];
-                        case 1:
-                            _a.sent();
-                            return [2 /*return*/];
-                    }
-                });
-            });
-        };
+        CrossDomainCache.xdLocalStorageInitialized = new Promise(function (resolve, reject) { return CrossDomainCache.xdLocalStorageInitializedResolver = resolve; });
+        // tslint:disable-next-line:no-empty
+        CrossDomainCache.xdLocalStorageInitializedResolver = function () { };
         return CrossDomainCache;
     }());
     exports.CrossDomainCache = CrossDomainCache;
@@ -2275,7 +2262,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     }
                     $.ajax({
                         type: 'GET',
-                        url: 'https://metasmoke.erwaysoftware.com/api/posts/urls',
+                        url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
                         data: {
                             urls: urlStr,
                             key: "" + MetaSmokeAPI.appKey
@@ -2613,169 +2600,170 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
 /**
  * Created by dagan on 07/04/2014.
  */
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1) {
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var XdLocalStorage = /** @class */ (function () {
-        function XdLocalStorage() {
+    var xdLocalStorage = /** @class */ (function () {
+        function xdLocalStorage() {
         }
-        XdLocalStorage.init = function (customOptions) {
+        xdLocalStorage.applyCallback = function (data) {
+            if (xdLocalStorage.requests[data.id]) {
+                xdLocalStorage.requests[data.id](data);
+                delete xdLocalStorage.requests[data.id];
+            }
+        };
+        xdLocalStorage.receiveMessage = function (event) {
+            var data;
+            try {
+                data = JSON.parse(event.data);
+            }
+            catch (err) {
+                //not our message, can ignore
+            }
+            if (data && data.namespace === xdLocalStorage.MESSAGE_NAMESPACE) {
+                if (data.id === 'iframe-ready') {
+                    xdLocalStorage.iframeReady = true;
+                    xdLocalStorage.options.initCallback();
+                }
+                else {
+                    xdLocalStorage.applyCallback(data);
+                }
+            }
+        };
+        xdLocalStorage.buildMessage = function (action, key, value, callback) {
+            xdLocalStorage.requestId++;
+            xdLocalStorage.requests[xdLocalStorage.requestId] = callback;
+            var data = {
+                namespace: xdLocalStorage.MESSAGE_NAMESPACE,
+                id: xdLocalStorage.requestId,
+                action: action,
+                key: key,
+                value: value
+            };
+            xdLocalStorage.iframe.contentWindow.postMessage(JSON.stringify(data), '*');
+        };
+        xdLocalStorage.internalInit = function (customOptions) {
+            xdLocalStorage.options = Object.assign({}, xdLocalStorage.defaultOptions, customOptions);
+            var temp = document.createElement('div');
+            if (window.addEventListener) {
+                window.addEventListener('message', xdLocalStorage.receiveMessage, false);
+            }
+            else {
+                window.attachEvent('onmessage', xdLocalStorage.receiveMessage);
+            }
+            temp.innerHTML = '<iframe id="' + xdLocalStorage.options.iframeId + '" src=' + xdLocalStorage.options.iframeUrl + ' style="display: none;"></iframe>';
+            document.body.appendChild(temp);
+            var element = document.getElementById(xdLocalStorage.options.iframeId);
+            if (element) {
+                xdLocalStorage.iframe = element;
+            }
+        };
+        xdLocalStorage.isApiReady = function () {
+            if (!xdLocalStorage.wasInitFlag) {
+                return false;
+            }
+            if (!xdLocalStorage.iframeReady) {
+                return false;
+            }
+            return true;
+        };
+        xdLocalStorage.isDomReady = function () {
+            return (document.readyState === 'complete');
+        };
+        xdLocalStorage.init = function (customOptions) {
             if (!customOptions.iframeUrl) {
-                throw Error('You must specify iframeUrl');
+                throw 'You must specify iframeUrl';
             }
             var validatedOptions = {
                 iframeId: customOptions.iframeId,
                 iframeUrl: customOptions.iframeUrl,
                 initCallback: customOptions.initCallback
             };
-            if (XdLocalStorage.wasInitFlag) {
+            if (xdLocalStorage.wasInitFlag) {
                 return;
             }
-            XdLocalStorage.wasInitFlag = true;
-            if (XdLocalStorage.isDomReady()) {
-                XdLocalStorage.internalInit(validatedOptions);
+            xdLocalStorage.wasInitFlag = true;
+            if (xdLocalStorage.isDomReady()) {
+                xdLocalStorage.internalInit(validatedOptions);
             }
             else {
+                var that_1 = xdLocalStorage;
                 if (document.addEventListener) {
                     // All browsers expect IE < 9
                     document.addEventListener('readystatechange', function () {
-                        if (XdLocalStorage.isDomReady()) {
-                            XdLocalStorage.internalInit(validatedOptions);
+                        if (that_1.isDomReady()) {
+                            that_1.internalInit(validatedOptions);
                         }
                     });
                 }
                 else {
                     // IE < 9
                     document.attachEvent('readystatechange', function () {
-                        if (XdLocalStorage.isDomReady()) {
-                            XdLocalStorage.internalInit(validatedOptions);
+                        if (that_1.isDomReady()) {
+                            that_1.internalInit(validatedOptions);
                         }
                     });
                 }
             }
         };
-        XdLocalStorage.setItem = function (key, value, callback) {
-            if (!XdLocalStorage.isApiReady()) {
+        ;
+        xdLocalStorage.setItem = function (key, value, callback) {
+            if (!xdLocalStorage.isApiReady()) {
                 return;
             }
-            XdLocalStorage.buildMessage('set', key, value, callback);
+            xdLocalStorage.buildMessage('set', key, value, callback);
         };
-        XdLocalStorage.getItem = function (key, callback) {
-            if (!XdLocalStorage.isApiReady()) {
+        xdLocalStorage.getItem = function (key, callback) {
+            if (!xdLocalStorage.isApiReady()) {
                 return;
             }
-            XdLocalStorage.buildMessage('get', key, null, callback);
+            xdLocalStorage.buildMessage('get', key, null, callback);
         };
-        XdLocalStorage.removeItem = function (key, callback) {
-            if (!XdLocalStorage.isApiReady()) {
+        xdLocalStorage.removeItem = function (key, callback) {
+            if (!xdLocalStorage.isApiReady()) {
                 return;
             }
-            XdLocalStorage.buildMessage('remove', key, null, callback);
+            xdLocalStorage.buildMessage('remove', key, null, callback);
         };
-        XdLocalStorage.key = function (index, callback) {
-            if (!XdLocalStorage.isApiReady()) {
+        xdLocalStorage.key = function (index, callback) {
+            if (!xdLocalStorage.isApiReady()) {
                 return;
             }
-            XdLocalStorage.buildMessage('key', index, null, callback);
+            xdLocalStorage.buildMessage('key', index, null, callback);
         };
-        XdLocalStorage.getSize = function (callback) {
-            if (!XdLocalStorage.isApiReady()) {
+        xdLocalStorage.getSize = function (callback) {
+            if (!xdLocalStorage.isApiReady()) {
                 return;
             }
-            XdLocalStorage.buildMessage('size', null, null, callback);
+            xdLocalStorage.buildMessage('size', null, null, callback);
         };
-        XdLocalStorage.getLength = function (callback) {
-            if (!XdLocalStorage.isApiReady()) {
+        xdLocalStorage.getLength = function (callback) {
+            if (!xdLocalStorage.isApiReady()) {
                 return;
             }
-            XdLocalStorage.buildMessage('length', null, null, callback);
+            xdLocalStorage.buildMessage('length', null, null, callback);
         };
-        XdLocalStorage.clear = function (callback) {
-            if (!XdLocalStorage.isApiReady()) {
+        xdLocalStorage.clear = function (callback) {
+            if (!xdLocalStorage.isApiReady()) {
                 return;
             }
-            XdLocalStorage.buildMessage('clear', null, null, callback);
+            xdLocalStorage.buildMessage('clear', null, null, callback);
         };
-        XdLocalStorage.wasInit = function () {
-            return XdLocalStorage.wasInitFlag;
+        xdLocalStorage.wasInit = function () {
+            return xdLocalStorage.wasInitFlag;
         };
-        XdLocalStorage.applyCallback = function (data) {
-            if (XdLocalStorage.requests[data.id]) {
-                XdLocalStorage.requests[data.id](data);
-                delete XdLocalStorage.requests[data.id];
-            }
-        };
-        XdLocalStorage.receiveMessage = function (event) {
-            var data;
-            try {
-                data = JSON.parse(event.data);
-            }
-            catch (err) {
-                // not our message, can ignore
-            }
-            if (data && data.namespace === XdLocalStorage.MESSAGE_NAMESPACE) {
-                if (data.id === 'iframe-ready') {
-                    XdLocalStorage.iframeReady = true;
-                    XdLocalStorage.options.initCallback();
-                }
-                else {
-                    XdLocalStorage.applyCallback(data);
-                }
-            }
-        };
-        XdLocalStorage.buildMessage = function (action, key, value, callback) {
-            XdLocalStorage.requestId++;
-            XdLocalStorage.requests[XdLocalStorage.requestId] = callback;
-            var data = {
-                namespace: XdLocalStorage.MESSAGE_NAMESPACE,
-                id: XdLocalStorage.requestId,
-                action: action,
-                key: key,
-                value: value
-            };
-            XdLocalStorage.iframe.contentWindow.postMessage(JSON.stringify(data), '*');
-        };
-        XdLocalStorage.internalInit = function (customOptions) {
-            XdLocalStorage.options = tslib_1.__assign({}, XdLocalStorage.defaultOptions, customOptions);
-            var temp = document.createElement('div');
-            if (window.addEventListener) {
-                window.addEventListener('message', XdLocalStorage.receiveMessage, false);
-            }
-            else {
-                window.attachEvent('onmessage', XdLocalStorage.receiveMessage);
-            }
-            temp.innerHTML = '<iframe id="' + XdLocalStorage.options.iframeId + '" src=' + XdLocalStorage.options.iframeUrl + ' style="display: none;"></iframe>';
-            document.body.appendChild(temp);
-            var element = document.getElementById(XdLocalStorage.options.iframeId);
-            if (element) {
-                XdLocalStorage.iframe = element;
-            }
-        };
-        XdLocalStorage.isApiReady = function () {
-            if (!XdLocalStorage.wasInitFlag) {
-                return false;
-            }
-            if (!XdLocalStorage.iframeReady) {
-                return false;
-            }
-            return true;
-        };
-        XdLocalStorage.isDomReady = function () {
-            return (document.readyState === 'complete');
-        };
-        XdLocalStorage.MESSAGE_NAMESPACE = 'cross-domain-local-message';
-        XdLocalStorage.defaultOptions = {
+        xdLocalStorage.MESSAGE_NAMESPACE = 'cross-domain-local-message';
+        xdLocalStorage.defaultOptions = {
             iframeId: 'cross-domain-iframe',
-            // tslint:disable-next-line:no-empty
             initCallback: function () { }
         };
-        XdLocalStorage.requestId = 1;
-        XdLocalStorage.requests = {};
-        XdLocalStorage.wasInitFlag = false;
-        XdLocalStorage.iframeReady = true;
-        return XdLocalStorage;
+        xdLocalStorage.requestId = 1;
+        xdLocalStorage.requests = {};
+        xdLocalStorage.wasInitFlag = false;
+        xdLocalStorage.iframeReady = true;
+        return xdLocalStorage;
     }());
-    exports.XdLocalStorage = XdLocalStorage;
+    exports.xdLocalStorage = xdLocalStorage;
 }.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 

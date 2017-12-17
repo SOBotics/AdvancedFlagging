@@ -9,7 +9,7 @@
   "devDependencies": {
     "@sobotics/caching": "^1.1.8",
     "@sobotics/genericbotapi": "^1.1.0",
-    "@sobotics/metasmokeapi": "^1.1.4",
+    "@sobotics/metasmokeapi": "^1.1.5",
     "@sobotics/nattyapi": "^1.1.2",
     "@sobotics/sotools": "^1.1.0",
     "concat-cli": "^4.0.0",

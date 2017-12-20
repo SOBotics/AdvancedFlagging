@@ -7,9 +7,9 @@
   "author": "Robert Rudman <rjrudman@gmail.com> (https://github.com/rjrudman)",
   "license": "ISC",
   "devDependencies": {
-    "@sobotics/caching": "^1.1.9",
+    "@sobotics/caching": "^1.1.11",
     "@sobotics/genericbotapi": "^1.1.0",
-    "@sobotics/metasmokeapi": "^1.1.7",
+    "@sobotics/metasmokeapi": "^1.1.9",
     "@sobotics/nattyapi": "^1.1.2",
     "@sobotics/sotools": "^1.1.0",
     "concat-cli": "^4.0.0",

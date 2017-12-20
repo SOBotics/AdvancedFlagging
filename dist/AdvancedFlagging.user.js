@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.4.0
+// @version      0.4.1
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -519,6 +519,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         SimpleCache.StoreInCache = function (cacheKey, item, expiresAt) {
             var jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
             localStorage.setItem(cacheKey, jsonStr);
+        };
+        SimpleCache.Unset = function (cacheKey) {
+            localStorage.removeItem(cacheKey);
         };
         return SimpleCache;
     }());
@@ -1619,8 +1622,27 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         case 1:
                             _a.sent();
                             jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
-                            xdLocalStorage_1.XdLocalStorage.setItem(cacheKey, jsonStr);
-                            return [2 /*return*/];
+                            return [2 /*return*/, new Promise(function (resolve, reject) {
+                                    xdLocalStorage_1.XdLocalStorage.setItem(cacheKey, jsonStr, function () {
+                                        resolve();
+                                    });
+                                })];
+                    }
+                });
+            });
+        };
+        CrossDomainCache.Unset = function (cacheKey) {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
+                        case 1:
+                            _a.sent();
+                            return [2 /*return*/, new Promise(function (resolve, reject) {
+                                    xdLocalStorage_1.XdLocalStorage.removeItem(cacheKey, function () {
+                                        resolve();
+                                    });
+                                })];
                     }
                 });
             });
@@ -2012,14 +2034,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 return tslib_1.__generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.StoreInCache(MetaSmokeDisabledConfig, undefined)];
+                        case 0: return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.Unset(MetaSmokeDisabledConfig)];
                         case 1:
                             _a.sent();
-                            return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.StoreInCache(MetaSmokeUserKeyConfig, undefined)];
+                            return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.Unset(MetaSmokeUserKeyConfig)];
                         case 2:
                             _a.sent();
-                            SimpleCache_1.SimpleCache.StoreInCache(MetaSmokeDisabledConfig, undefined);
-                            SimpleCache_1.SimpleCache.StoreInCache(MetaSmokeUserKeyConfig, undefined);
+                            SimpleCache_1.SimpleCache.Unset(MetaSmokeDisabledConfig);
+                            SimpleCache_1.SimpleCache.Unset(MetaSmokeUserKeyConfig);
                             return [2 /*return*/];
                     }
                 });
@@ -2047,7 +2069,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return tslib_1.__generator(this, function (_a) {
                     if (!codeGetter) {
                         codeGetter = function (metaSmokeOAuthUrl) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-                            var isDisabled, cachedUserKey, returnCode;
+                            var isDisabled, returnCode;
                             return tslib_1.__generator(this, function (_a) {
                                 switch (_a.label) {
                                     case 0: return [4 /*yield*/, MetaSmokeAPI.IsDisabled()];
@@ -2056,19 +2078,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                         if (isDisabled) {
                                             return [2 /*return*/];
                                         }
-                                        return [4 /*yield*/, MetaSmokeAPI.getUserKey()];
-                                    case 2:
-                                        cachedUserKey = _a.sent();
-                                        if (cachedUserKey) {
-                                            return [2 /*return*/, cachedUserKey];
-                                        }
                                         if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, see footer of Stack Overflow.')) {
                                             CrossDomainCache_1.CrossDomainCache.StoreInCache(MetaSmokeDisabledConfig, true);
                                             return [2 /*return*/];
                                         }
                                         window.open(metaSmokeOAuthUrl, '_blank');
                                         return [4 /*yield*/, Delay(100)];
-                                    case 3:
+                                    case 2:
                                         _a.sent();
                                         return [4 /*yield*/, new Promise(function (resolve) {
                                                 var handleFDSCCode = function () {
@@ -2083,7 +2099,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                                 };
                                                 $(window).focus(handleFDSCCode);
                                             })];
-                                    case 4:
+                                    case 3:
                                         returnCode = _a.sent();
                                         return [2 /*return*/, returnCode];
                                 }
@@ -4401,15 +4417,23 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }).hide();
     }
     function SetupAdminTools() {
+        var _this = this;
         var bottomBox = $('.-copyright, text-right').children('.g-column').children('.-list');
         var optionsDiv = $('<div>').text('AdvancedFlagging Admin');
         bottomBox.after(optionsDiv);
         var optionsList = $('<ul>').css({ 'list-style': 'none' });
         var clearMetaSmokeConfig = $('<a />').text('Clear Metasmoke Configuration');
-        clearMetaSmokeConfig.click(function () {
-            MetaSmokeAPI_1.MetaSmokeAPI.Reset();
-            location.reload();
-        });
+        clearMetaSmokeConfig.click(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+            return tslib_1.__generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Reset()];
+                    case 1:
+                        _a.sent();
+                        location.reload();
+                        return [2 /*return*/];
+                }
+            });
+        }); });
         optionsDiv.append(optionsList);
         optionsList.append($('<li>').append(clearMetaSmokeConfig));
     }

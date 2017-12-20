@@ -507,8 +507,8 @@ function SetupAdminTools() {
     const optionsList = $('<ul>').css({ 'list-style': 'none' });
 
     const clearMetaSmokeConfig = $('<a />').text('Clear Metasmoke Configuration');
-    clearMetaSmokeConfig.click(() => {
-        MetaSmokeAPI.Reset();
+    clearMetaSmokeConfig.click(async () => {
+        await MetaSmokeAPI.Reset();
         location.reload();
     });
 

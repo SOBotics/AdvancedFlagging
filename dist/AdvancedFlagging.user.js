@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.4.1
+// @version      0.4.2
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -4287,7 +4287,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 reporters.push({
                     name: 'Generic Bot',
                     ReportNaa: function (answerDate, questionDate) { return genericBotAPI_1.ReportNaa(); },
-                    ReportRedFlag: function () { return genericBotAPI_1.ReportRedFlag(); },
+                    ReportRedFlag: function () { return Promise.resolve(false); },
                     ReportLooksFine: function () { return genericBotAPI_1.ReportLooksFine(); },
                     ReportNeedsEditing: function () { return genericBotAPI_1.ReportNeedsEditing(); },
                     ReportVandalism: function () { return Promise.resolve(true); }

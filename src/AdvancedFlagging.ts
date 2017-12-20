@@ -355,7 +355,7 @@ function SetupPostPage() {
             reporters.push({
                 name: 'Generic Bot',
                 ReportNaa: (answerDate: Date, questionDate: Date) => genericBotAPI.ReportNaa(),
-                ReportRedFlag: () => genericBotAPI.ReportRedFlag(),
+                ReportRedFlag: () => Promise.resolve(false),
                 ReportLooksFine: () => genericBotAPI.ReportLooksFine(),
                 ReportNeedsEditing: () => genericBotAPI.ReportNeedsEditing(),
                 ReportVandalism: () => Promise.resolve(true)

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.0
+// @version      0.5.1
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1993,13 +1993,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             FlagTypes: [
                 {
                     DisplayName: 'Plagiarism',
-                    ReportType: 'Custom',
+                    ReportType: 'PostOther',
                     Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
                     GetCustomFlagText: function (copyPastorItem) { return "Possible plagiarism of another answer https:" + copyPastorItem.target_url + ", as can be seen here http://copypastor.sobotics.org/posts/" + copyPastorItem.post_id; }
                 },
                 {
                     DisplayName: 'Duplicate answer',
-                    ReportType: 'Custom',
+                    ReportType: 'PostOther',
                     Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
                     GetComment: function () { return 'Please don\'t add the [same answer to multiple questions](http://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.'; },
                     GetCustomFlagText: function (copyPastorItem) { return "The answer is a repost of their other answer https:" + copyPastorItem.target_url + ", but as there are slight differences as seen here http://copypastor.sobotics.org/posts/" + copyPastorItem.post_id + ", an auto flag wouldn't be raised."; }
@@ -4272,23 +4272,21 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         if (flag.ReportType !== 'NoFlag') {
             var wasFlagged = SimpleCache_1.SimpleCache.GetFromCache("AdvancedFlagging.Flagged." + postId);
             if (!wasFlagged) {
-                if (flag.ReportType === 'Custom') {
+                if (flag.ReportType === 'PostOther') {
                     // Do something here
                     result.FlagPromise = new Promise(function (resolve, reject) {
                         copyPastorPromise.then(function (copyPastorResults) {
                             if (flag.GetCustomFlagText && copyPastorResults.length > 0) {
                                 var flagText = flag.GetCustomFlagText(copyPastorResults[0]);
-                                // tslint:disable-next-line:no-console
-                                console.log('I wanted to make a custom flag with the following text: ', flagText);
-                                // $.ajax({
-                                //     url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
-                                //     type: 'POST',
-                                //     data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
-                                // }).done((data) => {
-                                //     resolve(data);
-                                // }).fail((jqXHR, textStatus, errorThrown) => {
-                                //     reject({ jqXHR, textStatus, errorThrown });
-                                // });
+                                $.ajax({
+                                    url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
+                                    type: 'POST',
+                                    data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
+                                }).done(function (data) {
+                                    resolve(data);
+                                }).fail(function (jqXHR, textStatus, errorThrown) {
+                                    reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                                });
                             }
                         });
                     });
@@ -4442,7 +4440,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     }
                     var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
                     var naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
-                    var customFlag = flagType.ReportType === 'Custom';
+                    var customFlag = flagType.ReportType === 'PostOther';
                     var _loop_1 = function (i) {
                         var reporter = reporters[i];
                         var promise = null;

@@ -87,24 +87,21 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
     if (flag.ReportType !== 'NoFlag') {
         const wasFlagged = SimpleCache.GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`);
         if (!wasFlagged) {
-            if (flag.ReportType === 'Custom') {
+            if (flag.ReportType === 'PostOther') {
                 // Do something here
                 result.FlagPromise = new Promise((resolve, reject) => {
                     copyPastorPromise.then(copyPastorResults => {
                         if (flag.GetCustomFlagText && copyPastorResults.length > 0) {
                             const flagText = flag.GetCustomFlagText(copyPastorResults[0]);
-                            // tslint:disable-next-line:no-console
-                            console.log('I wanted to make a custom flag with the following text: ', flagText);
-
-                            // $.ajax({
-                            //     url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
-                            //     type: 'POST',
-                            //     data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
-                            // }).done((data) => {
-                            //     resolve(data);
-                            // }).fail((jqXHR, textStatus, errorThrown) => {
-                            //     reject({ jqXHR, textStatus, errorThrown });
-                            // });
+                            $.ajax({
+                                url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
+                                type: 'POST',
+                                data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
+                            }).done((data) => {
+                                resolve(data);
+                            }).fail((jqXHR, textStatus, errorThrown) => {
+                                reject({ jqXHR, textStatus, errorThrown });
+                            });
                         }
                     });
 
@@ -294,7 +291,7 @@ function BuildFlaggingDialog(element: JQuery,
 
                 const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
                 const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
-                const customFlag = flagType.ReportType === 'Custom';
+                const customFlag = flagType.ReportType === 'PostOther';
                 for (let i = 0; i < reporters.length; i++) {
                     const reporter = reporters[i];
                     let promise: Promise<boolean> | null = null;

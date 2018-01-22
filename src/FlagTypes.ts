@@ -2,7 +2,7 @@ import { CopyPastorFindTargetResponseItem } from '@userscriptTools/copypastorapi
 
 export interface FlagType {
     DisplayName: string;
-    ReportType: 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'Custom';
+    ReportType: 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther';
     GetComment?(reputation: number): string;
     Enabled?(hasDuplicatePostLinks: boolean): boolean;
     GetCustomFlagText?(copyPastorItem: CopyPastorFindTargetResponseItem): string;
@@ -106,13 +106,13 @@ export const flagCategories: FlagCategory[] = [
         FlagTypes: [
             {
                 DisplayName: 'Plagiarism',
-                ReportType: 'Custom',
+                ReportType: 'PostOther',
                 Enabled: (hasDuplicatePostLinks) => hasDuplicatePostLinks,
                 GetCustomFlagText: (copyPastorItem) => `Possible plagiarism of another answer https:${copyPastorItem.target_url}, as can be seen here http://copypastor.sobotics.org/posts/${copyPastorItem.post_id}`
             },
             {
                 DisplayName: 'Duplicate answer',
-                ReportType: 'Custom',
+                ReportType: 'PostOther',
                 Enabled: (hasDuplicatePostLinks) => hasDuplicatePostLinks,
                 GetComment: () => 'Please don\'t add the [same answer to multiple questions](http://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.',
                 GetCustomFlagText: (copyPastorItem) => `The answer is a repost of their other answer https:${copyPastorItem.target_url}, but as there are slight differences as seen here http://copypastor.sobotics.org/posts/${copyPastorItem.post_id}, an auto flag wouldn't be raised.`

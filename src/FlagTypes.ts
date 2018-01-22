@@ -34,6 +34,25 @@ export const flagCategories: FlagCategory[] = [
         ]
     },
     {
+        BoxStyle: { 'padding-left': '5px', 'padding-right': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
+        AppliesTo: ['Answer'],
+        FlagTypes: [
+            {
+                DisplayName: 'Plagiarism',
+                ReportType: 'PostOther',
+                Enabled: (hasDuplicatePostLinks) => hasDuplicatePostLinks,
+                GetCustomFlagText: (copyPastorItem) => `Possible plagiarism of another answer https:${copyPastorItem.target_url}, as can be seen here http://copypastor.sobotics.org/posts/${copyPastorItem.post_id}`
+            },
+            {
+                DisplayName: 'Duplicate answer',
+                ReportType: 'PostOther',
+                Enabled: (hasDuplicatePostLinks) => hasDuplicatePostLinks,
+                GetComment: () => 'Please don\'t add the [same answer to multiple questions](http://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.',
+                GetCustomFlagText: (copyPastorItem) => `The answer is a repost of their other answer https:${copyPastorItem.target_url}, but as there are slight differences as seen here http://copypastor.sobotics.org/posts/${copyPastorItem.post_id}, an auto flag wouldn't be raised.`
+            }
+        ]
+    },
+    {
         BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
         AppliesTo: ['Answer'],
         FlagTypes: [
@@ -97,25 +116,6 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Comment',
                 ReportType: 'AnswerNotAnAnswer',
                 GetComment: () => 'This does not provide an answer to the question. Once you have sufficient [reputation](https://stackoverflow.com/help/whats-reputation) you will be able to [comment on any post](https://stackoverflow.com/help/privileges/comment); instead, [provide answers that don\'t require clarification from the asker](https://meta.stackexchange.com/questions/214173/why-do-i-need-50-reputation-to-comment-what-can-i-do-instead).'
-            }
-        ]
-    },
-    {
-        BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
-        AppliesTo: ['Answer'],
-        FlagTypes: [
-            {
-                DisplayName: 'Plagiarism',
-                ReportType: 'PostOther',
-                Enabled: (hasDuplicatePostLinks) => hasDuplicatePostLinks,
-                GetCustomFlagText: (copyPastorItem) => `Possible plagiarism of another answer https:${copyPastorItem.target_url}, as can be seen here http://copypastor.sobotics.org/posts/${copyPastorItem.post_id}`
-            },
-            {
-                DisplayName: 'Duplicate answer',
-                ReportType: 'PostOther',
-                Enabled: (hasDuplicatePostLinks) => hasDuplicatePostLinks,
-                GetComment: () => 'Please don\'t add the [same answer to multiple questions](http://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.',
-                GetCustomFlagText: (copyPastorItem) => `The answer is a repost of their other answer https:${copyPastorItem.target_url}, but as there are slight differences as seen here http://copypastor.sobotics.org/posts/${copyPastorItem.post_id}, an auto flag wouldn't be raised.`
             }
         ]
     },

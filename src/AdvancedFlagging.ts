@@ -218,9 +218,11 @@ function BuildFlaggingDialog(element: JQuery,
         if (flagCategory.AppliesTo.indexOf(postType) === -1) {
             return;
         }
+        const divider = getDivider();
         if (!firstCategory) {
-            dropDown.append(getDivider());
+            dropDown.append(divider);
         }
+        let activeLinks = flagCategory.FlagTypes.length;
         flagCategory.FlagTypes.forEach(flagType => {
             if (flagType.GetComment) {
                 hasCommentOptions = true;
@@ -232,14 +234,19 @@ function BuildFlaggingDialog(element: JQuery,
 
             const reportLink = $('<a />').css(linkStyle);
 
-            let linkEnabled = false;
             const disableLink = () => {
-                linkEnabled = false;
-                reportLink.css({ opacity: 0.5, cursor: 'default' });
+                activeLinks--;
+                reportLink.hide();
+                if (divider && activeLinks <= 0) {
+                    divider.hide();
+                }
             };
             const enableLink = () => {
-                linkEnabled = true;
-                reportLink.css({ opacity: 1, cursor: 'pointer' });
+                activeLinks++;
+                reportLink.show();
+                if (divider && activeLinks > 0) {
+                    divider.show();
+                }
             };
 
             disableLink();
@@ -249,8 +256,7 @@ function BuildFlaggingDialog(element: JQuery,
                     if (flagType.Enabled) {
                         const hasItems = items.length > 0;
                         const isEnabled = flagType.Enabled(hasItems);
-                        linkEnabled = isEnabled;
-                        if (linkEnabled) {
+                        if (isEnabled) {
                             enableLink();
                         }
                     } else {
@@ -262,10 +268,6 @@ function BuildFlaggingDialog(element: JQuery,
             }
 
             reportLink.click(() => {
-                if (!linkEnabled) {
-                    return;
-                }
-
                 if (!deleted) {
                     try {
                         const result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation, copyPastorPromise);

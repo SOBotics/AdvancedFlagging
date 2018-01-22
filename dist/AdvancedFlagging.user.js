@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.4
+// @version      0.5.5
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1926,6 +1926,25 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             ]
         },
         {
+            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
+            AppliesTo: ['Answer'],
+            FlagTypes: [
+                {
+                    DisplayName: 'Plagiarism',
+                    ReportType: 'PostOther',
+                    Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
+                    GetCustomFlagText: function (copyPastorItem) { return "Possible plagiarism of another answer https:" + copyPastorItem.target_url + ", as can be seen here http://copypastor.sobotics.org/posts/" + copyPastorItem.post_id; }
+                },
+                {
+                    DisplayName: 'Duplicate answer',
+                    ReportType: 'PostOther',
+                    Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
+                    GetComment: function () { return 'Please don\'t add the [same answer to multiple questions](http://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.'; },
+                    GetCustomFlagText: function (copyPastorItem) { return "The answer is a repost of their other answer https:" + copyPastorItem.target_url + ", but as there are slight differences as seen here http://copypastor.sobotics.org/posts/" + copyPastorItem.post_id + ", an auto flag wouldn't be raised."; }
+                }
+            ]
+        },
+        {
             BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
             AppliesTo: ['Answer'],
             FlagTypes: [
@@ -1989,25 +2008,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     DisplayName: 'Comment',
                     ReportType: 'AnswerNotAnAnswer',
                     GetComment: function () { return 'This does not provide an answer to the question. Once you have sufficient [reputation](https://stackoverflow.com/help/whats-reputation) you will be able to [comment on any post](https://stackoverflow.com/help/privileges/comment); instead, [provide answers that don\'t require clarification from the asker](https://meta.stackexchange.com/questions/214173/why-do-i-need-50-reputation-to-comment-what-can-i-do-instead).'; }
-                }
-            ]
-        },
-        {
-            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
-            AppliesTo: ['Answer'],
-            FlagTypes: [
-                {
-                    DisplayName: 'Plagiarism',
-                    ReportType: 'PostOther',
-                    Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
-                    GetCustomFlagText: function (copyPastorItem) { return "Possible plagiarism of another answer https:" + copyPastorItem.target_url + ", as can be seen here http://copypastor.sobotics.org/posts/" + copyPastorItem.post_id; }
-                },
-                {
-                    DisplayName: 'Duplicate answer',
-                    ReportType: 'PostOther',
-                    Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
-                    GetComment: function () { return 'Please don\'t add the [same answer to multiple questions](http://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.'; },
-                    GetCustomFlagText: function (copyPastorItem) { return "The answer is a repost of their other answer https:" + copyPastorItem.target_url + ", but as there are slight differences as seen here http://copypastor.sobotics.org/posts/" + copyPastorItem.post_id + ", an auto flag wouldn't be raised."; }
                 }
             ]
         },
@@ -4378,9 +4378,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             if (flagCategory.AppliesTo.indexOf(postType) === -1) {
                 return;
             }
+            var divider = getDivider();
             if (!firstCategory) {
-                dropDown.append(getDivider());
+                dropDown.append(divider);
             }
+            var activeLinks = flagCategory.FlagTypes.length;
             flagCategory.FlagTypes.forEach(function (flagType) {
                 if (flagType.GetComment) {
                     hasCommentOptions = true;
@@ -4390,14 +4392,19 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     dropdownItem.css(flagCategory.BoxStyle);
                 }
                 var reportLink = $('<a />').css(linkStyle);
-                var linkEnabled = false;
                 var disableLink = function () {
-                    linkEnabled = false;
-                    reportLink.css({ opacity: 0.5, cursor: 'default' });
+                    activeLinks--;
+                    reportLink.hide();
+                    if (divider && activeLinks <= 0) {
+                        divider.hide();
+                    }
                 };
                 var enableLink = function () {
-                    linkEnabled = true;
-                    reportLink.css({ opacity: 1, cursor: 'pointer' });
+                    activeLinks++;
+                    reportLink.show();
+                    if (divider && activeLinks > 0) {
+                        divider.show();
+                    }
                 };
                 disableLink();
                 if (flagType.Enabled) {
@@ -4406,8 +4413,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         if (flagType.Enabled) {
                             var hasItems = items.length > 0;
                             var isEnabled = flagType.Enabled(hasItems);
-                            linkEnabled = isEnabled;
-                            if (linkEnabled) {
+                            if (isEnabled) {
                                 enableLink();
                             }
                         }
@@ -4420,9 +4426,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     enableLink();
                 }
                 reportLink.click(function () {
-                    if (!linkEnabled) {
-                        return;
-                    }
                     if (!deleted) {
                         try {
                             var result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation, copyPastorPromise);

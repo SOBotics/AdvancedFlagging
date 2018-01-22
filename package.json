@@ -1,6 +1,6 @@
 {
   "name": "advancedflagging",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "scripts": {
     "build": "tslint src/**/*.ts{,x} && webpack && concat-cli -f src/UserScriptDeclaration.js dist/out.js -o dist/AdvancedFlagging.user.js && concat-cli -f src/UserScriptDeclaration.js dist/out.min.js -o dist/AdvancedFlagging.min.user.js"
   },

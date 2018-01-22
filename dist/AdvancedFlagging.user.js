@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.2
+// @version      0.5.3
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1973,7 +1973,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 {
                     DisplayName: 'Me too',
                     ReportType: 'AnswerNotAnAnswer',
-                    GetComment: function () { return "Please don't add *\"Me too\"* as answers. It doesn't actually provide an answer to the question. ' +\n                    'If you have a different but related question, then [ask](//" + window.location.hostname + "$/questions/ask) it ' +\n                    '(reference this one if it will help provide context). If you're interested in this specific question, ' +\n                    'you can [upvote](//stackoverflow.com/help/privileges/vote-up) it, leave a [comment](//stackoverflow.com/help/privileges/comment), ' +\n                    'or start a [bounty](//stackoverflow.com/help/privileges/set-bounties) ' +\n                    'once you have enough [reputation](//stackoverflow.com/help/whats-reputation)."; },
+                    GetComment: function () { return 'Please don\'t add *"Me too"* as answers. It doesn\'t actually provide an answer to the question. ' +
+                        ("If you have a different but related question, then [ask](//" + window.location.hostname + "$/questions/ask) it ") +
+                        '(reference this one if it will help provide context). If you\'re interested in this specific question, ' +
+                        'you can [upvote](//stackoverflow.com/help/privileges/vote-up) it, leave a [comment](//stackoverflow.com/help/privileges/comment), ' +
+                        'or start a [bounty](//stackoverflow.com/help/privileges/set-bounties) ' +
+                        'once you have enough [reputation](//stackoverflow.com/help/whats-reputation).'; },
                 },
                 {
                     DisplayName: 'Library',

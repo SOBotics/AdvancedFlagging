@@ -1,5 +1,7 @@
 var webpack = require('webpack');
 var UnminifiedWebpackPlugin = require('unminified-webpack-plugin');
+const { TsConfigPathsPlugin } = require('awesome-typescript-loader');
+
 
 module.exports = {
     entry: "./src/AdvancedFlagging.ts",
@@ -9,7 +11,10 @@ module.exports = {
     },
     resolve: {
         // Add '.ts' and '.tsx' as a resolvable extension.
-        extensions: ["", ".webpack.js", ".web.js", ".ts", ".tsx", ".js"]
+        extensions: ["", ".webpack.js", ".web.js", ".ts", ".tsx", ".js"],
+        plugins: [
+            new TsConfigPathsPlugin()
+        ]
     },
     module: {
         loaders: [
@@ -21,6 +26,6 @@ module.exports = {
         new webpack.optimize.UglifyJsPlugin({
             compress: { warnings: false }
         }),
-        new UnminifiedWebpackPlugin()
+        new UnminifiedWebpackPlugin(),
     ]
 }

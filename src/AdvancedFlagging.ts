@@ -1,14 +1,14 @@
 import * as jquery from 'jquery';
-import { MetaSmokeAPI } from '@sobotics/metasmokeapi/dist/MetaSmokeAPI';
+
 import { FlagType, flagCategories } from './FlagTypes';
-import { NattyAPI } from '@sobotics/nattyapi/dist/NattyApi';
+import { StackExchangeGlobal } from '@userscriptTools/sotools/StackExchangeConfiguration';
+import { SimpleCache } from '@userscriptTools/caching/SimpleCache';
+import { IsStackOverflow, parseQuestionsAndAnswers } from '@userscriptTools/sotools/sotools';
+import { NattyAPI } from '@userscriptTools/nattyapi/NattyApi';
+import { GenericBotAPI } from '@userscriptTools/genericbotapi/GenericBotAPI';
+import { MetaSmokeAPI } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
+import { CrossDomainCache } from '@userscriptTools/caching/CrossDomainCache';
 
-import { IsStackOverflow, parseQuestionsAndAnswers } from '@sobotics/sotools/dist/sotools';
-import { StackExchangeGlobal } from '@sobotics/sotools/dist/StackExchangeConfiguration';
-
-import { GenericBotAPI } from '@sobotics/genericbotapi/dist/GenericBotAPI';
-import { CrossDomainCache } from '@sobotics/caching/dist/CrossDomainCache';
-import { SimpleCache } from '@sobotics/caching/dist/SimpleCache';
 // tslint:disable-next-line:no-debugger
 debugger;
 

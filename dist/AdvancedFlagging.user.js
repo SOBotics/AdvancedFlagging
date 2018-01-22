@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.6
+// @version      0.5.7
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -4680,7 +4680,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
                 reporters.push({
                     name: 'Copy Pastor',
-                    ReportNaa: function (answerDate, questionDate) { return Promise.resolve(false); },
+                    ReportNaa: function (answerDate, questionDate) { return copyPastorApi.ReportFalsePositive(); },
                     ReportRedFlag: function () { return Promise.resolve(false); },
                     ReportLooksFine: function () { return copyPastorApi.ReportFalsePositive(); },
                     ReportNeedsEditing: function () { return copyPastorApi.ReportFalsePositive(); },

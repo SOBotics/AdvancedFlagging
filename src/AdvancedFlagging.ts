@@ -439,7 +439,7 @@ function SetupPostPage() {
 
             reporters.push({
                 name: 'Copy Pastor',
-                ReportNaa: (answerDate: Date, questionDate: Date) => Promise.resolve(false),
+                ReportNaa: (answerDate: Date, questionDate: Date) => copyPastorApi.ReportFalsePositive(),
                 ReportRedFlag: () => Promise.resolve(false),
                 ReportLooksFine: () => copyPastorApi.ReportFalsePositive(),
                 ReportNeedsEditing: () => copyPastorApi.ReportFalsePositive(),

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.3
+// @version      0.5.4
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2051,7 +2051,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             this.replaySubject = new ReplaySubject_1.ReplaySubject(1);
             this.subject.subscribe(this.replaySubject);
             SimpleCache_1.SimpleCache.GetAndCache("CopyPastor.FindTarget." + this.answerId, function () { return new Promise(function (resolve, reject) {
-                var url = copyPastorServer + "/posts/findTarget?url=//" + window.location.hostname + "/a/" + _this.answerId + "/4687348";
+                var url = copyPastorServer + "/posts/findTarget?url=//" + window.location.hostname + "/a/" + _this.answerId;
                 GM_xmlhttpRequest({
                     method: 'GET',
                     url: url,
@@ -4571,7 +4571,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         showFunc(copyPastorIcon);
                         copyPastorIcon.click(function () {
                             return items.forEach(function (item) {
-                                window.open(item.target_url);
+                                window.open('http://copypastor.sobotics.org/posts/' + item.post_id);
                             });
                         });
                     }

@@ -174,6 +174,8 @@ interface Reporter {
     ReportLooksFine(): Promise<boolean>;
     ReportNeedsEditing(): Promise<boolean>;
     ReportVandalism(): Promise<boolean>;
+    ReportDuplicateAnswer(): Promise<boolean>;
+    ReportPlagiarism(): Promise<boolean>;
 }
 function BuildFlaggingDialog(element: JQuery,
     postId: number,
@@ -292,6 +294,7 @@ function BuildFlaggingDialog(element: JQuery,
 
                 const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
                 const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
+                const customFlag = flagType.ReportType === 'Custom';
                 for (let i = 0; i < reporters.length; i++) {
                     const reporter = reporters[i];
                     let promise: Promise<boolean> | null = null;
@@ -310,6 +313,17 @@ function BuildFlaggingDialog(element: JQuery,
                             default:
                                 promise = reporter.ReportLooksFine();
                                 break;
+                        }
+                    } else if (customFlag) {
+                        switch (flagType.DisplayName) {
+                            case 'Duplicate answer':
+                                promise = reporter.ReportDuplicateAnswer();
+                                break;
+                            case 'Plagiarism':
+                                promise = reporter.ReportPlagiarism();
+                                break;
+                            default:
+                                promise = Promise.resolve(false);
                         }
                     }
                     if (promise) {
@@ -398,7 +412,9 @@ function SetupPostPage() {
                 ReportRedFlag: () => nattyApi.ReportRedFlag(),
                 ReportLooksFine: () => nattyApi.ReportLooksFine(),
                 ReportNeedsEditing: () => nattyApi.ReportNeedsEditing(),
-                ReportVandalism: () => Promise.resolve(false)
+                ReportVandalism: () => Promise.resolve(false),
+                ReportDuplicateAnswer: () => Promise.resolve(false),
+                ReportPlagiarism: () => Promise.resolve(false)
             });
 
             copyPastorObservable.subscribe(items => {
@@ -415,6 +431,17 @@ function SetupPostPage() {
                 }
             });
 
+            reporters.push({
+                name: 'Copy Pastor',
+                ReportNaa: (answerDate: Date, questionDate: Date) => Promise.resolve(false),
+                ReportRedFlag: () => Promise.resolve(false),
+                ReportLooksFine: () => copyPastorApi.ReportFalsePositive(),
+                ReportNeedsEditing: () => copyPastorApi.ReportFalsePositive(),
+                ReportVandalism: () => copyPastorApi.ReportFalsePositive(),
+                ReportDuplicateAnswer: () => copyPastorApi.ReportTruePositive(),
+                ReportPlagiarism: () => copyPastorApi.ReportTruePositive()
+            });
+
             const genericBotAPI = new GenericBotAPI(post.postId);
             reporters.push({
                 name: 'Generic Bot',
@@ -422,7 +449,9 @@ function SetupPostPage() {
                 ReportRedFlag: () => Promise.resolve(false),
                 ReportLooksFine: () => genericBotAPI.ReportLooksFine(),
                 ReportNeedsEditing: () => genericBotAPI.ReportNeedsEditing(),
-                ReportVandalism: () => Promise.resolve(true)
+                ReportVandalism: () => Promise.resolve(true),
+                ReportDuplicateAnswer: () => Promise.resolve(false),
+                ReportPlagiarism: () => Promise.resolve(false)
             });
 
         }
@@ -444,7 +473,9 @@ function SetupPostPage() {
             ReportRedFlag: () => metaSmoke.ReportRedFlag(),
             ReportLooksFine: () => metaSmoke.ReportLooksFine(),
             ReportNeedsEditing: () => metaSmoke.ReportNeedsEditing(),
-            ReportVandalism: () => metaSmoke.ReportVandalism()
+            ReportVandalism: () => metaSmoke.ReportVandalism(),
+            ReportDuplicateAnswer: () => Promise.resolve(false),
+            ReportPlagiarism: () => Promise.resolve(false)
         });
 
         const performedActionIcon = getPerformedActionIcon();

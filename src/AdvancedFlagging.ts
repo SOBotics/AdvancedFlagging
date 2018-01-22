@@ -14,6 +14,7 @@ import { CopyPastorAPI, CopyPastorFindTargetResponseItem } from '@userscriptTool
 debugger;
 
 const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
+const copyPastorKey = '???';
 
 declare const StackExchange: StackExchangeGlobal;
 declare const unsafeWindow: any;
@@ -396,7 +397,7 @@ function SetupPostPage() {
         let showFunc = (element: JQuery) => element.show();
 
         const copyPastorIcon = getCopyPastorIcon();
-        const copyPastorApi = new CopyPastorAPI(post.postId);
+        const copyPastorApi = new CopyPastorAPI(post.postId, copyPastorKey);
         const copyPastorObservable = copyPastorApi.Watch();
 
         const smokeyIcon = getSmokeyIcon();

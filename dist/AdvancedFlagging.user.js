@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.5
+// @version      0.5.6
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -337,9 +337,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 "use strict";
 "use strict";
 var root_1 = __webpack_require__(6);
-var toSubscriber_1 = __webpack_require__(44);
-var observable_1 = __webpack_require__(37);
-var pipe_1 = __webpack_require__(43);
+var toSubscriber_1 = __webpack_require__(45);
+var observable_1 = __webpack_require__(38);
+var pipe_1 = __webpack_require__(44);
 /**
  * A representation of any set of values over any amount of time. This is the most basic building block
  * of RxJS.
@@ -917,12 +917,12 @@ var SafeSubscriber = (function (_super) {
 
 "use strict";
 "use strict";
-var isArray_1 = __webpack_require__(40);
-var isObject_1 = __webpack_require__(41);
+var isArray_1 = __webpack_require__(41);
+var isObject_1 = __webpack_require__(42);
 var isFunction_1 = __webpack_require__(16);
-var tryCatch_1 = __webpack_require__(45);
+var tryCatch_1 = __webpack_require__(46);
 var errorObject_1 = __webpack_require__(15);
-var UnsubscriptionError_1 = __webpack_require__(39);
+var UnsubscriptionError_1 = __webpack_require__(40);
 /**
  * Represents a disposable resource, such as the execution of an Observable. A
  * Subscription has one important method, `unsubscribe`, that takes no argument
@@ -1532,9 +1532,9 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var Subject_1 = __webpack_require__(5);
-var queue_1 = __webpack_require__(36);
+var queue_1 = __webpack_require__(37);
 var Subscription_1 = __webpack_require__(4);
-var observeOn_1 = __webpack_require__(29);
+var observeOn_1 = __webpack_require__(30);
 var ObjectUnsubscribedError_1 = __webpack_require__(14);
 var SubjectSubscription_1 = __webpack_require__(12);
 /**
@@ -1648,7 +1648,7 @@ exports.$$rxSubscriber = exports.rxSubscriber;
 /* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(46)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, xdLocalStorage_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(47)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, xdLocalStorage_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var CrossDomainCache = /** @class */ (function () {
@@ -1844,7 +1844,7 @@ exports.SubjectSubscription = SubjectSubscription;
 "use strict";
 "use strict";
 var Observable_1 = __webpack_require__(2);
-var take_1 = __webpack_require__(27);
+var take_1 = __webpack_require__(28);
 Observable_1.Observable.prototype.take = take_1.take;
 //# sourceMappingURL=take.js.map
 
@@ -1905,6 +1905,118 @@ exports.isFunction = isFunction;
 
 /***/ },
 /* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(1)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, SimpleCache_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var ChatApi = /** @class */ (function () {
+        function ChatApi(chatUrl) {
+            if (chatUrl === void 0) { chatUrl = 'https://chat.stackoverflow.com'; }
+            this.chatRoomUrl = "" + chatUrl;
+        }
+        ChatApi.prototype.GetChannelFKey = function (roomId) {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                var cachingKey, getterPromise, expiryDate;
+                return tslib_1.__generator(this, function (_a) {
+                    cachingKey = "StackExchange.ChatApi.FKey_" + roomId;
+                    getterPromise = new Promise(function (resolve, reject) {
+                        _this.GetChannelPage(roomId).then(function (channelPage) {
+                            var match = channelPage.match(/hidden" value="([\dabcdef]{32})/);
+                            if (match && match.length) {
+                                var fkey = match[1];
+                                resolve(fkey);
+                            }
+                            reject('Could not find fkey');
+                        });
+                    });
+                    expiryDate = new Date();
+                    expiryDate.setDate(expiryDate.getDate() + 1);
+                    return [2 /*return*/, SimpleCache_1.SimpleCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate)];
+                });
+            });
+        };
+        ChatApi.prototype.GetChatUserId = function (roomId) {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                var cachingKey, getterPromise, expiryDate;
+                return tslib_1.__generator(this, function (_a) {
+                    cachingKey = "StackExchange.ChatApi.UserId_" + roomId;
+                    getterPromise = new Promise(function (resolve, reject) {
+                        _this.GetChannelPage(roomId).then(function (channelPage) {
+                            var activeUserDiv = $('#active-user', $(channelPage));
+                            var classAtr = activeUserDiv.attr('class');
+                            var match = classAtr.match(/user-(\d+)/);
+                            if (match && match.length) {
+                                resolve(parseInt(match[1], 10));
+                            }
+                            reject('Could not find user id');
+                        });
+                    });
+                    expiryDate = new Date();
+                    expiryDate.setDate(expiryDate.getDate() + 1);
+                    return [2 /*return*/, SimpleCache_1.SimpleCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate)];
+                });
+            });
+        };
+        ChatApi.prototype.SendMessage = function (roomId, message, providedFkey) {
+            var _this = this;
+            var fkeyPromise = providedFkey
+                ? Promise.resolve(providedFkey)
+                : this.GetChannelFKey(roomId);
+            return fkeyPromise.then(function (fKey) {
+                return new Promise(function (resolve, reject) {
+                    GM_xmlhttpRequest({
+                        method: 'POST',
+                        url: _this.chatRoomUrl + "/chats/" + roomId + "/messages/new",
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        data: 'text=' + encodeURIComponent(message) + '&fkey=' + fKey,
+                        onload: function (response) {
+                            if (response.status !== 200) {
+                                reject(response.statusText);
+                            }
+                            else {
+                                resolve();
+                            }
+                        },
+                        onerror: function (response) {
+                            reject(response);
+                        },
+                    });
+                });
+            });
+        };
+        ChatApi.prototype.GetChannelPage = function (roomId) {
+            var _this = this;
+            var cachingKey = "StackExchange.ChatApi.ChannelData_" + roomId;
+            var getterPromise = new Promise(function (resolve, reject) {
+                GM_xmlhttpRequest({
+                    method: 'GET',
+                    url: _this.chatRoomUrl + "/rooms/" + roomId,
+                    onload: function (response) {
+                        if (response.status !== 200) {
+                            reject(response.statusText);
+                        }
+                        else {
+                            resolve(response.responseText);
+                        }
+                    },
+                    onerror: function (data) { return reject(data); }
+                });
+            });
+            var expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + 1);
+            return SimpleCache_1.SimpleCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate);
+        };
+        return ChatApi;
+    }());
+    exports.ChatApi = ChatApi;
+}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
@@ -2034,16 +2146,18 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ },
-/* 18 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(1), __webpack_require__(8), __webpack_require__(5), __webpack_require__(24)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, SimpleCache_1, ReplaySubject_1, Subject_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(1), __webpack_require__(8), __webpack_require__(5), __webpack_require__(17), __webpack_require__(25)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, SimpleCache_1, ReplaySubject_1, Subject_1, ChatApi_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var copyPastorServer = 'http://copypastor.sobotics.org';
+    var soboticsRoomId = 111347;
     var CopyPastorAPI = /** @class */ (function () {
-        function CopyPastorAPI(answerId) {
+        function CopyPastorAPI(answerId, key) {
             this.answerId = answerId;
+            this.key = key;
         }
         CopyPastorAPI.prototype.Watch = function () {
             var _this = this;
@@ -2079,14 +2193,63 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         CopyPastorAPI.prototype.ReportTruePositive = function () {
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 return tslib_1.__generator(this, function (_a) {
-                    return [2 /*return*/, Promise.resolve(false)];
+                    return [2 /*return*/, this.SendFeedback('tp')];
                 });
             });
         };
         CopyPastorAPI.prototype.ReportFalsePositive = function () {
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 return tslib_1.__generator(this, function (_a) {
-                    return [2 /*return*/, Promise.resolve(false)];
+                    return [2 /*return*/, this.SendFeedback('fp')];
+                });
+            });
+        };
+        CopyPastorAPI.prototype.SendFeedback = function (type) {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                var username, chatApi, chatId, results, payloads, promises, allResults, i;
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
+                            chatApi = new ChatApi_1.ChatApi();
+                            return [4 /*yield*/, chatApi.GetChatUserId(soboticsRoomId)];
+                        case 1:
+                            chatId = _a.sent();
+                            return [4 /*yield*/, this.Promise()];
+                        case 2:
+                            results = _a.sent();
+                            payloads = results.map(function (result) {
+                                var postId = result.post_id;
+                                var payload = {
+                                    post_id: postId,
+                                    feedback_type: type,
+                                    username: username,
+                                    link: "https://chat.stackoverflow.com/users/" + chatId,
+                                    key: _this.key,
+                                };
+                                return payload;
+                            });
+                            promises = payloads.map(function (payload) {
+                                return new Promise(function (resolve, reject) {
+                                    $.ajax({
+                                        type: 'POST',
+                                        url: copyPastorServer + "/feedback/create",
+                                        data: payload
+                                    }).done(function () { return resolve(true); })
+                                        .fail(function () { return reject(); });
+                                });
+                            });
+                            return [4 /*yield*/, Promise.all(promises)];
+                        case 3:
+                            allResults = _a.sent();
+                            for (i = 0; i < allResults.length; i++) {
+                                if (!allResults[i]) {
+                                    return [2 /*return*/, false];
+                                }
+                            }
+                            return [2 /*return*/, true];
+                    }
                 });
             });
         };
@@ -2097,7 +2260,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ },
-/* 19 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(7)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, sotools_1) {
@@ -2202,7 +2365,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ },
-/* 20 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(5), __webpack_require__(8), __webpack_require__(10), __webpack_require__(1), __webpack_require__(13)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, Subject_1, ReplaySubject_1, CrossDomainCache_1, SimpleCache_1) {
@@ -2535,10 +2698,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ },
-/* 21 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(5), __webpack_require__(8), __webpack_require__(7), __webpack_require__(1), __webpack_require__(47), __webpack_require__(13)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, Subject_1, ReplaySubject_1, sotools_1, SimpleCache_1, ChatApi_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(5), __webpack_require__(8), __webpack_require__(7), __webpack_require__(1), __webpack_require__(17), __webpack_require__(13)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, Subject_1, ReplaySubject_1, sotools_1, SimpleCache_1, ChatApi_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
@@ -2689,7 +2852,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2822,7 +2985,7 @@ exports.Notification = Notification;
 //# sourceMappingURL=Notification.js.map
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -2877,18 +3040,18 @@ exports.Scheduler = Scheduler;
 //# sourceMappingURL=Scheduler.js.map
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
 var Observable_1 = __webpack_require__(2);
-var map_1 = __webpack_require__(26);
+var map_1 = __webpack_require__(27);
 Observable_1.Observable.prototype.map = map_1.map;
 //# sourceMappingURL=map.js.map
 
 /***/ },
-/* 25 */
+/* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2975,12 +3138,12 @@ exports.EmptyObservable = EmptyObservable;
 //# sourceMappingURL=EmptyObservable.js.map
 
 /***/ },
-/* 26 */
+/* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
-var map_1 = __webpack_require__(28);
+var map_1 = __webpack_require__(29);
 /**
  * Applies a given `project` function to each value emitted by the source
  * Observable, and emits the resulting values as an Observable.
@@ -3021,12 +3184,12 @@ exports.map = map;
 //# sourceMappingURL=map.js.map
 
 /***/ },
-/* 27 */
+/* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
-var take_1 = __webpack_require__(30);
+var take_1 = __webpack_require__(31);
 /**
  * Emits only the first `count` values emitted by the source Observable.
  *
@@ -3067,7 +3230,7 @@ exports.take = take;
 //# sourceMappingURL=take.js.map
 
 /***/ },
-/* 28 */
+/* 29 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3162,7 +3325,7 @@ var MapSubscriber = (function (_super) {
 //# sourceMappingURL=map.js.map
 
 /***/ },
-/* 29 */
+/* 30 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3173,7 +3336,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var Subscriber_1 = __webpack_require__(3);
-var Notification_1 = __webpack_require__(22);
+var Notification_1 = __webpack_require__(23);
 /**
  *
  * Re-emits all notifications from source Observable with specified scheduler.
@@ -3283,7 +3446,7 @@ exports.ObserveOnMessage = ObserveOnMessage;
 //# sourceMappingURL=observeOn.js.map
 
 /***/ },
-/* 30 */
+/* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3294,8 +3457,8 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var Subscriber_1 = __webpack_require__(3);
-var ArgumentOutOfRangeError_1 = __webpack_require__(38);
-var EmptyObservable_1 = __webpack_require__(25);
+var ArgumentOutOfRangeError_1 = __webpack_require__(39);
+var EmptyObservable_1 = __webpack_require__(26);
 /**
  * Emits only the first `count` values emitted by the source Observable.
  *
@@ -3380,7 +3543,7 @@ var TakeSubscriber = (function (_super) {
 //# sourceMappingURL=take.js.map
 
 /***/ },
-/* 31 */
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3430,7 +3593,7 @@ exports.Action = Action;
 //# sourceMappingURL=Action.js.map
 
 /***/ },
-/* 32 */
+/* 33 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3441,7 +3604,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var root_1 = __webpack_require__(6);
-var Action_1 = __webpack_require__(31);
+var Action_1 = __webpack_require__(32);
 /**
  * We need this JSDoc comment for affecting ESDoc.
  * @ignore
@@ -3578,7 +3741,7 @@ exports.AsyncAction = AsyncAction;
 //# sourceMappingURL=AsyncAction.js.map
 
 /***/ },
-/* 33 */
+/* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3588,7 +3751,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var Scheduler_1 = __webpack_require__(23);
+var Scheduler_1 = __webpack_require__(24);
 var AsyncScheduler = (function (_super) {
     __extends(AsyncScheduler, _super);
     function AsyncScheduler() {
@@ -3635,7 +3798,7 @@ exports.AsyncScheduler = AsyncScheduler;
 //# sourceMappingURL=AsyncScheduler.js.map
 
 /***/ },
-/* 34 */
+/* 35 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3645,7 +3808,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var AsyncAction_1 = __webpack_require__(32);
+var AsyncAction_1 = __webpack_require__(33);
 /**
  * We need this JSDoc comment for affecting ESDoc.
  * @ignore
@@ -3690,7 +3853,7 @@ exports.QueueAction = QueueAction;
 //# sourceMappingURL=QueueAction.js.map
 
 /***/ },
-/* 35 */
+/* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3700,7 +3863,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var AsyncScheduler_1 = __webpack_require__(33);
+var AsyncScheduler_1 = __webpack_require__(34);
 var QueueScheduler = (function (_super) {
     __extends(QueueScheduler, _super);
     function QueueScheduler() {
@@ -3712,13 +3875,13 @@ exports.QueueScheduler = QueueScheduler;
 //# sourceMappingURL=QueueScheduler.js.map
 
 /***/ },
-/* 36 */
+/* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
-var QueueAction_1 = __webpack_require__(34);
-var QueueScheduler_1 = __webpack_require__(35);
+var QueueAction_1 = __webpack_require__(35);
+var QueueScheduler_1 = __webpack_require__(36);
 /**
  *
  * Queue Scheduler
@@ -3784,7 +3947,7 @@ exports.queue = new QueueScheduler_1.QueueScheduler(QueueAction_1.QueueAction);
 //# sourceMappingURL=queue.js.map
 
 /***/ },
-/* 37 */
+/* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3816,7 +3979,7 @@ exports.$$observable = exports.observable;
 //# sourceMappingURL=observable.js.map
 
 /***/ },
-/* 38 */
+/* 39 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -3850,7 +4013,7 @@ exports.ArgumentOutOfRangeError = ArgumentOutOfRangeError;
 //# sourceMappingURL=ArgumentOutOfRangeError.js.map
 
 /***/ },
-/* 39 */
+/* 40 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -3881,7 +4044,7 @@ exports.UnsubscriptionError = UnsubscriptionError;
 //# sourceMappingURL=UnsubscriptionError.js.map
 
 /***/ },
-/* 40 */
+/* 41 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -3890,7 +4053,7 @@ exports.isArray = Array.isArray || (function (x) { return x && typeof x.length =
 //# sourceMappingURL=isArray.js.map
 
 /***/ },
-/* 41 */
+/* 42 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -3902,7 +4065,7 @@ exports.isObject = isObject;
 //# sourceMappingURL=isObject.js.map
 
 /***/ },
-/* 42 */
+/* 43 */
 /***/ function(module, exports) {
 
 "use strict";
@@ -3913,12 +4076,12 @@ exports.noop = noop;
 //# sourceMappingURL=noop.js.map
 
 /***/ },
-/* 43 */
+/* 44 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
 "use strict";
-var noop_1 = __webpack_require__(42);
+var noop_1 = __webpack_require__(43);
 /* tslint:enable:max-line-length */
 function pipe() {
     var fns = [];
@@ -3944,7 +4107,7 @@ exports.pipeFromArray = pipeFromArray;
 //# sourceMappingURL=pipe.js.map
 
 /***/ },
-/* 44 */
+/* 45 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3970,7 +4133,7 @@ exports.toSubscriber = toSubscriber;
 //# sourceMappingURL=toSubscriber.js.map
 
 /***/ },
-/* 45 */
+/* 46 */
 /***/ function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3995,7 +4158,7 @@ exports.tryCatch = tryCatch;
 //# sourceMappingURL=tryCatch.js.map
 
 /***/ },
-/* 46 */
+/* 47 */
 /***/ function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
@@ -4171,84 +4334,17 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
 
 
 /***/ },
-/* 47 */
-/***/ function(module, exports, __webpack_require__) {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, SimpleCache_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var ChatApi = /** @class */ (function () {
-        function ChatApi(chatUrl) {
-            if (chatUrl === void 0) { chatUrl = 'https://chat.stackoverflow.com'; }
-            this.chatRoomUrl = "" + chatUrl;
-        }
-        ChatApi.prototype.GetChannelFKey = function (roomId) {
-            var _this = this;
-            var cachingKey = "StackExchange.ChatApi.FKey_" + roomId;
-            var getterPromise = new Promise(function (resolve, reject) {
-                GM_xmlhttpRequest({
-                    method: 'GET',
-                    url: _this.chatRoomUrl + "/rooms/" + roomId,
-                    onload: function (response) {
-                        if (response.status !== 200) {
-                            reject(response.statusText);
-                        }
-                        else {
-                            var fkey = response.responseText.match(/hidden" value="([\dabcdef]{32})/)[1];
-                            resolve(fkey);
-                        }
-                    },
-                    onerror: function (data) { return reject(data); }
-                });
-            });
-            var expiryDate = new Date();
-            expiryDate.setDate(expiryDate.getDate() + 1);
-            return SimpleCache_1.SimpleCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate);
-        };
-        ChatApi.prototype.SendMessage = function (roomId, message, providedFkey) {
-            var _this = this;
-            var fkeyPromise = providedFkey
-                ? Promise.resolve(providedFkey)
-                : this.GetChannelFKey(roomId);
-            return fkeyPromise.then(function (fKey) {
-                return new Promise(function (resolve, reject) {
-                    GM_xmlhttpRequest({
-                        method: 'POST',
-                        url: _this.chatRoomUrl + "/chats/" + roomId + "/messages/new",
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        data: 'text=' + encodeURIComponent(message) + '&fkey=' + fKey,
-                        onload: function (response) {
-                            if (response.status !== 200) {
-                                reject(response.statusText);
-                            }
-                            else {
-                                resolve();
-                            }
-                        },
-                        onerror: function (response) {
-                            reject(response);
-                        },
-                    });
-                });
-            });
-        };
-        return ChatApi;
-    }());
-    exports.ChatApi = ChatApi;
-}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ },
 /* 48 */
 /***/ function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(17), __webpack_require__(1), __webpack_require__(7), __webpack_require__(21), __webpack_require__(19), __webpack_require__(20), __webpack_require__(10), __webpack_require__(18)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, FlagTypes_1, SimpleCache_1, sotools_1, NattyApi_1, GenericBotAPI_1, MetaSmokeAPI_1, CrossDomainCache_1, CopyPastorAPI_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(18), __webpack_require__(1), __webpack_require__(7), __webpack_require__(22), __webpack_require__(20), __webpack_require__(21), __webpack_require__(10), __webpack_require__(19)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, FlagTypes_1, SimpleCache_1, sotools_1, NattyApi_1, GenericBotAPI_1, MetaSmokeAPI_1, CrossDomainCache_1, CopyPastorAPI_1) {
     "use strict";
     var _this = this;
     Object.defineProperty(exports, "__esModule", { value: true });
     // tslint:disable-next-line:no-debugger
     debugger;
     var metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
+    var copyPastorKey = '???';
     function SetupStyles() {
         var scriptNode = document.createElement('style');
         scriptNode.type = 'text/css';
@@ -4543,7 +4639,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
             var showFunc = function (element) { return element.show(); };
             var copyPastorIcon = getCopyPastorIcon();
-            var copyPastorApi = new CopyPastorAPI_1.CopyPastorAPI(post.postId);
+            var copyPastorApi = new CopyPastorAPI_1.CopyPastorAPI(post.postId, copyPastorKey);
             var copyPastorObservable = copyPastorApi.Watch();
             var smokeyIcon = getSmokeyIcon();
             var reporters = [];

@@ -7,11 +7,10 @@ AdvancedFlagging started as a set of modular typescript tools to aid with StackE
 - Smokey / MetaSmoke
 - Natty / Sentinal
 - GenericBot
+- Guttenberg / CopyPastor
 - Chat
 - Stack Exchange API
 - Cross domain caching
-
-At the moment, these tools are bundled together within this repository. Going forward, these tools will ideally be independant npm packages to be used independantly.
 
 # Credits
 
@@ -32,7 +31,7 @@ Currently, only TamperMonkey is officially supported
 
 # What does it do?
 
-AdvancedFlagging adds icons from Smokey and Natty to posts which have been reported. In addition, flags made through the AdvancedFlagging interface are reported to Natty, Smokey and GenericBot if required.
+AdvancedFlagging adds icons from Smokey, Natty and CopyPastor to posts which have been reported. In addition, flags made through the AdvancedFlagging interface are reported to Natty, Smokey, CopyPastor and GenericBot if required.
 
 ## Smokey reports
 ![Smokey reported and flagged](https://i.imgur.com/BIsyUue.png)  
@@ -43,6 +42,35 @@ Clicking the smokey icon takes the user to the reported post on MetaSmoke. Hover
 ![Natty reported and flagged](https://i.imgur.com/ahg4HTN.png)  
 Here, Natty has reported a post (the dog icon), and the post was flagged via AdvancedFlagging (the red flag)
 Clicking the natty icon takes the user to the reported post on Sentinel. Hovering the flag displays which flag was raised.
+
+## Copy Pastor reports
+![Copy Pastor reported and flagged](https://i.imgur.com/bmN1cEs.png)  
+Here, Copy Pastor has reported a post (the cat icon), and the post was flagged via AdvancedFlagging (the red flag)
+Clicking the Copy Pastor opens the reports for *every* potential plagiarised source. 
+
+When Copy Pastor has detected a post, two additional options appear in the dropdown:
+
+![Dropdown with Copy Pastor](https://i.imgur.com/qM5zhuS.png)
+
+Either of these links ('Plagiarism' or 'Duplicate answer') will send true positive feedback for *all* reports detected for this post. This is likely going to change in the future, but for simplicitly, this is how it'll work at the moment.
+These links will raise the following custom flags:
+
+- Plagiarism 
+
+Possible plagiarism of another answer [first linked question], as can be seen here [first copy pastor report]
+
+No comment will be left for the OP
+
+- Duplicate answer
+
+The answer is a repost of their other answer [first linked question], but as there are slight differences as seen here [first copy pastor report], an auto flag wouldn't be raised.
+
+The following comment will also be left:
+
+Please don't add the [same answer to multiple questions](http://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.
+
+'Looks fine', 'Needs editing', 'Vandalism' and any NAA response will register as a false positive to Copy Pastor.
+
 
 ## Teamwork
 

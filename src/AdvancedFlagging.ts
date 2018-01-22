@@ -8,6 +8,7 @@ import { NattyAPI } from '@userscriptTools/nattyapi/NattyApi';
 import { GenericBotAPI } from '@userscriptTools/genericbotapi/GenericBotAPI';
 import { MetaSmokeAPI } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
 import { CrossDomainCache } from '@userscriptTools/caching/CrossDomainCache';
+import { CopyPastorAPI } from '@userscriptTools/copypastorapi/CopyPastorAPI';
 
 // tslint:disable-next-line:no-debugger
 debugger;
@@ -328,6 +329,7 @@ function SetupPostPage() {
             window.open(`https://sentinel.erwaysoftware.com/posts/aid/${post.postId}`, '_blank');
         });
 
+        const copyPastorIcon = getCopyPastorIcon();
         let showFunc = (element: JQuery) => element.show();
 
         const smokeyIcon = getSmokeyIcon();
@@ -349,6 +351,21 @@ function SetupPostPage() {
                 ReportLooksFine: () => nattyApi.ReportLooksFine(),
                 ReportNeedsEditing: () => nattyApi.ReportNeedsEditing(),
                 ReportVandalism: () => Promise.resolve(false)
+            });
+
+            const copyPastorApi = new CopyPastorAPI(post.postId);
+            copyPastorApi.Watch().subscribe(items => {
+                if (items.length) {
+                    copyPastorIcon.attr('Title', `Reported by CopyPastor - ${items.length}`);
+                    showFunc(copyPastorIcon);
+                    copyPastorIcon.click(() =>
+                        items.forEach(item => {
+                            window.open(item.target_url);
+                        })
+                    );
+                } else {
+                    copyPastorIcon.hide();
+                }
             });
 
             const genericBotAPI = new GenericBotAPI(post.postId);
@@ -424,12 +441,14 @@ function SetupPostPage() {
             iconLocation.append(performedActionIcon);
             iconLocation.append(reportedIcon);
             iconLocation.append(nattyIcon);
+            iconLocation.append(copyPastorIcon);
             iconLocation.append(smokeyIcon);
 
         } else {
             iconLocation = post.element.find('a.answer-hyperlink');
 
             iconLocation.after(smokeyIcon);
+            iconLocation.after(copyPastorIcon);
             iconLocation.after(nattyIcon);
             iconLocation.after(reportedIcon);
             iconLocation.after(performedActionIcon);
@@ -475,6 +494,16 @@ function getNattyIcon() {
         .attr('title', 'Reported by Natty')
         .hide();
 }
+function getCopyPastorIcon() {
+    return $('<div>')
+        .css({
+            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
+            'background': 'url("https://i.imgur.com/ZQwCGvB.png?s=328&g=1"', 'background-size': '100%'
+        })
+        .attr('title', 'Reported by CopyPastor')
+        .hide();
+}
+
 function getSmokeyIcon() {
     return $('<div>')
         .css({

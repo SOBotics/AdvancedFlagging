@@ -241,19 +241,25 @@ function BuildFlaggingDialog(element: JQuery,
                 linkEnabled = true;
                 reportLink.css({ opacity: 1, cursor: 'pointer' });
             };
+
             disableLink();
-            copyPastorPromise.then(items => {
-                if (flagType.Enabled) {
-                    const hasItems = items.length > 0;
-                    const isEnabled = flagType.Enabled(hasItems);
-                    linkEnabled = isEnabled;
-                    if (linkEnabled) {
+            if (flagType.Enabled) {
+                copyPastorPromise.then(items => {
+                    // If it somehow changed within the promise, check again
+                    if (flagType.Enabled) {
+                        const hasItems = items.length > 0;
+                        const isEnabled = flagType.Enabled(hasItems);
+                        linkEnabled = isEnabled;
+                        if (linkEnabled) {
+                            enableLink();
+                        }
+                    } else {
                         enableLink();
                     }
-                } else {
-                    enableLink();
-                }
-            });
+                });
+            } else {
+                enableLink();
+            }
 
             reportLink.click(() => {
                 if (!linkEnabled) {
@@ -498,7 +504,7 @@ function SetupPostPage() {
                 reportedIcon,
                 performedActionIcon,
                 reporters,
-                copyPastorObservable.take(1).toPromise()
+                copyPastorApi.Promise()
             );
 
             advancedFlaggingLink.append(dropDown);

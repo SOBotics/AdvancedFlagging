@@ -2068,6 +2068,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 .catch(function (err) { return _this.subject.error(err); });
             return this.subject;
         };
+        CopyPastorAPI.prototype.Promise = function () {
+            return this.replaySubject.take(1).toPromise();
+        };
         CopyPastorAPI.prototype.ReportTruePositive = function () {
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 return tslib_1.__generator(this, function (_a) {
@@ -4392,19 +4395,25 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     reportLink.css({ opacity: 1, cursor: 'pointer' });
                 };
                 disableLink();
-                copyPastorPromise.then(function (items) {
-                    if (flagType.Enabled) {
-                        var hasItems = items.length > 0;
-                        var isEnabled = flagType.Enabled(hasItems);
-                        linkEnabled = isEnabled;
-                        if (linkEnabled) {
+                if (flagType.Enabled) {
+                    copyPastorPromise.then(function (items) {
+                        // If it somehow changed within the promise, check again
+                        if (flagType.Enabled) {
+                            var hasItems = items.length > 0;
+                            var isEnabled = flagType.Enabled(hasItems);
+                            linkEnabled = isEnabled;
+                            if (linkEnabled) {
+                                enableLink();
+                            }
+                        }
+                        else {
                             enableLink();
                         }
-                    }
-                    else {
-                        enableLink();
-                    }
-                });
+                    });
+                }
+                else {
+                    enableLink();
+                }
                 reportLink.click(function () {
                     if (!linkEnabled) {
                         return;
@@ -4627,7 +4636,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     answerTime = post.postTime;
                 }
                 var deleted = post.element.hasClass('deleted-answer');
-                var dropDown_1 = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorObservable.take(1).toPromise());
+                var dropDown_1 = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi.Promise());
                 advancedFlaggingLink.append(dropDown_1);
                 $(window).click(function () {
                     dropDown_1.hide();

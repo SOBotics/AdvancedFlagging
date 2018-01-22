@@ -8,7 +8,7 @@ import { NattyAPI } from '@userscriptTools/nattyapi/NattyApi';
 import { GenericBotAPI } from '@userscriptTools/genericbotapi/GenericBotAPI';
 import { MetaSmokeAPI } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
 import { CrossDomainCache } from '@userscriptTools/caching/CrossDomainCache';
-import { CopyPastorAPI } from '@userscriptTools/copypastorapi/CopyPastorAPI';
+import { CopyPastorAPI, CopyPastorFindTargetResponseItem } from '@userscriptTools/copypastorapi/CopyPastorAPI';
 
 // tslint:disable-next-line:no-debugger
 debugger;
@@ -57,7 +57,7 @@ function SetupStyles() {
     target.appendChild(scriptNode);
 }
 
-function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: boolean, userReputation?: number) {
+function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: boolean, userReputation: number, copyPastorPromise: Promise<CopyPastorFindTargetResponseItem[]>) {
     const result: {
         CommentPromise?: Promise<string>;
         FlagPromise?: Promise<string>;
@@ -65,17 +65,8 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
 
     if (commentRequired) {
         let commentText: string | null = null;
-        if (flag.Comment) {
-            commentText = flag.Comment;
-        } else if (flag.Comments) {
-            const comments = flag.Comments;
-            comments.sort((a, b) => b.ReputationLimit - a.ReputationLimit);
-            for (let i = 0; i < comments.length; i++) {
-                if (userReputation === undefined || comments[i].ReputationLimit <= userReputation) {
-                    commentText = comments[i].Comment;
-                    break;
-                }
-            }
+        if (flag.GetComment) {
+            commentText = flag.GetComment(userReputation);
         }
 
         if (commentText) {
@@ -96,17 +87,42 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
     if (flag.ReportType !== 'NoFlag') {
         const wasFlagged = SimpleCache.GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`);
         if (!wasFlagged) {
-            result.FlagPromise = new Promise((resolve, reject) => {
-                $.ajax({
-                    url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
-                    type: 'POST',
-                    data: { fkey: StackExchange.options.user.fkey, otherText: '' }
-                }).done((data) => {
-                    resolve(data);
-                }).fail((jqXHR, textStatus, errorThrown) => {
-                    reject({ jqXHR, textStatus, errorThrown });
+            if (flag.ReportType === 'Custom') {
+                // Do something here
+                result.FlagPromise = new Promise((resolve, reject) => {
+                    copyPastorPromise.then(copyPastorResults => {
+                        if (flag.GetCustomFlagText && copyPastorResults.length > 0) {
+                            const flagText = flag.GetCustomFlagText(copyPastorResults[0]);
+                            // tslint:disable-next-line:no-console
+                            console.log('I wanted to make a custom flag with the following text: ', flagText);
+
+                            // $.ajax({
+                            //     url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
+                            //     type: 'POST',
+                            //     data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
+                            // }).done((data) => {
+                            //     resolve(data);
+                            // }).fail((jqXHR, textStatus, errorThrown) => {
+                            //     reject({ jqXHR, textStatus, errorThrown });
+                            // });
+                        }
+                    });
+
                 });
-            });
+
+            } else {
+                result.FlagPromise = new Promise((resolve, reject) => {
+                    $.ajax({
+                        url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
+                        type: 'POST',
+                        data: { fkey: StackExchange.options.user.fkey, otherText: '' }
+                    }).done((data) => {
+                        resolve(data);
+                    }).fail((jqXHR, textStatus, errorThrown) => {
+                        reject({ jqXHR, textStatus, errorThrown });
+                    });
+                });
+            }
         }
     }
 
@@ -162,13 +178,14 @@ interface Reporter {
 function BuildFlaggingDialog(element: JQuery,
     postId: number,
     postType: 'Question' | 'Answer',
-    reputation: number | undefined,
+    reputation: number,
     answerTime: Date,
     questionTime: Date,
     deleted: boolean,
     reportedIcon: JQuery,
     performedActionIcon: JQuery,
-    reporters: Reporter[]
+    reporters: Reporter[],
+    copyPastorPromise: Promise<CopyPastorFindTargetResponseItem[]>
 ) {
     const getDivider = () => $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' });
     const linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
@@ -206,7 +223,7 @@ function BuildFlaggingDialog(element: JQuery,
             dropDown.append(getDivider());
         }
         flagCategory.FlagTypes.forEach(flagType => {
-            if (flagType.Comment || (flagType.Comments && flagType.Comments.length > 0)) {
+            if (flagType.GetComment) {
                 hasCommentOptions = true;
             }
             const dropdownItem = $('<dd />');
@@ -215,10 +232,38 @@ function BuildFlaggingDialog(element: JQuery,
             }
 
             const reportLink = $('<a />').css(linkStyle);
+
+            let linkEnabled = false;
+            const disableLink = () => {
+                linkEnabled = false;
+                reportLink.css({ opacity: 0.5, cursor: 'default' });
+            };
+            const enableLink = () => {
+                linkEnabled = true;
+                reportLink.css({ opacity: 1, cursor: 'pointer' });
+            };
+            disableLink();
+            copyPastorPromise.then(items => {
+                if (flagType.Enabled) {
+                    const hasItems = items.length > 0;
+                    const isEnabled = flagType.Enabled(hasItems);
+                    linkEnabled = isEnabled;
+                    if (linkEnabled) {
+                        enableLink();
+                    }
+                } else {
+                    enableLink();
+                }
+            });
+
             reportLink.click(() => {
+                if (!linkEnabled) {
+                    return;
+                }
+
                 if (!deleted) {
                     try {
-                        const result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation);
+                        const result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation, copyPastorPromise);
                         if (result.CommentPromise) {
                             result.CommentPromise.then((data) => {
                                 const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
@@ -329,8 +374,11 @@ function SetupPostPage() {
             window.open(`https://sentinel.erwaysoftware.com/posts/aid/${post.postId}`, '_blank');
         });
 
-        const copyPastorIcon = getCopyPastorIcon();
         let showFunc = (element: JQuery) => element.show();
+
+        const copyPastorIcon = getCopyPastorIcon();
+        const copyPastorApi = new CopyPastorAPI(post.postId);
+        const copyPastorObservable = copyPastorApi.Watch();
 
         const smokeyIcon = getSmokeyIcon();
         const reporters: Reporter[] = [];
@@ -353,8 +401,7 @@ function SetupPostPage() {
                 ReportVandalism: () => Promise.resolve(false)
             });
 
-            const copyPastorApi = new CopyPastorAPI(post.postId);
-            copyPastorApi.Watch().subscribe(items => {
+            copyPastorObservable.subscribe(items => {
                 if (items.length) {
                     copyPastorIcon.attr('Title', `Reported by CopyPastor - ${items.length}`);
                     showFunc(copyPastorIcon);
@@ -418,11 +465,13 @@ function SetupPostPage() {
                 answerTime = post.postTime;
             }
             const deleted = post.element.hasClass('deleted-answer');
-            const dropDown = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime, questionTime,
+            const dropDown = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation as number, answerTime, questionTime,
                 deleted,
                 reportedIcon,
                 performedActionIcon,
-                reporters);
+                reporters,
+                copyPastorObservable.take(1).toPromise()
+            );
 
             advancedFlaggingLink.append(dropDown);
 

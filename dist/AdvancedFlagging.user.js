@@ -1932,76 +1932,76 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 {
                     DisplayName: 'Link Only',
                     ReportType: 'AnswerNotAnAnswer',
-                    Comment: 'A link to a solution is welcome, but please ensure your answer is useful without it: ' +
+                    GetComment: function () { return 'A link to a solution is welcome, but please ensure your answer is useful without it: ' +
                         '[add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will ' +
                         'have some idea what it is and why it’s there, then quote the most relevant part of the ' +
                         'page you\'re linking to in case the target page is unavailable. ' +
-                        '[Answers that are little more than a link may be deleted.](//stackoverflow.com/help/deleted-answers)'
+                        '[Answers that are little more than a link may be deleted.](//stackoverflow.com/help/deleted-answers)'; }
                 },
                 {
                     DisplayName: 'Not an answer',
                     ReportType: 'AnswerNotAnAnswer',
-                    Comments: [
-                        {
-                            ReputationLimit: 0,
-                            Comment: 'This does not provide an answer to the question. You can [search for similar questions](//stackoverflow.com/search), ' +
-                                'or refer to the related and linked questions on the right-hand side of the page to find an answer. ' +
-                                'If you have a related but different question, [ask a new question](//stackoverflow.com/questions/ask), ' +
-                                'and include a link to this one to help provide context. ' +
-                                'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)',
-                        },
-                        {
-                            ReputationLimit: 50,
-                            Comment: 'This post doesn\'t look like an attempt to answer this question. Every post here is expected to be ' +
-                                'an explicit attempt to *answer* this question; if you have a critique or need a clarification of ' +
-                                'the question or another answer, you can [post a comment](//stackoverflow.com/help/privileges/comment) ' +
-                                '(like this one) directly below it. Please remove this answer and create either a comment or a new question. ' +
-                                'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)',
-                        }
-                    ]
+                    GetComment: function (reptuation) { return reptuation < 50
+                        ? 'This does not provide an answer to the question. You can [search for similar questions](//stackoverflow.com/search), ' +
+                            'or refer to the related and linked questions on the right-hand side of the page to find an answer. ' +
+                            'If you have a related but different question, [ask a new question](//stackoverflow.com/questions/ask), ' +
+                            'and include a link to this one to help provide context. ' +
+                            'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)'
+                        : 'This post doesn\'t look like an attempt to answer this question. Every post here is expected to be ' +
+                            'an explicit attempt to *answer* this question; if you have a critique or need a clarification of ' +
+                            'the question or another answer, you can [post a comment](//stackoverflow.com/help/privileges/comment) ' +
+                            '(like this one) directly below it. Please remove this answer and create either a comment or a new question. ' +
+                            'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)'; }
                 },
                 {
                     DisplayName: 'Thanks',
                     ReportType: 'AnswerNotAnAnswer',
-                    Comments: [
-                        {
-                            ReputationLimit: 0,
-                            Comment: 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
-                                'and can be perceived as noise by its future visitors. Once you [earn](http://meta.stackoverflow.com/q/146472) ' +
-                                'enough [reputation](http://stackoverflow.com/help/whats-reputation), you will gain privileges to ' +
-                                '[upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
-                                'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
-                                'See [Why is voting important](http://stackoverflow.com/help/why-vote).'
-                        },
-                        {
-                            ReputationLimit: 15,
-                            Comment: 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
+                    GetComment: function (reputation) { return reputation < 15
+                        ? 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
+                            'and can be perceived as noise by its future visitors. Once you [earn](http://meta.stackoverflow.com/q/146472) ' +
+                            'enough [reputation](http://stackoverflow.com/help/whats-reputation), you will gain privileges to ' +
+                            '[upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
+                            'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
+                            'See [Why is voting important](http://stackoverflow.com/help/why-vote).'
+                        :
+                            'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
                                 'and can be perceived as noise by its future visitors. ' +
                                 'Instead, [upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
                                 'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
-                                'See [Why is voting important](http://stackoverflow.com/help/why-vote).'
-                        }
-                    ]
+                                'See [Why is voting important](http://stackoverflow.com/help/why-vote).'; }
                 },
                 {
                     DisplayName: 'Me too',
                     ReportType: 'AnswerNotAnAnswer',
-                    Comment: 'Please don\'t add *"Me too"* as answers. It doesn\'t actually provide an answer to the question. ' +
-                        'If you have a different but related question, then [ask](//$SITEURL$/questions/ask) it ' +
-                        '(reference this one if it will help provide context). If you\'re interested in this specific question, ' +
-                        'you can [upvote](//stackoverflow.com/help/privileges/vote-up) it, leave a [comment](//stackoverflow.com/help/privileges/comment), ' +
-                        'or start a [bounty](//stackoverflow.com/help/privileges/set-bounties) ' +
-                        'once you have enough [reputation](//stackoverflow.com/help/whats-reputation).',
+                    GetComment: function () { return "Please don't add *\"Me too\"* as answers. It doesn't actually provide an answer to the question. ' +\n                    'If you have a different but related question, then [ask](//" + window.location.hostname + "$/questions/ask) it ' +\n                    '(reference this one if it will help provide context). If you're interested in this specific question, ' +\n                    'you can [upvote](//stackoverflow.com/help/privileges/vote-up) it, leave a [comment](//stackoverflow.com/help/privileges/comment), ' +\n                    'or start a [bounty](//stackoverflow.com/help/privileges/set-bounties) ' +\n                    'once you have enough [reputation](//stackoverflow.com/help/whats-reputation)."; },
                 },
                 {
                     DisplayName: 'Library',
                     ReportType: 'AnswerNotAnAnswer',
-                    Comment: 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](http://meta.stackoverflow.com/a/251605) in the answer itself.'
+                    GetComment: function () { return 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](http://meta.stackoverflow.com/a/251605) in the answer itself.'; }
                 },
                 {
                     DisplayName: 'Comment',
                     ReportType: 'AnswerNotAnAnswer',
-                    Comment: 'This does not provide an answer to the question. Once you have sufficient [reputation](https://stackoverflow.com/help/whats-reputation) you will be able to [comment on any post](https://stackoverflow.com/help/privileges/comment); instead, [provide answers that don\'t require clarification from the asker](https://meta.stackexchange.com/questions/214173/why-do-i-need-50-reputation-to-comment-what-can-i-do-instead).'
+                    GetComment: function () { return 'This does not provide an answer to the question. Once you have sufficient [reputation](https://stackoverflow.com/help/whats-reputation) you will be able to [comment on any post](https://stackoverflow.com/help/privileges/comment); instead, [provide answers that don\'t require clarification from the asker](https://meta.stackexchange.com/questions/214173/why-do-i-need-50-reputation-to-comment-what-can-i-do-instead).'; }
+                }
+            ]
+        },
+        {
+            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
+            AppliesTo: ['Answer'],
+            FlagTypes: [
+                {
+                    DisplayName: 'Plagiarism',
+                    ReportType: 'Custom',
+                    Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
+                },
+                {
+                    DisplayName: 'Duplicate answer',
+                    ReportType: 'Custom',
+                    Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
+                    GetComment: function () { return 'Please don\'t add the [same answer to multiple questions](http://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.'; },
+                    GetCustomFlagText: function (copyPastorItem) { return "Possible plagiarism of another answer https://" + copyPastorItem.target_url + ", as can be seen here http://copypastor.sobotics.org/posts/" + copyPastorItem.post_id; }
                 }
             ]
         },
@@ -2044,7 +2044,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             this.subject = new Subject_1.Subject();
             this.replaySubject = new ReplaySubject_1.ReplaySubject(1);
             this.subject.subscribe(this.replaySubject);
-            SimpleCache_1.SimpleCache.Unset("CopyPastor.FindTarget." + this.answerId);
             SimpleCache_1.SimpleCache.GetAndCache("CopyPastor.FindTarget." + this.answerId, function () { return new Promise(function (resolve, reject) {
                 var url = copyPastorServer + "/posts/findTarget?url=//" + window.location.hostname + "/a/" + _this.answerId + "/4687348";
                 GM_xmlhttpRequest({
@@ -4082,22 +4081,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
         target.appendChild(scriptNode);
     }
-    function handleFlagAndComment(postId, flag, commentRequired, userReputation) {
+    function handleFlagAndComment(postId, flag, commentRequired, userReputation, copyPastorPromise) {
         var result = {};
         if (commentRequired) {
             var commentText_1 = null;
-            if (flag.Comment) {
-                commentText_1 = flag.Comment;
-            }
-            else if (flag.Comments) {
-                var comments = flag.Comments;
-                comments.sort(function (a, b) { return b.ReputationLimit - a.ReputationLimit; });
-                for (var i = 0; i < comments.length; i++) {
-                    if (userReputation === undefined || comments[i].ReputationLimit <= userReputation) {
-                        commentText_1 = comments[i].Comment;
-                        break;
-                    }
-                }
+            if (flag.GetComment) {
+                commentText_1 = flag.GetComment(userReputation);
             }
             if (commentText_1) {
                 result.CommentPromise = new Promise(function (resolve, reject) {
@@ -4116,17 +4105,40 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         if (flag.ReportType !== 'NoFlag') {
             var wasFlagged = SimpleCache_1.SimpleCache.GetFromCache("AdvancedFlagging.Flagged." + postId);
             if (!wasFlagged) {
-                result.FlagPromise = new Promise(function (resolve, reject) {
-                    $.ajax({
-                        url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
-                        type: 'POST',
-                        data: { fkey: StackExchange.options.user.fkey, otherText: '' }
-                    }).done(function (data) {
-                        resolve(data);
-                    }).fail(function (jqXHR, textStatus, errorThrown) {
-                        reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                if (flag.ReportType === 'Custom') {
+                    // Do something here
+                    result.FlagPromise = new Promise(function (resolve, reject) {
+                        copyPastorPromise.then(function (copyPastorResults) {
+                            if (flag.GetCustomFlagText && copyPastorResults.length > 0) {
+                                var flagText = flag.GetCustomFlagText(copyPastorResults[0]);
+                                // tslint:disable-next-line:no-console
+                                console.log('I wanted to make a custom flag with the following text: ', flagText);
+                                // $.ajax({
+                                //     url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
+                                //     type: 'POST',
+                                //     data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
+                                // }).done((data) => {
+                                //     resolve(data);
+                                // }).fail((jqXHR, textStatus, errorThrown) => {
+                                //     reject({ jqXHR, textStatus, errorThrown });
+                                // });
+                            }
+                        });
                     });
-                });
+                }
+                else {
+                    result.FlagPromise = new Promise(function (resolve, reject) {
+                        $.ajax({
+                            url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
+                            type: 'POST',
+                            data: { fkey: StackExchange.options.user.fkey, otherText: '' }
+                        }).done(function (data) {
+                            resolve(data);
+                        }).fail(function (jqXHR, textStatus, errorThrown) {
+                            reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                        });
+                    });
+                }
             }
         }
         return result;
@@ -4164,7 +4176,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     function displayError(message) {
         displayToaster(message, '#ba1701');
     }
-    function BuildFlaggingDialog(element, postId, postType, reputation, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters) {
+    function BuildFlaggingDialog(element, postId, postType, reputation, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorPromise) {
         var getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
         var linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
         var dropDown = $('<dl />').css({
@@ -4197,7 +4209,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 dropDown.append(getDivider());
             }
             flagCategory.FlagTypes.forEach(function (flagType) {
-                if (flagType.Comment || (flagType.Comments && flagType.Comments.length > 0)) {
+                if (flagType.GetComment) {
                     hasCommentOptions = true;
                 }
                 var dropdownItem = $('<dd />');
@@ -4205,10 +4217,36 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     dropdownItem.css(flagCategory.BoxStyle);
                 }
                 var reportLink = $('<a />').css(linkStyle);
+                var linkEnabled = false;
+                var disableLink = function () {
+                    linkEnabled = false;
+                    reportLink.css({ opacity: 0.5, cursor: 'default' });
+                };
+                var enableLink = function () {
+                    linkEnabled = true;
+                    reportLink.css({ opacity: 1, cursor: 'pointer' });
+                };
+                disableLink();
+                copyPastorPromise.then(function (items) {
+                    if (flagType.Enabled) {
+                        var hasItems = items.length > 0;
+                        var isEnabled = flagType.Enabled(hasItems);
+                        linkEnabled = isEnabled;
+                        if (linkEnabled) {
+                            enableLink();
+                        }
+                    }
+                    else {
+                        enableLink();
+                    }
+                });
                 reportLink.click(function () {
+                    if (!linkEnabled) {
+                        return;
+                    }
                     if (!deleted) {
                         try {
-                            var result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation);
+                            var result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation, copyPastorPromise);
                             if (result.CommentPromise) {
                                 result.CommentPromise.then(function (data) {
                                     var commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
@@ -4308,8 +4346,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             var nattyIcon = getNattyIcon().click(function () {
                 window.open("https://sentinel.erwaysoftware.com/posts/aid/" + post.postId, '_blank');
             });
-            var copyPastorIcon = getCopyPastorIcon();
             var showFunc = function (element) { return element.show(); };
+            var copyPastorIcon = getCopyPastorIcon();
+            var copyPastorApi = new CopyPastorAPI_1.CopyPastorAPI(post.postId);
+            var copyPastorObservable = copyPastorApi.Watch();
             var smokeyIcon = getSmokeyIcon();
             var reporters = [];
             if (post.type === 'Answer') {
@@ -4331,8 +4371,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     ReportNeedsEditing: function () { return nattyApi_1.ReportNeedsEditing(); },
                     ReportVandalism: function () { return Promise.resolve(false); }
                 });
-                var copyPastorApi = new CopyPastorAPI_1.CopyPastorAPI(post.postId);
-                copyPastorApi.Watch().subscribe(function (items) {
+                copyPastorObservable.subscribe(function (items) {
                     if (items.length) {
                         copyPastorIcon.attr('Title', "Reported by CopyPastor - " + items.length);
                         showFunc(copyPastorIcon);
@@ -4394,7 +4433,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     answerTime = post.postTime;
                 }
                 var deleted = post.element.hasClass('deleted-answer');
-                var dropDown_1 = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters);
+                var dropDown_1 = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorObservable.take(1).toPromise());
                 advancedFlaggingLink.append(dropDown_1);
                 $(window).click(function () {
                     dropDown_1.hide();

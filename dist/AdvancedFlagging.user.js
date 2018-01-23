@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.7
+// @version      0.5.8
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2243,6 +2243,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             return [4 /*yield*/, Promise.all(promises)];
                         case 3:
                             allResults = _a.sent();
+                            if (allResults.length <= 0) {
+                                return [2 /*return*/, false];
+                            }
                             for (i = 0; i < allResults.length; i++) {
                                 if (!allResults[i]) {
                                     return [2 /*return*/, false];

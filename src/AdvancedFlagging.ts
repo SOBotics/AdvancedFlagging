@@ -286,6 +286,7 @@ function BuildFlaggingDialog(element: JQuery,
                                 SimpleCache.StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType);
                                 reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
                                 reportedIcon.show();
+                                displaySuccess('Flagged');
                             }).catch(err => displayError('Failed to flag post'));
                         }
                     } catch (err) { displayError(err); }

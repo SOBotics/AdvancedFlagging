@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.8
+// @version      0.5.9
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -4541,6 +4541,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                     SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType);
                                     reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
                                     reportedIcon.show();
+                                    displaySuccess('Flagged');
                                 }).catch(function (err) { return displayError('Failed to flag post'); });
                             }
                         }

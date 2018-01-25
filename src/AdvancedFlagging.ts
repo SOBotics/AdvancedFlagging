@@ -58,7 +58,7 @@ function SetupStyles() {
     target.appendChild(scriptNode);
 }
 
-function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: boolean, userReputation: number, copyPastorPromise: Promise<CopyPastorFindTargetResponseItem[]>) {
+function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: boolean, flagRequired: boolean, userReputation: number, copyPastorPromise: Promise<CopyPastorFindTargetResponseItem[]>) {
     const result: {
         CommentPromise?: Promise<string>;
         FlagPromise?: Promise<string>;
@@ -85,41 +85,43 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
         }
     }
 
-    if (flag.ReportType !== 'NoFlag') {
-        const wasFlagged = SimpleCache.GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`);
-        if (!wasFlagged) {
-            if (flag.ReportType === 'PostOther') {
-                // Do something here
-                result.FlagPromise = new Promise((resolve, reject) => {
-                    copyPastorPromise.then(copyPastorResults => {
-                        if (flag.GetCustomFlagText && copyPastorResults.length > 0) {
-                            const flagText = flag.GetCustomFlagText(copyPastorResults[0]);
-                            $.ajax({
-                                url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
-                                type: 'POST',
-                                data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
-                            }).done((data) => {
-                                resolve(data);
-                            }).fail((jqXHR, textStatus, errorThrown) => {
-                                reject({ jqXHR, textStatus, errorThrown });
-                            });
-                        }
+    if (flagRequired) {
+        if (flag.ReportType !== 'NoFlag') {
+            const wasFlagged = SimpleCache.GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`);
+            if (!wasFlagged) {
+                if (flag.ReportType === 'PostOther') {
+                    // Do something here
+                    result.FlagPromise = new Promise((resolve, reject) => {
+                        copyPastorPromise.then(copyPastorResults => {
+                            if (flag.GetCustomFlagText && copyPastorResults.length > 0) {
+                                const flagText = flag.GetCustomFlagText(copyPastorResults[0]);
+                                $.ajax({
+                                    url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
+                                    type: 'POST',
+                                    data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
+                                }).done((data) => {
+                                    resolve(data);
+                                }).fail((jqXHR, textStatus, errorThrown) => {
+                                    reject({ jqXHR, textStatus, errorThrown });
+                                });
+                            }
+                        });
+
                     });
 
-                });
-
-            } else {
-                result.FlagPromise = new Promise((resolve, reject) => {
-                    $.ajax({
-                        url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
-                        type: 'POST',
-                        data: { fkey: StackExchange.options.user.fkey, otherText: '' }
-                    }).done((data) => {
-                        resolve(data);
-                    }).fail((jqXHR, textStatus, errorThrown) => {
-                        reject({ jqXHR, textStatus, errorThrown });
+                } else {
+                    result.FlagPromise = new Promise((resolve, reject) => {
+                        $.ajax({
+                            url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
+                            type: 'POST',
+                            data: { fkey: StackExchange.options.user.fkey, otherText: '' }
+                        }).done((data) => {
+                            resolve(data);
+                        }).fail((jqXHR, textStatus, errorThrown) => {
+                            reject({ jqXHR, textStatus, errorThrown });
+                        });
                     });
-                });
+                }
             }
         }
     }
@@ -205,6 +207,10 @@ function BuildFlaggingDialog(element: JQuery,
     const leaveCommentBox = $('<input />')
         .attr('type', 'checkbox')
         .attr('name', checkboxName);
+    const flagBox = $('<input />')
+        .attr('type', 'checkbox')
+        .attr('name', checkboxName)
+        .prop('checked', true);
 
     const isStackOverflow = IsStackOverflow();
 
@@ -271,7 +277,10 @@ function BuildFlaggingDialog(element: JQuery,
             reportLink.click(() => {
                 if (!deleted) {
                     try {
-                        const result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation, copyPastorPromise);
+                        const result = handleFlagAndComment(postId, flagType,
+                            leaveCommentBox.is(':checked'), flagBox.is(':checked'),
+                            reputation, copyPastorPromise);
+
                         if (result.CommentPromise) {
                             result.CommentPromise.then((data) => {
                                 const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
@@ -359,9 +368,8 @@ function BuildFlaggingDialog(element: JQuery,
         hasCommentOptions = false;
     }
 
+    dropDown.append(getDivider());
     if (hasCommentOptions) {
-        dropDown.append(getDivider());
-
         const commentBoxLabel =
             $('<label />').text('Leave comment')
                 .attr('for', checkboxName)
@@ -378,6 +386,22 @@ function BuildFlaggingDialog(element: JQuery,
 
         dropDown.append(commentingRow);
     }
+
+    const flagBoxLabel =
+        $('<label />').text('Flag')
+            .attr('for', checkboxName)
+            .css({
+                'margin-right': '5px',
+                'margin-left': '4px',
+            });
+
+    flagBoxLabel.click(() => flagBox.click());
+
+    const flaggingRow = $('<dd />');
+    flaggingRow.append(flagBoxLabel);
+    flaggingRow.append(flagBox);
+
+    dropDown.append(flaggingRow);
 
     return dropDown;
 }

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.9
+// @version      0.5.10
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -4355,7 +4355,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
         target.appendChild(scriptNode);
     }
-    function handleFlagAndComment(postId, flag, commentRequired, userReputation, copyPastorPromise) {
+    function handleFlagAndComment(postId, flag, commentRequired, flagRequired, userReputation, copyPastorPromise) {
         var result = {};
         if (commentRequired) {
             var commentText_1 = null;
@@ -4376,40 +4376,42 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
             }
         }
-        if (flag.ReportType !== 'NoFlag') {
-            var wasFlagged = SimpleCache_1.SimpleCache.GetFromCache("AdvancedFlagging.Flagged." + postId);
-            if (!wasFlagged) {
-                if (flag.ReportType === 'PostOther') {
-                    // Do something here
-                    result.FlagPromise = new Promise(function (resolve, reject) {
-                        copyPastorPromise.then(function (copyPastorResults) {
-                            if (flag.GetCustomFlagText && copyPastorResults.length > 0) {
-                                var flagText = flag.GetCustomFlagText(copyPastorResults[0]);
-                                $.ajax({
-                                    url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
-                                    type: 'POST',
-                                    data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
-                                }).done(function (data) {
-                                    resolve(data);
-                                }).fail(function (jqXHR, textStatus, errorThrown) {
-                                    reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
-                                });
-                            }
+        if (flagRequired) {
+            if (flag.ReportType !== 'NoFlag') {
+                var wasFlagged = SimpleCache_1.SimpleCache.GetFromCache("AdvancedFlagging.Flagged." + postId);
+                if (!wasFlagged) {
+                    if (flag.ReportType === 'PostOther') {
+                        // Do something here
+                        result.FlagPromise = new Promise(function (resolve, reject) {
+                            copyPastorPromise.then(function (copyPastorResults) {
+                                if (flag.GetCustomFlagText && copyPastorResults.length > 0) {
+                                    var flagText = flag.GetCustomFlagText(copyPastorResults[0]);
+                                    $.ajax({
+                                        url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
+                                        type: 'POST',
+                                        data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
+                                    }).done(function (data) {
+                                        resolve(data);
+                                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                                        reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                                    });
+                                }
+                            });
                         });
-                    });
-                }
-                else {
-                    result.FlagPromise = new Promise(function (resolve, reject) {
-                        $.ajax({
-                            url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
-                            type: 'POST',
-                            data: { fkey: StackExchange.options.user.fkey, otherText: '' }
-                        }).done(function (data) {
-                            resolve(data);
-                        }).fail(function (jqXHR, textStatus, errorThrown) {
-                            reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                    }
+                    else {
+                        result.FlagPromise = new Promise(function (resolve, reject) {
+                            $.ajax({
+                                url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
+                                type: 'POST',
+                                data: { fkey: StackExchange.options.user.fkey, otherText: '' }
+                            }).done(function (data) {
+                                resolve(data);
+                            }).fail(function (jqXHR, textStatus, errorThrown) {
+                                reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+                            });
                         });
-                    });
+                    }
                 }
             }
         }
@@ -4466,6 +4468,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         var leaveCommentBox = $('<input />')
             .attr('type', 'checkbox')
             .attr('name', checkboxName);
+        var flagBox = $('<input />')
+            .attr('type', 'checkbox')
+            .attr('name', checkboxName)
+            .prop('checked', true);
         var isStackOverflow = sotools_1.IsStackOverflow();
         var comments = element.find('.comment-body');
         if (comments.length === 0 && isStackOverflow) {
@@ -4527,7 +4533,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 reportLink.click(function () {
                     if (!deleted) {
                         try {
-                            var result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), reputation, copyPastorPromise);
+                            var result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), flagBox.is(':checked'), reputation, copyPastorPromise);
                             if (result.CommentPromise) {
                                 result.CommentPromise.then(function (data) {
                                     var commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
@@ -4616,8 +4622,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         if (!isStackOverflow) {
             hasCommentOptions = false;
         }
+        dropDown.append(getDivider());
         if (hasCommentOptions) {
-            dropDown.append(getDivider());
             var commentBoxLabel = $('<label />').text('Leave comment')
                 .attr('for', checkboxName)
                 .css({
@@ -4630,6 +4636,17 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             commentingRow.append(leaveCommentBox);
             dropDown.append(commentingRow);
         }
+        var flagBoxLabel = $('<label />').text('Flag')
+            .attr('for', checkboxName)
+            .css({
+            'margin-right': '5px',
+            'margin-left': '4px',
+        });
+        flagBoxLabel.click(function () { return flagBox.click(); });
+        var flaggingRow = $('<dd />');
+        flaggingRow.append(flagBoxLabel);
+        flaggingRow.append(flagBox);
+        dropDown.append(flaggingRow);
         return dropDown;
     }
     function SetupPostPage() {

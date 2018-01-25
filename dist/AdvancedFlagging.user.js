@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.10
+// @version      0.5.11
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2232,12 +2232,28 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             });
                             promises = payloads.map(function (payload) {
                                 return new Promise(function (resolve, reject) {
-                                    $.ajax({
-                                        type: 'POST',
+                                    var payloadString = JSON.stringify(payload);
+                                    GM_xmlhttpRequest({
+                                        method: 'POST',
                                         url: copyPastorServer + "/feedback/create",
-                                        data: payload
-                                    }).done(function () { return resolve(true); })
-                                        .fail(function () { return reject(); });
+                                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                        data: 'post_id=' + payload.post_id
+                                            + '&feedback_type=' + payload.feedback_type
+                                            + '&username=' + payload.username
+                                            + '&link=' + payload.link
+                                            + '&key=' + payload.key,
+                                        onload: function (response) {
+                                            if (response.status !== 200) {
+                                                reject(JSON.parse(response.responseText));
+                                            }
+                                            else {
+                                                resolve(true);
+                                            }
+                                        },
+                                        onerror: function (response) {
+                                            reject(response);
+                                        },
+                                    });
                                 });
                             });
                             return [4 /*yield*/, Promise.all(promises)];
@@ -4347,7 +4363,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     // tslint:disable-next-line:no-debugger
     debugger;
     var metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
-    var copyPastorKey = '???';
+    var copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
     function SetupStyles() {
         var scriptNode = document.createElement('style');
         scriptNode.type = 'text/css';

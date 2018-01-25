@@ -58,31 +58,28 @@ function SetupStyles() {
     target.appendChild(scriptNode);
 }
 
-function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: boolean, flagRequired: boolean, userReputation: number, copyPastorPromise: Promise<CopyPastorFindTargetResponseItem[]>) {
+function handleFlagAndComment(postId: number, flag: FlagType,
+    flagRequired: boolean,
+    commentText: string | undefined,
+    copyPastorPromise: Promise<CopyPastorFindTargetResponseItem[]>
+) {
     const result: {
         CommentPromise?: Promise<string>;
         FlagPromise?: Promise<string>;
     } = {};
 
-    if (commentRequired) {
-        let commentText: string | null = null;
-        if (flag.GetComment) {
-            commentText = flag.GetComment(userReputation);
-        }
-
-        if (commentText) {
-            result.CommentPromise = new Promise((resolve, reject) => {
-                $.ajax({
-                    url: `//stackoverflow.com/posts/${postId}/comments`,
-                    type: 'POST',
-                    data: { fkey: StackExchange.options.user.fkey, comment: commentText }
-                }).done((data) => {
-                    resolve(data);
-                }).fail((jqXHR, textStatus, errorThrown) => {
-                    reject({ jqXHR, textStatus, errorThrown });
-                });
+    if (commentText) {
+        result.CommentPromise = new Promise((resolve, reject) => {
+            $.ajax({
+                url: `//stackoverflow.com/posts/${postId}/comments`,
+                type: 'POST',
+                data: { fkey: StackExchange.options.user.fkey, comment: commentText }
+            }).done((data) => {
+                resolve(data);
+            }).fail((jqXHR, textStatus, errorThrown) => {
+                reject({ jqXHR, textStatus, errorThrown });
             });
-        }
+        });
     }
 
     if (flagRequired) {
@@ -125,7 +122,6 @@ function handleFlagAndComment(postId: number, flag: FlagType, commentRequired: b
             }
         }
     }
-
     return result;
 }
 
@@ -277,10 +273,37 @@ function BuildFlaggingDialog(element: JQuery,
             reportLink.click(() => {
                 if (!deleted) {
                     try {
-                        const result = handleFlagAndComment(postId, flagType,
-                            leaveCommentBox.is(':checked'), flagBox.is(':checked'),
-                            reputation, copyPastorPromise);
+                        let commentText: string | undefined;
+                        if (flagType.GetComment) {
+                            commentText = flagType.GetComment(reputation);
+                        }
+                        if (!leaveCommentBox.is(':checked')) {
+                            // Now we need to investigate the existing comments to upvote them.
+                            const commentTextItems = element.find('.comment-body .comment-copy').map((i, ele) => $(ele).text());
+                            if (commentText) {
+                                // Match [some text](http://somehyperlink.com)
+                                let strippedComment = commentText.replace(/\[([^\]]+)\]\(([^\]]+)\)/g, '$1');
+                                // Match [edit]
+                                strippedComment = strippedComment.replace(/\[([^\]]+)\][^\(]*?/g, '$1');
 
+                                element.find('.comment-body .comment-copy').each((i, ele) => {
+                                    const jEle = $(ele);
+                                    let text = jEle.text();
+                                    const fromReviewText = ' - From Review';
+                                    if (text.endsWith(fromReviewText)) {
+                                        text = text.substring(0, text.length - fromReviewText.length);
+                                    }
+
+                                    if (text === strippedComment) {
+                                        jEle.closest('tr').find('a.comment-up.comment-up-off').trigger('click');
+                                    }
+                                });
+                            }
+
+                            commentText = undefined;
+                        }
+
+                        const result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), commentText, copyPastorPromise);
                         if (result.CommentPromise) {
                             result.CommentPromise.then((data) => {
                                 const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));

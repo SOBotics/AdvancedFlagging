@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.11
+// @version      0.5.12
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -4371,26 +4371,20 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
         target.appendChild(scriptNode);
     }
-    function handleFlagAndComment(postId, flag, commentRequired, flagRequired, userReputation, copyPastorPromise) {
+    function handleFlagAndComment(postId, flag, flagRequired, commentText, copyPastorPromise) {
         var result = {};
-        if (commentRequired) {
-            var commentText_1 = null;
-            if (flag.GetComment) {
-                commentText_1 = flag.GetComment(userReputation);
-            }
-            if (commentText_1) {
-                result.CommentPromise = new Promise(function (resolve, reject) {
-                    $.ajax({
-                        url: "//stackoverflow.com/posts/" + postId + "/comments",
-                        type: 'POST',
-                        data: { fkey: StackExchange.options.user.fkey, comment: commentText_1 }
-                    }).done(function (data) {
-                        resolve(data);
-                    }).fail(function (jqXHR, textStatus, errorThrown) {
-                        reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
-                    });
+        if (commentText) {
+            result.CommentPromise = new Promise(function (resolve, reject) {
+                $.ajax({
+                    url: "//stackoverflow.com/posts/" + postId + "/comments",
+                    type: 'POST',
+                    data: { fkey: StackExchange.options.user.fkey, comment: commentText }
+                }).done(function (data) {
+                    resolve(data);
+                }).fail(function (jqXHR, textStatus, errorThrown) {
+                    reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
                 });
-            }
+            });
         }
         if (flagRequired) {
             if (flag.ReportType !== 'NoFlag') {
@@ -4549,7 +4543,33 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 reportLink.click(function () {
                     if (!deleted) {
                         try {
-                            var result = handleFlagAndComment(postId, flagType, leaveCommentBox.is(':checked'), flagBox.is(':checked'), reputation, copyPastorPromise);
+                            var commentText = void 0;
+                            if (flagType.GetComment) {
+                                commentText = flagType.GetComment(reputation);
+                            }
+                            if (!leaveCommentBox.is(':checked')) {
+                                // Now we need to investigate the existing comments to upvote them.
+                                var commentTextItems = element.find('.comment-body .comment-copy').map(function (i, ele) { return $(ele).text(); });
+                                if (commentText) {
+                                    // Match [some text](http://somehyperlink.com)
+                                    var strippedComment_1 = commentText.replace(/\[([^\]]+)\]\(([^\]]+)\)/g, '$1');
+                                    // Match [edit]
+                                    strippedComment_1 = strippedComment_1.replace(/\[([^\]]+)\][^\(]*?/g, '$1');
+                                    element.find('.comment-body .comment-copy').each(function (i, ele) {
+                                        var jEle = $(ele);
+                                        var text = jEle.text();
+                                        var fromReviewText = ' - From Review';
+                                        if (text.endsWith(fromReviewText)) {
+                                            text = text.substring(0, text.length - fromReviewText.length);
+                                        }
+                                        if (text === strippedComment_1) {
+                                            jEle.closest('tr').find('a.comment-up.comment-up-off').trigger('click');
+                                        }
+                                    });
+                                }
+                                commentText = undefined;
+                            }
+                            var result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), commentText, copyPastorPromise);
                             if (result.CommentPromise) {
                                 result.CommentPromise.then(function (data) {
                                     var commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));

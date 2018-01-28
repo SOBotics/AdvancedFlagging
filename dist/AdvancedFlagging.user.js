@@ -2207,13 +2207,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 else {
                     enableLink();
                 }
+                var commentText;
+                if (flagType.GetComment) {
+                    commentText = flagType.GetComment(reputation);
+                    reportLink.attr('title', commentText);
+                }
                 reportLink.click(function () {
                     if (!deleted) {
                         try {
-                            var commentText = void 0;
-                            if (flagType.GetComment) {
-                                commentText = flagType.GetComment(reputation);
-                            }
                             if (!leaveCommentBox.is(':checked')) {
                                 // Now we need to investigate the existing comments to upvote them.
                                 var commentTextItems = element.find('.comment-body .comment-copy').map(function (i, ele) { return $(ele).text(); });
@@ -2362,7 +2363,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 window.open("https://sentinel.erwaysoftware.com/posts/aid/" + post.postId, '_blank');
             });
             var showFunc = function (element) { return element.show(); };
-            var copyPastorIcon = getCopyPastorIcon();
+            var copyPastorIcon = getGuttenbergIcon();
             var copyPastorApi = new CopyPastorAPI_1.CopyPastorAPI(post.postId, copyPastorKey);
             var copyPastorObservable = copyPastorApi.Watch();
             var smokeyIcon = getSmokeyIcon();
@@ -2403,7 +2404,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     }
                 });
                 reporters.push({
-                    name: 'Copy Pastor',
+                    name: 'Guttenberg',
                     ReportNaa: function (answerDate, questionDate) { return copyPastorApi.ReportFalsePositive(); },
                     ReportRedFlag: function () { return Promise.resolve(false); },
                     ReportLooksFine: function () { return copyPastorApi.ReportFalsePositive(); },
@@ -2529,13 +2530,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             .attr('title', 'Reported by Natty')
             .hide();
     }
-    function getCopyPastorIcon() {
+    function getGuttenbergIcon() {
         return $('<div>')
             .css({
             'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
             'background': 'url("https://i.imgur.com/ZQwCGvB.png?s=328&g=1"', 'background-size': '100%'
         })
-            .attr('title', 'Reported by CopyPastor')
+            .attr('title', 'Reported by Guttenberg')
             .hide();
     }
     function getSmokeyIcon() {

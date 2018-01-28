@@ -270,13 +270,15 @@ function BuildFlaggingDialog(element: JQuery,
                 enableLink();
             }
 
+            let commentText: string | undefined;
+            if (flagType.GetComment) {
+                commentText = flagType.GetComment(reputation);
+                reportLink.attr('title', commentText);
+            }
+
             reportLink.click(() => {
                 if (!deleted) {
                     try {
-                        let commentText: string | undefined;
-                        if (flagType.GetComment) {
-                            commentText = flagType.GetComment(reputation);
-                        }
                         if (!leaveCommentBox.is(':checked')) {
                             // Now we need to investigate the existing comments to upvote them.
                             const commentTextItems = element.find('.comment-body .comment-copy').map((i, ele) => $(ele).text());

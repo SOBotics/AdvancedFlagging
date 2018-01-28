@@ -444,7 +444,7 @@ function SetupPostPage() {
 
         let showFunc = (element: JQuery) => element.show();
 
-        const copyPastorIcon = getCopyPastorIcon();
+        const copyPastorIcon = getGuttenbergIcon();
         const copyPastorApi = new CopyPastorAPI(post.postId, copyPastorKey);
         const copyPastorObservable = copyPastorApi.Watch();
 
@@ -486,7 +486,7 @@ function SetupPostPage() {
             });
 
             reporters.push({
-                name: 'Copy Pastor',
+                name: 'Guttenberg',
                 ReportNaa: (answerDate: Date, questionDate: Date) => copyPastorApi.ReportFalsePositive(),
                 ReportRedFlag: () => Promise.resolve(false),
                 ReportLooksFine: () => copyPastorApi.ReportFalsePositive(),
@@ -628,13 +628,13 @@ function getNattyIcon() {
         .attr('title', 'Reported by Natty')
         .hide();
 }
-function getCopyPastorIcon() {
+function getGuttenbergIcon() {
     return $('<div>')
         .css({
             'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
             'background': 'url("https://i.imgur.com/ZQwCGvB.png?s=328&g=1"', 'background-size': '100%'
         })
-        .attr('title', 'Reported by CopyPastor')
+        .attr('title', 'Reported by Guttenberg')
         .hide();
 }
 

@@ -26,9 +26,9 @@
 /******/ 	function __webpack_require__(moduleId) {
 /******/
 /******/ 		// Check if module is in cache
-/******/ 		if(installedModules[moduleId])
+/******/ 		if(installedModules[moduleId]) {
 /******/ 			return installedModules[moduleId].exports;
-/******/
+/******/ 		}
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = installedModules[moduleId] = {
 /******/ 			i: moduleId,
@@ -53,16 +53,15 @@
 /******/ 	// expose the module cache
 /******/ 	__webpack_require__.c = installedModules;
 /******/
-/******/ 	// identity function for calling harmory imports with the correct context
-/******/ 	__webpack_require__.i = function(value) { return value; };
-/******/
-/******/ 	// define getter function for harmory exports
+/******/ 	// define getter function for harmony exports
 /******/ 	__webpack_require__.d = function(exports, name, getter) {
-/******/ 		Object.defineProperty(exports, name, {
-/******/ 			configurable: false,
-/******/ 			enumerable: true,
-/******/ 			get: getter
-/******/ 		});
+/******/ 		if(!__webpack_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, {
+/******/ 				configurable: false,
+/******/ 				enumerable: true,
+/******/ 				get: getter
+/******/ 			});
+/******/ 		}
 /******/ 	};
 /******/
 /******/ 	// getDefaultExport function for compatibility with non-harmony modules
@@ -81,31 +80,32 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 48);
+/******/ 	return __webpack_require__(__webpack_require__.s = 18);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony export (immutable) */ exports["__extends"] = __extends;
-/* harmony export (binding) */ __webpack_require__.d(exports, "__assign", function() { return __assign; });
-/* harmony export (immutable) */ exports["__rest"] = __rest;
-/* harmony export (immutable) */ exports["__decorate"] = __decorate;
-/* harmony export (immutable) */ exports["__param"] = __param;
-/* harmony export (immutable) */ exports["__metadata"] = __metadata;
-/* harmony export (immutable) */ exports["__awaiter"] = __awaiter;
-/* harmony export (immutable) */ exports["__generator"] = __generator;
-/* harmony export (immutable) */ exports["__exportStar"] = __exportStar;
-/* harmony export (immutable) */ exports["__values"] = __values;
-/* harmony export (immutable) */ exports["__read"] = __read;
-/* harmony export (immutable) */ exports["__spread"] = __spread;
-/* harmony export (immutable) */ exports["__await"] = __await;
-/* harmony export (immutable) */ exports["__asyncGenerator"] = __asyncGenerator;
-/* harmony export (immutable) */ exports["__asyncDelegator"] = __asyncDelegator;
-/* harmony export (immutable) */ exports["__asyncValues"] = __asyncValues;
-/* harmony export (immutable) */ exports["__makeTemplateObject"] = __makeTemplateObject;
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony export (immutable) */ __webpack_exports__["__extends"] = __extends;
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "__assign", function() { return __assign; });
+/* harmony export (immutable) */ __webpack_exports__["__rest"] = __rest;
+/* harmony export (immutable) */ __webpack_exports__["__decorate"] = __decorate;
+/* harmony export (immutable) */ __webpack_exports__["__param"] = __param;
+/* harmony export (immutable) */ __webpack_exports__["__metadata"] = __metadata;
+/* harmony export (immutable) */ __webpack_exports__["__awaiter"] = __awaiter;
+/* harmony export (immutable) */ __webpack_exports__["__generator"] = __generator;
+/* harmony export (immutable) */ __webpack_exports__["__exportStar"] = __exportStar;
+/* harmony export (immutable) */ __webpack_exports__["__values"] = __values;
+/* harmony export (immutable) */ __webpack_exports__["__read"] = __read;
+/* harmony export (immutable) */ __webpack_exports__["__spread"] = __spread;
+/* harmony export (immutable) */ __webpack_exports__["__await"] = __await;
+/* harmony export (immutable) */ __webpack_exports__["__asyncGenerator"] = __asyncGenerator;
+/* harmony export (immutable) */ __webpack_exports__["__asyncDelegator"] = __asyncDelegator;
+/* harmony export (immutable) */ __webpack_exports__["__asyncValues"] = __asyncValues;
+/* harmony export (immutable) */ __webpack_exports__["__makeTemplateObject"] = __makeTemplateObject;
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use
@@ -274,72 +274,16 @@ function __makeTemplateObject(cooked, raw) {
 };
 
 
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var SimpleCache = /** @class */ (function () {
-        function SimpleCache() {
-        }
-        SimpleCache.GetAndCache = function (cacheKey, getterPromise, expiresAt) {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                var cachedItem, result;
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            cachedItem = SimpleCache.GetFromCache(cacheKey);
-                            if (cachedItem !== undefined) {
-                                return [2 /*return*/, cachedItem];
-                            }
-                            return [4 /*yield*/, getterPromise()];
-                        case 1:
-                            result = _a.sent();
-                            SimpleCache.StoreInCache(cacheKey, result, expiresAt);
-                            return [2 /*return*/, result];
-                    }
-                });
-            });
-        };
-        SimpleCache.ClearCache = function () {
-            localStorage.clear();
-        };
-        SimpleCache.GetFromCache = function (cacheKey) {
-            var jsonItem = localStorage.getItem(cacheKey);
-            if (!jsonItem) {
-                return undefined;
-            }
-            var dataItem = JSON.parse(jsonItem);
-            if ((dataItem.Expires && dataItem.Expires < new Date())) {
-                return undefined;
-            }
-            return dataItem.Data;
-        };
-        SimpleCache.StoreInCache = function (cacheKey, item, expiresAt) {
-            var jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
-            localStorage.setItem(cacheKey, jsonStr);
-        };
-        SimpleCache.Unset = function (cacheKey) {
-            localStorage.removeItem(cacheKey);
-        };
-        return SimpleCache;
-    }());
-    exports.SimpleCache = SimpleCache;
-}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ },
-/* 2 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-"use strict";
+
 var root_1 = __webpack_require__(6);
-var toSubscriber_1 = __webpack_require__(45);
-var observable_1 = __webpack_require__(38);
-var pipe_1 = __webpack_require__(44);
+var toSubscriber_1 = __webpack_require__(20);
+var observable_1 = __webpack_require__(25);
+var pipe_1 = __webpack_require__(26);
 /**
  * A representation of any set of values over any amount of time. This is the most basic building block
  * of RxJS.
@@ -641,21 +585,21 @@ var Observable = (function () {
 exports.Observable = Observable;
 //# sourceMappingURL=Observable.js.map
 
-/***/ },
-/* 3 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-"use strict";
+
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var isFunction_1 = __webpack_require__(16);
-var Subscription_1 = __webpack_require__(4);
-var Observer_1 = __webpack_require__(11);
-var rxSubscriber_1 = __webpack_require__(9);
+var isFunction_1 = __webpack_require__(10);
+var Subscription_1 = __webpack_require__(3);
+var Observer_1 = __webpack_require__(12);
+var rxSubscriber_1 = __webpack_require__(7);
 /**
  * Implements the {@link Observer} interface and extends the
  * {@link Subscription} class. While the {@link Observer} is the public API for
@@ -911,18 +855,18 @@ var SafeSubscriber = (function (_super) {
 }(Subscriber));
 //# sourceMappingURL=Subscriber.js.map
 
-/***/ },
-/* 4 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-"use strict";
-var isArray_1 = __webpack_require__(41);
-var isObject_1 = __webpack_require__(42);
-var isFunction_1 = __webpack_require__(16);
-var tryCatch_1 = __webpack_require__(46);
-var errorObject_1 = __webpack_require__(15);
-var UnsubscriptionError_1 = __webpack_require__(40);
+
+var isArray_1 = __webpack_require__(21);
+var isObject_1 = __webpack_require__(22);
+var isFunction_1 = __webpack_require__(10);
+var tryCatch_1 = __webpack_require__(23);
+var errorObject_1 = __webpack_require__(11);
+var UnsubscriptionError_1 = __webpack_require__(24);
 /**
  * Represents a disposable resource, such as the execution of an Observable. A
  * Subscription has one important method, `unsubscribe`, that takes no argument
@@ -1110,23 +1054,80 @@ function flattenUnsubscriptionErrors(errors) {
 }
 //# sourceMappingURL=Subscription.js.map
 
-/***/ },
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var SimpleCache = /** @class */ (function () {
+        function SimpleCache() {
+        }
+        SimpleCache.GetAndCache = function (cacheKey, getterPromise, expiresAt) {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var cachedItem, result;
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            cachedItem = SimpleCache.GetFromCache(cacheKey);
+                            if (cachedItem !== undefined) {
+                                return [2 /*return*/, cachedItem];
+                            }
+                            return [4 /*yield*/, getterPromise()];
+                        case 1:
+                            result = _a.sent();
+                            SimpleCache.StoreInCache(cacheKey, result, expiresAt);
+                            return [2 /*return*/, result];
+                    }
+                });
+            });
+        };
+        SimpleCache.ClearCache = function () {
+            localStorage.clear();
+        };
+        SimpleCache.GetFromCache = function (cacheKey) {
+            var jsonItem = localStorage.getItem(cacheKey);
+            if (!jsonItem) {
+                return undefined;
+            }
+            var dataItem = JSON.parse(jsonItem);
+            if ((dataItem.Expires && dataItem.Expires < new Date())) {
+                return undefined;
+            }
+            return dataItem.Data;
+        };
+        SimpleCache.StoreInCache = function (cacheKey, item, expiresAt) {
+            var jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
+            localStorage.setItem(cacheKey, jsonStr);
+        };
+        SimpleCache.Unset = function (cacheKey) {
+            localStorage.removeItem(cacheKey);
+        };
+        return SimpleCache;
+    }());
+    exports.SimpleCache = SimpleCache;
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
 /* 5 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-"use strict";
+
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var Observable_1 = __webpack_require__(2);
-var Subscriber_1 = __webpack_require__(3);
-var Subscription_1 = __webpack_require__(4);
-var ObjectUnsubscribedError_1 = __webpack_require__(14);
-var SubjectSubscription_1 = __webpack_require__(12);
-var rxSubscriber_1 = __webpack_require__(9);
+var Observable_1 = __webpack_require__(1);
+var Subscriber_1 = __webpack_require__(2);
+var Subscription_1 = __webpack_require__(3);
+var ObjectUnsubscribedError_1 = __webpack_require__(13);
+var SubjectSubscription_1 = __webpack_require__(14);
+var rxSubscriber_1 = __webpack_require__(7);
 /**
  * @class SubjectSubscriber<T>
  */
@@ -1284,12 +1285,12 @@ var AnonymousSubject = (function (_super) {
 exports.AnonymousSubject = AnonymousSubject;
 //# sourceMappingURL=Subject.js.map
 
-/***/ },
+/***/ }),
 /* 6 */
-/***/ function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-"use strict";
+
 // CommonJS / Node have global context exposed as "global" variable.
 // We don't want to include the whole node.d.ts this this compilation unit so we'll just fake
 // the global "global" var for now.
@@ -1309,11 +1310,135 @@ exports.root = _root;
 })();
 //# sourceMappingURL=root.js.map
 
-/***/ },
+/***/ }),
 /* 7 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+"use strict";
+
+var root_1 = __webpack_require__(6);
+var Symbol = root_1.root.Symbol;
+exports.rxSubscriber = (typeof Symbol === 'function' && typeof Symbol.for === 'function') ?
+    Symbol.for('rxSubscriber') : '@@rxSubscriber';
+/**
+ * @deprecated use rxSubscriber instead
+ */
+exports.$$rxSubscriber = exports.rxSubscriber;
+//# sourceMappingURL=rxSubscriber.js.map
+
+/***/ }),
+/* 8 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var Subject_1 = __webpack_require__(5);
+var queue_1 = __webpack_require__(28);
+var Subscription_1 = __webpack_require__(3);
+var observeOn_1 = __webpack_require__(35);
+var ObjectUnsubscribedError_1 = __webpack_require__(13);
+var SubjectSubscription_1 = __webpack_require__(14);
+/**
+ * @class ReplaySubject<T>
+ */
+var ReplaySubject = (function (_super) {
+    __extends(ReplaySubject, _super);
+    function ReplaySubject(bufferSize, windowTime, scheduler) {
+        if (bufferSize === void 0) { bufferSize = Number.POSITIVE_INFINITY; }
+        if (windowTime === void 0) { windowTime = Number.POSITIVE_INFINITY; }
+        _super.call(this);
+        this.scheduler = scheduler;
+        this._events = [];
+        this._bufferSize = bufferSize < 1 ? 1 : bufferSize;
+        this._windowTime = windowTime < 1 ? 1 : windowTime;
+    }
+    ReplaySubject.prototype.next = function (value) {
+        var now = this._getNow();
+        this._events.push(new ReplayEvent(now, value));
+        this._trimBufferThenGetEvents();
+        _super.prototype.next.call(this, value);
+    };
+    ReplaySubject.prototype._subscribe = function (subscriber) {
+        var _events = this._trimBufferThenGetEvents();
+        var scheduler = this.scheduler;
+        var subscription;
+        if (this.closed) {
+            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+        }
+        else if (this.hasError) {
+            subscription = Subscription_1.Subscription.EMPTY;
+        }
+        else if (this.isStopped) {
+            subscription = Subscription_1.Subscription.EMPTY;
+        }
+        else {
+            this.observers.push(subscriber);
+            subscription = new SubjectSubscription_1.SubjectSubscription(this, subscriber);
+        }
+        if (scheduler) {
+            subscriber.add(subscriber = new observeOn_1.ObserveOnSubscriber(subscriber, scheduler));
+        }
+        var len = _events.length;
+        for (var i = 0; i < len && !subscriber.closed; i++) {
+            subscriber.next(_events[i].value);
+        }
+        if (this.hasError) {
+            subscriber.error(this.thrownError);
+        }
+        else if (this.isStopped) {
+            subscriber.complete();
+        }
+        return subscription;
+    };
+    ReplaySubject.prototype._getNow = function () {
+        return (this.scheduler || queue_1.queue).now();
+    };
+    ReplaySubject.prototype._trimBufferThenGetEvents = function () {
+        var now = this._getNow();
+        var _bufferSize = this._bufferSize;
+        var _windowTime = this._windowTime;
+        var _events = this._events;
+        var eventsCount = _events.length;
+        var spliceCount = 0;
+        // Trim events that fall out of the time window.
+        // Start at the front of the list. Break early once
+        // we encounter an event that falls within the window.
+        while (spliceCount < eventsCount) {
+            if ((now - _events[spliceCount].time) < _windowTime) {
+                break;
+            }
+            spliceCount++;
+        }
+        if (eventsCount > _bufferSize) {
+            spliceCount = Math.max(spliceCount, eventsCount - _bufferSize);
+        }
+        if (spliceCount > 0) {
+            _events.splice(0, spliceCount);
+        }
+        return _events;
+    };
+    return ReplaySubject;
+}(Subject_1.Subject));
+exports.ReplaySubject = ReplaySubject;
+var ReplayEvent = (function () {
+    function ReplayEvent(time, value) {
+        this.time = time;
+        this.value = value;
+    }
+    return ReplayEvent;
+}());
+//# sourceMappingURL=ReplaySubject.js.map
+
+/***/ }),
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function IsStackOverflow() {
@@ -1517,138 +1642,254 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         var answerTime = new Date(actionDiv.attr('title'));
         return answerTime;
     }
-}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
-/***/ },
-/* 8 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 10 */
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
+
+function isFunction(x) {
+    return typeof x === 'function';
+}
+exports.isFunction = isFunction;
+//# sourceMappingURL=isFunction.js.map
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
 "use strict";
+
+// typeof any so that it we don't have to cast when comparing a result to the error object
+exports.errorObject = { e: {} };
+//# sourceMappingURL=errorObject.js.map
+
+/***/ }),
+/* 12 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+exports.empty = {
+    closed: true,
+    next: function (value) { },
+    error: function (err) { throw err; },
+    complete: function () { }
+};
+//# sourceMappingURL=Observer.js.map
+
+/***/ }),
+/* 13 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var Subject_1 = __webpack_require__(5);
-var queue_1 = __webpack_require__(37);
-var Subscription_1 = __webpack_require__(4);
-var observeOn_1 = __webpack_require__(30);
-var ObjectUnsubscribedError_1 = __webpack_require__(14);
-var SubjectSubscription_1 = __webpack_require__(12);
 /**
- * @class ReplaySubject<T>
+ * An error thrown when an action is invalid because the object has been
+ * unsubscribed.
+ *
+ * @see {@link Subject}
+ * @see {@link BehaviorSubject}
+ *
+ * @class ObjectUnsubscribedError
  */
-var ReplaySubject = (function (_super) {
-    __extends(ReplaySubject, _super);
-    function ReplaySubject(bufferSize, windowTime, scheduler) {
-        if (bufferSize === void 0) { bufferSize = Number.POSITIVE_INFINITY; }
-        if (windowTime === void 0) { windowTime = Number.POSITIVE_INFINITY; }
+var ObjectUnsubscribedError = (function (_super) {
+    __extends(ObjectUnsubscribedError, _super);
+    function ObjectUnsubscribedError() {
+        var err = _super.call(this, 'object unsubscribed');
+        this.name = err.name = 'ObjectUnsubscribedError';
+        this.stack = err.stack;
+        this.message = err.message;
+    }
+    return ObjectUnsubscribedError;
+}(Error));
+exports.ObjectUnsubscribedError = ObjectUnsubscribedError;
+//# sourceMappingURL=ObjectUnsubscribedError.js.map
+
+/***/ }),
+/* 14 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var Subscription_1 = __webpack_require__(3);
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
+var SubjectSubscription = (function (_super) {
+    __extends(SubjectSubscription, _super);
+    function SubjectSubscription(subject, subscriber) {
         _super.call(this);
-        this.scheduler = scheduler;
-        this._events = [];
-        this._bufferSize = bufferSize < 1 ? 1 : bufferSize;
-        this._windowTime = windowTime < 1 ? 1 : windowTime;
+        this.subject = subject;
+        this.subscriber = subscriber;
+        this.closed = false;
     }
-    ReplaySubject.prototype.next = function (value) {
-        var now = this._getNow();
-        this._events.push(new ReplayEvent(now, value));
-        this._trimBufferThenGetEvents();
-        _super.prototype.next.call(this, value);
-    };
-    ReplaySubject.prototype._subscribe = function (subscriber) {
-        var _events = this._trimBufferThenGetEvents();
-        var scheduler = this.scheduler;
-        var subscription;
+    SubjectSubscription.prototype.unsubscribe = function () {
         if (this.closed) {
-            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+            return;
         }
-        else if (this.hasError) {
-            subscription = Subscription_1.Subscription.EMPTY;
+        this.closed = true;
+        var subject = this.subject;
+        var observers = subject.observers;
+        this.subject = null;
+        if (!observers || observers.length === 0 || subject.isStopped || subject.closed) {
+            return;
         }
-        else if (this.isStopped) {
-            subscription = Subscription_1.Subscription.EMPTY;
+        var subscriberIndex = observers.indexOf(this.subscriber);
+        if (subscriberIndex !== -1) {
+            observers.splice(subscriberIndex, 1);
         }
-        else {
-            this.observers.push(subscriber);
-            subscription = new SubjectSubscription_1.SubjectSubscription(this, subscriber);
-        }
-        if (scheduler) {
-            subscriber.add(subscriber = new observeOn_1.ObserveOnSubscriber(subscriber, scheduler));
-        }
-        var len = _events.length;
-        for (var i = 0; i < len && !subscriber.closed; i++) {
-            subscriber.next(_events[i].value);
-        }
-        if (this.hasError) {
-            subscriber.error(this.thrownError);
-        }
-        else if (this.isStopped) {
-            subscriber.complete();
-        }
-        return subscription;
     };
-    ReplaySubject.prototype._getNow = function () {
-        return (this.scheduler || queue_1.queue).now();
-    };
-    ReplaySubject.prototype._trimBufferThenGetEvents = function () {
-        var now = this._getNow();
-        var _bufferSize = this._bufferSize;
-        var _windowTime = this._windowTime;
-        var _events = this._events;
-        var eventsCount = _events.length;
-        var spliceCount = 0;
-        // Trim events that fall out of the time window.
-        // Start at the front of the list. Break early once
-        // we encounter an event that falls within the window.
-        while (spliceCount < eventsCount) {
-            if ((now - _events[spliceCount].time) < _windowTime) {
-                break;
-            }
-            spliceCount++;
-        }
-        if (eventsCount > _bufferSize) {
-            spliceCount = Math.max(spliceCount, eventsCount - _bufferSize);
-        }
-        if (spliceCount > 0) {
-            _events.splice(0, spliceCount);
-        }
-        return _events;
-    };
-    return ReplaySubject;
-}(Subject_1.Subject));
-exports.ReplaySubject = ReplaySubject;
-var ReplayEvent = (function () {
-    function ReplayEvent(time, value) {
-        this.time = time;
-        this.value = value;
-    }
-    return ReplayEvent;
-}());
-//# sourceMappingURL=ReplaySubject.js.map
+    return SubjectSubscription;
+}(Subscription_1.Subscription));
+exports.SubjectSubscription = SubjectSubscription;
+//# sourceMappingURL=SubjectSubscription.js.map
 
-/***/ },
-/* 9 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 15 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(4)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, SimpleCache_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var ChatApi = /** @class */ (function () {
+        function ChatApi(chatUrl) {
+            if (chatUrl === void 0) { chatUrl = 'https://chat.stackoverflow.com'; }
+            this.chatRoomUrl = "" + chatUrl;
+        }
+        ChatApi.prototype.GetChannelFKey = function (roomId) {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                var cachingKey, getterPromise, expiryDate;
+                return tslib_1.__generator(this, function (_a) {
+                    cachingKey = "StackExchange.ChatApi.FKey_" + roomId;
+                    getterPromise = new Promise(function (resolve, reject) {
+                        _this.GetChannelPage(roomId).then(function (channelPage) {
+                            var match = channelPage.match(/hidden" value="([\dabcdef]{32})/);
+                            if (match && match.length) {
+                                var fkey = match[1];
+                                resolve(fkey);
+                            }
+                            reject('Could not find fkey');
+                        });
+                    });
+                    expiryDate = new Date();
+                    expiryDate.setDate(expiryDate.getDate() + 1);
+                    return [2 /*return*/, SimpleCache_1.SimpleCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate)];
+                });
+            });
+        };
+        ChatApi.prototype.GetChatUserId = function (roomId) {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                var cachingKey, getterPromise, expiryDate;
+                return tslib_1.__generator(this, function (_a) {
+                    cachingKey = "StackExchange.ChatApi.UserId_" + roomId;
+                    getterPromise = new Promise(function (resolve, reject) {
+                        _this.GetChannelPage(roomId).then(function (channelPage) {
+                            var activeUserDiv = $('#active-user', $(channelPage));
+                            var classAtr = activeUserDiv.attr('class');
+                            var match = classAtr.match(/user-(\d+)/);
+                            if (match && match.length) {
+                                resolve(parseInt(match[1], 10));
+                            }
+                            reject('Could not find user id');
+                        });
+                    });
+                    expiryDate = new Date();
+                    expiryDate.setDate(expiryDate.getDate() + 1);
+                    return [2 /*return*/, SimpleCache_1.SimpleCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate)];
+                });
+            });
+        };
+        ChatApi.prototype.SendMessage = function (roomId, message, providedFkey) {
+            var _this = this;
+            var fkeyPromise = providedFkey
+                ? Promise.resolve(providedFkey)
+                : this.GetChannelFKey(roomId);
+            return fkeyPromise.then(function (fKey) {
+                return new Promise(function (resolve, reject) {
+                    GM_xmlhttpRequest({
+                        method: 'POST',
+                        url: _this.chatRoomUrl + "/chats/" + roomId + "/messages/new",
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        data: 'text=' + encodeURIComponent(message) + '&fkey=' + fKey,
+                        onload: function (response) {
+                            if (response.status !== 200) {
+                                reject(response.statusText);
+                            }
+                            else {
+                                resolve();
+                            }
+                        },
+                        onerror: function (response) {
+                            reject(response);
+                        },
+                    });
+                });
+            });
+        };
+        ChatApi.prototype.GetChannelPage = function (roomId) {
+            var _this = this;
+            var cachingKey = "StackExchange.ChatApi.ChannelData_" + roomId;
+            var getterPromise = new Promise(function (resolve, reject) {
+                GM_xmlhttpRequest({
+                    method: 'GET',
+                    url: _this.chatRoomUrl + "/rooms/" + roomId,
+                    onload: function (response) {
+                        if (response.status !== 200) {
+                            reject(response.statusText);
+                        }
+                        else {
+                            resolve(response.responseText);
+                        }
+                    },
+                    onerror: function (data) { return reject(data); }
+                });
+            });
+            var expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + 1);
+            return SimpleCache_1.SimpleCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate);
+        };
+        return ChatApi;
+    }());
+    exports.ChatApi = ChatApi;
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
+/* 16 */
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-"use strict";
-var root_1 = __webpack_require__(6);
-var Symbol = root_1.root.Symbol;
-exports.rxSubscriber = (typeof Symbol === 'function' && typeof Symbol.for === 'function') ?
-    Symbol.for('rxSubscriber') : '@@rxSubscriber';
-/**
- * @deprecated use rxSubscriber instead
- */
-exports.$$rxSubscriber = exports.rxSubscriber;
-//# sourceMappingURL=rxSubscriber.js.map
 
-/***/ },
-/* 10 */
-/***/ function(module, exports, __webpack_require__) {
+var Observable_1 = __webpack_require__(1);
+var take_1 = __webpack_require__(37);
+Observable_1.Observable.prototype.take = take_1.take;
+//# sourceMappingURL=take.js.map
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(47)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, xdLocalStorage_1) {
+/***/ }),
+/* 17 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(44)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, xdLocalStorage_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var CrossDomainCache = /** @class */ (function () {
@@ -1774,2589 +2015,15 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         return CrossDomainCache;
     }());
     exports.CrossDomainCache = CrossDomainCache;
-}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
-/***/ },
-/* 11 */
-/***/ function(module, exports) {
-
-"use strict";
-"use strict";
-exports.empty = {
-    closed: true,
-    next: function (value) { },
-    error: function (err) { throw err; },
-    complete: function () { }
-};
-//# sourceMappingURL=Observer.js.map
-
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-var Subscription_1 = __webpack_require__(4);
-/**
- * We need this JSDoc comment for affecting ESDoc.
- * @ignore
- * @extends {Ignored}
- */
-var SubjectSubscription = (function (_super) {
-    __extends(SubjectSubscription, _super);
-    function SubjectSubscription(subject, subscriber) {
-        _super.call(this);
-        this.subject = subject;
-        this.subscriber = subscriber;
-        this.closed = false;
-    }
-    SubjectSubscription.prototype.unsubscribe = function () {
-        if (this.closed) {
-            return;
-        }
-        this.closed = true;
-        var subject = this.subject;
-        var observers = subject.observers;
-        this.subject = null;
-        if (!observers || observers.length === 0 || subject.isStopped || subject.closed) {
-            return;
-        }
-        var subscriberIndex = observers.indexOf(this.subscriber);
-        if (subscriberIndex !== -1) {
-            observers.splice(subscriberIndex, 1);
-        }
-    };
-    return SubjectSubscription;
-}(Subscription_1.Subscription));
-exports.SubjectSubscription = SubjectSubscription;
-//# sourceMappingURL=SubjectSubscription.js.map
-
-/***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var Observable_1 = __webpack_require__(2);
-var take_1 = __webpack_require__(28);
-Observable_1.Observable.prototype.take = take_1.take;
-//# sourceMappingURL=take.js.map
-
-/***/ },
-/* 14 */
-/***/ function(module, exports) {
-
-"use strict";
-"use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-/**
- * An error thrown when an action is invalid because the object has been
- * unsubscribed.
- *
- * @see {@link Subject}
- * @see {@link BehaviorSubject}
- *
- * @class ObjectUnsubscribedError
- */
-var ObjectUnsubscribedError = (function (_super) {
-    __extends(ObjectUnsubscribedError, _super);
-    function ObjectUnsubscribedError() {
-        var err = _super.call(this, 'object unsubscribed');
-        this.name = err.name = 'ObjectUnsubscribedError';
-        this.stack = err.stack;
-        this.message = err.message;
-    }
-    return ObjectUnsubscribedError;
-}(Error));
-exports.ObjectUnsubscribedError = ObjectUnsubscribedError;
-//# sourceMappingURL=ObjectUnsubscribedError.js.map
-
-/***/ },
-/* 15 */
-/***/ function(module, exports) {
-
-"use strict";
-"use strict";
-// typeof any so that it we don't have to cast when comparing a result to the error object
-exports.errorObject = { e: {} };
-//# sourceMappingURL=errorObject.js.map
-
-/***/ },
-/* 16 */
-/***/ function(module, exports) {
-
-"use strict";
-"use strict";
-function isFunction(x) {
-    return typeof x === 'function';
-}
-exports.isFunction = isFunction;
-//# sourceMappingURL=isFunction.js.map
-
-/***/ },
-/* 17 */
-/***/ function(module, exports, __webpack_require__) {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(1)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, SimpleCache_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var ChatApi = /** @class */ (function () {
-        function ChatApi(chatUrl) {
-            if (chatUrl === void 0) { chatUrl = 'https://chat.stackoverflow.com'; }
-            this.chatRoomUrl = "" + chatUrl;
-        }
-        ChatApi.prototype.GetChannelFKey = function (roomId) {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                var _this = this;
-                var cachingKey, getterPromise, expiryDate;
-                return tslib_1.__generator(this, function (_a) {
-                    cachingKey = "StackExchange.ChatApi.FKey_" + roomId;
-                    getterPromise = new Promise(function (resolve, reject) {
-                        _this.GetChannelPage(roomId).then(function (channelPage) {
-                            var match = channelPage.match(/hidden" value="([\dabcdef]{32})/);
-                            if (match && match.length) {
-                                var fkey = match[1];
-                                resolve(fkey);
-                            }
-                            reject('Could not find fkey');
-                        });
-                    });
-                    expiryDate = new Date();
-                    expiryDate.setDate(expiryDate.getDate() + 1);
-                    return [2 /*return*/, SimpleCache_1.SimpleCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate)];
-                });
-            });
-        };
-        ChatApi.prototype.GetChatUserId = function (roomId) {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                var _this = this;
-                var cachingKey, getterPromise, expiryDate;
-                return tslib_1.__generator(this, function (_a) {
-                    cachingKey = "StackExchange.ChatApi.UserId_" + roomId;
-                    getterPromise = new Promise(function (resolve, reject) {
-                        _this.GetChannelPage(roomId).then(function (channelPage) {
-                            var activeUserDiv = $('#active-user', $(channelPage));
-                            var classAtr = activeUserDiv.attr('class');
-                            var match = classAtr.match(/user-(\d+)/);
-                            if (match && match.length) {
-                                resolve(parseInt(match[1], 10));
-                            }
-                            reject('Could not find user id');
-                        });
-                    });
-                    expiryDate = new Date();
-                    expiryDate.setDate(expiryDate.getDate() + 1);
-                    return [2 /*return*/, SimpleCache_1.SimpleCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate)];
-                });
-            });
-        };
-        ChatApi.prototype.SendMessage = function (roomId, message, providedFkey) {
-            var _this = this;
-            var fkeyPromise = providedFkey
-                ? Promise.resolve(providedFkey)
-                : this.GetChannelFKey(roomId);
-            return fkeyPromise.then(function (fKey) {
-                return new Promise(function (resolve, reject) {
-                    GM_xmlhttpRequest({
-                        method: 'POST',
-                        url: _this.chatRoomUrl + "/chats/" + roomId + "/messages/new",
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        data: 'text=' + encodeURIComponent(message) + '&fkey=' + fKey,
-                        onload: function (response) {
-                            if (response.status !== 200) {
-                                reject(response.statusText);
-                            }
-                            else {
-                                resolve();
-                            }
-                        },
-                        onerror: function (response) {
-                            reject(response);
-                        },
-                    });
-                });
-            });
-        };
-        ChatApi.prototype.GetChannelPage = function (roomId) {
-            var _this = this;
-            var cachingKey = "StackExchange.ChatApi.ChannelData_" + roomId;
-            var getterPromise = new Promise(function (resolve, reject) {
-                GM_xmlhttpRequest({
-                    method: 'GET',
-                    url: _this.chatRoomUrl + "/rooms/" + roomId,
-                    onload: function (response) {
-                        if (response.status !== 200) {
-                            reject(response.statusText);
-                        }
-                        else {
-                            resolve(response.responseText);
-                        }
-                    },
-                    onerror: function (data) { return reject(data); }
-                });
-            });
-            var expiryDate = new Date();
-            expiryDate.setDate(expiryDate.getDate() + 1);
-            return SimpleCache_1.SimpleCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate);
-        };
-        return ChatApi;
-    }());
-    exports.ChatApi = ChatApi;
-}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ },
+/***/ }),
 /* 18 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.flagCategories = [
-        {
-            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
-            AppliesTo: ['Answer', 'Question'],
-            FlagTypes: [
-                {
-                    DisplayName: 'Spam',
-                    ReportType: 'PostSpam'
-                },
-                {
-                    DisplayName: 'Rude or Abusive',
-                    ReportType: 'PostOffensive'
-                }
-            ]
-        },
-        {
-            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
-            AppliesTo: ['Answer'],
-            FlagTypes: [
-                {
-                    DisplayName: 'Plagiarism',
-                    ReportType: 'PostOther',
-                    Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
-                    GetCustomFlagText: function (copyPastorItem) { return "Possible plagiarism of another answer https:" + copyPastorItem.target_url + ", as can be seen here http://copypastor.sobotics.org/posts/" + copyPastorItem.post_id; }
-                },
-                {
-                    DisplayName: 'Duplicate answer',
-                    ReportType: 'PostOther',
-                    Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
-                    GetComment: function () { return 'Please don\'t add the [same answer to multiple questions](http://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.'; },
-                    GetCustomFlagText: function (copyPastorItem) { return "The answer is a repost of their other answer https:" + copyPastorItem.target_url + ", but as there are slight differences as seen here http://copypastor.sobotics.org/posts/" + copyPastorItem.post_id + ", an auto flag wouldn't be raised."; }
-                }
-            ]
-        },
-        {
-            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
-            AppliesTo: ['Answer'],
-            FlagTypes: [
-                {
-                    DisplayName: 'Link Only',
-                    ReportType: 'AnswerNotAnAnswer',
-                    GetComment: function () { return 'A link to a solution is welcome, but please ensure your answer is useful without it: ' +
-                        '[add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will ' +
-                        'have some idea what it is and why it’s there, then quote the most relevant part of the ' +
-                        'page you\'re linking to in case the target page is unavailable. ' +
-                        '[Answers that are little more than a link may be deleted.](//stackoverflow.com/help/deleted-answers)'; }
-                },
-                {
-                    DisplayName: 'Not an answer',
-                    ReportType: 'AnswerNotAnAnswer',
-                    GetComment: function (reptuation) { return reptuation < 50
-                        ? 'This does not provide an answer to the question. You can [search for similar questions](//stackoverflow.com/search), ' +
-                            'or refer to the related and linked questions on the right-hand side of the page to find an answer. ' +
-                            'If you have a related but different question, [ask a new question](//stackoverflow.com/questions/ask), ' +
-                            'and include a link to this one to help provide context. ' +
-                            'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)'
-                        : 'This post doesn\'t look like an attempt to answer this question. Every post here is expected to be ' +
-                            'an explicit attempt to *answer* this question; if you have a critique or need a clarification of ' +
-                            'the question or another answer, you can [post a comment](//stackoverflow.com/help/privileges/comment) ' +
-                            '(like this one) directly below it. Please remove this answer and create either a comment or a new question. ' +
-                            'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)'; }
-                },
-                {
-                    DisplayName: 'Thanks',
-                    ReportType: 'AnswerNotAnAnswer',
-                    GetComment: function (reputation) { return reputation < 15
-                        ? 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
-                            'and can be perceived as noise by its future visitors. Once you [earn](http://meta.stackoverflow.com/q/146472) ' +
-                            'enough [reputation](http://stackoverflow.com/help/whats-reputation), you will gain privileges to ' +
-                            '[upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
-                            'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
-                            'See [Why is voting important](http://stackoverflow.com/help/why-vote).'
-                        :
-                            'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
-                                'and can be perceived as noise by its future visitors. ' +
-                                'Instead, [upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
-                                'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
-                                'See [Why is voting important](http://stackoverflow.com/help/why-vote).'; }
-                },
-                {
-                    DisplayName: 'Me too',
-                    ReportType: 'AnswerNotAnAnswer',
-                    GetComment: function () { return 'Please don\'t add *"Me too"* as answers. It doesn\'t actually provide an answer to the question. ' +
-                        ("If you have a different but related question, then [ask](//" + window.location.hostname + "$/questions/ask) it ") +
-                        '(reference this one if it will help provide context). If you\'re interested in this specific question, ' +
-                        'you can [upvote](//stackoverflow.com/help/privileges/vote-up) it, leave a [comment](//stackoverflow.com/help/privileges/comment), ' +
-                        'or start a [bounty](//stackoverflow.com/help/privileges/set-bounties) ' +
-                        'once you have enough [reputation](//stackoverflow.com/help/whats-reputation).'; },
-                },
-                {
-                    DisplayName: 'Library',
-                    ReportType: 'AnswerNotAnAnswer',
-                    GetComment: function () { return 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](http://meta.stackoverflow.com/a/251605) in the answer itself.'; }
-                },
-                {
-                    DisplayName: 'Comment',
-                    ReportType: 'AnswerNotAnAnswer',
-                    GetComment: function () { return 'This does not provide an answer to the question. Once you have sufficient [reputation](https://stackoverflow.com/help/whats-reputation) you will be able to [comment on any post](https://stackoverflow.com/help/privileges/comment); instead, [provide answers that don\'t require clarification from the asker](https://meta.stackexchange.com/questions/214173/why-do-i-need-50-reputation-to-comment-what-can-i-do-instead).'; }
-                }
-            ]
-        },
-        {
-            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
-            AppliesTo: ['Answer', 'Question'],
-            FlagTypes: [
-                {
-                    DisplayName: 'Looks Fine',
-                    ReportType: 'NoFlag'
-                },
-                {
-                    DisplayName: 'Needs Editing',
-                    ReportType: 'NoFlag'
-                },
-                {
-                    DisplayName: 'Vandalism',
-                    ReportType: 'NoFlag'
-                }
-            ]
-        }
-    ];
-}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ },
-/* 19 */
-/***/ function(module, exports, __webpack_require__) {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(1), __webpack_require__(8), __webpack_require__(5), __webpack_require__(17), __webpack_require__(25)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, SimpleCache_1, ReplaySubject_1, Subject_1, ChatApi_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var copyPastorServer = 'http://copypastor.sobotics.org';
-    var soboticsRoomId = 111347;
-    var CopyPastorAPI = /** @class */ (function () {
-        function CopyPastorAPI(answerId, key) {
-            this.answerId = answerId;
-            this.key = key;
-        }
-        CopyPastorAPI.prototype.Watch = function () {
-            var _this = this;
-            this.subject = new Subject_1.Subject();
-            this.replaySubject = new ReplaySubject_1.ReplaySubject(1);
-            this.subject.subscribe(this.replaySubject);
-            SimpleCache_1.SimpleCache.GetAndCache("CopyPastor.FindTarget." + this.answerId, function () { return new Promise(function (resolve, reject) {
-                var url = copyPastorServer + "/posts/findTarget?url=//" + window.location.hostname + "/a/" + _this.answerId;
-                GM_xmlhttpRequest({
-                    method: 'GET',
-                    url: url,
-                    onload: function (response) {
-                        var responseObject = JSON.parse(response.responseText);
-                        if (responseObject.status === 'success') {
-                            resolve(responseObject.posts);
-                        }
-                        else {
-                            reject(responseObject.message);
-                        }
-                    },
-                    onerror: function (response) {
-                        reject(response);
-                    },
-                });
-            }); })
-                .then(function (r) { return _this.subject.next(r); })
-                .catch(function (err) { return _this.subject.error(err); });
-            return this.subject;
-        };
-        CopyPastorAPI.prototype.Promise = function () {
-            return this.replaySubject.take(1).toPromise();
-        };
-        CopyPastorAPI.prototype.ReportTruePositive = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                return tslib_1.__generator(this, function (_a) {
-                    return [2 /*return*/, this.SendFeedback('tp')];
-                });
-            });
-        };
-        CopyPastorAPI.prototype.ReportFalsePositive = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                return tslib_1.__generator(this, function (_a) {
-                    return [2 /*return*/, this.SendFeedback('fp')];
-                });
-            });
-        };
-        CopyPastorAPI.prototype.SendFeedback = function (type) {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                var _this = this;
-                var username, chatApi, chatId, results, payloads, promises, allResults, i;
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
-                            chatApi = new ChatApi_1.ChatApi();
-                            return [4 /*yield*/, chatApi.GetChatUserId(soboticsRoomId)];
-                        case 1:
-                            chatId = _a.sent();
-                            return [4 /*yield*/, this.Promise()];
-                        case 2:
-                            results = _a.sent();
-                            payloads = results.map(function (result) {
-                                var postId = result.post_id;
-                                var payload = {
-                                    post_id: postId,
-                                    feedback_type: type,
-                                    username: username,
-                                    link: "https://chat.stackoverflow.com/users/" + chatId,
-                                    key: _this.key,
-                                };
-                                return payload;
-                            });
-                            promises = payloads.map(function (payload) {
-                                return new Promise(function (resolve, reject) {
-                                    var payloadString = JSON.stringify(payload);
-                                    GM_xmlhttpRequest({
-                                        method: 'POST',
-                                        url: copyPastorServer + "/feedback/create",
-                                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                                        data: 'post_id=' + payload.post_id
-                                            + '&feedback_type=' + payload.feedback_type
-                                            + '&username=' + payload.username
-                                            + '&link=' + payload.link
-                                            + '&key=' + payload.key,
-                                        onload: function (response) {
-                                            if (response.status !== 200) {
-                                                reject(JSON.parse(response.responseText));
-                                            }
-                                            else {
-                                                resolve(true);
-                                            }
-                                        },
-                                        onerror: function (response) {
-                                            reject(response);
-                                        },
-                                    });
-                                });
-                            });
-                            return [4 /*yield*/, Promise.all(promises)];
-                        case 3:
-                            allResults = _a.sent();
-                            if (allResults.length <= 0) {
-                                return [2 /*return*/, false];
-                            }
-                            for (i = 0; i < allResults.length; i++) {
-                                if (!allResults[i]) {
-                                    return [2 /*return*/, false];
-                                }
-                            }
-                            return [2 /*return*/, true];
-                    }
-                });
-            });
-        };
-        return CopyPastorAPI;
-    }());
-    exports.CopyPastorAPI = CopyPastorAPI;
-}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ },
-/* 20 */
-/***/ function(module, exports, __webpack_require__) {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(7)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, sotools_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var genericBotUrl = 'https://so.floern.com/api/trackpost.php';
-    var genericBotKey = 'Cm45BSrt51FR3ju';
-    var GenericBotAPI = /** @class */ (function () {
-        function GenericBotAPI(answerId) {
-            this.answerId = answerId;
-        }
-        GenericBotAPI.prototype.ReportNaa = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                var response;
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.makeTrackRequest()];
-                        case 1:
-                            response = _a.sent();
-                            return [2 /*return*/, response];
-                    }
-                });
-            });
-        };
-        GenericBotAPI.prototype.ReportRedFlag = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                var response;
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.makeTrackRequest()];
-                        case 1:
-                            response = _a.sent();
-                            return [2 /*return*/, response];
-                    }
-                });
-            });
-        };
-        GenericBotAPI.prototype.ReportLooksFine = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                return tslib_1.__generator(this, function (_a) {
-                    return [2 /*return*/, false];
-                });
-            });
-        };
-        GenericBotAPI.prototype.ReportNeedsEditing = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                return tslib_1.__generator(this, function (_a) {
-                    return [2 /*return*/, false];
-                });
-            });
-        };
-        GenericBotAPI.prototype.computeContentHash = function (postContent) {
-            if (!postContent) {
-                return 0;
-            }
-            var hash = 0;
-            for (var i = 0; i < postContent.length; ++i) {
-                hash = ((hash << 5) - hash) + postContent.charCodeAt(i);
-                hash = hash & hash;
-            }
-            return hash;
-        };
-        GenericBotAPI.prototype.makeTrackRequest = function () {
-            var _this = this;
-            var promise = new Promise(function (resolve, reject) {
-                if (!sotools_1.IsStackOverflow()) {
-                    resolve(false);
-                }
-                if ($('#answer-' + _this.answerId + ' .post-text').length === 0) {
-                    resolve(false);
-                }
-                if ($('.top-bar .my-profile .gravatar-wrapper-24').length === 0) {
-                    reject('Flag Tracker: Could not find username.');
-                }
-                var flaggerName = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
-                var contentHash = _this.computeContentHash($('#answer-' + _this.answerId + ' .post-text').html().trim());
-                GM_xmlhttpRequest({
-                    method: 'POST',
-                    url: 'https://so.floern.com/api/trackpost.php',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    data: "key=" + genericBotKey
-                        + '&postId=' + _this.answerId
-                        + '&contentHash=' + contentHash
-                        + '&flagger=' + encodeURIComponent(flaggerName),
-                    onload: function (response) {
-                        if (response.status !== 200) {
-                            reject('Flag Tracker Error: Status ' + response.status);
-                        }
-                        resolve(true);
-                    },
-                    onerror: function (response) {
-                        reject('Flag Tracker Error: ' + response.responseText);
-                    }
-                });
-            });
-            return promise;
-        };
-        return GenericBotAPI;
-    }());
-    exports.GenericBotAPI = GenericBotAPI;
-}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ },
-/* 21 */
-/***/ function(module, exports, __webpack_require__) {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(5), __webpack_require__(8), __webpack_require__(10), __webpack_require__(1), __webpack_require__(13)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, Subject_1, ReplaySubject_1, CrossDomainCache_1, SimpleCache_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
-    var MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
-    var MetaSmokeWasReportedConfig = 'MetaSmoke.WasReported';
-    function Delay(milliseconds) {
-        return new Promise(function (resolve) {
-            setTimeout(function () {
-                resolve();
-            }, milliseconds);
-        });
-    }
-    var MetaSmokeAPI = /** @class */ (function () {
-        function MetaSmokeAPI(postId, postType) {
-            this.postId = postId;
-            this.postType = postType;
-        }
-        MetaSmokeAPI.Reset = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.Unset(MetaSmokeDisabledConfig)];
-                        case 1:
-                            _a.sent();
-                            return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.Unset(MetaSmokeUserKeyConfig)];
-                        case 2:
-                            _a.sent();
-                            SimpleCache_1.SimpleCache.Unset(MetaSmokeDisabledConfig);
-                            SimpleCache_1.SimpleCache.Unset(MetaSmokeUserKeyConfig);
-                            return [2 /*return*/];
-                    }
-                });
-            });
-        };
-        MetaSmokeAPI.IsDisabled = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                var cachedDisabled;
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.GetFromCache(MetaSmokeDisabledConfig)];
-                        case 1:
-                            cachedDisabled = _a.sent();
-                            if (cachedDisabled === undefined) {
-                                return [2 /*return*/, false];
-                            }
-                            return [2 /*return*/, cachedDisabled];
-                    }
-                });
-            });
-        };
-        MetaSmokeAPI.Setup = function (appKey, codeGetter) {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                var _this = this;
-                return tslib_1.__generator(this, function (_a) {
-                    if (!codeGetter) {
-                        codeGetter = function (metaSmokeOAuthUrl) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-                            var isDisabled, returnCode;
-                            return tslib_1.__generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0: return [4 /*yield*/, MetaSmokeAPI.IsDisabled()];
-                                    case 1:
-                                        isDisabled = _a.sent();
-                                        if (isDisabled) {
-                                            return [2 /*return*/];
-                                        }
-                                        if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, see footer of Stack Overflow.')) {
-                                            CrossDomainCache_1.CrossDomainCache.StoreInCache(MetaSmokeDisabledConfig, true);
-                                            return [2 /*return*/];
-                                        }
-                                        window.open(metaSmokeOAuthUrl, '_blank');
-                                        return [4 /*yield*/, Delay(100)];
-                                    case 2:
-                                        _a.sent();
-                                        return [4 /*yield*/, new Promise(function (resolve) {
-                                                var handleFDSCCode = function () {
-                                                    $(window).off('focus', handleFDSCCode);
-                                                    var code = window.prompt('Once you\'ve authenticated FDSC with metasmoke, you\'ll be given a code; enter it here.');
-                                                    if (!code) {
-                                                        resolve();
-                                                    }
-                                                    else {
-                                                        return resolve(code);
-                                                    }
-                                                };
-                                                $(window).focus(handleFDSCCode);
-                                            })];
-                                    case 3:
-                                        returnCode = _a.sent();
-                                        return [2 /*return*/, returnCode];
-                                }
-                            });
-                        }); };
-                    }
-                    MetaSmokeAPI.codeGetter = codeGetter;
-                    MetaSmokeAPI.appKey = appKey;
-                    MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
-                    return [2 /*return*/];
-                });
-            });
-        };
-        MetaSmokeAPI.getUserKey = function () {
-            var _this = this;
-            return SimpleCache_1.SimpleCache.GetAndCache(MetaSmokeUserKeyConfig, function () {
-                return CrossDomainCache_1.CrossDomainCache.GetAndCache(MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-                    var prom, code;
-                    return tslib_1.__generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                prom = MetaSmokeAPI.actualPromise;
-                                if (prom === undefined) {
-                                    prom = MetaSmokeAPI.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + MetaSmokeAPI.appKey);
-                                    MetaSmokeAPI.actualPromise = prom;
-                                }
-                                return [4 /*yield*/, prom];
-                            case 1:
-                                code = _a.sent();
-                                if (code) {
-                                    $.ajax({
-                                        url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeAPI.appKey + '&code=' + code,
-                                        method: 'GET'
-                                    }).done(function (data) { return resolve(data.token); })
-                                        .fail(function (err) { return reject(err); });
-                                }
-                                return [2 /*return*/];
-                        }
-                    });
-                }); }); });
-            });
-        };
-        MetaSmokeAPI.prototype.Watch = function () {
-            this.subject = new Subject_1.Subject();
-            this.replaySubject = new ReplaySubject_1.ReplaySubject(1);
-            this.subject.subscribe(this.replaySubject);
-            this.QueryMetaSmokey();
-            return this.subject;
-        };
-        MetaSmokeAPI.prototype.ReportNaa = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                var smokeyid;
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
-                        case 1:
-                            smokeyid = _a.sent();
-                            if (!(smokeyid != null)) return [3 /*break*/, 3];
-                            return [4 /*yield*/, this.SendFeedback(smokeyid, 'naa-')];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/, true];
-                        case 3: return [2 /*return*/, false];
-                    }
-                });
-            });
-        };
-        MetaSmokeAPI.prototype.ReportRedFlag = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                var _this = this;
-                var smokeyid, urlStr_1, promise, result, queryUrlStr;
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
-                        case 1:
-                            smokeyid = _a.sent();
-                            if (!(smokeyid != null)) return [3 /*break*/, 3];
-                            return [4 /*yield*/, this.SendFeedback(smokeyid, 'tpu-')];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/, true];
-                        case 3:
-                            urlStr_1 = this.postType === 'Answer'
-                                ? "//" + window.location.hostname + "/a/" + this.postId
-                                : "//" + window.location.hostname + "/q/" + this.postId;
-                            promise = new Promise(function (resolve, reject) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-                                var userKey;
-                                return tslib_1.__generator(this, function (_a) {
-                                    switch (_a.label) {
-                                        case 0: return [4 /*yield*/, MetaSmokeAPI.getUserKey()];
-                                        case 1:
-                                            userKey = _a.sent();
-                                            if (userKey) {
-                                                $.ajax({
-                                                    type: 'POST',
-                                                    url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
-                                                    data: {
-                                                        post_link: urlStr_1,
-                                                        key: MetaSmokeAPI.appKey,
-                                                        token: userKey
-                                                    }
-                                                }).done(function () { return resolve(true); })
-                                                    .fail(function () { return reject(); });
-                                            }
-                                            return [2 /*return*/];
-                                    }
-                                });
-                            }); });
-                            return [4 /*yield*/, promise];
-                        case 4:
-                            result = _a.sent();
-                            queryUrlStr = this.GetQueryUrl();
-                            SimpleCache_1.SimpleCache.StoreInCache(MetaSmokeWasReportedConfig + "." + queryUrlStr, undefined);
-                            return [4 /*yield*/, Delay(1000)];
-                        case 5:
-                            _a.sent();
-                            this.QueryMetaSmokey();
-                            return [2 /*return*/, result];
-                    }
-                });
-            });
-        };
-        MetaSmokeAPI.prototype.ReportLooksFine = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                var smokeyid;
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
-                        case 1:
-                            smokeyid = _a.sent();
-                            if (!(smokeyid != null)) return [3 /*break*/, 3];
-                            return [4 /*yield*/, this.SendFeedback(smokeyid, 'fp-')];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/, true];
-                        case 3: return [2 /*return*/, false];
-                    }
-                });
-            });
-        };
-        MetaSmokeAPI.prototype.ReportNeedsEditing = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                var smokeyid;
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
-                        case 1:
-                            smokeyid = _a.sent();
-                            if (!(smokeyid != null)) return [3 /*break*/, 3];
-                            return [4 /*yield*/, this.SendFeedback(smokeyid, 'fp-')];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/, true];
-                        case 3: return [2 /*return*/, false];
-                    }
-                });
-            });
-        };
-        MetaSmokeAPI.prototype.ReportVandalism = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                var smokeyid;
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
-                        case 1:
-                            smokeyid = _a.sent();
-                            if (!(smokeyid != null)) return [3 /*break*/, 3];
-                            return [4 /*yield*/, this.SendFeedback(smokeyid, 'tp-')];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/, true];
-                        case 3: return [2 /*return*/, false];
-                    }
-                });
-            });
-        };
-        MetaSmokeAPI.prototype.GetQueryUrl = function () {
-            return this.postType === 'Answer'
-                ? "//" + window.location.hostname + "/a/" + this.postId
-                : "//" + window.location.hostname + "/questions/" + this.postId;
-        };
-        MetaSmokeAPI.prototype.QueryMetaSmokey = function () {
-            var _this = this;
-            var urlStr = this.GetQueryUrl();
-            var resultPromise = SimpleCache_1.SimpleCache.GetAndCache(MetaSmokeWasReportedConfig + "." + urlStr, function () { return new Promise(function (resolve, reject) {
-                MetaSmokeAPI.IsDisabled().then(function (isDisabled) {
-                    if (isDisabled) {
-                        return;
-                    }
-                    $.ajax({
-                        type: 'GET',
-                        url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
-                        data: {
-                            urls: urlStr,
-                            key: "" + MetaSmokeAPI.appKey
-                        }
-                    }).done(function (metaSmokeResult) {
-                        if (metaSmokeResult.items.length > 0) {
-                            resolve(metaSmokeResult.items[0].id);
-                        }
-                        else {
-                            resolve(null);
-                        }
-                    }).fail(function (error) {
-                        reject(error);
-                    });
-                });
-            }); });
-            resultPromise
-                .then(function (r) { return _this.subject.next(r); })
-                .catch(function (err) { return _this.subject.error(err); });
-        };
-        MetaSmokeAPI.prototype.GetSmokeyId = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                return tslib_1.__generator(this, function (_a) {
-                    return [2 /*return*/, this.replaySubject.take(1).toPromise()];
-                });
-            });
-        };
-        MetaSmokeAPI.prototype.SendFeedback = function (metaSmokeId, feedbackType) {
-            return new Promise(function (resolve, reject) {
-                MetaSmokeAPI.getUserKey().then(function (userKey) {
-                    $.ajax({
-                        type: 'POST',
-                        url: "https://metasmoke.erwaysoftware.com/api/w/post/" + metaSmokeId + "/feedback",
-                        data: {
-                            type: feedbackType,
-                            key: MetaSmokeAPI.appKey,
-                            token: userKey
-                        }
-                    }).done(function () { return resolve(); })
-                        .fail(function () { return reject(); });
-                });
-            });
-        };
-        return MetaSmokeAPI;
-    }());
-    exports.MetaSmokeAPI = MetaSmokeAPI;
-}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ },
-/* 22 */
-/***/ function(module, exports, __webpack_require__) {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(5), __webpack_require__(8), __webpack_require__(7), __webpack_require__(1), __webpack_require__(17), __webpack_require__(13)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, Subject_1, ReplaySubject_1, sotools_1, SimpleCache_1, ChatApi_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
-    var soboticsRoomId = 111347;
-    var NattyAPI = /** @class */ (function () {
-        function NattyAPI(answerId) {
-            this.chat = new ChatApi_1.ChatApi();
-            this.answerId = answerId;
-        }
-        NattyAPI.prototype.Watch = function () {
-            var _this = this;
-            this.subject = new Subject_1.Subject();
-            this.replaySubject = new ReplaySubject_1.ReplaySubject(1);
-            this.subject.subscribe(this.replaySubject);
-            if (sotools_1.IsStackOverflow()) {
-                SimpleCache_1.SimpleCache.GetAndCache("NattyApi.Feedback." + this.answerId, function () { return new Promise(function (resolve, reject) {
-                    GM_xmlhttpRequest({
-                        method: 'GET',
-                        url: nattyFeedbackUrl + "/" + _this.answerId,
-                        onload: function (response) {
-                            var nattyResult = JSON.parse(response.responseText);
-                            if (nattyResult.items && nattyResult.items[0]) {
-                                resolve(true);
-                            }
-                            else {
-                                resolve(false);
-                            }
-                        },
-                        onerror: function (response) {
-                            reject(response);
-                        },
-                    });
-                }); })
-                    .then(function (r) { return _this.subject.next(r); })
-                    .catch(function (err) { return _this.subject.error(err); });
-            }
-            return this.subject;
-        };
-        NattyAPI.prototype.ReportNaa = function (answerDate, questionDate) {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                var _this = this;
-                var answerAge, daysPostedAfterQuestion, promise;
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            if (!sotools_1.IsStackOverflow()) {
-                                return [2 /*return*/, false];
-                            }
-                            return [4 /*yield*/, this.WasReported()];
-                        case 1:
-                            if (!_a.sent()) return [3 /*break*/, 3];
-                            return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this.answerId + " tp")];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/, true];
-                        case 3:
-                            answerAge = this.DaysBetween(answerDate, new Date());
-                            daysPostedAfterQuestion = this.DaysBetween(questionDate, answerDate);
-                            if (answerAge > 30 || daysPostedAfterQuestion < 30) {
-                                return [2 /*return*/, false];
-                            }
-                            promise = this.chat.SendMessage(soboticsRoomId, "@Natty report http://stackoverflow.com/a/" + this.answerId);
-                            return [4 /*yield*/, promise.then(function () {
-                                    SimpleCache_1.SimpleCache.StoreInCache("NattyApi.Feedback." + _this.answerId, true);
-                                    _this.subject.next(true);
-                                })];
-                        case 4:
-                            _a.sent();
-                            return [2 /*return*/, true];
-                    }
-                });
-            });
-        };
-        NattyAPI.prototype.ReportRedFlag = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            if (!sotools_1.IsStackOverflow()) {
-                                return [2 /*return*/, false];
-                            }
-                            return [4 /*yield*/, this.WasReported()];
-                        case 1:
-                            if (!_a.sent()) return [3 /*break*/, 3];
-                            return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this.answerId + " tp")];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/, true];
-                        case 3: return [2 /*return*/, false];
-                    }
-                });
-            });
-        };
-        NattyAPI.prototype.ReportLooksFine = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            if (!sotools_1.IsStackOverflow()) {
-                                return [2 /*return*/, false];
-                            }
-                            return [4 /*yield*/, this.WasReported()];
-                        case 1:
-                            if (!_a.sent()) return [3 /*break*/, 3];
-                            return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this.answerId + " fp")];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/, true];
-                        case 3: return [2 /*return*/, false];
-                    }
-                });
-            });
-        };
-        NattyAPI.prototype.ReportNeedsEditing = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            if (!sotools_1.IsStackOverflow()) {
-                                return [2 /*return*/, false];
-                            }
-                            return [4 /*yield*/, this.WasReported()];
-                        case 1:
-                            if (!_a.sent()) return [3 /*break*/, 3];
-                            return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this.answerId + " ne")];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/, true];
-                        case 3: return [2 /*return*/, false];
-                    }
-                });
-            });
-        };
-        NattyAPI.prototype.WasReported = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                return tslib_1.__generator(this, function (_a) {
-                    return [2 /*return*/, this.replaySubject.take(1).toPromise()];
-                });
-            });
-        };
-        NattyAPI.prototype.DaysBetween = function (first, second) {
-            return Math.round((second - first) / (1000 * 60 * 60 * 24));
-        };
-        return NattyAPI;
-    }());
-    exports.NattyAPI = NattyAPI;
-}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ },
-/* 23 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var Observable_1 = __webpack_require__(2);
-/**
- * Represents a push-based event or value that an {@link Observable} can emit.
- * This class is particularly useful for operators that manage notifications,
- * like {@link materialize}, {@link dematerialize}, {@link observeOn}, and
- * others. Besides wrapping the actual delivered value, it also annotates it
- * with metadata of, for instance, what type of push message it is (`next`,
- * `error`, or `complete`).
- *
- * @see {@link materialize}
- * @see {@link dematerialize}
- * @see {@link observeOn}
- *
- * @class Notification<T>
- */
-var Notification = (function () {
-    function Notification(kind, value, error) {
-        this.kind = kind;
-        this.value = value;
-        this.error = error;
-        this.hasValue = kind === 'N';
-    }
-    /**
-     * Delivers to the given `observer` the value wrapped by this Notification.
-     * @param {Observer} observer
-     * @return
-     */
-    Notification.prototype.observe = function (observer) {
-        switch (this.kind) {
-            case 'N':
-                return observer.next && observer.next(this.value);
-            case 'E':
-                return observer.error && observer.error(this.error);
-            case 'C':
-                return observer.complete && observer.complete();
-        }
-    };
-    /**
-     * Given some {@link Observer} callbacks, deliver the value represented by the
-     * current Notification to the correctly corresponding callback.
-     * @param {function(value: T): void} next An Observer `next` callback.
-     * @param {function(err: any): void} [error] An Observer `error` callback.
-     * @param {function(): void} [complete] An Observer `complete` callback.
-     * @return {any}
-     */
-    Notification.prototype.do = function (next, error, complete) {
-        var kind = this.kind;
-        switch (kind) {
-            case 'N':
-                return next && next(this.value);
-            case 'E':
-                return error && error(this.error);
-            case 'C':
-                return complete && complete();
-        }
-    };
-    /**
-     * Takes an Observer or its individual callback functions, and calls `observe`
-     * or `do` methods accordingly.
-     * @param {Observer|function(value: T): void} nextOrObserver An Observer or
-     * the `next` callback.
-     * @param {function(err: any): void} [error] An Observer `error` callback.
-     * @param {function(): void} [complete] An Observer `complete` callback.
-     * @return {any}
-     */
-    Notification.prototype.accept = function (nextOrObserver, error, complete) {
-        if (nextOrObserver && typeof nextOrObserver.next === 'function') {
-            return this.observe(nextOrObserver);
-        }
-        else {
-            return this.do(nextOrObserver, error, complete);
-        }
-    };
-    /**
-     * Returns a simple Observable that just delivers the notification represented
-     * by this Notification instance.
-     * @return {any}
-     */
-    Notification.prototype.toObservable = function () {
-        var kind = this.kind;
-        switch (kind) {
-            case 'N':
-                return Observable_1.Observable.of(this.value);
-            case 'E':
-                return Observable_1.Observable.throw(this.error);
-            case 'C':
-                return Observable_1.Observable.empty();
-        }
-        throw new Error('unexpected notification kind value');
-    };
-    /**
-     * A shortcut to create a Notification instance of the type `next` from a
-     * given value.
-     * @param {T} value The `next` value.
-     * @return {Notification<T>} The "next" Notification representing the
-     * argument.
-     */
-    Notification.createNext = function (value) {
-        if (typeof value !== 'undefined') {
-            return new Notification('N', value);
-        }
-        return Notification.undefinedValueNotification;
-    };
-    /**
-     * A shortcut to create a Notification instance of the type `error` from a
-     * given error.
-     * @param {any} [err] The `error` error.
-     * @return {Notification<T>} The "error" Notification representing the
-     * argument.
-     */
-    Notification.createError = function (err) {
-        return new Notification('E', undefined, err);
-    };
-    /**
-     * A shortcut to create a Notification instance of the type `complete`.
-     * @return {Notification<any>} The valueless "complete" Notification.
-     */
-    Notification.createComplete = function () {
-        return Notification.completeNotification;
-    };
-    Notification.completeNotification = new Notification('C');
-    Notification.undefinedValueNotification = new Notification('N', undefined);
-    return Notification;
-}());
-exports.Notification = Notification;
-//# sourceMappingURL=Notification.js.map
-
-/***/ },
-/* 24 */
-/***/ function(module, exports) {
-
-"use strict";
-"use strict";
-/**
- * An execution context and a data structure to order tasks and schedule their
- * execution. Provides a notion of (potentially virtual) time, through the
- * `now()` getter method.
- *
- * Each unit of work in a Scheduler is called an {@link Action}.
- *
- * ```ts
- * class Scheduler {
- *   now(): number;
- *   schedule(work, delay?, state?): Subscription;
- * }
- * ```
- *
- * @class Scheduler
- */
-var Scheduler = (function () {
-    function Scheduler(SchedulerAction, now) {
-        if (now === void 0) { now = Scheduler.now; }
-        this.SchedulerAction = SchedulerAction;
-        this.now = now;
-    }
-    /**
-     * Schedules a function, `work`, for execution. May happen at some point in
-     * the future, according to the `delay` parameter, if specified. May be passed
-     * some context object, `state`, which will be passed to the `work` function.
-     *
-     * The given arguments will be processed an stored as an Action object in a
-     * queue of actions.
-     *
-     * @param {function(state: ?T): ?Subscription} work A function representing a
-     * task, or some unit of work to be executed by the Scheduler.
-     * @param {number} [delay] Time to wait before executing the work, where the
-     * time unit is implicit and defined by the Scheduler itself.
-     * @param {T} [state] Some contextual data that the `work` function uses when
-     * called by the Scheduler.
-     * @return {Subscription} A subscription in order to be able to unsubscribe
-     * the scheduled work.
-     */
-    Scheduler.prototype.schedule = function (work, delay, state) {
-        if (delay === void 0) { delay = 0; }
-        return new this.SchedulerAction(this, work).schedule(state, delay);
-    };
-    Scheduler.now = Date.now ? Date.now : function () { return +new Date(); };
-    return Scheduler;
-}());
-exports.Scheduler = Scheduler;
-//# sourceMappingURL=Scheduler.js.map
-
-/***/ },
-/* 25 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var Observable_1 = __webpack_require__(2);
-var map_1 = __webpack_require__(27);
-Observable_1.Observable.prototype.map = map_1.map;
-//# sourceMappingURL=map.js.map
-
-/***/ },
-/* 26 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-var Observable_1 = __webpack_require__(2);
-/**
- * We need this JSDoc comment for affecting ESDoc.
- * @extends {Ignored}
- * @hide true
- */
-var EmptyObservable = (function (_super) {
-    __extends(EmptyObservable, _super);
-    function EmptyObservable(scheduler) {
-        _super.call(this);
-        this.scheduler = scheduler;
-    }
-    /**
-     * Creates an Observable that emits no items to the Observer and immediately
-     * emits a complete notification.
-     *
-     * <span class="informal">Just emits 'complete', and nothing else.
-     * </span>
-     *
-     * <img src="./img/empty.png" width="100%">
-     *
-     * This static operator is useful for creating a simple Observable that only
-     * emits the complete notification. It can be used for composing with other
-     * Observables, such as in a {@link mergeMap}.
-     *
-     * @example <caption>Emit the number 7, then complete.</caption>
-     * var result = Rx.Observable.empty().startWith(7);
-     * result.subscribe(x => console.log(x));
-     *
-     * @example <caption>Map and flatten only odd numbers to the sequence 'a', 'b', 'c'</caption>
-     * var interval = Rx.Observable.interval(1000);
-     * var result = interval.mergeMap(x =>
-     *   x % 2 === 1 ? Rx.Observable.of('a', 'b', 'c') : Rx.Observable.empty()
-     * );
-     * result.subscribe(x => console.log(x));
-     *
-     * // Results in the following to the console:
-     * // x is equal to the count on the interval eg(0,1,2,3,...)
-     * // x will occur every 1000ms
-     * // if x % 2 is equal to 1 print abc
-     * // if x % 2 is not equal to 1 nothing will be output
-     *
-     * @see {@link create}
-     * @see {@link never}
-     * @see {@link of}
-     * @see {@link throw}
-     *
-     * @param {Scheduler} [scheduler] A {@link IScheduler} to use for scheduling
-     * the emission of the complete notification.
-     * @return {Observable} An "empty" Observable: emits only the complete
-     * notification.
-     * @static true
-     * @name empty
-     * @owner Observable
-     */
-    EmptyObservable.create = function (scheduler) {
-        return new EmptyObservable(scheduler);
-    };
-    EmptyObservable.dispatch = function (arg) {
-        var subscriber = arg.subscriber;
-        subscriber.complete();
-    };
-    EmptyObservable.prototype._subscribe = function (subscriber) {
-        var scheduler = this.scheduler;
-        if (scheduler) {
-            return scheduler.schedule(EmptyObservable.dispatch, 0, { subscriber: subscriber });
-        }
-        else {
-            subscriber.complete();
-        }
-    };
-    return EmptyObservable;
-}(Observable_1.Observable));
-exports.EmptyObservable = EmptyObservable;
-//# sourceMappingURL=EmptyObservable.js.map
-
-/***/ },
-/* 27 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var map_1 = __webpack_require__(29);
-/**
- * Applies a given `project` function to each value emitted by the source
- * Observable, and emits the resulting values as an Observable.
- *
- * <span class="informal">Like [Array.prototype.map()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map),
- * it passes each source value through a transformation function to get
- * corresponding output values.</span>
- *
- * <img src="./img/map.png" width="100%">
- *
- * Similar to the well known `Array.prototype.map` function, this operator
- * applies a projection to each value and emits that projection in the output
- * Observable.
- *
- * @example <caption>Map every click to the clientX position of that click</caption>
- * var clicks = Rx.Observable.fromEvent(document, 'click');
- * var positions = clicks.map(ev => ev.clientX);
- * positions.subscribe(x => console.log(x));
- *
- * @see {@link mapTo}
- * @see {@link pluck}
- *
- * @param {function(value: T, index: number): R} project The function to apply
- * to each `value` emitted by the source Observable. The `index` parameter is
- * the number `i` for the i-th emission that has happened since the
- * subscription, starting from the number `0`.
- * @param {any} [thisArg] An optional argument to define what `this` is in the
- * `project` function.
- * @return {Observable<R>} An Observable that emits the values from the source
- * Observable transformed by the given `project` function.
- * @method map
- * @owner Observable
- */
-function map(project, thisArg) {
-    return map_1.map(project, thisArg)(this);
-}
-exports.map = map;
-//# sourceMappingURL=map.js.map
-
-/***/ },
-/* 28 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var take_1 = __webpack_require__(31);
-/**
- * Emits only the first `count` values emitted by the source Observable.
- *
- * <span class="informal">Takes the first `count` values from the source, then
- * completes.</span>
- *
- * <img src="./img/take.png" width="100%">
- *
- * `take` returns an Observable that emits only the first `count` values emitted
- * by the source Observable. If the source emits fewer than `count` values then
- * all of its values are emitted. After that, it completes, regardless if the
- * source completes.
- *
- * @example <caption>Take the first 5 seconds of an infinite 1-second interval Observable</caption>
- * var interval = Rx.Observable.interval(1000);
- * var five = interval.take(5);
- * five.subscribe(x => console.log(x));
- *
- * @see {@link takeLast}
- * @see {@link takeUntil}
- * @see {@link takeWhile}
- * @see {@link skip}
- *
- * @throws {ArgumentOutOfRangeError} When using `take(i)`, it delivers an
- * ArgumentOutOrRangeError to the Observer's `error` callback if `i < 0`.
- *
- * @param {number} count The maximum number of `next` values to emit.
- * @return {Observable<T>} An Observable that emits only the first `count`
- * values emitted by the source Observable, or all of the values from the source
- * if the source emits fewer than `count` values.
- * @method take
- * @owner Observable
- */
-function take(count) {
-    return take_1.take(count)(this);
-}
-exports.take = take;
-//# sourceMappingURL=take.js.map
-
-/***/ },
-/* 29 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-var Subscriber_1 = __webpack_require__(3);
-/**
- * Applies a given `project` function to each value emitted by the source
- * Observable, and emits the resulting values as an Observable.
- *
- * <span class="informal">Like [Array.prototype.map()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map),
- * it passes each source value through a transformation function to get
- * corresponding output values.</span>
- *
- * <img src="./img/map.png" width="100%">
- *
- * Similar to the well known `Array.prototype.map` function, this operator
- * applies a projection to each value and emits that projection in the output
- * Observable.
- *
- * @example <caption>Map every click to the clientX position of that click</caption>
- * var clicks = Rx.Observable.fromEvent(document, 'click');
- * var positions = clicks.map(ev => ev.clientX);
- * positions.subscribe(x => console.log(x));
- *
- * @see {@link mapTo}
- * @see {@link pluck}
- *
- * @param {function(value: T, index: number): R} project The function to apply
- * to each `value` emitted by the source Observable. The `index` parameter is
- * the number `i` for the i-th emission that has happened since the
- * subscription, starting from the number `0`.
- * @param {any} [thisArg] An optional argument to define what `this` is in the
- * `project` function.
- * @return {Observable<R>} An Observable that emits the values from the source
- * Observable transformed by the given `project` function.
- * @method map
- * @owner Observable
- */
-function map(project, thisArg) {
-    return function mapOperation(source) {
-        if (typeof project !== 'function') {
-            throw new TypeError('argument is not a function. Are you looking for `mapTo()`?');
-        }
-        return source.lift(new MapOperator(project, thisArg));
-    };
-}
-exports.map = map;
-var MapOperator = (function () {
-    function MapOperator(project, thisArg) {
-        this.project = project;
-        this.thisArg = thisArg;
-    }
-    MapOperator.prototype.call = function (subscriber, source) {
-        return source.subscribe(new MapSubscriber(subscriber, this.project, this.thisArg));
-    };
-    return MapOperator;
-}());
-exports.MapOperator = MapOperator;
-/**
- * We need this JSDoc comment for affecting ESDoc.
- * @ignore
- * @extends {Ignored}
- */
-var MapSubscriber = (function (_super) {
-    __extends(MapSubscriber, _super);
-    function MapSubscriber(destination, project, thisArg) {
-        _super.call(this, destination);
-        this.project = project;
-        this.count = 0;
-        this.thisArg = thisArg || this;
-    }
-    // NOTE: This looks unoptimized, but it's actually purposefully NOT
-    // using try/catch optimizations.
-    MapSubscriber.prototype._next = function (value) {
-        var result;
-        try {
-            result = this.project.call(this.thisArg, value, this.count++);
-        }
-        catch (err) {
-            this.destination.error(err);
-            return;
-        }
-        this.destination.next(result);
-    };
-    return MapSubscriber;
-}(Subscriber_1.Subscriber));
-//# sourceMappingURL=map.js.map
-
-/***/ },
-/* 30 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-var Subscriber_1 = __webpack_require__(3);
-var Notification_1 = __webpack_require__(23);
-/**
- *
- * Re-emits all notifications from source Observable with specified scheduler.
- *
- * <span class="informal">Ensure a specific scheduler is used, from outside of an Observable.</span>
- *
- * `observeOn` is an operator that accepts a scheduler as a first parameter, which will be used to reschedule
- * notifications emitted by the source Observable. It might be useful, if you do not have control over
- * internal scheduler of a given Observable, but want to control when its values are emitted nevertheless.
- *
- * Returned Observable emits the same notifications (nexted values, complete and error events) as the source Observable,
- * but rescheduled with provided scheduler. Note that this doesn't mean that source Observables internal
- * scheduler will be replaced in any way. Original scheduler still will be used, but when the source Observable emits
- * notification, it will be immediately scheduled again - this time with scheduler passed to `observeOn`.
- * An anti-pattern would be calling `observeOn` on Observable that emits lots of values synchronously, to split
- * that emissions into asynchronous chunks. For this to happen, scheduler would have to be passed into the source
- * Observable directly (usually into the operator that creates it). `observeOn` simply delays notifications a
- * little bit more, to ensure that they are emitted at expected moments.
- *
- * As a matter of fact, `observeOn` accepts second parameter, which specifies in milliseconds with what delay notifications
- * will be emitted. The main difference between {@link delay} operator and `observeOn` is that `observeOn`
- * will delay all notifications - including error notifications - while `delay` will pass through error
- * from source Observable immediately when it is emitted. In general it is highly recommended to use `delay` operator
- * for any kind of delaying of values in the stream, while using `observeOn` to specify which scheduler should be used
- * for notification emissions in general.
- *
- * @example <caption>Ensure values in subscribe are called just before browser repaint.</caption>
- * const intervals = Rx.Observable.interval(10); // Intervals are scheduled
- *                                               // with async scheduler by default...
- *
- * intervals
- * .observeOn(Rx.Scheduler.animationFrame)       // ...but we will observe on animationFrame
- * .subscribe(val => {                           // scheduler to ensure smooth animation.
- *   someDiv.style.height = val + 'px';
- * });
- *
- * @see {@link delay}
- *
- * @param {IScheduler} scheduler Scheduler that will be used to reschedule notifications from source Observable.
- * @param {number} [delay] Number of milliseconds that states with what delay every notification should be rescheduled.
- * @return {Observable<T>} Observable that emits the same notifications as the source Observable,
- * but with provided scheduler.
- *
- * @method observeOn
- * @owner Observable
- */
-function observeOn(scheduler, delay) {
-    if (delay === void 0) { delay = 0; }
-    return function observeOnOperatorFunction(source) {
-        return source.lift(new ObserveOnOperator(scheduler, delay));
-    };
-}
-exports.observeOn = observeOn;
-var ObserveOnOperator = (function () {
-    function ObserveOnOperator(scheduler, delay) {
-        if (delay === void 0) { delay = 0; }
-        this.scheduler = scheduler;
-        this.delay = delay;
-    }
-    ObserveOnOperator.prototype.call = function (subscriber, source) {
-        return source.subscribe(new ObserveOnSubscriber(subscriber, this.scheduler, this.delay));
-    };
-    return ObserveOnOperator;
-}());
-exports.ObserveOnOperator = ObserveOnOperator;
-/**
- * We need this JSDoc comment for affecting ESDoc.
- * @ignore
- * @extends {Ignored}
- */
-var ObserveOnSubscriber = (function (_super) {
-    __extends(ObserveOnSubscriber, _super);
-    function ObserveOnSubscriber(destination, scheduler, delay) {
-        if (delay === void 0) { delay = 0; }
-        _super.call(this, destination);
-        this.scheduler = scheduler;
-        this.delay = delay;
-    }
-    ObserveOnSubscriber.dispatch = function (arg) {
-        var notification = arg.notification, destination = arg.destination;
-        notification.observe(destination);
-        this.unsubscribe();
-    };
-    ObserveOnSubscriber.prototype.scheduleMessage = function (notification) {
-        this.add(this.scheduler.schedule(ObserveOnSubscriber.dispatch, this.delay, new ObserveOnMessage(notification, this.destination)));
-    };
-    ObserveOnSubscriber.prototype._next = function (value) {
-        this.scheduleMessage(Notification_1.Notification.createNext(value));
-    };
-    ObserveOnSubscriber.prototype._error = function (err) {
-        this.scheduleMessage(Notification_1.Notification.createError(err));
-    };
-    ObserveOnSubscriber.prototype._complete = function () {
-        this.scheduleMessage(Notification_1.Notification.createComplete());
-    };
-    return ObserveOnSubscriber;
-}(Subscriber_1.Subscriber));
-exports.ObserveOnSubscriber = ObserveOnSubscriber;
-var ObserveOnMessage = (function () {
-    function ObserveOnMessage(notification, destination) {
-        this.notification = notification;
-        this.destination = destination;
-    }
-    return ObserveOnMessage;
-}());
-exports.ObserveOnMessage = ObserveOnMessage;
-//# sourceMappingURL=observeOn.js.map
-
-/***/ },
-/* 31 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-var Subscriber_1 = __webpack_require__(3);
-var ArgumentOutOfRangeError_1 = __webpack_require__(39);
-var EmptyObservable_1 = __webpack_require__(26);
-/**
- * Emits only the first `count` values emitted by the source Observable.
- *
- * <span class="informal">Takes the first `count` values from the source, then
- * completes.</span>
- *
- * <img src="./img/take.png" width="100%">
- *
- * `take` returns an Observable that emits only the first `count` values emitted
- * by the source Observable. If the source emits fewer than `count` values then
- * all of its values are emitted. After that, it completes, regardless if the
- * source completes.
- *
- * @example <caption>Take the first 5 seconds of an infinite 1-second interval Observable</caption>
- * var interval = Rx.Observable.interval(1000);
- * var five = interval.take(5);
- * five.subscribe(x => console.log(x));
- *
- * @see {@link takeLast}
- * @see {@link takeUntil}
- * @see {@link takeWhile}
- * @see {@link skip}
- *
- * @throws {ArgumentOutOfRangeError} When using `take(i)`, it delivers an
- * ArgumentOutOrRangeError to the Observer's `error` callback if `i < 0`.
- *
- * @param {number} count The maximum number of `next` values to emit.
- * @return {Observable<T>} An Observable that emits only the first `count`
- * values emitted by the source Observable, or all of the values from the source
- * if the source emits fewer than `count` values.
- * @method take
- * @owner Observable
- */
-function take(count) {
-    return function (source) {
-        if (count === 0) {
-            return new EmptyObservable_1.EmptyObservable();
-        }
-        else {
-            return source.lift(new TakeOperator(count));
-        }
-    };
-}
-exports.take = take;
-var TakeOperator = (function () {
-    function TakeOperator(total) {
-        this.total = total;
-        if (this.total < 0) {
-            throw new ArgumentOutOfRangeError_1.ArgumentOutOfRangeError;
-        }
-    }
-    TakeOperator.prototype.call = function (subscriber, source) {
-        return source.subscribe(new TakeSubscriber(subscriber, this.total));
-    };
-    return TakeOperator;
-}());
-/**
- * We need this JSDoc comment for affecting ESDoc.
- * @ignore
- * @extends {Ignored}
- */
-var TakeSubscriber = (function (_super) {
-    __extends(TakeSubscriber, _super);
-    function TakeSubscriber(destination, total) {
-        _super.call(this, destination);
-        this.total = total;
-        this.count = 0;
-    }
-    TakeSubscriber.prototype._next = function (value) {
-        var total = this.total;
-        var count = ++this.count;
-        if (count <= total) {
-            this.destination.next(value);
-            if (count === total) {
-                this.destination.complete();
-                this.unsubscribe();
-            }
-        }
-    };
-    return TakeSubscriber;
-}(Subscriber_1.Subscriber));
-//# sourceMappingURL=take.js.map
-
-/***/ },
-/* 32 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-var Subscription_1 = __webpack_require__(4);
-/**
- * A unit of work to be executed in a {@link Scheduler}. An action is typically
- * created from within a Scheduler and an RxJS user does not need to concern
- * themselves about creating and manipulating an Action.
- *
- * ```ts
- * class Action<T> extends Subscription {
- *   new (scheduler: Scheduler, work: (state?: T) => void);
- *   schedule(state?: T, delay: number = 0): Subscription;
- * }
- * ```
- *
- * @class Action<T>
- */
-var Action = (function (_super) {
-    __extends(Action, _super);
-    function Action(scheduler, work) {
-        _super.call(this);
-    }
-    /**
-     * Schedules this action on its parent Scheduler for execution. May be passed
-     * some context object, `state`. May happen at some point in the future,
-     * according to the `delay` parameter, if specified.
-     * @param {T} [state] Some contextual data that the `work` function uses when
-     * called by the Scheduler.
-     * @param {number} [delay] Time to wait before executing the work, where the
-     * time unit is implicit and defined by the Scheduler.
-     * @return {void}
-     */
-    Action.prototype.schedule = function (state, delay) {
-        if (delay === void 0) { delay = 0; }
-        return this;
-    };
-    return Action;
-}(Subscription_1.Subscription));
-exports.Action = Action;
-//# sourceMappingURL=Action.js.map
-
-/***/ },
-/* 33 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-var root_1 = __webpack_require__(6);
-var Action_1 = __webpack_require__(32);
-/**
- * We need this JSDoc comment for affecting ESDoc.
- * @ignore
- * @extends {Ignored}
- */
-var AsyncAction = (function (_super) {
-    __extends(AsyncAction, _super);
-    function AsyncAction(scheduler, work) {
-        _super.call(this, scheduler, work);
-        this.scheduler = scheduler;
-        this.work = work;
-        this.pending = false;
-    }
-    AsyncAction.prototype.schedule = function (state, delay) {
-        if (delay === void 0) { delay = 0; }
-        if (this.closed) {
-            return this;
-        }
-        // Always replace the current state with the new state.
-        this.state = state;
-        // Set the pending flag indicating that this action has been scheduled, or
-        // has recursively rescheduled itself.
-        this.pending = true;
-        var id = this.id;
-        var scheduler = this.scheduler;
-        //
-        // Important implementation note:
-        //
-        // Actions only execute once by default, unless rescheduled from within the
-        // scheduled callback. This allows us to implement single and repeat
-        // actions via the same code path, without adding API surface area, as well
-        // as mimic traditional recursion but across asynchronous boundaries.
-        //
-        // However, JS runtimes and timers distinguish between intervals achieved by
-        // serial `setTimeout` calls vs. a single `setInterval` call. An interval of
-        // serial `setTimeout` calls can be individually delayed, which delays
-        // scheduling the next `setTimeout`, and so on. `setInterval` attempts to
-        // guarantee the interval callback will be invoked more precisely to the
-        // interval period, regardless of load.
-        //
-        // Therefore, we use `setInterval` to schedule single and repeat actions.
-        // If the action reschedules itself with the same delay, the interval is not
-        // canceled. If the action doesn't reschedule, or reschedules with a
-        // different delay, the interval will be canceled after scheduled callback
-        // execution.
-        //
-        if (id != null) {
-            this.id = this.recycleAsyncId(scheduler, id, delay);
-        }
-        this.delay = delay;
-        // If this action has already an async Id, don't request a new one.
-        this.id = this.id || this.requestAsyncId(scheduler, this.id, delay);
-        return this;
-    };
-    AsyncAction.prototype.requestAsyncId = function (scheduler, id, delay) {
-        if (delay === void 0) { delay = 0; }
-        return root_1.root.setInterval(scheduler.flush.bind(scheduler, this), delay);
-    };
-    AsyncAction.prototype.recycleAsyncId = function (scheduler, id, delay) {
-        if (delay === void 0) { delay = 0; }
-        // If this action is rescheduled with the same delay time, don't clear the interval id.
-        if (delay !== null && this.delay === delay && this.pending === false) {
-            return id;
-        }
-        // Otherwise, if the action's delay time is different from the current delay,
-        // or the action has been rescheduled before it's executed, clear the interval id
-        return root_1.root.clearInterval(id) && undefined || undefined;
-    };
-    /**
-     * Immediately executes this action and the `work` it contains.
-     * @return {any}
-     */
-    AsyncAction.prototype.execute = function (state, delay) {
-        if (this.closed) {
-            return new Error('executing a cancelled action');
-        }
-        this.pending = false;
-        var error = this._execute(state, delay);
-        if (error) {
-            return error;
-        }
-        else if (this.pending === false && this.id != null) {
-            // Dequeue if the action didn't reschedule itself. Don't call
-            // unsubscribe(), because the action could reschedule later.
-            // For example:
-            // ```
-            // scheduler.schedule(function doWork(counter) {
-            //   /* ... I'm a busy worker bee ... */
-            //   var originalAction = this;
-            //   /* wait 100ms before rescheduling the action */
-            //   setTimeout(function () {
-            //     originalAction.schedule(counter + 1);
-            //   }, 100);
-            // }, 1000);
-            // ```
-            this.id = this.recycleAsyncId(this.scheduler, this.id, null);
-        }
-    };
-    AsyncAction.prototype._execute = function (state, delay) {
-        var errored = false;
-        var errorValue = undefined;
-        try {
-            this.work(state);
-        }
-        catch (e) {
-            errored = true;
-            errorValue = !!e && e || new Error(e);
-        }
-        if (errored) {
-            this.unsubscribe();
-            return errorValue;
-        }
-    };
-    AsyncAction.prototype._unsubscribe = function () {
-        var id = this.id;
-        var scheduler = this.scheduler;
-        var actions = scheduler.actions;
-        var index = actions.indexOf(this);
-        this.work = null;
-        this.state = null;
-        this.pending = false;
-        this.scheduler = null;
-        if (index !== -1) {
-            actions.splice(index, 1);
-        }
-        if (id != null) {
-            this.id = this.recycleAsyncId(scheduler, id, null);
-        }
-        this.delay = null;
-    };
-    return AsyncAction;
-}(Action_1.Action));
-exports.AsyncAction = AsyncAction;
-//# sourceMappingURL=AsyncAction.js.map
-
-/***/ },
-/* 34 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-var Scheduler_1 = __webpack_require__(24);
-var AsyncScheduler = (function (_super) {
-    __extends(AsyncScheduler, _super);
-    function AsyncScheduler() {
-        _super.apply(this, arguments);
-        this.actions = [];
-        /**
-         * A flag to indicate whether the Scheduler is currently executing a batch of
-         * queued actions.
-         * @type {boolean}
-         */
-        this.active = false;
-        /**
-         * An internal ID used to track the latest asynchronous task such as those
-         * coming from `setTimeout`, `setInterval`, `requestAnimationFrame`, and
-         * others.
-         * @type {any}
-         */
-        this.scheduled = undefined;
-    }
-    AsyncScheduler.prototype.flush = function (action) {
-        var actions = this.actions;
-        if (this.active) {
-            actions.push(action);
-            return;
-        }
-        var error;
-        this.active = true;
-        do {
-            if (error = action.execute(action.state, action.delay)) {
-                break;
-            }
-        } while (action = actions.shift()); // exhaust the scheduler queue
-        this.active = false;
-        if (error) {
-            while (action = actions.shift()) {
-                action.unsubscribe();
-            }
-            throw error;
-        }
-    };
-    return AsyncScheduler;
-}(Scheduler_1.Scheduler));
-exports.AsyncScheduler = AsyncScheduler;
-//# sourceMappingURL=AsyncScheduler.js.map
-
-/***/ },
-/* 35 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-var AsyncAction_1 = __webpack_require__(33);
-/**
- * We need this JSDoc comment for affecting ESDoc.
- * @ignore
- * @extends {Ignored}
- */
-var QueueAction = (function (_super) {
-    __extends(QueueAction, _super);
-    function QueueAction(scheduler, work) {
-        _super.call(this, scheduler, work);
-        this.scheduler = scheduler;
-        this.work = work;
-    }
-    QueueAction.prototype.schedule = function (state, delay) {
-        if (delay === void 0) { delay = 0; }
-        if (delay > 0) {
-            return _super.prototype.schedule.call(this, state, delay);
-        }
-        this.delay = delay;
-        this.state = state;
-        this.scheduler.flush(this);
-        return this;
-    };
-    QueueAction.prototype.execute = function (state, delay) {
-        return (delay > 0 || this.closed) ?
-            _super.prototype.execute.call(this, state, delay) :
-            this._execute(state, delay);
-    };
-    QueueAction.prototype.requestAsyncId = function (scheduler, id, delay) {
-        if (delay === void 0) { delay = 0; }
-        // If delay exists and is greater than 0, or if the delay is null (the
-        // action wasn't rescheduled) but was originally scheduled as an async
-        // action, then recycle as an async action.
-        if ((delay !== null && delay > 0) || (delay === null && this.delay > 0)) {
-            return _super.prototype.requestAsyncId.call(this, scheduler, id, delay);
-        }
-        // Otherwise flush the scheduler starting with this action.
-        return scheduler.flush(this);
-    };
-    return QueueAction;
-}(AsyncAction_1.AsyncAction));
-exports.QueueAction = QueueAction;
-//# sourceMappingURL=QueueAction.js.map
-
-/***/ },
-/* 36 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-var AsyncScheduler_1 = __webpack_require__(34);
-var QueueScheduler = (function (_super) {
-    __extends(QueueScheduler, _super);
-    function QueueScheduler() {
-        _super.apply(this, arguments);
-    }
-    return QueueScheduler;
-}(AsyncScheduler_1.AsyncScheduler));
-exports.QueueScheduler = QueueScheduler;
-//# sourceMappingURL=QueueScheduler.js.map
-
-/***/ },
-/* 37 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var QueueAction_1 = __webpack_require__(35);
-var QueueScheduler_1 = __webpack_require__(36);
-/**
- *
- * Queue Scheduler
- *
- * <span class="informal">Put every next task on a queue, instead of executing it immediately</span>
- *
- * `queue` scheduler, when used with delay, behaves the same as {@link async} scheduler.
- *
- * When used without delay, it schedules given task synchronously - executes it right when
- * it is scheduled. However when called recursively, that is when inside the scheduled task,
- * another task is scheduled with queue scheduler, instead of executing immediately as well,
- * that task will be put on a queue and wait for current one to finish.
- *
- * This means that when you execute task with `queue` scheduler, you are sure it will end
- * before any other task scheduled with that scheduler will start.
- *
- * @examples <caption>Schedule recursively first, then do something</caption>
- *
- * Rx.Scheduler.queue.schedule(() => {
- *   Rx.Scheduler.queue.schedule(() => console.log('second')); // will not happen now, but will be put on a queue
- *
- *   console.log('first');
- * });
- *
- * // Logs:
- * // "first"
- * // "second"
- *
- *
- * @example <caption>Reschedule itself recursively</caption>
- *
- * Rx.Scheduler.queue.schedule(function(state) {
- *   if (state !== 0) {
- *     console.log('before', state);
- *     this.schedule(state - 1); // `this` references currently executing Action,
- *                               // which we reschedule with new state
- *     console.log('after', state);
- *   }
- * }, 0, 3);
- *
- * // In scheduler that runs recursively, you would expect:
- * // "before", 3
- * // "before", 2
- * // "before", 1
- * // "after", 1
- * // "after", 2
- * // "after", 3
- *
- * // But with queue it logs:
- * // "before", 3
- * // "after", 3
- * // "before", 2
- * // "after", 2
- * // "before", 1
- * // "after", 1
- *
- *
- * @static true
- * @name queue
- * @owner Scheduler
- */
-exports.queue = new QueueScheduler_1.QueueScheduler(QueueAction_1.QueueAction);
-//# sourceMappingURL=queue.js.map
-
-/***/ },
-/* 38 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var root_1 = __webpack_require__(6);
-function getSymbolObservable(context) {
-    var $$observable;
-    var Symbol = context.Symbol;
-    if (typeof Symbol === 'function') {
-        if (Symbol.observable) {
-            $$observable = Symbol.observable;
-        }
-        else {
-            $$observable = Symbol('observable');
-            Symbol.observable = $$observable;
-        }
-    }
-    else {
-        $$observable = '@@observable';
-    }
-    return $$observable;
-}
-exports.getSymbolObservable = getSymbolObservable;
-exports.observable = getSymbolObservable(root_1.root);
-/**
- * @deprecated use observable instead
- */
-exports.$$observable = exports.observable;
-//# sourceMappingURL=observable.js.map
-
-/***/ },
-/* 39 */
-/***/ function(module, exports) {
-
-"use strict";
-"use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-/**
- * An error thrown when an element was queried at a certain index of an
- * Observable, but no such index or position exists in that sequence.
- *
- * @see {@link elementAt}
- * @see {@link take}
- * @see {@link takeLast}
- *
- * @class ArgumentOutOfRangeError
- */
-var ArgumentOutOfRangeError = (function (_super) {
-    __extends(ArgumentOutOfRangeError, _super);
-    function ArgumentOutOfRangeError() {
-        var err = _super.call(this, 'argument out of range');
-        this.name = err.name = 'ArgumentOutOfRangeError';
-        this.stack = err.stack;
-        this.message = err.message;
-    }
-    return ArgumentOutOfRangeError;
-}(Error));
-exports.ArgumentOutOfRangeError = ArgumentOutOfRangeError;
-//# sourceMappingURL=ArgumentOutOfRangeError.js.map
-
-/***/ },
-/* 40 */
-/***/ function(module, exports) {
-
-"use strict";
-"use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-/**
- * An error thrown when one or more errors have occurred during the
- * `unsubscribe` of a {@link Subscription}.
- */
-var UnsubscriptionError = (function (_super) {
-    __extends(UnsubscriptionError, _super);
-    function UnsubscriptionError(errors) {
-        _super.call(this);
-        this.errors = errors;
-        var err = Error.call(this, errors ?
-            errors.length + " errors occurred during unsubscription:\n  " + errors.map(function (err, i) { return ((i + 1) + ") " + err.toString()); }).join('\n  ') : '');
-        this.name = err.name = 'UnsubscriptionError';
-        this.stack = err.stack;
-        this.message = err.message;
-    }
-    return UnsubscriptionError;
-}(Error));
-exports.UnsubscriptionError = UnsubscriptionError;
-//# sourceMappingURL=UnsubscriptionError.js.map
-
-/***/ },
-/* 41 */
-/***/ function(module, exports) {
-
-"use strict";
-"use strict";
-exports.isArray = Array.isArray || (function (x) { return x && typeof x.length === 'number'; });
-//# sourceMappingURL=isArray.js.map
-
-/***/ },
-/* 42 */
-/***/ function(module, exports) {
-
-"use strict";
-"use strict";
-function isObject(x) {
-    return x != null && typeof x === 'object';
-}
-exports.isObject = isObject;
-//# sourceMappingURL=isObject.js.map
-
-/***/ },
-/* 43 */
-/***/ function(module, exports) {
-
-"use strict";
-"use strict";
-/* tslint:disable:no-empty */
-function noop() { }
-exports.noop = noop;
-//# sourceMappingURL=noop.js.map
-
-/***/ },
-/* 44 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var noop_1 = __webpack_require__(43);
-/* tslint:enable:max-line-length */
-function pipe() {
-    var fns = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        fns[_i - 0] = arguments[_i];
-    }
-    return pipeFromArray(fns);
-}
-exports.pipe = pipe;
-/* @internal */
-function pipeFromArray(fns) {
-    if (!fns) {
-        return noop_1.noop;
-    }
-    if (fns.length === 1) {
-        return fns[0];
-    }
-    return function piped(input) {
-        return fns.reduce(function (prev, fn) { return fn(prev); }, input);
-    };
-}
-exports.pipeFromArray = pipeFromArray;
-//# sourceMappingURL=pipe.js.map
-
-/***/ },
-/* 45 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var Subscriber_1 = __webpack_require__(3);
-var rxSubscriber_1 = __webpack_require__(9);
-var Observer_1 = __webpack_require__(11);
-function toSubscriber(nextOrObserver, error, complete) {
-    if (nextOrObserver) {
-        if (nextOrObserver instanceof Subscriber_1.Subscriber) {
-            return nextOrObserver;
-        }
-        if (nextOrObserver[rxSubscriber_1.rxSubscriber]) {
-            return nextOrObserver[rxSubscriber_1.rxSubscriber]();
-        }
-    }
-    if (!nextOrObserver && !error && !complete) {
-        return new Subscriber_1.Subscriber(Observer_1.empty);
-    }
-    return new Subscriber_1.Subscriber(nextOrObserver, error, complete);
-}
-exports.toSubscriber = toSubscriber;
-//# sourceMappingURL=toSubscriber.js.map
-
-/***/ },
-/* 46 */
-/***/ function(module, exports, __webpack_require__) {
-
-"use strict";
-"use strict";
-var errorObject_1 = __webpack_require__(15);
-var tryCatchTarget;
-function tryCatcher() {
-    try {
-        return tryCatchTarget.apply(this, arguments);
-    }
-    catch (e) {
-        errorObject_1.errorObject.e = e;
-        return errorObject_1.errorObject;
-    }
-}
-function tryCatch(fn) {
-    tryCatchTarget = fn;
-    return tryCatcher;
-}
-exports.tryCatch = tryCatch;
-;
-//# sourceMappingURL=tryCatch.js.map
-
-/***/ },
-/* 47 */
-/***/ function(module, exports, __webpack_require__) {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
- * xdLocalStorage is a port of https://github.com/ofirdagan/cross-domain-local-storage to typescript using modules
- */
-/**
- * Created by dagan on 07/04/2014.
- */
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var XdLocalStorage = /** @class */ (function () {
-        function XdLocalStorage() {
-        }
-        XdLocalStorage.init = function (customOptions) {
-            if (!customOptions.iframeUrl) {
-                throw Error('You must specify iframeUrl');
-            }
-            var validatedOptions = {
-                iframeId: customOptions.iframeId,
-                iframeUrl: customOptions.iframeUrl,
-                initCallback: customOptions.initCallback
-            };
-            if (XdLocalStorage.wasInitFlag) {
-                return;
-            }
-            XdLocalStorage.wasInitFlag = true;
-            if (XdLocalStorage.isDomReady()) {
-                XdLocalStorage.internalInit(validatedOptions);
-            }
-            else {
-                if (document.addEventListener) {
-                    // All browsers expect IE < 9
-                    document.addEventListener('readystatechange', function () {
-                        if (XdLocalStorage.isDomReady()) {
-                            XdLocalStorage.internalInit(validatedOptions);
-                        }
-                    });
-                }
-                else {
-                    // IE < 9
-                    document.attachEvent('readystatechange', function () {
-                        if (XdLocalStorage.isDomReady()) {
-                            XdLocalStorage.internalInit(validatedOptions);
-                        }
-                    });
-                }
-            }
-        };
-        XdLocalStorage.setItem = function (key, value, callback) {
-            if (!XdLocalStorage.isApiReady()) {
-                return;
-            }
-            XdLocalStorage.buildMessage('set', key, value, callback);
-        };
-        XdLocalStorage.getItem = function (key, callback) {
-            if (!XdLocalStorage.isApiReady()) {
-                return;
-            }
-            XdLocalStorage.buildMessage('get', key, null, callback);
-        };
-        XdLocalStorage.removeItem = function (key, callback) {
-            if (!XdLocalStorage.isApiReady()) {
-                return;
-            }
-            XdLocalStorage.buildMessage('remove', key, null, callback);
-        };
-        XdLocalStorage.key = function (index, callback) {
-            if (!XdLocalStorage.isApiReady()) {
-                return;
-            }
-            XdLocalStorage.buildMessage('key', index, null, callback);
-        };
-        XdLocalStorage.getSize = function (callback) {
-            if (!XdLocalStorage.isApiReady()) {
-                return;
-            }
-            XdLocalStorage.buildMessage('size', null, null, callback);
-        };
-        XdLocalStorage.getLength = function (callback) {
-            if (!XdLocalStorage.isApiReady()) {
-                return;
-            }
-            XdLocalStorage.buildMessage('length', null, null, callback);
-        };
-        XdLocalStorage.clear = function (callback) {
-            if (!XdLocalStorage.isApiReady()) {
-                return;
-            }
-            XdLocalStorage.buildMessage('clear', null, null, callback);
-        };
-        XdLocalStorage.wasInit = function () {
-            return XdLocalStorage.wasInitFlag;
-        };
-        XdLocalStorage.applyCallback = function (data) {
-            if (XdLocalStorage.requests[data.id]) {
-                XdLocalStorage.requests[data.id](data);
-                delete XdLocalStorage.requests[data.id];
-            }
-        };
-        XdLocalStorage.receiveMessage = function (event) {
-            var data;
-            try {
-                data = JSON.parse(event.data);
-            }
-            catch (err) {
-                // not our message, can ignore
-            }
-            if (data && data.namespace === XdLocalStorage.MESSAGE_NAMESPACE) {
-                if (data.id === 'iframe-ready') {
-                    XdLocalStorage.iframeReady = true;
-                    XdLocalStorage.options.initCallback();
-                }
-                else {
-                    XdLocalStorage.applyCallback(data);
-                }
-            }
-        };
-        XdLocalStorage.buildMessage = function (action, key, value, callback) {
-            XdLocalStorage.requestId++;
-            XdLocalStorage.requests[XdLocalStorage.requestId] = callback;
-            var data = {
-                namespace: XdLocalStorage.MESSAGE_NAMESPACE,
-                id: XdLocalStorage.requestId,
-                action: action,
-                key: key,
-                value: value
-            };
-            XdLocalStorage.iframe.contentWindow.postMessage(JSON.stringify(data), '*');
-        };
-        XdLocalStorage.internalInit = function (customOptions) {
-            XdLocalStorage.options = tslib_1.__assign({}, XdLocalStorage.defaultOptions, customOptions);
-            var temp = document.createElement('div');
-            if (window.addEventListener) {
-                window.addEventListener('message', XdLocalStorage.receiveMessage, false);
-            }
-            else {
-                window.attachEvent('onmessage', XdLocalStorage.receiveMessage);
-            }
-            temp.innerHTML = '<iframe id="' + XdLocalStorage.options.iframeId + '" src=' + XdLocalStorage.options.iframeUrl + ' style="display: none;"></iframe>';
-            document.body.appendChild(temp);
-            var element = document.getElementById(XdLocalStorage.options.iframeId);
-            if (element) {
-                XdLocalStorage.iframe = element;
-            }
-        };
-        XdLocalStorage.isApiReady = function () {
-            if (!XdLocalStorage.wasInitFlag) {
-                return false;
-            }
-            if (!XdLocalStorage.iframeReady) {
-                return false;
-            }
-            return true;
-        };
-        XdLocalStorage.isDomReady = function () {
-            return (document.readyState === 'complete');
-        };
-        XdLocalStorage.MESSAGE_NAMESPACE = 'cross-domain-local-message';
-        XdLocalStorage.defaultOptions = {
-            iframeId: 'cross-domain-iframe',
-            // tslint:disable-next-line:no-empty
-            initCallback: function () { }
-        };
-        XdLocalStorage.requestId = 1;
-        XdLocalStorage.requests = {};
-        XdLocalStorage.wasInitFlag = false;
-        XdLocalStorage.iframeReady = true;
-        return XdLocalStorage;
-    }());
-    exports.XdLocalStorage = XdLocalStorage;
-}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ },
-/* 48 */
-/***/ function(module, exports, __webpack_require__) {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(18), __webpack_require__(1), __webpack_require__(7), __webpack_require__(22), __webpack_require__(20), __webpack_require__(21), __webpack_require__(10), __webpack_require__(19)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, tslib_1, FlagTypes_1, SimpleCache_1, sotools_1, NattyApi_1, GenericBotAPI_1, MetaSmokeAPI_1, CrossDomainCache_1, CopyPastorAPI_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(41), __webpack_require__(4), __webpack_require__(9), __webpack_require__(19), __webpack_require__(42), __webpack_require__(43), __webpack_require__(17), __webpack_require__(45)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, FlagTypes_1, SimpleCache_1, sotools_1, NattyApi_1, GenericBotAPI_1, MetaSmokeAPI_1, CrossDomainCache_1, CopyPastorAPI_1) {
     "use strict";
     var _this = this;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -4893,6 +2560,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             'cursor': 'default'
         }).hide();
     }
+    var metaSmokeManualKey = 'MetaSmoke.ManualKey';
     function SetupAdminTools() {
         var _this = this;
         var bottomBox = $('.-copyright, text-right').children('.g-column').children('.-list');
@@ -4911,17 +2579,45 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 }
             });
         }); });
+        var manualMetaSmokeAuthUrl = $('<a />').text('Get MetaSmoke key').attr('href', "https://metasmoke.erwaysoftware.com/oauth/request?key=" + metaSmokeKey);
+        var manualRegisterMetaSmokeKey = $('<a />').text('Manually register MetaSmoke key');
+        manualMetaSmokeAuthUrl.click(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+            var prompt;
+            return tslib_1.__generator(this, function (_a) {
+                prompt = window.prompt('Enter metasmoke key');
+                if (prompt) {
+                    CrossDomainCache_1.CrossDomainCache.StoreInCache(MetaSmokeAPI_1.MetaSmokeDisabledConfig, false);
+                    localStorage.setItem(metaSmokeManualKey, prompt);
+                    location.reload();
+                }
+                return [2 /*return*/];
+            });
+        }); });
         optionsDiv.append(optionsList);
         optionsList.append($('<li>').append(clearMetaSmokeConfig));
+        optionsList.append($('<li>').append(manualMetaSmokeAuthUrl));
     }
     $(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+        var _this = this;
+        var manualKey;
         return tslib_1.__generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     CrossDomainCache_1.CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
-                    return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(metaSmokeKey)];
+                    manualKey = localStorage.getItem(metaSmokeManualKey);
+                    if (!manualKey) return [3 /*break*/, 2];
+                    localStorage.removeItem(metaSmokeManualKey);
+                    return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(metaSmokeKey, function () { return tslib_1.__awaiter(_this, void 0, void 0, function () { return tslib_1.__generator(this, function (_a) {
+                            return [2 /*return*/, manualKey];
+                        }); }); })];
                 case 1:
                     _a.sent();
+                    return [3 /*break*/, 4];
+                case 2: return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(metaSmokeKey)];
+                case 3:
+                    _a.sent();
+                    _a.label = 4;
+                case 4:
                     SetupPostPage();
                     SetupAdminTools();
                     SetupStyles();
@@ -4930,8 +2626,2352 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             }
         });
     }); });
-}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
-/***/ }
+/***/ }),
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(5), __webpack_require__(8), __webpack_require__(9), __webpack_require__(4), __webpack_require__(15), __webpack_require__(16)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, Subject_1, ReplaySubject_1, sotools_1, SimpleCache_1, ChatApi_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
+    var soboticsRoomId = 111347;
+    var NattyAPI = /** @class */ (function () {
+        function NattyAPI(answerId) {
+            this.chat = new ChatApi_1.ChatApi();
+            this.answerId = answerId;
+        }
+        NattyAPI.prototype.Watch = function () {
+            var _this = this;
+            this.subject = new Subject_1.Subject();
+            this.replaySubject = new ReplaySubject_1.ReplaySubject(1);
+            this.subject.subscribe(this.replaySubject);
+            if (sotools_1.IsStackOverflow()) {
+                SimpleCache_1.SimpleCache.GetAndCache("NattyApi.Feedback." + this.answerId, function () { return new Promise(function (resolve, reject) {
+                    GM_xmlhttpRequest({
+                        method: 'GET',
+                        url: nattyFeedbackUrl + "/" + _this.answerId,
+                        onload: function (response) {
+                            var nattyResult = JSON.parse(response.responseText);
+                            if (nattyResult.items && nattyResult.items[0]) {
+                                resolve(true);
+                            }
+                            else {
+                                resolve(false);
+                            }
+                        },
+                        onerror: function (response) {
+                            reject(response);
+                        },
+                    });
+                }); })
+                    .then(function (r) { return _this.subject.next(r); })
+                    .catch(function (err) { return _this.subject.error(err); });
+            }
+            return this.subject;
+        };
+        NattyAPI.prototype.ReportNaa = function (answerDate, questionDate) {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                var answerAge, daysPostedAfterQuestion, promise;
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            if (!sotools_1.IsStackOverflow()) {
+                                return [2 /*return*/, false];
+                            }
+                            return [4 /*yield*/, this.WasReported()];
+                        case 1:
+                            if (!_a.sent()) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this.answerId + " tp")];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/, true];
+                        case 3:
+                            answerAge = this.DaysBetween(answerDate, new Date());
+                            daysPostedAfterQuestion = this.DaysBetween(questionDate, answerDate);
+                            if (answerAge > 30 || daysPostedAfterQuestion < 30) {
+                                return [2 /*return*/, false];
+                            }
+                            promise = this.chat.SendMessage(soboticsRoomId, "@Natty report http://stackoverflow.com/a/" + this.answerId);
+                            return [4 /*yield*/, promise.then(function () {
+                                    SimpleCache_1.SimpleCache.StoreInCache("NattyApi.Feedback." + _this.answerId, true);
+                                    _this.subject.next(true);
+                                })];
+                        case 4:
+                            _a.sent();
+                            return [2 /*return*/, true];
+                    }
+                });
+            });
+        };
+        NattyAPI.prototype.ReportRedFlag = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            if (!sotools_1.IsStackOverflow()) {
+                                return [2 /*return*/, false];
+                            }
+                            return [4 /*yield*/, this.WasReported()];
+                        case 1:
+                            if (!_a.sent()) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this.answerId + " tp")];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/, true];
+                        case 3: return [2 /*return*/, false];
+                    }
+                });
+            });
+        };
+        NattyAPI.prototype.ReportLooksFine = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            if (!sotools_1.IsStackOverflow()) {
+                                return [2 /*return*/, false];
+                            }
+                            return [4 /*yield*/, this.WasReported()];
+                        case 1:
+                            if (!_a.sent()) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this.answerId + " fp")];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/, true];
+                        case 3: return [2 /*return*/, false];
+                    }
+                });
+            });
+        };
+        NattyAPI.prototype.ReportNeedsEditing = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            if (!sotools_1.IsStackOverflow()) {
+                                return [2 /*return*/, false];
+                            }
+                            return [4 /*yield*/, this.WasReported()];
+                        case 1:
+                            if (!_a.sent()) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.chat.SendMessage(soboticsRoomId, "@Natty feedback http://stackoverflow.com/a/" + this.answerId + " ne")];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/, true];
+                        case 3: return [2 /*return*/, false];
+                    }
+                });
+            });
+        };
+        NattyAPI.prototype.WasReported = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                return tslib_1.__generator(this, function (_a) {
+                    return [2 /*return*/, this.replaySubject.take(1).toPromise()];
+                });
+            });
+        };
+        NattyAPI.prototype.DaysBetween = function (first, second) {
+            return Math.round((second - first) / (1000 * 60 * 60 * 24));
+        };
+        return NattyAPI;
+    }());
+    exports.NattyAPI = NattyAPI;
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
+/* 20 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var Subscriber_1 = __webpack_require__(2);
+var rxSubscriber_1 = __webpack_require__(7);
+var Observer_1 = __webpack_require__(12);
+function toSubscriber(nextOrObserver, error, complete) {
+    if (nextOrObserver) {
+        if (nextOrObserver instanceof Subscriber_1.Subscriber) {
+            return nextOrObserver;
+        }
+        if (nextOrObserver[rxSubscriber_1.rxSubscriber]) {
+            return nextOrObserver[rxSubscriber_1.rxSubscriber]();
+        }
+    }
+    if (!nextOrObserver && !error && !complete) {
+        return new Subscriber_1.Subscriber(Observer_1.empty);
+    }
+    return new Subscriber_1.Subscriber(nextOrObserver, error, complete);
+}
+exports.toSubscriber = toSubscriber;
+//# sourceMappingURL=toSubscriber.js.map
+
+/***/ }),
+/* 21 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+exports.isArray = Array.isArray || (function (x) { return x && typeof x.length === 'number'; });
+//# sourceMappingURL=isArray.js.map
+
+/***/ }),
+/* 22 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+function isObject(x) {
+    return x != null && typeof x === 'object';
+}
+exports.isObject = isObject;
+//# sourceMappingURL=isObject.js.map
+
+/***/ }),
+/* 23 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var errorObject_1 = __webpack_require__(11);
+var tryCatchTarget;
+function tryCatcher() {
+    try {
+        return tryCatchTarget.apply(this, arguments);
+    }
+    catch (e) {
+        errorObject_1.errorObject.e = e;
+        return errorObject_1.errorObject;
+    }
+}
+function tryCatch(fn) {
+    tryCatchTarget = fn;
+    return tryCatcher;
+}
+exports.tryCatch = tryCatch;
+;
+//# sourceMappingURL=tryCatch.js.map
+
+/***/ }),
+/* 24 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+/**
+ * An error thrown when one or more errors have occurred during the
+ * `unsubscribe` of a {@link Subscription}.
+ */
+var UnsubscriptionError = (function (_super) {
+    __extends(UnsubscriptionError, _super);
+    function UnsubscriptionError(errors) {
+        _super.call(this);
+        this.errors = errors;
+        var err = Error.call(this, errors ?
+            errors.length + " errors occurred during unsubscription:\n  " + errors.map(function (err, i) { return ((i + 1) + ") " + err.toString()); }).join('\n  ') : '');
+        this.name = err.name = 'UnsubscriptionError';
+        this.stack = err.stack;
+        this.message = err.message;
+    }
+    return UnsubscriptionError;
+}(Error));
+exports.UnsubscriptionError = UnsubscriptionError;
+//# sourceMappingURL=UnsubscriptionError.js.map
+
+/***/ }),
+/* 25 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var root_1 = __webpack_require__(6);
+function getSymbolObservable(context) {
+    var $$observable;
+    var Symbol = context.Symbol;
+    if (typeof Symbol === 'function') {
+        if (Symbol.observable) {
+            $$observable = Symbol.observable;
+        }
+        else {
+            $$observable = Symbol('observable');
+            Symbol.observable = $$observable;
+        }
+    }
+    else {
+        $$observable = '@@observable';
+    }
+    return $$observable;
+}
+exports.getSymbolObservable = getSymbolObservable;
+exports.observable = getSymbolObservable(root_1.root);
+/**
+ * @deprecated use observable instead
+ */
+exports.$$observable = exports.observable;
+//# sourceMappingURL=observable.js.map
+
+/***/ }),
+/* 26 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var noop_1 = __webpack_require__(27);
+/* tslint:enable:max-line-length */
+function pipe() {
+    var fns = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        fns[_i - 0] = arguments[_i];
+    }
+    return pipeFromArray(fns);
+}
+exports.pipe = pipe;
+/* @internal */
+function pipeFromArray(fns) {
+    if (!fns) {
+        return noop_1.noop;
+    }
+    if (fns.length === 1) {
+        return fns[0];
+    }
+    return function piped(input) {
+        return fns.reduce(function (prev, fn) { return fn(prev); }, input);
+    };
+}
+exports.pipeFromArray = pipeFromArray;
+//# sourceMappingURL=pipe.js.map
+
+/***/ }),
+/* 27 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+/* tslint:disable:no-empty */
+function noop() { }
+exports.noop = noop;
+//# sourceMappingURL=noop.js.map
+
+/***/ }),
+/* 28 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var QueueAction_1 = __webpack_require__(29);
+var QueueScheduler_1 = __webpack_require__(32);
+/**
+ *
+ * Queue Scheduler
+ *
+ * <span class="informal">Put every next task on a queue, instead of executing it immediately</span>
+ *
+ * `queue` scheduler, when used with delay, behaves the same as {@link async} scheduler.
+ *
+ * When used without delay, it schedules given task synchronously - executes it right when
+ * it is scheduled. However when called recursively, that is when inside the scheduled task,
+ * another task is scheduled with queue scheduler, instead of executing immediately as well,
+ * that task will be put on a queue and wait for current one to finish.
+ *
+ * This means that when you execute task with `queue` scheduler, you are sure it will end
+ * before any other task scheduled with that scheduler will start.
+ *
+ * @examples <caption>Schedule recursively first, then do something</caption>
+ *
+ * Rx.Scheduler.queue.schedule(() => {
+ *   Rx.Scheduler.queue.schedule(() => console.log('second')); // will not happen now, but will be put on a queue
+ *
+ *   console.log('first');
+ * });
+ *
+ * // Logs:
+ * // "first"
+ * // "second"
+ *
+ *
+ * @example <caption>Reschedule itself recursively</caption>
+ *
+ * Rx.Scheduler.queue.schedule(function(state) {
+ *   if (state !== 0) {
+ *     console.log('before', state);
+ *     this.schedule(state - 1); // `this` references currently executing Action,
+ *                               // which we reschedule with new state
+ *     console.log('after', state);
+ *   }
+ * }, 0, 3);
+ *
+ * // In scheduler that runs recursively, you would expect:
+ * // "before", 3
+ * // "before", 2
+ * // "before", 1
+ * // "after", 1
+ * // "after", 2
+ * // "after", 3
+ *
+ * // But with queue it logs:
+ * // "before", 3
+ * // "after", 3
+ * // "before", 2
+ * // "after", 2
+ * // "before", 1
+ * // "after", 1
+ *
+ *
+ * @static true
+ * @name queue
+ * @owner Scheduler
+ */
+exports.queue = new QueueScheduler_1.QueueScheduler(QueueAction_1.QueueAction);
+//# sourceMappingURL=queue.js.map
+
+/***/ }),
+/* 29 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var AsyncAction_1 = __webpack_require__(30);
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
+var QueueAction = (function (_super) {
+    __extends(QueueAction, _super);
+    function QueueAction(scheduler, work) {
+        _super.call(this, scheduler, work);
+        this.scheduler = scheduler;
+        this.work = work;
+    }
+    QueueAction.prototype.schedule = function (state, delay) {
+        if (delay === void 0) { delay = 0; }
+        if (delay > 0) {
+            return _super.prototype.schedule.call(this, state, delay);
+        }
+        this.delay = delay;
+        this.state = state;
+        this.scheduler.flush(this);
+        return this;
+    };
+    QueueAction.prototype.execute = function (state, delay) {
+        return (delay > 0 || this.closed) ?
+            _super.prototype.execute.call(this, state, delay) :
+            this._execute(state, delay);
+    };
+    QueueAction.prototype.requestAsyncId = function (scheduler, id, delay) {
+        if (delay === void 0) { delay = 0; }
+        // If delay exists and is greater than 0, or if the delay is null (the
+        // action wasn't rescheduled) but was originally scheduled as an async
+        // action, then recycle as an async action.
+        if ((delay !== null && delay > 0) || (delay === null && this.delay > 0)) {
+            return _super.prototype.requestAsyncId.call(this, scheduler, id, delay);
+        }
+        // Otherwise flush the scheduler starting with this action.
+        return scheduler.flush(this);
+    };
+    return QueueAction;
+}(AsyncAction_1.AsyncAction));
+exports.QueueAction = QueueAction;
+//# sourceMappingURL=QueueAction.js.map
+
+/***/ }),
+/* 30 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var root_1 = __webpack_require__(6);
+var Action_1 = __webpack_require__(31);
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
+var AsyncAction = (function (_super) {
+    __extends(AsyncAction, _super);
+    function AsyncAction(scheduler, work) {
+        _super.call(this, scheduler, work);
+        this.scheduler = scheduler;
+        this.work = work;
+        this.pending = false;
+    }
+    AsyncAction.prototype.schedule = function (state, delay) {
+        if (delay === void 0) { delay = 0; }
+        if (this.closed) {
+            return this;
+        }
+        // Always replace the current state with the new state.
+        this.state = state;
+        // Set the pending flag indicating that this action has been scheduled, or
+        // has recursively rescheduled itself.
+        this.pending = true;
+        var id = this.id;
+        var scheduler = this.scheduler;
+        //
+        // Important implementation note:
+        //
+        // Actions only execute once by default, unless rescheduled from within the
+        // scheduled callback. This allows us to implement single and repeat
+        // actions via the same code path, without adding API surface area, as well
+        // as mimic traditional recursion but across asynchronous boundaries.
+        //
+        // However, JS runtimes and timers distinguish between intervals achieved by
+        // serial `setTimeout` calls vs. a single `setInterval` call. An interval of
+        // serial `setTimeout` calls can be individually delayed, which delays
+        // scheduling the next `setTimeout`, and so on. `setInterval` attempts to
+        // guarantee the interval callback will be invoked more precisely to the
+        // interval period, regardless of load.
+        //
+        // Therefore, we use `setInterval` to schedule single and repeat actions.
+        // If the action reschedules itself with the same delay, the interval is not
+        // canceled. If the action doesn't reschedule, or reschedules with a
+        // different delay, the interval will be canceled after scheduled callback
+        // execution.
+        //
+        if (id != null) {
+            this.id = this.recycleAsyncId(scheduler, id, delay);
+        }
+        this.delay = delay;
+        // If this action has already an async Id, don't request a new one.
+        this.id = this.id || this.requestAsyncId(scheduler, this.id, delay);
+        return this;
+    };
+    AsyncAction.prototype.requestAsyncId = function (scheduler, id, delay) {
+        if (delay === void 0) { delay = 0; }
+        return root_1.root.setInterval(scheduler.flush.bind(scheduler, this), delay);
+    };
+    AsyncAction.prototype.recycleAsyncId = function (scheduler, id, delay) {
+        if (delay === void 0) { delay = 0; }
+        // If this action is rescheduled with the same delay time, don't clear the interval id.
+        if (delay !== null && this.delay === delay && this.pending === false) {
+            return id;
+        }
+        // Otherwise, if the action's delay time is different from the current delay,
+        // or the action has been rescheduled before it's executed, clear the interval id
+        return root_1.root.clearInterval(id) && undefined || undefined;
+    };
+    /**
+     * Immediately executes this action and the `work` it contains.
+     * @return {any}
+     */
+    AsyncAction.prototype.execute = function (state, delay) {
+        if (this.closed) {
+            return new Error('executing a cancelled action');
+        }
+        this.pending = false;
+        var error = this._execute(state, delay);
+        if (error) {
+            return error;
+        }
+        else if (this.pending === false && this.id != null) {
+            // Dequeue if the action didn't reschedule itself. Don't call
+            // unsubscribe(), because the action could reschedule later.
+            // For example:
+            // ```
+            // scheduler.schedule(function doWork(counter) {
+            //   /* ... I'm a busy worker bee ... */
+            //   var originalAction = this;
+            //   /* wait 100ms before rescheduling the action */
+            //   setTimeout(function () {
+            //     originalAction.schedule(counter + 1);
+            //   }, 100);
+            // }, 1000);
+            // ```
+            this.id = this.recycleAsyncId(this.scheduler, this.id, null);
+        }
+    };
+    AsyncAction.prototype._execute = function (state, delay) {
+        var errored = false;
+        var errorValue = undefined;
+        try {
+            this.work(state);
+        }
+        catch (e) {
+            errored = true;
+            errorValue = !!e && e || new Error(e);
+        }
+        if (errored) {
+            this.unsubscribe();
+            return errorValue;
+        }
+    };
+    AsyncAction.prototype._unsubscribe = function () {
+        var id = this.id;
+        var scheduler = this.scheduler;
+        var actions = scheduler.actions;
+        var index = actions.indexOf(this);
+        this.work = null;
+        this.state = null;
+        this.pending = false;
+        this.scheduler = null;
+        if (index !== -1) {
+            actions.splice(index, 1);
+        }
+        if (id != null) {
+            this.id = this.recycleAsyncId(scheduler, id, null);
+        }
+        this.delay = null;
+    };
+    return AsyncAction;
+}(Action_1.Action));
+exports.AsyncAction = AsyncAction;
+//# sourceMappingURL=AsyncAction.js.map
+
+/***/ }),
+/* 31 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var Subscription_1 = __webpack_require__(3);
+/**
+ * A unit of work to be executed in a {@link Scheduler}. An action is typically
+ * created from within a Scheduler and an RxJS user does not need to concern
+ * themselves about creating and manipulating an Action.
+ *
+ * ```ts
+ * class Action<T> extends Subscription {
+ *   new (scheduler: Scheduler, work: (state?: T) => void);
+ *   schedule(state?: T, delay: number = 0): Subscription;
+ * }
+ * ```
+ *
+ * @class Action<T>
+ */
+var Action = (function (_super) {
+    __extends(Action, _super);
+    function Action(scheduler, work) {
+        _super.call(this);
+    }
+    /**
+     * Schedules this action on its parent Scheduler for execution. May be passed
+     * some context object, `state`. May happen at some point in the future,
+     * according to the `delay` parameter, if specified.
+     * @param {T} [state] Some contextual data that the `work` function uses when
+     * called by the Scheduler.
+     * @param {number} [delay] Time to wait before executing the work, where the
+     * time unit is implicit and defined by the Scheduler.
+     * @return {void}
+     */
+    Action.prototype.schedule = function (state, delay) {
+        if (delay === void 0) { delay = 0; }
+        return this;
+    };
+    return Action;
+}(Subscription_1.Subscription));
+exports.Action = Action;
+//# sourceMappingURL=Action.js.map
+
+/***/ }),
+/* 32 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var AsyncScheduler_1 = __webpack_require__(33);
+var QueueScheduler = (function (_super) {
+    __extends(QueueScheduler, _super);
+    function QueueScheduler() {
+        _super.apply(this, arguments);
+    }
+    return QueueScheduler;
+}(AsyncScheduler_1.AsyncScheduler));
+exports.QueueScheduler = QueueScheduler;
+//# sourceMappingURL=QueueScheduler.js.map
+
+/***/ }),
+/* 33 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var Scheduler_1 = __webpack_require__(34);
+var AsyncScheduler = (function (_super) {
+    __extends(AsyncScheduler, _super);
+    function AsyncScheduler() {
+        _super.apply(this, arguments);
+        this.actions = [];
+        /**
+         * A flag to indicate whether the Scheduler is currently executing a batch of
+         * queued actions.
+         * @type {boolean}
+         */
+        this.active = false;
+        /**
+         * An internal ID used to track the latest asynchronous task such as those
+         * coming from `setTimeout`, `setInterval`, `requestAnimationFrame`, and
+         * others.
+         * @type {any}
+         */
+        this.scheduled = undefined;
+    }
+    AsyncScheduler.prototype.flush = function (action) {
+        var actions = this.actions;
+        if (this.active) {
+            actions.push(action);
+            return;
+        }
+        var error;
+        this.active = true;
+        do {
+            if (error = action.execute(action.state, action.delay)) {
+                break;
+            }
+        } while (action = actions.shift()); // exhaust the scheduler queue
+        this.active = false;
+        if (error) {
+            while (action = actions.shift()) {
+                action.unsubscribe();
+            }
+            throw error;
+        }
+    };
+    return AsyncScheduler;
+}(Scheduler_1.Scheduler));
+exports.AsyncScheduler = AsyncScheduler;
+//# sourceMappingURL=AsyncScheduler.js.map
+
+/***/ }),
+/* 34 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+/**
+ * An execution context and a data structure to order tasks and schedule their
+ * execution. Provides a notion of (potentially virtual) time, through the
+ * `now()` getter method.
+ *
+ * Each unit of work in a Scheduler is called an {@link Action}.
+ *
+ * ```ts
+ * class Scheduler {
+ *   now(): number;
+ *   schedule(work, delay?, state?): Subscription;
+ * }
+ * ```
+ *
+ * @class Scheduler
+ */
+var Scheduler = (function () {
+    function Scheduler(SchedulerAction, now) {
+        if (now === void 0) { now = Scheduler.now; }
+        this.SchedulerAction = SchedulerAction;
+        this.now = now;
+    }
+    /**
+     * Schedules a function, `work`, for execution. May happen at some point in
+     * the future, according to the `delay` parameter, if specified. May be passed
+     * some context object, `state`, which will be passed to the `work` function.
+     *
+     * The given arguments will be processed an stored as an Action object in a
+     * queue of actions.
+     *
+     * @param {function(state: ?T): ?Subscription} work A function representing a
+     * task, or some unit of work to be executed by the Scheduler.
+     * @param {number} [delay] Time to wait before executing the work, where the
+     * time unit is implicit and defined by the Scheduler itself.
+     * @param {T} [state] Some contextual data that the `work` function uses when
+     * called by the Scheduler.
+     * @return {Subscription} A subscription in order to be able to unsubscribe
+     * the scheduled work.
+     */
+    Scheduler.prototype.schedule = function (work, delay, state) {
+        if (delay === void 0) { delay = 0; }
+        return new this.SchedulerAction(this, work).schedule(state, delay);
+    };
+    Scheduler.now = Date.now ? Date.now : function () { return +new Date(); };
+    return Scheduler;
+}());
+exports.Scheduler = Scheduler;
+//# sourceMappingURL=Scheduler.js.map
+
+/***/ }),
+/* 35 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var Subscriber_1 = __webpack_require__(2);
+var Notification_1 = __webpack_require__(36);
+/**
+ *
+ * Re-emits all notifications from source Observable with specified scheduler.
+ *
+ * <span class="informal">Ensure a specific scheduler is used, from outside of an Observable.</span>
+ *
+ * `observeOn` is an operator that accepts a scheduler as a first parameter, which will be used to reschedule
+ * notifications emitted by the source Observable. It might be useful, if you do not have control over
+ * internal scheduler of a given Observable, but want to control when its values are emitted nevertheless.
+ *
+ * Returned Observable emits the same notifications (nexted values, complete and error events) as the source Observable,
+ * but rescheduled with provided scheduler. Note that this doesn't mean that source Observables internal
+ * scheduler will be replaced in any way. Original scheduler still will be used, but when the source Observable emits
+ * notification, it will be immediately scheduled again - this time with scheduler passed to `observeOn`.
+ * An anti-pattern would be calling `observeOn` on Observable that emits lots of values synchronously, to split
+ * that emissions into asynchronous chunks. For this to happen, scheduler would have to be passed into the source
+ * Observable directly (usually into the operator that creates it). `observeOn` simply delays notifications a
+ * little bit more, to ensure that they are emitted at expected moments.
+ *
+ * As a matter of fact, `observeOn` accepts second parameter, which specifies in milliseconds with what delay notifications
+ * will be emitted. The main difference between {@link delay} operator and `observeOn` is that `observeOn`
+ * will delay all notifications - including error notifications - while `delay` will pass through error
+ * from source Observable immediately when it is emitted. In general it is highly recommended to use `delay` operator
+ * for any kind of delaying of values in the stream, while using `observeOn` to specify which scheduler should be used
+ * for notification emissions in general.
+ *
+ * @example <caption>Ensure values in subscribe are called just before browser repaint.</caption>
+ * const intervals = Rx.Observable.interval(10); // Intervals are scheduled
+ *                                               // with async scheduler by default...
+ *
+ * intervals
+ * .observeOn(Rx.Scheduler.animationFrame)       // ...but we will observe on animationFrame
+ * .subscribe(val => {                           // scheduler to ensure smooth animation.
+ *   someDiv.style.height = val + 'px';
+ * });
+ *
+ * @see {@link delay}
+ *
+ * @param {IScheduler} scheduler Scheduler that will be used to reschedule notifications from source Observable.
+ * @param {number} [delay] Number of milliseconds that states with what delay every notification should be rescheduled.
+ * @return {Observable<T>} Observable that emits the same notifications as the source Observable,
+ * but with provided scheduler.
+ *
+ * @method observeOn
+ * @owner Observable
+ */
+function observeOn(scheduler, delay) {
+    if (delay === void 0) { delay = 0; }
+    return function observeOnOperatorFunction(source) {
+        return source.lift(new ObserveOnOperator(scheduler, delay));
+    };
+}
+exports.observeOn = observeOn;
+var ObserveOnOperator = (function () {
+    function ObserveOnOperator(scheduler, delay) {
+        if (delay === void 0) { delay = 0; }
+        this.scheduler = scheduler;
+        this.delay = delay;
+    }
+    ObserveOnOperator.prototype.call = function (subscriber, source) {
+        return source.subscribe(new ObserveOnSubscriber(subscriber, this.scheduler, this.delay));
+    };
+    return ObserveOnOperator;
+}());
+exports.ObserveOnOperator = ObserveOnOperator;
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
+var ObserveOnSubscriber = (function (_super) {
+    __extends(ObserveOnSubscriber, _super);
+    function ObserveOnSubscriber(destination, scheduler, delay) {
+        if (delay === void 0) { delay = 0; }
+        _super.call(this, destination);
+        this.scheduler = scheduler;
+        this.delay = delay;
+    }
+    ObserveOnSubscriber.dispatch = function (arg) {
+        var notification = arg.notification, destination = arg.destination;
+        notification.observe(destination);
+        this.unsubscribe();
+    };
+    ObserveOnSubscriber.prototype.scheduleMessage = function (notification) {
+        this.add(this.scheduler.schedule(ObserveOnSubscriber.dispatch, this.delay, new ObserveOnMessage(notification, this.destination)));
+    };
+    ObserveOnSubscriber.prototype._next = function (value) {
+        this.scheduleMessage(Notification_1.Notification.createNext(value));
+    };
+    ObserveOnSubscriber.prototype._error = function (err) {
+        this.scheduleMessage(Notification_1.Notification.createError(err));
+    };
+    ObserveOnSubscriber.prototype._complete = function () {
+        this.scheduleMessage(Notification_1.Notification.createComplete());
+    };
+    return ObserveOnSubscriber;
+}(Subscriber_1.Subscriber));
+exports.ObserveOnSubscriber = ObserveOnSubscriber;
+var ObserveOnMessage = (function () {
+    function ObserveOnMessage(notification, destination) {
+        this.notification = notification;
+        this.destination = destination;
+    }
+    return ObserveOnMessage;
+}());
+exports.ObserveOnMessage = ObserveOnMessage;
+//# sourceMappingURL=observeOn.js.map
+
+/***/ }),
+/* 36 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var Observable_1 = __webpack_require__(1);
+/**
+ * Represents a push-based event or value that an {@link Observable} can emit.
+ * This class is particularly useful for operators that manage notifications,
+ * like {@link materialize}, {@link dematerialize}, {@link observeOn}, and
+ * others. Besides wrapping the actual delivered value, it also annotates it
+ * with metadata of, for instance, what type of push message it is (`next`,
+ * `error`, or `complete`).
+ *
+ * @see {@link materialize}
+ * @see {@link dematerialize}
+ * @see {@link observeOn}
+ *
+ * @class Notification<T>
+ */
+var Notification = (function () {
+    function Notification(kind, value, error) {
+        this.kind = kind;
+        this.value = value;
+        this.error = error;
+        this.hasValue = kind === 'N';
+    }
+    /**
+     * Delivers to the given `observer` the value wrapped by this Notification.
+     * @param {Observer} observer
+     * @return
+     */
+    Notification.prototype.observe = function (observer) {
+        switch (this.kind) {
+            case 'N':
+                return observer.next && observer.next(this.value);
+            case 'E':
+                return observer.error && observer.error(this.error);
+            case 'C':
+                return observer.complete && observer.complete();
+        }
+    };
+    /**
+     * Given some {@link Observer} callbacks, deliver the value represented by the
+     * current Notification to the correctly corresponding callback.
+     * @param {function(value: T): void} next An Observer `next` callback.
+     * @param {function(err: any): void} [error] An Observer `error` callback.
+     * @param {function(): void} [complete] An Observer `complete` callback.
+     * @return {any}
+     */
+    Notification.prototype.do = function (next, error, complete) {
+        var kind = this.kind;
+        switch (kind) {
+            case 'N':
+                return next && next(this.value);
+            case 'E':
+                return error && error(this.error);
+            case 'C':
+                return complete && complete();
+        }
+    };
+    /**
+     * Takes an Observer or its individual callback functions, and calls `observe`
+     * or `do` methods accordingly.
+     * @param {Observer|function(value: T): void} nextOrObserver An Observer or
+     * the `next` callback.
+     * @param {function(err: any): void} [error] An Observer `error` callback.
+     * @param {function(): void} [complete] An Observer `complete` callback.
+     * @return {any}
+     */
+    Notification.prototype.accept = function (nextOrObserver, error, complete) {
+        if (nextOrObserver && typeof nextOrObserver.next === 'function') {
+            return this.observe(nextOrObserver);
+        }
+        else {
+            return this.do(nextOrObserver, error, complete);
+        }
+    };
+    /**
+     * Returns a simple Observable that just delivers the notification represented
+     * by this Notification instance.
+     * @return {any}
+     */
+    Notification.prototype.toObservable = function () {
+        var kind = this.kind;
+        switch (kind) {
+            case 'N':
+                return Observable_1.Observable.of(this.value);
+            case 'E':
+                return Observable_1.Observable.throw(this.error);
+            case 'C':
+                return Observable_1.Observable.empty();
+        }
+        throw new Error('unexpected notification kind value');
+    };
+    /**
+     * A shortcut to create a Notification instance of the type `next` from a
+     * given value.
+     * @param {T} value The `next` value.
+     * @return {Notification<T>} The "next" Notification representing the
+     * argument.
+     */
+    Notification.createNext = function (value) {
+        if (typeof value !== 'undefined') {
+            return new Notification('N', value);
+        }
+        return Notification.undefinedValueNotification;
+    };
+    /**
+     * A shortcut to create a Notification instance of the type `error` from a
+     * given error.
+     * @param {any} [err] The `error` error.
+     * @return {Notification<T>} The "error" Notification representing the
+     * argument.
+     */
+    Notification.createError = function (err) {
+        return new Notification('E', undefined, err);
+    };
+    /**
+     * A shortcut to create a Notification instance of the type `complete`.
+     * @return {Notification<any>} The valueless "complete" Notification.
+     */
+    Notification.createComplete = function () {
+        return Notification.completeNotification;
+    };
+    Notification.completeNotification = new Notification('C');
+    Notification.undefinedValueNotification = new Notification('N', undefined);
+    return Notification;
+}());
+exports.Notification = Notification;
+//# sourceMappingURL=Notification.js.map
+
+/***/ }),
+/* 37 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var take_1 = __webpack_require__(38);
+/**
+ * Emits only the first `count` values emitted by the source Observable.
+ *
+ * <span class="informal">Takes the first `count` values from the source, then
+ * completes.</span>
+ *
+ * <img src="./img/take.png" width="100%">
+ *
+ * `take` returns an Observable that emits only the first `count` values emitted
+ * by the source Observable. If the source emits fewer than `count` values then
+ * all of its values are emitted. After that, it completes, regardless if the
+ * source completes.
+ *
+ * @example <caption>Take the first 5 seconds of an infinite 1-second interval Observable</caption>
+ * var interval = Rx.Observable.interval(1000);
+ * var five = interval.take(5);
+ * five.subscribe(x => console.log(x));
+ *
+ * @see {@link takeLast}
+ * @see {@link takeUntil}
+ * @see {@link takeWhile}
+ * @see {@link skip}
+ *
+ * @throws {ArgumentOutOfRangeError} When using `take(i)`, it delivers an
+ * ArgumentOutOrRangeError to the Observer's `error` callback if `i < 0`.
+ *
+ * @param {number} count The maximum number of `next` values to emit.
+ * @return {Observable<T>} An Observable that emits only the first `count`
+ * values emitted by the source Observable, or all of the values from the source
+ * if the source emits fewer than `count` values.
+ * @method take
+ * @owner Observable
+ */
+function take(count) {
+    return take_1.take(count)(this);
+}
+exports.take = take;
+//# sourceMappingURL=take.js.map
+
+/***/ }),
+/* 38 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var Subscriber_1 = __webpack_require__(2);
+var ArgumentOutOfRangeError_1 = __webpack_require__(39);
+var EmptyObservable_1 = __webpack_require__(40);
+/**
+ * Emits only the first `count` values emitted by the source Observable.
+ *
+ * <span class="informal">Takes the first `count` values from the source, then
+ * completes.</span>
+ *
+ * <img src="./img/take.png" width="100%">
+ *
+ * `take` returns an Observable that emits only the first `count` values emitted
+ * by the source Observable. If the source emits fewer than `count` values then
+ * all of its values are emitted. After that, it completes, regardless if the
+ * source completes.
+ *
+ * @example <caption>Take the first 5 seconds of an infinite 1-second interval Observable</caption>
+ * var interval = Rx.Observable.interval(1000);
+ * var five = interval.take(5);
+ * five.subscribe(x => console.log(x));
+ *
+ * @see {@link takeLast}
+ * @see {@link takeUntil}
+ * @see {@link takeWhile}
+ * @see {@link skip}
+ *
+ * @throws {ArgumentOutOfRangeError} When using `take(i)`, it delivers an
+ * ArgumentOutOrRangeError to the Observer's `error` callback if `i < 0`.
+ *
+ * @param {number} count The maximum number of `next` values to emit.
+ * @return {Observable<T>} An Observable that emits only the first `count`
+ * values emitted by the source Observable, or all of the values from the source
+ * if the source emits fewer than `count` values.
+ * @method take
+ * @owner Observable
+ */
+function take(count) {
+    return function (source) {
+        if (count === 0) {
+            return new EmptyObservable_1.EmptyObservable();
+        }
+        else {
+            return source.lift(new TakeOperator(count));
+        }
+    };
+}
+exports.take = take;
+var TakeOperator = (function () {
+    function TakeOperator(total) {
+        this.total = total;
+        if (this.total < 0) {
+            throw new ArgumentOutOfRangeError_1.ArgumentOutOfRangeError;
+        }
+    }
+    TakeOperator.prototype.call = function (subscriber, source) {
+        return source.subscribe(new TakeSubscriber(subscriber, this.total));
+    };
+    return TakeOperator;
+}());
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
+var TakeSubscriber = (function (_super) {
+    __extends(TakeSubscriber, _super);
+    function TakeSubscriber(destination, total) {
+        _super.call(this, destination);
+        this.total = total;
+        this.count = 0;
+    }
+    TakeSubscriber.prototype._next = function (value) {
+        var total = this.total;
+        var count = ++this.count;
+        if (count <= total) {
+            this.destination.next(value);
+            if (count === total) {
+                this.destination.complete();
+                this.unsubscribe();
+            }
+        }
+    };
+    return TakeSubscriber;
+}(Subscriber_1.Subscriber));
+//# sourceMappingURL=take.js.map
+
+/***/ }),
+/* 39 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+/**
+ * An error thrown when an element was queried at a certain index of an
+ * Observable, but no such index or position exists in that sequence.
+ *
+ * @see {@link elementAt}
+ * @see {@link take}
+ * @see {@link takeLast}
+ *
+ * @class ArgumentOutOfRangeError
+ */
+var ArgumentOutOfRangeError = (function (_super) {
+    __extends(ArgumentOutOfRangeError, _super);
+    function ArgumentOutOfRangeError() {
+        var err = _super.call(this, 'argument out of range');
+        this.name = err.name = 'ArgumentOutOfRangeError';
+        this.stack = err.stack;
+        this.message = err.message;
+    }
+    return ArgumentOutOfRangeError;
+}(Error));
+exports.ArgumentOutOfRangeError = ArgumentOutOfRangeError;
+//# sourceMappingURL=ArgumentOutOfRangeError.js.map
+
+/***/ }),
+/* 40 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var Observable_1 = __webpack_require__(1);
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @extends {Ignored}
+ * @hide true
+ */
+var EmptyObservable = (function (_super) {
+    __extends(EmptyObservable, _super);
+    function EmptyObservable(scheduler) {
+        _super.call(this);
+        this.scheduler = scheduler;
+    }
+    /**
+     * Creates an Observable that emits no items to the Observer and immediately
+     * emits a complete notification.
+     *
+     * <span class="informal">Just emits 'complete', and nothing else.
+     * </span>
+     *
+     * <img src="./img/empty.png" width="100%">
+     *
+     * This static operator is useful for creating a simple Observable that only
+     * emits the complete notification. It can be used for composing with other
+     * Observables, such as in a {@link mergeMap}.
+     *
+     * @example <caption>Emit the number 7, then complete.</caption>
+     * var result = Rx.Observable.empty().startWith(7);
+     * result.subscribe(x => console.log(x));
+     *
+     * @example <caption>Map and flatten only odd numbers to the sequence 'a', 'b', 'c'</caption>
+     * var interval = Rx.Observable.interval(1000);
+     * var result = interval.mergeMap(x =>
+     *   x % 2 === 1 ? Rx.Observable.of('a', 'b', 'c') : Rx.Observable.empty()
+     * );
+     * result.subscribe(x => console.log(x));
+     *
+     * // Results in the following to the console:
+     * // x is equal to the count on the interval eg(0,1,2,3,...)
+     * // x will occur every 1000ms
+     * // if x % 2 is equal to 1 print abc
+     * // if x % 2 is not equal to 1 nothing will be output
+     *
+     * @see {@link create}
+     * @see {@link never}
+     * @see {@link of}
+     * @see {@link throw}
+     *
+     * @param {Scheduler} [scheduler] A {@link IScheduler} to use for scheduling
+     * the emission of the complete notification.
+     * @return {Observable} An "empty" Observable: emits only the complete
+     * notification.
+     * @static true
+     * @name empty
+     * @owner Observable
+     */
+    EmptyObservable.create = function (scheduler) {
+        return new EmptyObservable(scheduler);
+    };
+    EmptyObservable.dispatch = function (arg) {
+        var subscriber = arg.subscriber;
+        subscriber.complete();
+    };
+    EmptyObservable.prototype._subscribe = function (subscriber) {
+        var scheduler = this.scheduler;
+        if (scheduler) {
+            return scheduler.schedule(EmptyObservable.dispatch, 0, { subscriber: subscriber });
+        }
+        else {
+            subscriber.complete();
+        }
+    };
+    return EmptyObservable;
+}(Observable_1.Observable));
+exports.EmptyObservable = EmptyObservable;
+//# sourceMappingURL=EmptyObservable.js.map
+
+/***/ }),
+/* 41 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.flagCategories = [
+        {
+            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
+            AppliesTo: ['Answer', 'Question'],
+            FlagTypes: [
+                {
+                    DisplayName: 'Spam',
+                    ReportType: 'PostSpam'
+                },
+                {
+                    DisplayName: 'Rude or Abusive',
+                    ReportType: 'PostOffensive'
+                }
+            ]
+        },
+        {
+            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
+            AppliesTo: ['Answer'],
+            FlagTypes: [
+                {
+                    DisplayName: 'Plagiarism',
+                    ReportType: 'PostOther',
+                    Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
+                    GetCustomFlagText: function (copyPastorItem) { return "Possible plagiarism of another answer https:" + copyPastorItem.target_url + ", as can be seen here http://copypastor.sobotics.org/posts/" + copyPastorItem.post_id; }
+                },
+                {
+                    DisplayName: 'Duplicate answer',
+                    ReportType: 'PostOther',
+                    Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
+                    GetComment: function () { return 'Please don\'t add the [same answer to multiple questions](http://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.'; },
+                    GetCustomFlagText: function (copyPastorItem) { return "The answer is a repost of their other answer https:" + copyPastorItem.target_url + ", but as there are slight differences as seen here http://copypastor.sobotics.org/posts/" + copyPastorItem.post_id + ", an auto flag wouldn't be raised."; }
+                }
+            ]
+        },
+        {
+            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
+            AppliesTo: ['Answer'],
+            FlagTypes: [
+                {
+                    DisplayName: 'Link Only',
+                    ReportType: 'AnswerNotAnAnswer',
+                    GetComment: function () { return 'A link to a solution is welcome, but please ensure your answer is useful without it: ' +
+                        '[add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will ' +
+                        'have some idea what it is and why it’s there, then quote the most relevant part of the ' +
+                        'page you\'re linking to in case the target page is unavailable. ' +
+                        '[Answers that are little more than a link may be deleted.](//stackoverflow.com/help/deleted-answers)'; }
+                },
+                {
+                    DisplayName: 'Not an answer',
+                    ReportType: 'AnswerNotAnAnswer',
+                    GetComment: function (reptuation) { return reptuation < 50
+                        ? 'This does not provide an answer to the question. You can [search for similar questions](//stackoverflow.com/search), ' +
+                            'or refer to the related and linked questions on the right-hand side of the page to find an answer. ' +
+                            'If you have a related but different question, [ask a new question](//stackoverflow.com/questions/ask), ' +
+                            'and include a link to this one to help provide context. ' +
+                            'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)'
+                        : 'This post doesn\'t look like an attempt to answer this question. Every post here is expected to be ' +
+                            'an explicit attempt to *answer* this question; if you have a critique or need a clarification of ' +
+                            'the question or another answer, you can [post a comment](//stackoverflow.com/help/privileges/comment) ' +
+                            '(like this one) directly below it. Please remove this answer and create either a comment or a new question. ' +
+                            'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)'; }
+                },
+                {
+                    DisplayName: 'Thanks',
+                    ReportType: 'AnswerNotAnAnswer',
+                    GetComment: function (reputation) { return reputation < 15
+                        ? 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
+                            'and can be perceived as noise by its future visitors. Once you [earn](http://meta.stackoverflow.com/q/146472) ' +
+                            'enough [reputation](http://stackoverflow.com/help/whats-reputation), you will gain privileges to ' +
+                            '[upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
+                            'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
+                            'See [Why is voting important](http://stackoverflow.com/help/why-vote).'
+                        :
+                            'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
+                                'and can be perceived as noise by its future visitors. ' +
+                                'Instead, [upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
+                                'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
+                                'See [Why is voting important](http://stackoverflow.com/help/why-vote).'; }
+                },
+                {
+                    DisplayName: 'Me too',
+                    ReportType: 'AnswerNotAnAnswer',
+                    GetComment: function () { return 'Please don\'t add *"Me too"* as answers. It doesn\'t actually provide an answer to the question. ' +
+                        ("If you have a different but related question, then [ask](//" + window.location.hostname + "$/questions/ask) it ") +
+                        '(reference this one if it will help provide context). If you\'re interested in this specific question, ' +
+                        'you can [upvote](//stackoverflow.com/help/privileges/vote-up) it, leave a [comment](//stackoverflow.com/help/privileges/comment), ' +
+                        'or start a [bounty](//stackoverflow.com/help/privileges/set-bounties) ' +
+                        'once you have enough [reputation](//stackoverflow.com/help/whats-reputation).'; },
+                },
+                {
+                    DisplayName: 'Library',
+                    ReportType: 'AnswerNotAnAnswer',
+                    GetComment: function () { return 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](http://meta.stackoverflow.com/a/251605) in the answer itself.'; }
+                },
+                {
+                    DisplayName: 'Comment',
+                    ReportType: 'AnswerNotAnAnswer',
+                    GetComment: function () { return 'This does not provide an answer to the question. Once you have sufficient [reputation](https://stackoverflow.com/help/whats-reputation) you will be able to [comment on any post](https://stackoverflow.com/help/privileges/comment); instead, [provide answers that don\'t require clarification from the asker](https://meta.stackexchange.com/questions/214173/why-do-i-need-50-reputation-to-comment-what-can-i-do-instead).'; }
+                }
+            ]
+        },
+        {
+            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
+            AppliesTo: ['Answer', 'Question'],
+            FlagTypes: [
+                {
+                    DisplayName: 'Looks Fine',
+                    ReportType: 'NoFlag'
+                },
+                {
+                    DisplayName: 'Needs Editing',
+                    ReportType: 'NoFlag'
+                },
+                {
+                    DisplayName: 'Vandalism',
+                    ReportType: 'NoFlag'
+                }
+            ]
+        }
+    ];
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
+/* 42 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(9)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, sotools_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var genericBotUrl = 'https://so.floern.com/api/trackpost.php';
+    var genericBotKey = 'Cm45BSrt51FR3ju';
+    var GenericBotAPI = /** @class */ (function () {
+        function GenericBotAPI(answerId) {
+            this.answerId = answerId;
+        }
+        GenericBotAPI.prototype.ReportNaa = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var response;
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.makeTrackRequest()];
+                        case 1:
+                            response = _a.sent();
+                            return [2 /*return*/, response];
+                    }
+                });
+            });
+        };
+        GenericBotAPI.prototype.ReportRedFlag = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var response;
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.makeTrackRequest()];
+                        case 1:
+                            response = _a.sent();
+                            return [2 /*return*/, response];
+                    }
+                });
+            });
+        };
+        GenericBotAPI.prototype.ReportLooksFine = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                return tslib_1.__generator(this, function (_a) {
+                    return [2 /*return*/, false];
+                });
+            });
+        };
+        GenericBotAPI.prototype.ReportNeedsEditing = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                return tslib_1.__generator(this, function (_a) {
+                    return [2 /*return*/, false];
+                });
+            });
+        };
+        GenericBotAPI.prototype.computeContentHash = function (postContent) {
+            if (!postContent) {
+                return 0;
+            }
+            var hash = 0;
+            for (var i = 0; i < postContent.length; ++i) {
+                hash = ((hash << 5) - hash) + postContent.charCodeAt(i);
+                hash = hash & hash;
+            }
+            return hash;
+        };
+        GenericBotAPI.prototype.makeTrackRequest = function () {
+            var _this = this;
+            var promise = new Promise(function (resolve, reject) {
+                if (!sotools_1.IsStackOverflow()) {
+                    resolve(false);
+                }
+                if ($('#answer-' + _this.answerId + ' .post-text').length === 0) {
+                    resolve(false);
+                }
+                if ($('.top-bar .my-profile .gravatar-wrapper-24').length === 0) {
+                    reject('Flag Tracker: Could not find username.');
+                }
+                var flaggerName = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
+                var contentHash = _this.computeContentHash($('#answer-' + _this.answerId + ' .post-text').html().trim());
+                GM_xmlhttpRequest({
+                    method: 'POST',
+                    url: 'https://so.floern.com/api/trackpost.php',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    data: "key=" + genericBotKey
+                        + '&postId=' + _this.answerId
+                        + '&contentHash=' + contentHash
+                        + '&flagger=' + encodeURIComponent(flaggerName),
+                    onload: function (response) {
+                        if (response.status !== 200) {
+                            reject('Flag Tracker Error: Status ' + response.status);
+                        }
+                        resolve(true);
+                    },
+                    onerror: function (response) {
+                        reject('Flag Tracker Error: ' + response.responseText);
+                    }
+                });
+            });
+            return promise;
+        };
+        return GenericBotAPI;
+    }());
+    exports.GenericBotAPI = GenericBotAPI;
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
+/* 43 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(5), __webpack_require__(8), __webpack_require__(17), __webpack_require__(4), __webpack_require__(16)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, Subject_1, ReplaySubject_1, CrossDomainCache_1, SimpleCache_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
+    exports.MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
+    exports.MetaSmokeWasReportedConfig = 'MetaSmoke.WasReported';
+    function Delay(milliseconds) {
+        return new Promise(function (resolve) {
+            setTimeout(function () {
+                resolve();
+            }, milliseconds);
+        });
+    }
+    var MetaSmokeAPI = /** @class */ (function () {
+        function MetaSmokeAPI(postId, postType) {
+            this.postId = postId;
+            this.postType = postType;
+        }
+        MetaSmokeAPI.Reset = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.Unset(exports.MetaSmokeDisabledConfig)];
+                        case 1:
+                            _a.sent();
+                            return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.Unset(exports.MetaSmokeUserKeyConfig)];
+                        case 2:
+                            _a.sent();
+                            SimpleCache_1.SimpleCache.Unset(exports.MetaSmokeDisabledConfig);
+                            SimpleCache_1.SimpleCache.Unset(exports.MetaSmokeUserKeyConfig);
+                            return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        MetaSmokeAPI.IsDisabled = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var cachedDisabled;
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.GetFromCache(exports.MetaSmokeDisabledConfig)];
+                        case 1:
+                            cachedDisabled = _a.sent();
+                            if (cachedDisabled === undefined) {
+                                return [2 /*return*/, false];
+                            }
+                            return [2 /*return*/, cachedDisabled];
+                    }
+                });
+            });
+        };
+        MetaSmokeAPI.Setup = function (appKey, codeGetter) {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                return tslib_1.__generator(this, function (_a) {
+                    if (!codeGetter) {
+                        codeGetter = function (metaSmokeOAuthUrl) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+                            var isDisabled, returnCode;
+                            return tslib_1.__generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0: return [4 /*yield*/, MetaSmokeAPI.IsDisabled()];
+                                    case 1:
+                                        isDisabled = _a.sent();
+                                        if (isDisabled) {
+                                            return [2 /*return*/];
+                                        }
+                                        if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, see footer of Stack Overflow.')) {
+                                            CrossDomainCache_1.CrossDomainCache.StoreInCache(exports.MetaSmokeDisabledConfig, true);
+                                            return [2 /*return*/];
+                                        }
+                                        window.open(metaSmokeOAuthUrl, '_blank');
+                                        return [4 /*yield*/, Delay(100)];
+                                    case 2:
+                                        _a.sent();
+                                        return [4 /*yield*/, new Promise(function (resolve) {
+                                                var handleFDSCCode = function () {
+                                                    $(window).off('focus', handleFDSCCode);
+                                                    var code = window.prompt('Once you\'ve authenticated FDSC with metasmoke, you\'ll be given a code; enter it here.');
+                                                    if (!code) {
+                                                        resolve();
+                                                    }
+                                                    else {
+                                                        return resolve(code);
+                                                    }
+                                                };
+                                                $(window).focus(handleFDSCCode);
+                                            })];
+                                    case 3:
+                                        returnCode = _a.sent();
+                                        return [2 /*return*/, returnCode];
+                                }
+                            });
+                        }); };
+                    }
+                    MetaSmokeAPI.codeGetter = codeGetter;
+                    MetaSmokeAPI.appKey = appKey;
+                    MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
+                    return [2 /*return*/];
+                });
+            });
+        };
+        MetaSmokeAPI.getUserKey = function () {
+            var _this = this;
+            return SimpleCache_1.SimpleCache.GetAndCache(exports.MetaSmokeUserKeyConfig, function () {
+                return CrossDomainCache_1.CrossDomainCache.GetAndCache(exports.MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+                    var prom, code;
+                    return tslib_1.__generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                prom = MetaSmokeAPI.actualPromise;
+                                if (prom === undefined) {
+                                    prom = MetaSmokeAPI.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + MetaSmokeAPI.appKey);
+                                    MetaSmokeAPI.actualPromise = prom;
+                                }
+                                return [4 /*yield*/, prom];
+                            case 1:
+                                code = _a.sent();
+                                if (code) {
+                                    $.ajax({
+                                        url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeAPI.appKey + '&code=' + code,
+                                        method: 'GET'
+                                    }).done(function (data) { return resolve(data.token); })
+                                        .fail(function (err) { return reject(err); });
+                                }
+                                return [2 /*return*/];
+                        }
+                    });
+                }); }); });
+            });
+        };
+        MetaSmokeAPI.prototype.Watch = function () {
+            this.subject = new Subject_1.Subject();
+            this.replaySubject = new ReplaySubject_1.ReplaySubject(1);
+            this.subject.subscribe(this.replaySubject);
+            this.QueryMetaSmokey();
+            return this.subject;
+        };
+        MetaSmokeAPI.prototype.ReportNaa = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var smokeyid;
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
+                        case 1:
+                            smokeyid = _a.sent();
+                            if (!(smokeyid != null)) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.SendFeedback(smokeyid, 'naa-')];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/, true];
+                        case 3: return [2 /*return*/, false];
+                    }
+                });
+            });
+        };
+        MetaSmokeAPI.prototype.ReportRedFlag = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                var smokeyid, urlStr_1, promise, result, queryUrlStr;
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
+                        case 1:
+                            smokeyid = _a.sent();
+                            if (!(smokeyid != null)) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.SendFeedback(smokeyid, 'tpu-')];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/, true];
+                        case 3:
+                            urlStr_1 = this.postType === 'Answer'
+                                ? "//" + window.location.hostname + "/a/" + this.postId
+                                : "//" + window.location.hostname + "/q/" + this.postId;
+                            promise = new Promise(function (resolve, reject) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+                                var userKey;
+                                return tslib_1.__generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0: return [4 /*yield*/, MetaSmokeAPI.getUserKey()];
+                                        case 1:
+                                            userKey = _a.sent();
+                                            if (userKey) {
+                                                $.ajax({
+                                                    type: 'POST',
+                                                    url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
+                                                    data: {
+                                                        post_link: urlStr_1,
+                                                        key: MetaSmokeAPI.appKey,
+                                                        token: userKey
+                                                    }
+                                                }).done(function () { return resolve(true); })
+                                                    .fail(function () { return reject(); });
+                                            }
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); });
+                            return [4 /*yield*/, promise];
+                        case 4:
+                            result = _a.sent();
+                            queryUrlStr = this.GetQueryUrl();
+                            SimpleCache_1.SimpleCache.StoreInCache(exports.MetaSmokeWasReportedConfig + "." + queryUrlStr, undefined);
+                            return [4 /*yield*/, Delay(1000)];
+                        case 5:
+                            _a.sent();
+                            this.QueryMetaSmokey();
+                            return [2 /*return*/, result];
+                    }
+                });
+            });
+        };
+        MetaSmokeAPI.prototype.ReportLooksFine = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var smokeyid;
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
+                        case 1:
+                            smokeyid = _a.sent();
+                            if (!(smokeyid != null)) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.SendFeedback(smokeyid, 'fp-')];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/, true];
+                        case 3: return [2 /*return*/, false];
+                    }
+                });
+            });
+        };
+        MetaSmokeAPI.prototype.ReportNeedsEditing = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var smokeyid;
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
+                        case 1:
+                            smokeyid = _a.sent();
+                            if (!(smokeyid != null)) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.SendFeedback(smokeyid, 'fp-')];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/, true];
+                        case 3: return [2 /*return*/, false];
+                    }
+                });
+            });
+        };
+        MetaSmokeAPI.prototype.ReportVandalism = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var smokeyid;
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
+                        case 1:
+                            smokeyid = _a.sent();
+                            if (!(smokeyid != null)) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.SendFeedback(smokeyid, 'tp-')];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/, true];
+                        case 3: return [2 /*return*/, false];
+                    }
+                });
+            });
+        };
+        MetaSmokeAPI.prototype.GetQueryUrl = function () {
+            return this.postType === 'Answer'
+                ? "//" + window.location.hostname + "/a/" + this.postId
+                : "//" + window.location.hostname + "/questions/" + this.postId;
+        };
+        MetaSmokeAPI.prototype.QueryMetaSmokey = function () {
+            var _this = this;
+            var urlStr = this.GetQueryUrl();
+            var resultPromise = SimpleCache_1.SimpleCache.GetAndCache(exports.MetaSmokeWasReportedConfig + "." + urlStr, function () { return new Promise(function (resolve, reject) {
+                MetaSmokeAPI.IsDisabled().then(function (isDisabled) {
+                    if (isDisabled) {
+                        return;
+                    }
+                    $.ajax({
+                        type: 'GET',
+                        url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
+                        data: {
+                            urls: urlStr,
+                            key: "" + MetaSmokeAPI.appKey
+                        }
+                    }).done(function (metaSmokeResult) {
+                        if (metaSmokeResult.items.length > 0) {
+                            resolve(metaSmokeResult.items[0].id);
+                        }
+                        else {
+                            resolve(null);
+                        }
+                    }).fail(function (error) {
+                        reject(error);
+                    });
+                });
+            }); });
+            resultPromise
+                .then(function (r) { return _this.subject.next(r); })
+                .catch(function (err) { return _this.subject.error(err); });
+        };
+        MetaSmokeAPI.prototype.GetSmokeyId = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                return tslib_1.__generator(this, function (_a) {
+                    return [2 /*return*/, this.replaySubject.take(1).toPromise()];
+                });
+            });
+        };
+        MetaSmokeAPI.prototype.SendFeedback = function (metaSmokeId, feedbackType) {
+            return new Promise(function (resolve, reject) {
+                MetaSmokeAPI.getUserKey().then(function (userKey) {
+                    $.ajax({
+                        type: 'POST',
+                        url: "https://metasmoke.erwaysoftware.com/api/w/post/" + metaSmokeId + "/feedback",
+                        data: {
+                            type: feedbackType,
+                            key: MetaSmokeAPI.appKey,
+                            token: userKey
+                        }
+                    }).done(function () { return resolve(); })
+                        .fail(function () { return reject(); });
+                });
+            });
+        };
+        return MetaSmokeAPI;
+    }());
+    exports.MetaSmokeAPI = MetaSmokeAPI;
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
+/* 44 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
+ * xdLocalStorage is a port of https://github.com/ofirdagan/cross-domain-local-storage to typescript using modules
+ */
+/**
+ * Created by dagan on 07/04/2014.
+ */
+!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var XdLocalStorage = /** @class */ (function () {
+        function XdLocalStorage() {
+        }
+        XdLocalStorage.init = function (customOptions) {
+            if (!customOptions.iframeUrl) {
+                throw Error('You must specify iframeUrl');
+            }
+            var validatedOptions = {
+                iframeId: customOptions.iframeId,
+                iframeUrl: customOptions.iframeUrl,
+                initCallback: customOptions.initCallback
+            };
+            if (XdLocalStorage.wasInitFlag) {
+                return;
+            }
+            XdLocalStorage.wasInitFlag = true;
+            if (XdLocalStorage.isDomReady()) {
+                XdLocalStorage.internalInit(validatedOptions);
+            }
+            else {
+                if (document.addEventListener) {
+                    // All browsers expect IE < 9
+                    document.addEventListener('readystatechange', function () {
+                        if (XdLocalStorage.isDomReady()) {
+                            XdLocalStorage.internalInit(validatedOptions);
+                        }
+                    });
+                }
+                else {
+                    // IE < 9
+                    document.attachEvent('readystatechange', function () {
+                        if (XdLocalStorage.isDomReady()) {
+                            XdLocalStorage.internalInit(validatedOptions);
+                        }
+                    });
+                }
+            }
+        };
+        XdLocalStorage.setItem = function (key, value, callback) {
+            if (!XdLocalStorage.isApiReady()) {
+                return;
+            }
+            XdLocalStorage.buildMessage('set', key, value, callback);
+        };
+        XdLocalStorage.getItem = function (key, callback) {
+            if (!XdLocalStorage.isApiReady()) {
+                return;
+            }
+            XdLocalStorage.buildMessage('get', key, null, callback);
+        };
+        XdLocalStorage.removeItem = function (key, callback) {
+            if (!XdLocalStorage.isApiReady()) {
+                return;
+            }
+            XdLocalStorage.buildMessage('remove', key, null, callback);
+        };
+        XdLocalStorage.key = function (index, callback) {
+            if (!XdLocalStorage.isApiReady()) {
+                return;
+            }
+            XdLocalStorage.buildMessage('key', index, null, callback);
+        };
+        XdLocalStorage.getSize = function (callback) {
+            if (!XdLocalStorage.isApiReady()) {
+                return;
+            }
+            XdLocalStorage.buildMessage('size', null, null, callback);
+        };
+        XdLocalStorage.getLength = function (callback) {
+            if (!XdLocalStorage.isApiReady()) {
+                return;
+            }
+            XdLocalStorage.buildMessage('length', null, null, callback);
+        };
+        XdLocalStorage.clear = function (callback) {
+            if (!XdLocalStorage.isApiReady()) {
+                return;
+            }
+            XdLocalStorage.buildMessage('clear', null, null, callback);
+        };
+        XdLocalStorage.wasInit = function () {
+            return XdLocalStorage.wasInitFlag;
+        };
+        XdLocalStorage.applyCallback = function (data) {
+            if (XdLocalStorage.requests[data.id]) {
+                XdLocalStorage.requests[data.id](data);
+                delete XdLocalStorage.requests[data.id];
+            }
+        };
+        XdLocalStorage.receiveMessage = function (event) {
+            var data;
+            try {
+                data = JSON.parse(event.data);
+            }
+            catch (err) {
+                // not our message, can ignore
+            }
+            if (data && data.namespace === XdLocalStorage.MESSAGE_NAMESPACE) {
+                if (data.id === 'iframe-ready') {
+                    XdLocalStorage.iframeReady = true;
+                    XdLocalStorage.options.initCallback();
+                }
+                else {
+                    XdLocalStorage.applyCallback(data);
+                }
+            }
+        };
+        XdLocalStorage.buildMessage = function (action, key, value, callback) {
+            XdLocalStorage.requestId++;
+            XdLocalStorage.requests[XdLocalStorage.requestId] = callback;
+            var data = {
+                namespace: XdLocalStorage.MESSAGE_NAMESPACE,
+                id: XdLocalStorage.requestId,
+                action: action,
+                key: key,
+                value: value
+            };
+            XdLocalStorage.iframe.contentWindow.postMessage(JSON.stringify(data), '*');
+        };
+        XdLocalStorage.internalInit = function (customOptions) {
+            XdLocalStorage.options = tslib_1.__assign({}, XdLocalStorage.defaultOptions, customOptions);
+            var temp = document.createElement('div');
+            if (window.addEventListener) {
+                window.addEventListener('message', XdLocalStorage.receiveMessage, false);
+            }
+            else {
+                window.attachEvent('onmessage', XdLocalStorage.receiveMessage);
+            }
+            temp.innerHTML = '<iframe id="' + XdLocalStorage.options.iframeId + '" src=' + XdLocalStorage.options.iframeUrl + ' style="display: none;"></iframe>';
+            document.body.appendChild(temp);
+            var element = document.getElementById(XdLocalStorage.options.iframeId);
+            if (element) {
+                XdLocalStorage.iframe = element;
+            }
+        };
+        XdLocalStorage.isApiReady = function () {
+            if (!XdLocalStorage.wasInitFlag) {
+                return false;
+            }
+            if (!XdLocalStorage.iframeReady) {
+                return false;
+            }
+            return true;
+        };
+        XdLocalStorage.isDomReady = function () {
+            return (document.readyState === 'complete');
+        };
+        XdLocalStorage.MESSAGE_NAMESPACE = 'cross-domain-local-message';
+        XdLocalStorage.defaultOptions = {
+            iframeId: 'cross-domain-iframe',
+            // tslint:disable-next-line:no-empty
+            initCallback: function () { }
+        };
+        XdLocalStorage.requestId = 1;
+        XdLocalStorage.requests = {};
+        XdLocalStorage.wasInitFlag = false;
+        XdLocalStorage.iframeReady = true;
+        return XdLocalStorage;
+    }());
+    exports.XdLocalStorage = XdLocalStorage;
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
+/* 45 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(4), __webpack_require__(8), __webpack_require__(5), __webpack_require__(15), __webpack_require__(46)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, SimpleCache_1, ReplaySubject_1, Subject_1, ChatApi_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var copyPastorServer = 'http://copypastor.sobotics.org';
+    var soboticsRoomId = 111347;
+    var CopyPastorAPI = /** @class */ (function () {
+        function CopyPastorAPI(answerId, key) {
+            this.answerId = answerId;
+            this.key = key;
+        }
+        CopyPastorAPI.prototype.Watch = function () {
+            var _this = this;
+            this.subject = new Subject_1.Subject();
+            this.replaySubject = new ReplaySubject_1.ReplaySubject(1);
+            this.subject.subscribe(this.replaySubject);
+            SimpleCache_1.SimpleCache.GetAndCache("CopyPastor.FindTarget." + this.answerId, function () { return new Promise(function (resolve, reject) {
+                var url = copyPastorServer + "/posts/findTarget?url=//" + window.location.hostname + "/a/" + _this.answerId;
+                GM_xmlhttpRequest({
+                    method: 'GET',
+                    url: url,
+                    onload: function (response) {
+                        var responseObject = JSON.parse(response.responseText);
+                        if (responseObject.status === 'success') {
+                            resolve(responseObject.posts);
+                        }
+                        else {
+                            reject(responseObject.message);
+                        }
+                    },
+                    onerror: function (response) {
+                        reject(response);
+                    },
+                });
+            }); })
+                .then(function (r) { return _this.subject.next(r); })
+                .catch(function (err) { return _this.subject.error(err); });
+            return this.subject;
+        };
+        CopyPastorAPI.prototype.Promise = function () {
+            return this.replaySubject.take(1).toPromise();
+        };
+        CopyPastorAPI.prototype.ReportTruePositive = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                return tslib_1.__generator(this, function (_a) {
+                    return [2 /*return*/, this.SendFeedback('tp')];
+                });
+            });
+        };
+        CopyPastorAPI.prototype.ReportFalsePositive = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                return tslib_1.__generator(this, function (_a) {
+                    return [2 /*return*/, this.SendFeedback('fp')];
+                });
+            });
+        };
+        CopyPastorAPI.prototype.SendFeedback = function (type) {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                var username, chatApi, chatId, results, payloads, promises, allResults, i;
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
+                            chatApi = new ChatApi_1.ChatApi();
+                            return [4 /*yield*/, chatApi.GetChatUserId(soboticsRoomId)];
+                        case 1:
+                            chatId = _a.sent();
+                            return [4 /*yield*/, this.Promise()];
+                        case 2:
+                            results = _a.sent();
+                            payloads = results.map(function (result) {
+                                var postId = result.post_id;
+                                var payload = {
+                                    post_id: postId,
+                                    feedback_type: type,
+                                    username: username,
+                                    link: "https://chat.stackoverflow.com/users/" + chatId,
+                                    key: _this.key,
+                                };
+                                return payload;
+                            });
+                            promises = payloads.map(function (payload) {
+                                return new Promise(function (resolve, reject) {
+                                    var payloadString = JSON.stringify(payload);
+                                    GM_xmlhttpRequest({
+                                        method: 'POST',
+                                        url: copyPastorServer + "/feedback/create",
+                                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                        data: 'post_id=' + payload.post_id
+                                            + '&feedback_type=' + payload.feedback_type
+                                            + '&username=' + payload.username
+                                            + '&link=' + payload.link
+                                            + '&key=' + payload.key,
+                                        onload: function (response) {
+                                            if (response.status !== 200) {
+                                                reject(JSON.parse(response.responseText));
+                                            }
+                                            else {
+                                                resolve(true);
+                                            }
+                                        },
+                                        onerror: function (response) {
+                                            reject(response);
+                                        },
+                                    });
+                                });
+                            });
+                            return [4 /*yield*/, Promise.all(promises)];
+                        case 3:
+                            allResults = _a.sent();
+                            if (allResults.length <= 0) {
+                                return [2 /*return*/, false];
+                            }
+                            for (i = 0; i < allResults.length; i++) {
+                                if (!allResults[i]) {
+                                    return [2 /*return*/, false];
+                                }
+                            }
+                            return [2 /*return*/, true];
+                    }
+                });
+            });
+        };
+        return CopyPastorAPI;
+    }());
+    exports.CopyPastorAPI = CopyPastorAPI;
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
+/* 46 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var Observable_1 = __webpack_require__(1);
+var map_1 = __webpack_require__(47);
+Observable_1.Observable.prototype.map = map_1.map;
+//# sourceMappingURL=map.js.map
+
+/***/ }),
+/* 47 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var map_1 = __webpack_require__(48);
+/**
+ * Applies a given `project` function to each value emitted by the source
+ * Observable, and emits the resulting values as an Observable.
+ *
+ * <span class="informal">Like [Array.prototype.map()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map),
+ * it passes each source value through a transformation function to get
+ * corresponding output values.</span>
+ *
+ * <img src="./img/map.png" width="100%">
+ *
+ * Similar to the well known `Array.prototype.map` function, this operator
+ * applies a projection to each value and emits that projection in the output
+ * Observable.
+ *
+ * @example <caption>Map every click to the clientX position of that click</caption>
+ * var clicks = Rx.Observable.fromEvent(document, 'click');
+ * var positions = clicks.map(ev => ev.clientX);
+ * positions.subscribe(x => console.log(x));
+ *
+ * @see {@link mapTo}
+ * @see {@link pluck}
+ *
+ * @param {function(value: T, index: number): R} project The function to apply
+ * to each `value` emitted by the source Observable. The `index` parameter is
+ * the number `i` for the i-th emission that has happened since the
+ * subscription, starting from the number `0`.
+ * @param {any} [thisArg] An optional argument to define what `this` is in the
+ * `project` function.
+ * @return {Observable<R>} An Observable that emits the values from the source
+ * Observable transformed by the given `project` function.
+ * @method map
+ * @owner Observable
+ */
+function map(project, thisArg) {
+    return map_1.map(project, thisArg)(this);
+}
+exports.map = map;
+//# sourceMappingURL=map.js.map
+
+/***/ }),
+/* 48 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var Subscriber_1 = __webpack_require__(2);
+/**
+ * Applies a given `project` function to each value emitted by the source
+ * Observable, and emits the resulting values as an Observable.
+ *
+ * <span class="informal">Like [Array.prototype.map()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map),
+ * it passes each source value through a transformation function to get
+ * corresponding output values.</span>
+ *
+ * <img src="./img/map.png" width="100%">
+ *
+ * Similar to the well known `Array.prototype.map` function, this operator
+ * applies a projection to each value and emits that projection in the output
+ * Observable.
+ *
+ * @example <caption>Map every click to the clientX position of that click</caption>
+ * var clicks = Rx.Observable.fromEvent(document, 'click');
+ * var positions = clicks.map(ev => ev.clientX);
+ * positions.subscribe(x => console.log(x));
+ *
+ * @see {@link mapTo}
+ * @see {@link pluck}
+ *
+ * @param {function(value: T, index: number): R} project The function to apply
+ * to each `value` emitted by the source Observable. The `index` parameter is
+ * the number `i` for the i-th emission that has happened since the
+ * subscription, starting from the number `0`.
+ * @param {any} [thisArg] An optional argument to define what `this` is in the
+ * `project` function.
+ * @return {Observable<R>} An Observable that emits the values from the source
+ * Observable transformed by the given `project` function.
+ * @method map
+ * @owner Observable
+ */
+function map(project, thisArg) {
+    return function mapOperation(source) {
+        if (typeof project !== 'function') {
+            throw new TypeError('argument is not a function. Are you looking for `mapTo()`?');
+        }
+        return source.lift(new MapOperator(project, thisArg));
+    };
+}
+exports.map = map;
+var MapOperator = (function () {
+    function MapOperator(project, thisArg) {
+        this.project = project;
+        this.thisArg = thisArg;
+    }
+    MapOperator.prototype.call = function (subscriber, source) {
+        return source.subscribe(new MapSubscriber(subscriber, this.project, this.thisArg));
+    };
+    return MapOperator;
+}());
+exports.MapOperator = MapOperator;
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
+var MapSubscriber = (function (_super) {
+    __extends(MapSubscriber, _super);
+    function MapSubscriber(destination, project, thisArg) {
+        _super.call(this, destination);
+        this.project = project;
+        this.count = 0;
+        this.thisArg = thisArg || this;
+    }
+    // NOTE: This looks unoptimized, but it's actually purposefully NOT
+    // using try/catch optimizations.
+    MapSubscriber.prototype._next = function (value) {
+        var result;
+        try {
+            result = this.project.call(this.thisArg, value, this.count++);
+        }
+        catch (err) {
+            this.destination.error(err);
+            return;
+        }
+        this.destination.next(result);
+    };
+    return MapSubscriber;
+}(Subscriber_1.Subscriber));
+//# sourceMappingURL=map.js.map
+
+/***/ })
 /******/ ]);

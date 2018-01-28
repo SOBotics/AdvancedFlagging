@@ -6,7 +6,7 @@ import { SimpleCache } from '@userscriptTools/caching/SimpleCache';
 import { IsStackOverflow, parseQuestionsAndAnswers } from '@userscriptTools/sotools/sotools';
 import { NattyAPI } from '@userscriptTools/nattyapi/NattyApi';
 import { GenericBotAPI } from '@userscriptTools/genericbotapi/GenericBotAPI';
-import { MetaSmokeAPI } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
+import { MetaSmokeAPI, MetaSmokeDisabledConfig } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
 import { CrossDomainCache } from '@userscriptTools/caching/CrossDomainCache';
 import { CopyPastorAPI, CopyPastorFindTargetResponseItem } from '@userscriptTools/copypastorapi/CopyPastorAPI';
 
@@ -662,6 +662,8 @@ function getDropdown() {
     }).hide();
 }
 
+const metaSmokeManualKey = 'MetaSmoke.ManualKey';
+
 function SetupAdminTools() {
     const bottomBox = $('.-copyright, text-right').children('.g-column').children('.-list');
     const optionsDiv = $('<div>').text('AdvancedFlagging Admin');
@@ -675,13 +677,31 @@ function SetupAdminTools() {
         location.reload();
     });
 
+    const manualMetaSmokeAuthUrl = $('<a />').text('Get MetaSmoke key').attr('href', `https://metasmoke.erwaysoftware.com/oauth/request?key=${metaSmokeKey}`);
+    const manualRegisterMetaSmokeKey = $('<a />').text('Manually register MetaSmoke key');
+    manualMetaSmokeAuthUrl.click(async () => {
+        const prompt = window.prompt('Enter metasmoke key');
+        if (prompt) {
+            CrossDomainCache.StoreInCache(MetaSmokeDisabledConfig, false);
+            localStorage.setItem(metaSmokeManualKey, prompt);
+            location.reload();
+        }
+    });
+
     optionsDiv.append(optionsList);
     optionsList.append($('<li>').append(clearMetaSmokeConfig));
+    optionsList.append($('<li>').append(manualMetaSmokeAuthUrl));
 }
 
 $(async () => {
     CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
-    await MetaSmokeAPI.Setup(metaSmokeKey);
+    const manualKey = localStorage.getItem(metaSmokeManualKey);
+    if (manualKey) {
+        localStorage.removeItem(metaSmokeManualKey);
+        await MetaSmokeAPI.Setup(metaSmokeKey, async () => manualKey);
+    } else {
+        await MetaSmokeAPI.Setup(metaSmokeKey);
+    }
 
     SetupPostPage();
     SetupAdminTools();

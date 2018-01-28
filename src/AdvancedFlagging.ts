@@ -288,6 +288,15 @@ function BuildFlaggingDialog(element: JQuery,
                                 // Match [edit]
                                 strippedComment = strippedComment.replace(/\[([^\]]+)\][^\(]*?/g, '$1');
 
+                                // Strip out italics. _thanks_ => thanks
+                                strippedComment = strippedComment.replace(/_([^_]+)_/g, '$1');
+
+                                // Strip out bolds. **thanks** => thanks
+                                strippedComment = strippedComment.replace(/\*\*([^\*]+)\*\*/g, '$1');
+
+                                // Strip out italics. *thanks* => thanks
+                                strippedComment = strippedComment.replace(/\*([^\*]+)\*/g, '$1');
+
                                 element.find('.comment-body .comment-copy').each((i, ele) => {
                                     const jEle = $(ele);
                                     let text = jEle.text();

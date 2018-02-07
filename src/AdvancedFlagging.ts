@@ -430,10 +430,7 @@ function BuildFlaggingDialog(element: JQuery,
 }
 
 function SetupPostPage() {
-    const results = parseQuestionsAndAnswers();
-
-    for (let i = 0; i < results.Posts.length; i++) {
-        const post = results.Posts[i];
+    parseQuestionsAndAnswers(post => {
 
         let iconLocation: JQuery;
         let advancedFlaggingLink: JQuery | null = null;
@@ -601,7 +598,7 @@ function SetupPostPage() {
             performedActionIcon.attr('title', `Previously performed action: ${previousAction.DisplayName}`);
             showFunc(performedActionIcon);
         }
-    }
+    });
 }
 
 function getPerformedActionIcon() {
@@ -679,7 +676,7 @@ function SetupAdminTools() {
 
     const manualMetaSmokeAuthUrl = $('<a />').text('Get MetaSmoke key').attr('href', `https://metasmoke.erwaysoftware.com/oauth/request?key=${metaSmokeKey}`);
     const manualRegisterMetaSmokeKey = $('<a />').text('Manually register MetaSmoke key');
-    manualMetaSmokeAuthUrl.click(async () => {
+    manualRegisterMetaSmokeKey.click(async () => {
         const prompt = window.prompt('Enter metasmoke key');
         if (prompt) {
             CrossDomainCache.StoreInCache(MetaSmokeDisabledConfig, false);
@@ -691,6 +688,7 @@ function SetupAdminTools() {
     optionsDiv.append(optionsList);
     optionsList.append($('<li>').append(clearMetaSmokeConfig));
     optionsList.append($('<li>').append(manualMetaSmokeAuthUrl));
+    optionsList.append($('<li>').append(manualRegisterMetaSmokeKey));
 }
 
 $(async () => {

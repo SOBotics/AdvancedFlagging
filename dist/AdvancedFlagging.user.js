@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.12
+// @version      0.5.13
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1441,6 +1441,13 @@ var ReplayEvent = (function () {
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
+    $.event.special.destroyed = {
+        remove: function (o) {
+            if (o.handler) {
+                o.handler();
+            }
+        }
+    };
     function IsStackOverflow() {
         return !!window.location.href.match(/^https:\/\/stackoverflow.com/);
     }
@@ -1449,9 +1456,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         return !!window.location.href.match(/\/tools\/new-answers-old-questions/);
     }
     exports.isNatoPage = isNatoPage;
-    function parseNatoPage() {
+    function parseNatoPage(callback) {
         var nodes = $('.answer-hyperlink').parent().parent();
-        var results = [];
         for (var i = 0; i < nodes.length; i++) {
             var node = $(nodes[i]);
             var postId = parseInt(node.find('.answer-hyperlink').attr('href').split('#')[1], 10);
@@ -1459,7 +1465,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             var questionTime = parseActionDate(node.find('td .relativetime'));
             var authorReputation = parseReputation(node.find('.reputation-score'));
             var _a = parseAuthorDetails(node.find('.user-details')), authorName = _a.authorName, authorId = _a.authorId;
-            results.push({
+            callback({
                 type: 'Answer',
                 element: node,
                 page: 'NATO',
@@ -1471,15 +1477,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 authorId: authorId,
             });
         }
-        return results;
     }
     function isQuestionPage() {
         return !!window.location.href.match(/\/questions\/\d+.*/);
     }
     exports.isQuestionPage = isQuestionPage;
-    function parseQuestionPage() {
-        var questionNode = $('.question');
-        var postId = parseInt(questionNode.attr('data-questionid'), 10);
+    function parseQuestionPage(callback) {
         function getPostDetails(node) {
             var score = parseInt(node.find('.vote-count-post').text(), 10);
             var authorReputation = parseReputation(node.find('.post-signature .reputation-score').last());
@@ -1487,45 +1490,67 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             var postTime = parseActionDate(node.find('.post-signature .relativetime').last());
             return { score: score, authorReputation: authorReputation, authorName: authorName, authorId: authorId, postTime: postTime };
         }
-        var postDetails = getPostDetails(questionNode);
-        var results = [];
-        var question = {
-            type: 'Question',
-            element: questionNode,
-            page: 'Question',
-            postId: postId,
-            postTime: postDetails.postTime,
-            score: postDetails.score,
-            authorReputation: postDetails.authorReputation,
-            authorName: postDetails.authorName,
-            authorId: postDetails.authorId
-        };
-        results.push(question);
-        var answerNodes = $('.answer');
-        for (var i = 0; i < answerNodes.length; i++) {
-            var answerNode = $(answerNodes[i]);
-            var answerId = parseInt(answerNode.attr('data-answerid'), 10);
-            postDetails = getPostDetails(answerNode);
-            results.push({
-                type: 'Answer',
-                element: answerNode,
+        var question;
+        var parseQuestionDetails = function (qNode) {
+            var postId = parseInt(qNode.attr('data-questionid'), 10);
+            var postDetails = getPostDetails(qNode);
+            qNode.find('.postcell').bind('destroyed', function () {
+                setTimeout(function () {
+                    var updatedQuestionNode = $("[data-questionid=\"" + postId + "\"]");
+                    parseQuestionDetails(updatedQuestionNode);
+                });
+            });
+            question = {
+                type: 'Question',
+                element: qNode,
                 page: 'Question',
-                postId: answerId,
-                question: question,
+                postId: postId,
                 postTime: postDetails.postTime,
                 score: postDetails.score,
                 authorReputation: postDetails.authorReputation,
                 authorName: postDetails.authorName,
                 authorId: postDetails.authorId
-            });
+            };
+            callback(question);
+        };
+        var questionNode = $('.question');
+        parseQuestionDetails(questionNode);
+        var answerNodes = $('.answer');
+        var _loop_1 = function (i) {
+            var parseAnswerDetails = function (aNode) {
+                var answerId = parseInt(aNode.attr('data-answerid'), 10);
+                var postDetails = getPostDetails(aNode);
+                aNode.find('.answercell').bind('destroyed', function () {
+                    setTimeout(function () {
+                        var updatedAnswerNode = $("#answer-" + answerId);
+                        parseAnswerDetails(updatedAnswerNode);
+                    });
+                });
+                callback({
+                    type: 'Answer',
+                    element: aNode,
+                    page: 'Question',
+                    postId: answerId,
+                    question: question,
+                    postTime: postDetails.postTime,
+                    score: postDetails.score,
+                    authorReputation: postDetails.authorReputation,
+                    authorName: postDetails.authorName,
+                    authorId: postDetails.authorId
+                });
+            };
+            var answerNode = $(answerNodes[i]);
+            parseAnswerDetails(answerNode);
+        };
+        for (var i = 0; i < answerNodes.length; i++) {
+            _loop_1(i);
         }
-        return results;
     }
     function isFlagsPage() {
         return !!window.location.href.match(/\/users\/flag-summary\//);
     }
     exports.isFlagsPage = isFlagsPage;
-    function parseFlagsPage() {
+    function parseFlagsPage(callback) {
         var nodes = $('.flagged-post');
         var results = [];
         for (var i = 0; i < nodes.length; i++) {
@@ -1559,7 +1584,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         return results;
     }
-    function parseGenericPage() {
+    function parseGenericPage(callback) {
         var questionNodes = $('.question-hyperlink');
         var results = [];
         for (var i = 0; i < questionNodes.length; i++) {
@@ -1593,24 +1618,20 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         return results;
     }
-    function parseQuestionsAndAnswers() {
+    function parseQuestionsAndAnswers(callback) {
         if (isNatoPage()) {
-            // We explicitly type the page, as it allows the typescript compiler to
-            // figure out the type of posts if a user checks if. For example:
-            // const parsed = parseCurrentPage();
-            // if (parsed.Page === 'Nato') {
-            //     parsed.Posts is now properly typed as a nato post
-            // }
-            // If we don't do this, 'Page' is simply a string and doesn't give us any compiler hints
-            return { Page: 'NATO', Posts: parseNatoPage() };
+            parseNatoPage(callback);
+            return;
         }
         if (isQuestionPage()) {
-            return { Page: 'Question', Posts: parseQuestionPage() };
+            parseQuestionPage(callback);
+            return;
         }
         if (isFlagsPage()) {
-            return { Page: 'Flags', Posts: parseFlagsPage() };
+            parseFlagsPage(callback);
+            return;
         }
-        return { Page: 'Unknown', Posts: parseGenericPage() };
+        parseGenericPage(callback);
     }
     exports.parseQuestionsAndAnswers = parseQuestionsAndAnswers;
     function parseReputation(reputationDiv) {
@@ -2353,10 +2374,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         return dropDown;
     }
     function SetupPostPage() {
-        var results = sotools_1.parseQuestionsAndAnswers();
-        var _loop_2 = function (i) {
-            var post = results.Posts[i];
-            var iconLocation = void 0;
+        sotools_1.parseQuestionsAndAnswers(function (post) {
+            var iconLocation;
             var advancedFlaggingLink = null;
             var nattyIcon = getNattyIcon().click(function () {
                 window.open("https://sentinel.erwaysoftware.com/posts/aid/" + post.postId, '_blank');
@@ -2502,10 +2521,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 performedActionIcon.attr('title', "Previously performed action: " + previousAction.DisplayName);
                 showFunc(performedActionIcon);
             }
-        };
-        for (var i = 0; i < results.Posts.length; i++) {
-            _loop_2(i);
-        }
+        });
     }
     function getPerformedActionIcon() {
         return $('<div>').addClass('comment-flag')
@@ -2581,7 +2597,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }); });
         var manualMetaSmokeAuthUrl = $('<a />').text('Get MetaSmoke key').attr('href', "https://metasmoke.erwaysoftware.com/oauth/request?key=" + metaSmokeKey);
         var manualRegisterMetaSmokeKey = $('<a />').text('Manually register MetaSmoke key');
-        manualMetaSmokeAuthUrl.click(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+        manualRegisterMetaSmokeKey.click(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
             var prompt;
             return tslib_1.__generator(this, function (_a) {
                 prompt = window.prompt('Enter metasmoke key');
@@ -2596,6 +2612,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         optionsDiv.append(optionsList);
         optionsList.append($('<li>').append(clearMetaSmokeConfig));
         optionsList.append($('<li>').append(manualMetaSmokeAuthUrl));
+        optionsList.append($('<li>').append(manualRegisterMetaSmokeKey));
     }
     $(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
         var _this = this;

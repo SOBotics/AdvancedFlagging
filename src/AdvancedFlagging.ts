@@ -270,13 +270,15 @@ function BuildFlaggingDialog(element: JQuery,
                 enableLink();
             }
 
+            let commentText: string | undefined;
+            if (flagType.GetComment) {
+                commentText = flagType.GetComment(reputation);
+                reportLink.attr('title', commentText);
+            }
+
             reportLink.click(() => {
                 if (!deleted) {
                     try {
-                        let commentText: string | undefined;
-                        if (flagType.GetComment) {
-                            commentText = flagType.GetComment(reputation);
-                        }
                         if (!leaveCommentBox.is(':checked')) {
                             // Now we need to investigate the existing comments to upvote them.
                             const commentTextItems = element.find('.comment-body .comment-copy').map((i, ele) => $(ele).text());
@@ -285,6 +287,15 @@ function BuildFlaggingDialog(element: JQuery,
                                 let strippedComment = commentText.replace(/\[([^\]]+)\]\(([^\]]+)\)/g, '$1');
                                 // Match [edit]
                                 strippedComment = strippedComment.replace(/\[([^\]]+)\][^\(]*?/g, '$1');
+
+                                // Strip out italics. _thanks_ => thanks
+                                strippedComment = strippedComment.replace(/_([^_]+)_/g, '$1');
+
+                                // Strip out bolds. **thanks** => thanks
+                                strippedComment = strippedComment.replace(/\*\*([^\*]+)\*\*/g, '$1');
+
+                                // Strip out italics. *thanks* => thanks
+                                strippedComment = strippedComment.replace(/\*([^\*]+)\*/g, '$1');
 
                                 element.find('.comment-body .comment-copy').each((i, ele) => {
                                     const jEle = $(ele);
@@ -441,7 +452,7 @@ function SetupPostPage() {
 
         let showFunc = (element: JQuery) => element.show();
 
-        const copyPastorIcon = getCopyPastorIcon();
+        const copyPastorIcon = getGuttenbergIcon();
         const copyPastorApi = new CopyPastorAPI(post.postId, copyPastorKey);
         const copyPastorObservable = copyPastorApi.Watch();
 
@@ -483,7 +494,7 @@ function SetupPostPage() {
             });
 
             reporters.push({
-                name: 'Copy Pastor',
+                name: 'Guttenberg',
                 ReportNaa: (answerDate: Date, questionDate: Date) => copyPastorApi.ReportFalsePositive(),
                 ReportRedFlag: () => Promise.resolve(false),
                 ReportLooksFine: () => copyPastorApi.ReportFalsePositive(),
@@ -625,13 +636,13 @@ function getNattyIcon() {
         .attr('title', 'Reported by Natty')
         .hide();
 }
-function getCopyPastorIcon() {
+function getGuttenbergIcon() {
     return $('<div>')
         .css({
             'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
             'background': 'url("https://i.imgur.com/ZQwCGvB.png?s=328&g=1"', 'background-size': '100%'
         })
-        .attr('title', 'Reported by CopyPastor')
+        .attr('title', 'Reported by Guttenberg')
         .hide();
 }
 

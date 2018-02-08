@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.16
+// @version      0.5.17
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1584,7 +1584,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     function parseGenericPage(callback) {
         var questionNodes = $('.question-hyperlink');
-        var results = [];
         for (var i = 0; i < questionNodes.length; i++) {
             var questionNode = $(questionNodes[i]);
             var fragment = questionNode.attr('href').split('/')[2];
@@ -1592,7 +1591,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 fragment = fragment.split('_')[1];
             }
             var postId = parseInt(fragment, 10);
-            results.push({
+            callback({
                 type: 'Question',
                 element: questionNode,
                 page: 'Unknown',
@@ -1607,14 +1606,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 fragment = fragment.split('_')[1];
             }
             var postId = parseInt(fragment, 10);
-            results.push({
+            callback({
                 type: 'Answer',
                 element: answerNode,
                 page: 'Unknown',
                 postId: postId
             });
         }
-        return results;
     }
     function parseQuestionsAndAnswers(callback) {
         if (isNatoPage()) {

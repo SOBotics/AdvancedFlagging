@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.21
+// @version      0.5.22
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2734,8 +2734,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                         var postId = parseInt(postIdStr, 10);
                                         var nattyApi_2 = new NattyApi_1.NattyAPI(postId);
                                         nattyApi_2.Watch();
-                                        var answerTime = new Date($('.post-signature.owner .user-action-time span').attr('title'));
-                                        var questionTime = new Date($('.post-signature .user-action-time span').attr('title'));
+                                        var questionTime = new Date($('.post-signature.owner .user-action-time span').attr('title'));
+                                        var answerTime = new Date($('.post-signature .user-action-time span').attr('title'));
                                         handleFlag({ ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
                                             {
                                                 name: 'Natty',
@@ -2846,6 +2846,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return tslib_1.__generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
+                            if (answerDate < questionDate) {
+                                throw new Error('Answer must be posted after the question');
+                            }
                             if (!sotools_1.IsStackOverflow()) {
                                 return [2 /*return*/, false];
                             }

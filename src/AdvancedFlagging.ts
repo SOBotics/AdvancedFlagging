@@ -802,8 +802,8 @@ $(async () => {
                         const nattyApi = new NattyAPI(postId);
                         nattyApi.Watch();
 
-                        const answerTime = new Date($('.post-signature.owner .user-action-time span').attr('title'));
-                        const questionTime = new Date($('.post-signature .user-action-time span').attr('title'));
+                        const questionTime = new Date($('.post-signature.owner .user-action-time span').attr('title'));
+                        const answerTime = new Date($('.post-signature .user-action-time span').attr('title'));
 
                         handleFlag({ ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
                             {

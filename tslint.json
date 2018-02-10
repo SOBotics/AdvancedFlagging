@@ -16,6 +16,7 @@
     "array-type": false,
     "no-bitwise": false,
     "no-submodule-imports": false,
-    "no-implicit-dependencies": false
+    "no-implicit-dependencies": false,
+    "space-before-function-paren": false
   }
 }

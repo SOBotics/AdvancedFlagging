@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.17
+// @version      0.5.18
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2048,6 +2048,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     debugger;
     var metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
     var copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
+    var ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlags';
+    var ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
     function SetupStyles() {
         var scriptNode = document.createElement('style');
         scriptNode.type = 'text/css';
@@ -2288,56 +2290,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         performedActionIcon.attr('title', "Performed action: " + flagType.DisplayName);
                         performedActionIcon.show();
                     }
-                    var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
-                    var naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
-                    var customFlag = flagType.ReportType === 'PostOther';
-                    var _loop_1 = function (i) {
-                        var reporter = reporters[i];
-                        var promise = null;
-                        if (rudeFlag) {
-                            promise = reporter.ReportRedFlag();
-                        }
-                        else if (naaFlag) {
-                            promise = reporter.ReportNaa(answerTime, questionTime);
-                        }
-                        else if (noFlag) {
-                            switch (flagType.DisplayName) {
-                                case 'Needs Editing':
-                                    promise = reporter.ReportNeedsEditing();
-                                    break;
-                                case 'Vandalism':
-                                    promise = reporter.ReportVandalism();
-                                    break;
-                                default:
-                                    promise = reporter.ReportLooksFine();
-                                    break;
-                            }
-                        }
-                        else if (customFlag) {
-                            switch (flagType.DisplayName) {
-                                case 'Duplicate answer':
-                                    promise = reporter.ReportDuplicateAnswer();
-                                    break;
-                                case 'Plagiarism':
-                                    promise = reporter.ReportPlagiarism();
-                                    break;
-                                default:
-                                    promise = Promise.resolve(false);
-                            }
-                        }
-                        if (promise) {
-                            promise.then(function (didReport) {
-                                if (didReport) {
-                                    displaySuccess("Feedback sent to " + reporter.name);
-                                }
-                            }).catch(function (error) {
-                                displayError("Failed to send feedback to " + reporter.name + ".");
-                            });
-                        }
-                    };
-                    for (var i = 0; i < reporters.length; i++) {
-                        _loop_1(i);
-                    }
+                    handleFlag(flagType, reporters, answerTime, questionTime);
                     dropDown.hide();
                 });
                 reportLink.text(flagType.DisplayName);
@@ -2375,6 +2328,59 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         flaggingRow.append(flagBox);
         dropDown.append(flaggingRow);
         return dropDown;
+    }
+    function handleFlag(flagType, reporters, answerTime, questionTime) {
+        var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
+        var naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
+        var customFlag = flagType.ReportType === 'PostOther';
+        var noFlag = flagType.ReportType === 'NoFlag';
+        var _loop_1 = function (i) {
+            var reporter = reporters[i];
+            var promise = null;
+            if (rudeFlag) {
+                promise = reporter.ReportRedFlag();
+            }
+            else if (naaFlag) {
+                promise = reporter.ReportNaa(answerTime, questionTime);
+            }
+            else if (noFlag) {
+                switch (flagType.DisplayName) {
+                    case 'Needs Editing':
+                        promise = reporter.ReportNeedsEditing();
+                        break;
+                    case 'Vandalism':
+                        promise = reporter.ReportVandalism();
+                        break;
+                    default:
+                        promise = reporter.ReportLooksFine();
+                        break;
+                }
+            }
+            else if (customFlag) {
+                switch (flagType.DisplayName) {
+                    case 'Duplicate answer':
+                        promise = reporter.ReportDuplicateAnswer();
+                        break;
+                    case 'Plagiarism':
+                        promise = reporter.ReportPlagiarism();
+                        break;
+                    default:
+                        promise = Promise.resolve(false);
+                }
+            }
+            if (promise) {
+                promise.then(function (didReport) {
+                    if (didReport) {
+                        displaySuccess("Feedback sent to " + reporter.name);
+                    }
+                }).catch(function (error) {
+                    displayError("Failed to send feedback to " + reporter.name + ".");
+                });
+            }
+        };
+        for (var i = 0; i < reporters.length; i++) {
+            _loop_1(i);
+        }
     }
     function SetupPostPage() {
         sotools_1.parseQuestionsAndAnswers(function (post) {
@@ -2475,18 +2481,32 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 // Now we setup the flagging dialog
                 iconLocation = post.element.find('.post-menu');
                 advancedFlaggingLink = $('<a />').text('Advanced Flagging');
-                var questionTime = void 0;
-                var answerTime = void 0;
+                var questionTime_1;
+                var answerTime_1;
                 if (post.type === 'Answer') {
-                    questionTime = post.question.postTime;
-                    answerTime = post.postTime;
+                    questionTime_1 = post.question.postTime;
+                    answerTime_1 = post.postTime;
                 }
                 else {
-                    questionTime = post.postTime;
-                    answerTime = post.postTime;
+                    questionTime_1 = post.postTime;
+                    answerTime_1 = post.postTime;
                 }
                 var deleted = post.element.hasClass('deleted-answer');
-                var dropDown_1 = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi.Promise());
+                getFromCaches(ConfigurationWatchFlags).then(function (isEnabled) {
+                    if (isEnabled) {
+                        addXHRListener(function (xhr) {
+                            var matches = new RegExp("/flags/posts/" + post.postId + "/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)").exec(xhr.responseURL);
+                            if (matches !== null && xhr.status === 200) {
+                                var flagType = {
+                                    ReportType: matches[1],
+                                    DisplayName: matches[1]
+                                };
+                                handleFlag(flagType, reporters, answerTime_1, questionTime_1);
+                            }
+                        });
+                    }
+                });
+                var dropDown_1 = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime_1, questionTime_1, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi.Promise());
                 advancedFlaggingLink.append(dropDown_1);
                 $(window).click(function () {
                     dropDown_1.hide();
@@ -2583,9 +2603,16 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     function SetupAdminTools() {
         var _this = this;
         var bottomBox = $('.-copyright, text-right').children('.g-column').children('.-list');
-        var optionsDiv = $('<div>').text('AdvancedFlagging Admin');
+        var optionsDiv = $('<div>')
+            .css('line-height', '18px')
+            .css('background-color', '#3b3b3c')
+            .css('text-align', 'right')
+            .css('padding', '5px')
+            .css('border-radius', '3px');
         bottomBox.after(optionsDiv);
-        var optionsList = $('<ul>').css({ 'list-style': 'none' });
+        var title = $('<span>').css('color', '#c1cccc').text('AdvancedFlagging Admin');
+        optionsDiv.append(title);
+        var optionsList = $('<ul>').css({ 'list-style': 'none' }).css('margin', '0px');
         var clearMetaSmokeConfig = $('<a />').text('Clear Metasmoke Configuration');
         clearMetaSmokeConfig.click(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
             return tslib_1.__generator(this, function (_a) {
@@ -2612,10 +2639,54 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return [2 /*return*/];
             });
         }); });
+        var configWatchFlags = $('<input type="checkbox" />');
+        getFromCaches(ConfigurationWatchFlags).then(function (isEnabled) {
+            if (isEnabled) {
+                configWatchFlags.prop('checked', true);
+            }
+        });
+        configWatchFlags.click(function (a) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+            var isChecked;
+            return tslib_1.__generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        isChecked = !!configWatchFlags.prop('checked');
+                        return [4 /*yield*/, storeInCaches(ConfigurationWatchFlags, isChecked)];
+                    case 1:
+                        _a.sent();
+                        window.location.reload();
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        var configWatchFlagsLabel = $('<label />').append(configWatchFlags).append('Watch for manual flags');
+        var configWatchQueues = $('<input type="checkbox" />');
+        getFromCaches(ConfigurationWatchQueues).then(function (isEnabled) {
+            if (isEnabled) {
+                configWatchQueues.prop('checked', true);
+            }
+        });
+        configWatchQueues.click(function (a) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+            var isChecked;
+            return tslib_1.__generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        isChecked = !!configWatchQueues.prop('checked');
+                        return [4 /*yield*/, storeInCaches(ConfigurationWatchQueues, isChecked)];
+                    case 1:
+                        _a.sent();
+                        window.location.reload();
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        var configWatchQueuesLabel = $('<label />').append(configWatchQueues).append('Watch for queue responses');
         optionsDiv.append(optionsList);
         optionsList.append($('<li>').append(clearMetaSmokeConfig));
         optionsList.append($('<li>').append(manualMetaSmokeAuthUrl));
         optionsList.append($('<li>').append(manualRegisterMetaSmokeKey));
+        optionsList.append($('<li>').append(configWatchFlagsLabel));
+        optionsList.append($('<li>').append(configWatchQueuesLabel));
     }
     $(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
         var _this = this;
@@ -2642,10 +2713,78 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     SetupAdminTools();
                     SetupStyles();
                     document.body.appendChild(popupWrapper.get(0));
+                    getFromCaches(ConfigurationWatchQueues).then(function (isEnabled) {
+                        if (isEnabled) {
+                            addXHRListener(function (xhr) {
+                                var matches = /(\d+)\/vote\/10|(\d+)\/recommend-delete/.exec(xhr.responseURL);
+                                if (matches !== null && xhr.status === 200) {
+                                    // Check we're reviewing an answer
+                                    if ($('.answers-subheader').length > 0) {
+                                        var postIdStr = matches[1];
+                                        if (postIdStr === undefined) {
+                                            postIdStr = matches[2];
+                                        }
+                                        var postId = parseInt(postIdStr, 10);
+                                        var nattyApi_2 = new NattyApi_1.NattyAPI(postId);
+                                        nattyApi_2.Watch();
+                                        var answerTime = new Date($('.post-signature.owner .user-action-time span').attr('title'));
+                                        var questionTime = new Date($('.post-signature .user-action-time span').attr('title'));
+                                        handleFlag({ ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
+                                            {
+                                                name: 'Natty',
+                                                ReportNaa: function (answerDate, questionDate) { return nattyApi_2.ReportNaa(answerDate, questionDate); },
+                                                ReportRedFlag: function () { return nattyApi_2.ReportRedFlag(); },
+                                                ReportLooksFine: function () { return nattyApi_2.ReportLooksFine(); },
+                                                ReportNeedsEditing: function () { return nattyApi_2.ReportNeedsEditing(); },
+                                                ReportVandalism: function () { return Promise.resolve(false); },
+                                                ReportDuplicateAnswer: function () { return Promise.resolve(false); },
+                                                ReportPlagiarism: function () { return Promise.resolve(false); }
+                                            }
+                                        ], answerTime, questionTime);
+                                    }
+                                }
+                            });
+                        }
+                    });
                     return [2 /*return*/];
             }
         });
     }); });
+    // Credits: https://github.com/SOBotics/Userscripts/blob/master/Natty/NattyReporter.user.js#L101
+    function addXHRListener(callback) {
+        var open = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function () {
+            this.addEventListener('load', callback.bind(null, this), false);
+            open.apply(this, arguments);
+        };
+    }
+    // First attempt to retrieve the value from the local cache.
+    // If it doesn't exist, check the cross domain cache, and store it locally
+    function getFromCaches(key) {
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            return tslib_1.__generator(this, function (_a) {
+                return [2 /*return*/, SimpleCache_1.SimpleCache.GetAndCache(key, function () {
+                        return CrossDomainCache_1.CrossDomainCache.GetFromCache(key);
+                    })];
+            });
+        });
+    }
+    // Store the value in both the local and global cache
+    function storeInCaches(key, item) {
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            return tslib_1.__generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, SimpleCache_1.SimpleCache.StoreInCache(key, item)];
+                    case 1:
+                        _a.sent();
+                        return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.StoreInCache(key, item)];
+                    case 2:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    }
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 

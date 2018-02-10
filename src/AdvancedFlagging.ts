@@ -16,6 +16,9 @@ debugger;
 const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
 const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
 
+const ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlags';
+const ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
+
 declare const StackExchange: StackExchangeGlobal;
 declare const unsafeWindow: any;
 
@@ -342,50 +345,7 @@ function BuildFlaggingDialog(element: JQuery,
                     performedActionIcon.show();
                 }
 
-                const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
-                const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
-                const customFlag = flagType.ReportType === 'PostOther';
-                for (let i = 0; i < reporters.length; i++) {
-                    const reporter = reporters[i];
-                    let promise: Promise<boolean> | null = null;
-                    if (rudeFlag) {
-                        promise = reporter.ReportRedFlag();
-                    } else if (naaFlag) {
-                        promise = reporter.ReportNaa(answerTime, questionTime);
-                    } else if (noFlag) {
-                        switch (flagType.DisplayName) {
-                            case 'Needs Editing':
-                                promise = reporter.ReportNeedsEditing();
-                                break;
-                            case 'Vandalism':
-                                promise = reporter.ReportVandalism();
-                                break;
-                            default:
-                                promise = reporter.ReportLooksFine();
-                                break;
-                        }
-                    } else if (customFlag) {
-                        switch (flagType.DisplayName) {
-                            case 'Duplicate answer':
-                                promise = reporter.ReportDuplicateAnswer();
-                                break;
-                            case 'Plagiarism':
-                                promise = reporter.ReportPlagiarism();
-                                break;
-                            default:
-                                promise = Promise.resolve(false);
-                        }
-                    }
-                    if (promise) {
-                        promise.then((didReport) => {
-                            if (didReport) {
-                                displaySuccess(`Feedback sent to ${reporter.name}`);
-                            }
-                        }).catch(error => {
-                            displayError(`Failed to send feedback to ${reporter.name}.`);
-                        });
-                    }
-                }
+                handleFlag(flagType, reporters, answerTime, questionTime);
 
                 dropDown.hide();
             });
@@ -440,6 +400,54 @@ function BuildFlaggingDialog(element: JQuery,
     return dropDown;
 }
 
+function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date, questionTime: Date) {
+    const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
+    const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
+    const customFlag = flagType.ReportType === 'PostOther';
+    const noFlag = flagType.ReportType === 'NoFlag';
+    for (let i = 0; i < reporters.length; i++) {
+        const reporter = reporters[i];
+        let promise: Promise<boolean> | null = null;
+        if (rudeFlag) {
+            promise = reporter.ReportRedFlag();
+        } else if (naaFlag) {
+            promise = reporter.ReportNaa(answerTime, questionTime);
+        } else if (noFlag) {
+            switch (flagType.DisplayName) {
+                case 'Needs Editing':
+                    promise = reporter.ReportNeedsEditing();
+                    break;
+                case 'Vandalism':
+                    promise = reporter.ReportVandalism();
+                    break;
+                default:
+                    promise = reporter.ReportLooksFine();
+                    break;
+            }
+        } else if (customFlag) {
+            switch (flagType.DisplayName) {
+                case 'Duplicate answer':
+                    promise = reporter.ReportDuplicateAnswer();
+                    break;
+                case 'Plagiarism':
+                    promise = reporter.ReportPlagiarism();
+                    break;
+                default:
+                    promise = Promise.resolve(false);
+            }
+        }
+        if (promise) {
+            promise.then((didReport) => {
+                if (didReport) {
+                    displaySuccess(`Feedback sent to ${reporter.name}`);
+                }
+            }).catch(error => {
+                displayError(`Failed to send feedback to ${reporter.name}.`);
+            });
+        }
+    }
+}
+
 function SetupPostPage() {
     parseQuestionsAndAnswers(post => {
 
@@ -468,6 +476,7 @@ function SetupPostPage() {
                         nattyIcon.hide();
                     }
                 });
+
             reporters.push({
                 name: 'Natty',
                 ReportNaa: (answerDate: Date, questionDate: Date) => nattyApi.ReportNaa(answerDate, questionDate),
@@ -558,6 +567,22 @@ function SetupPostPage() {
                 answerTime = post.postTime;
             }
             const deleted = post.element.hasClass('deleted-answer');
+
+            getFromCaches<boolean>(ConfigurationWatchFlags).then(isEnabled => {
+                if (isEnabled) {
+                    addXHRListener((xhr) => {
+                        const matches = new RegExp(`/flags\/posts\/${post.postId}\/add\/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`).exec(xhr.responseURL);
+                        if (matches !== null && xhr.status === 200) {
+                            const flagType = {
+                                ReportType: matches[1] as 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther',
+                                DisplayName: matches[1]
+                            };
+                            handleFlag(flagType, reporters, answerTime, questionTime);
+                        }
+                    });
+                }
+            });
+
             const dropDown = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation as number, answerTime, questionTime,
                 deleted,
                 reportedIcon,
@@ -674,10 +699,18 @@ const metaSmokeManualKey = 'MetaSmoke.ManualKey';
 
 function SetupAdminTools() {
     const bottomBox = $('.-copyright, text-right').children('.g-column').children('.-list');
-    const optionsDiv = $('<div>').text('AdvancedFlagging Admin');
+    const optionsDiv = $('<div>')
+        .css('line-height', '18px')
+        .css('background-color', '#3b3b3c')
+        .css('text-align', 'right')
+        .css('padding', '5px')
+        .css('border-radius', '3px');
     bottomBox.after(optionsDiv);
 
-    const optionsList = $('<ul>').css({ 'list-style': 'none' });
+    const title = $('<span>').css('color', '#c1cccc').text('AdvancedFlagging Admin');
+    optionsDiv.append(title);
+
+    const optionsList = $('<ul>').css({ 'list-style': 'none' }).css('margin', '0px');
 
     const clearMetaSmokeConfig = $('<a />').text('Clear Metasmoke Configuration');
     clearMetaSmokeConfig.click(async () => {
@@ -696,10 +729,38 @@ function SetupAdminTools() {
         }
     });
 
+    const configWatchFlags = $('<input type="checkbox" />');
+    getFromCaches(ConfigurationWatchFlags).then((isEnabled) => {
+        if (isEnabled) {
+            configWatchFlags.prop('checked', true);
+        }
+    });
+    configWatchFlags.click(async a => {
+        const isChecked = !!configWatchFlags.prop('checked');
+        await storeInCaches(ConfigurationWatchFlags, isChecked);
+        window.location.reload();
+    });
+    const configWatchFlagsLabel = $('<label />').append(configWatchFlags).append('Watch for manual flags');
+
+    const configWatchQueues = $('<input type="checkbox" />');
+    getFromCaches(ConfigurationWatchQueues).then((isEnabled) => {
+        if (isEnabled) {
+            configWatchQueues.prop('checked', true);
+        }
+    });
+    configWatchQueues.click(async a => {
+        const isChecked = !!configWatchQueues.prop('checked');
+        await storeInCaches(ConfigurationWatchQueues, isChecked);
+        window.location.reload();
+    });
+    const configWatchQueuesLabel = $('<label />').append(configWatchQueues).append('Watch for queue responses');
+
     optionsDiv.append(optionsList);
     optionsList.append($('<li>').append(clearMetaSmokeConfig));
     optionsList.append($('<li>').append(manualMetaSmokeAuthUrl));
     optionsList.append($('<li>').append(manualRegisterMetaSmokeKey));
+    optionsList.append($('<li>').append(configWatchFlagsLabel));
+    optionsList.append($('<li>').append(configWatchQueuesLabel));
 }
 
 $(async () => {
@@ -717,4 +778,64 @@ $(async () => {
 
     SetupStyles();
     document.body.appendChild(popupWrapper.get(0));
+
+    getFromCaches<boolean>(ConfigurationWatchQueues).then(isEnabled => {
+        if (isEnabled) {
+            addXHRListener((xhr) => {
+                const matches = /(\d+)\/vote\/10|(\d+)\/recommend-delete/.exec(xhr.responseURL);
+                if (matches !== null && xhr.status === 200) {
+                    // Check we're reviewing an answer
+                    if ($('.answers-subheader').length > 0) {
+                        let postIdStr = matches[1];
+                        if (postIdStr === undefined) {
+                            postIdStr = matches[2];
+                        }
+
+                        const postId = parseInt(postIdStr, 10);
+                        const nattyApi = new NattyAPI(postId);
+                        nattyApi.Watch();
+
+                        const answerTime = new Date($('.post-signature.owner .user-action-time span').attr('title'));
+                        const questionTime = new Date($('.post-signature .user-action-time span').attr('title'));
+
+                        handleFlag({ ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
+                            {
+                                name: 'Natty',
+                                ReportNaa: (answerDate: Date, questionDate: Date) => nattyApi.ReportNaa(answerDate, questionDate),
+                                ReportRedFlag: () => nattyApi.ReportRedFlag(),
+                                ReportLooksFine: () => nattyApi.ReportLooksFine(),
+                                ReportNeedsEditing: () => nattyApi.ReportNeedsEditing(),
+                                ReportVandalism: () => Promise.resolve(false),
+                                ReportDuplicateAnswer: () => Promise.resolve(false),
+                                ReportPlagiarism: () => Promise.resolve(false)
+                            }
+                        ], answerTime, questionTime);
+                    }
+                }
+            });
+        }
+    });
 });
+
+// Credits: https://github.com/SOBotics/Userscripts/blob/master/Natty/NattyReporter.user.js#L101
+function addXHRListener(callback: (request: JQueryXHR) => void) {
+    const open = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function () {
+        this.addEventListener('load', callback.bind(null, this), false);
+        open.apply(this, arguments);
+    };
+}
+
+// First attempt to retrieve the value from the local cache.
+// If it doesn't exist, check the cross domain cache, and store it locally
+async function getFromCaches<T>(key: string) {
+    return SimpleCache.GetAndCache<T | undefined>(key, () => {
+        return CrossDomainCache.GetFromCache<T>(key);
+    });
+}
+
+// Store the value in both the local and global cache
+async function storeInCaches<T>(key: string, item: any) {
+    await SimpleCache.StoreInCache<T>(key, item);
+    await CrossDomainCache.StoreInCache<T>(key, item);
+}

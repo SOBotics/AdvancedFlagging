@@ -101,7 +101,7 @@ function handleFlagAndComment(postId: number, flag: FlagType,
                                     type: 'POST',
                                     data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
                                 }).done((data) => {
-                                    autoFlagging = false;
+                                    setTimeout(() => autoFlagging = false, 500);
                                     resolve(data);
                                 }).fail((jqXHR, textStatus, errorThrown) => {
                                     reject({ jqXHR, textStatus, errorThrown });
@@ -113,11 +113,13 @@ function handleFlagAndComment(postId: number, flag: FlagType,
 
                 } else {
                     result.FlagPromise = new Promise((resolve, reject) => {
+                        autoFlagging = true;
                         $.ajax({
                             url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
                             type: 'POST',
                             data: { fkey: StackExchange.options.user.fkey, otherText: '' }
                         }).done((data) => {
+                            setTimeout(() => autoFlagging = false, 500);
                             resolve(data);
                         }).fail((jqXHR, textStatus, errorThrown) => {
                             reject({ jqXHR, textStatus, errorThrown });

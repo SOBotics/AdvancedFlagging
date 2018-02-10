@@ -2088,7 +2088,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                         type: 'POST',
                                         data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
                                     }).done(function (data) {
-                                        autoFlagging = false;
+                                        setTimeout(function () { return autoFlagging = false; }, 500);
                                         resolve(data);
                                     }).fail(function (jqXHR, textStatus, errorThrown) {
                                         reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
@@ -2099,11 +2099,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     }
                     else {
                         result.FlagPromise = new Promise(function (resolve, reject) {
+                            autoFlagging = true;
                             $.ajax({
                                 url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
                                 type: 'POST',
                                 data: { fkey: StackExchange.options.user.fkey, otherText: '' }
                             }).done(function (data) {
+                                setTimeout(function () { return autoFlagging = false; }, 500);
                                 resolve(data);
                             }).fail(function (jqXHR, textStatus, errorThrown) {
                                 reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
@@ -2801,7 +2803,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(5), __webpack_require__(8), __webpack_require__(9), __webpack_require__(4), __webpack_require__(15), __webpack_require__(16)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, Subject_1, ReplaySubject_1, sotools_1, SimpleCache_1, ChatApi_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var nattyFeedbackUrl = 'http://samserver.bhargavrao.com:8000/napi/api/feedback';
+    var nattyFeedbackUrl = 'http://logs.sobotics.org/napi/api/feedback';
     var soboticsRoomId = 111347;
     var NattyAPI = /** @class */ (function () {
         function NattyAPI(answerId) {

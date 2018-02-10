@@ -342,13 +342,6 @@ function BuildFlaggingDialog(element: JQuery,
                     } catch (err) { displayError(err); }
                 }
 
-                const noFlag = flagType.ReportType === 'NoFlag';
-                if (noFlag) {
-                    SimpleCache.StoreInCache(`AdvancedFlagging.PerformedAction.${postId}`, flagType);
-                    performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
-                    performedActionIcon.show();
-                }
-
                 handleFlag(flagType, reporters, answerTime, questionTime);
 
                 dropDown.hide();
@@ -584,6 +577,13 @@ function SetupPostPage() {
                                     DisplayName: matches[1]
                                 };
                                 handleFlag(flagType, reporters, answerTime, questionTime);
+
+                                const noFlag = flagType.ReportType === 'NoFlag';
+                                if (noFlag) {
+                                    SimpleCache.StoreInCache(`AdvancedFlagging.PerformedAction.${post.postId}`, flagType);
+                                    performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
+                                    performedActionIcon.show();
+                                }
                             }
                         }
                     });

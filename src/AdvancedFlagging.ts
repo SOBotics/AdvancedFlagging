@@ -95,11 +95,13 @@ function handleFlagAndComment(postId: number, flag: FlagType,
                         copyPastorPromise.then(copyPastorResults => {
                             if (flag.GetCustomFlagText && copyPastorResults.length > 0) {
                                 const flagText = flag.GetCustomFlagText(copyPastorResults[0]);
+                                autoFlagging = true;
                                 $.ajax({
                                     url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
                                     type: 'POST',
                                     data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
                                 }).done((data) => {
+                                    autoFlagging = false;
                                     resolve(data);
                                 }).fail((jqXHR, textStatus, errorThrown) => {
                                     reject({ jqXHR, textStatus, errorThrown });
@@ -448,6 +450,7 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
     }
 }
 
+let autoFlagging = false;
 function SetupPostPage() {
     parseQuestionsAndAnswers(post => {
 
@@ -571,13 +574,15 @@ function SetupPostPage() {
             getFromCaches<boolean>(ConfigurationWatchFlags).then(isEnabled => {
                 if (isEnabled) {
                     addXHRListener((xhr) => {
-                        const matches = new RegExp(`/flags\/posts\/${post.postId}\/add\/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`).exec(xhr.responseURL);
-                        if (matches !== null && xhr.status === 200) {
-                            const flagType = {
-                                ReportType: matches[1] as 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther',
-                                DisplayName: matches[1]
-                            };
-                            handleFlag(flagType, reporters, answerTime, questionTime);
+                        if (!autoFlagging) {
+                            const matches = new RegExp(`/flags\/posts\/${post.postId}\/add\/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`).exec(xhr.responseURL);
+                            if (matches !== null && xhr.status === 200) {
+                                const flagType = {
+                                    ReportType: matches[1] as 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther',
+                                    DisplayName: matches[1]
+                                };
+                                handleFlag(flagType, reporters, answerTime, questionTime);
+                            }
                         }
                     });
                 }

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.18
+// @version      0.5.19
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2082,11 +2082,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             copyPastorPromise.then(function (copyPastorResults) {
                                 if (flag.GetCustomFlagText && copyPastorResults.length > 0) {
                                     var flagText = flag.GetCustomFlagText(copyPastorResults[0]);
+                                    autoFlagging = true;
                                     $.ajax({
                                         url: "//" + window.location.hostname + "/flags/posts/" + postId + "/add/" + flag.ReportType,
                                         type: 'POST',
                                         data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
                                     }).done(function (data) {
+                                        autoFlagging = false;
                                         resolve(data);
                                     }).fail(function (jqXHR, textStatus, errorThrown) {
                                         reject({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
@@ -2382,6 +2384,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             _loop_1(i);
         }
     }
+    var autoFlagging = false;
     function SetupPostPage() {
         sotools_1.parseQuestionsAndAnswers(function (post) {
             var iconLocation;
@@ -2495,13 +2498,15 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 getFromCaches(ConfigurationWatchFlags).then(function (isEnabled) {
                     if (isEnabled) {
                         addXHRListener(function (xhr) {
-                            var matches = new RegExp("/flags/posts/" + post.postId + "/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)").exec(xhr.responseURL);
-                            if (matches !== null && xhr.status === 200) {
-                                var flagType = {
-                                    ReportType: matches[1],
-                                    DisplayName: matches[1]
-                                };
-                                handleFlag(flagType, reporters, answerTime_1, questionTime_1);
+                            if (!autoFlagging) {
+                                var matches = new RegExp("/flags/posts/" + post.postId + "/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)").exec(xhr.responseURL);
+                                if (matches !== null && xhr.status === 200) {
+                                    var flagType = {
+                                        ReportType: matches[1],
+                                        DisplayName: matches[1]
+                                    };
+                                    handleFlag(flagType, reporters, answerTime_1, questionTime_1);
+                                }
                             }
                         });
                     }

@@ -5,7 +5,7 @@
 AdvancedFlagging started as a set of modular typescript tools to aid with StackExchange UserScripts. It has support for:
 
 - Smokey / MetaSmoke
-- Natty / Sentinal
+- Natty / Sentinel
 - GenericBot
 - Guttenberg / CopyPastor
 - Chat

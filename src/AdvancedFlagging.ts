@@ -3,7 +3,7 @@ import * as jquery from 'jquery';
 import { FlagType, flagCategories } from './FlagTypes';
 import { StackExchangeGlobal } from '@userscriptTools/sotools/StackExchangeConfiguration';
 import { SimpleCache } from '@userscriptTools/caching/SimpleCache';
-import { IsStackOverflow, parseQuestionsAndAnswers } from '@userscriptTools/sotools/sotools';
+import { IsStackOverflow, parseQuestionsAndAnswers, parseDate } from '@userscriptTools/sotools/sotools';
 import { NattyAPI } from '@userscriptTools/nattyapi/NattyApi';
 import { GenericBotAPI } from '@userscriptTools/genericbotapi/GenericBotAPI';
 import { MetaSmokeAPI, MetaSmokeDisabledConfig } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
@@ -792,8 +792,8 @@ $(async () => {
                     const postId = review.postId;
                     const content = $(review.content);
                     postDetails[postId] = {
-                        questionTime: new Date($('.post-signature.owner .user-action-time span', content).attr('title')),
-                        answerTime: new Date($('.post-signature .user-action-time span', content).attr('title'))
+                        questionTime: parseDate($('.post-signature.owner .user-action-time span', content).attr('title')),
+                        answerTime: parseDate($('.post-signature .user-action-time span', content).attr('title'))
                     };
                 };
 

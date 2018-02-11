@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.23
+// @version      0.5.24
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1656,9 +1656,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         if (!actionDiv.hasClass('relativetime')) {
             actionDiv = actionDiv.find('.relativetime');
         }
-        var answerTime = new Date(actionDiv.attr('title'));
+        var answerTime = parseDate(actionDiv.attr('title'));
         return answerTime;
     }
+    function parseDate(dateStr) {
+        // Fix for safari
+        return new Date(dateStr.replace(' ', 'T'));
+    }
+    exports.parseDate = parseDate;
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
@@ -2724,8 +2729,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                     var postId = review.postId;
                                     var content = $(review.content);
                                     postDetails[postId] = {
-                                        questionTime: new Date($('.post-signature.owner .user-action-time span', content).attr('title')),
-                                        answerTime: new Date($('.post-signature .user-action-time span', content).attr('title'))
+                                        questionTime: sotools_1.parseDate($('.post-signature.owner .user-action-time span', content).attr('title')),
+                                        answerTime: sotools_1.parseDate($('.post-signature .user-action-time span', content).attr('title'))
                                     };
                                 };
                                 // We can't just parse the page after a recommend/delete request, as the page will have sometimes already updated

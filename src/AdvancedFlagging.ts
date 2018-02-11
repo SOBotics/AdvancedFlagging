@@ -329,7 +329,11 @@ function BuildFlaggingDialog(element: JQuery,
                                 commentUI.addShow(true, false);
                                 commentUI.showComments(data, null, false, true);
                                 $(document).trigger('comment', postId);
-                            }).catch(err => displayError('Failed to comment on post'));
+                            }).catch(err => {
+                                displayError('Failed to comment on post');
+                                // tslint:disable-next-line:no-console
+                                console.log(err);
+                            });
                         }
 
                         if (result.FlagPromise) {
@@ -338,7 +342,11 @@ function BuildFlaggingDialog(element: JQuery,
                                 reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
                                 reportedIcon.show();
                                 displaySuccess('Flagged');
-                            }).catch(err => displayError('Failed to flag post'));
+                            }).catch(err => {
+                                displayError('Failed to flag post');
+                                // tslint:disable-next-line:no-console
+                                console.log(err);
+                            });
                         }
                     } catch (err) { displayError(err); }
                 }

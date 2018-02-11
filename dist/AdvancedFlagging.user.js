@@ -2870,6 +2870,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         case 3:
                             answerAge = this.DaysBetween(answerDate, new Date());
                             daysPostedAfterQuestion = this.DaysBetween(questionDate, answerDate);
+                            if (isNaN(answerAge)) {
+                                throw new Error('Invalid answerDate provided');
+                            }
+                            if (isNaN(daysPostedAfterQuestion)) {
+                                throw new Error('Invalid questionDate provided');
+                            }
                             if (answerAge > 30 || daysPostedAfterQuestion < 30) {
                                 return [2 /*return*/, false];
                             }

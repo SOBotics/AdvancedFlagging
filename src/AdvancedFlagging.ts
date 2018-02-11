@@ -9,6 +9,7 @@ import { GenericBotAPI } from '@userscriptTools/genericbotapi/GenericBotAPI';
 import { MetaSmokeAPI, MetaSmokeDisabledConfig } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
 import { CrossDomainCache } from '@userscriptTools/caching/CrossDomainCache';
 import { CopyPastorAPI, CopyPastorFindTargetResponseItem } from '@userscriptTools/copypastorapi/CopyPastorAPI';
+import { WatchFlags, WatchRequests } from '@userscriptTools/sotools/RequestWatcher';
 
 // tslint:disable-next-line:no-debugger
 debugger;
@@ -567,27 +568,23 @@ function SetupPostPage() {
             const deleted = post.element.hasClass('deleted-answer');
 
             getFromCaches<boolean>(ConfigurationWatchFlags).then(isEnabled => {
-                if (isEnabled) {
-                    addXHRListener((xhr) => {
-                        if (!autoFlagging) {
-                            const matches = new RegExp(`/flags\/posts\/${post.postId}\/add\/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`).exec(xhr.responseURL);
-                            if (matches !== null && xhr.status === 200) {
-                                const flagType = {
-                                    ReportType: matches[1] as 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther',
-                                    DisplayName: matches[1]
-                                };
-                                handleFlag(flagType, reporters, answerTime, questionTime);
+                WatchFlags().subscribe(xhr => {
+                    if (isEnabled && !autoFlagging) {
+                        const matches = new RegExp(`/flags\/posts\/${post.postId}\/add\/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`).exec(xhr.responseURL);
+                        if (matches !== null && xhr.status === 200) {
+                            const flagType = {
+                                ReportType: matches[1] as 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther',
+                                DisplayName: matches[1]
+                            };
+                            handleFlag(flagType, reporters, answerTime, questionTime);
 
-                                const noFlag = flagType.ReportType === 'NoFlag';
-                                if (noFlag) {
-                                    SimpleCache.StoreInCache(`AdvancedFlagging.PerformedAction.${post.postId}`, flagType);
-                                    performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
-                                    performedActionIcon.show();
-                                }
-                            }
+                            SimpleCache.StoreInCache(`AdvancedFlagging.Flagged.${post.postId}`, flagType);
+                            reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
+                            reportedIcon.show();
+                            displaySuccess('Flagged');
                         }
-                    });
-                }
+                    }
+                });
             });
 
             const dropDown = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation as number, answerTime, questionTime,
@@ -784,26 +781,42 @@ $(async () => {
     SetupAdminTools();
 
     SetupStyles();
+
     document.body.appendChild(popupWrapper.get(0));
 
     getFromCaches<boolean>(ConfigurationWatchQueues).then(isEnabled => {
-        if (isEnabled) {
-            addXHRListener((xhr) => {
+        const postDetails: {questionTime: Date, answerTime: Date}[] = [];
+        WatchRequests().subscribe((xhr) => {
+            if (isEnabled) {
+                const parseReviewDetails = (review: any) => {
+                    const postId = review.postId;
+                    const content = $(review.content);
+                    postDetails[postId] = {
+                        questionTime: new Date($('.post-signature.owner .user-action-time span', content).attr('title')),
+                        answerTime: new Date($('.post-signature .user-action-time span', content).attr('title'))
+                    };
+                };
+
+                // We can't just parse the page after a recommend/delete request, as the page will have sometimes already updated
+                // This means we're actually grabbing the information for the following review
+
+                // So, we watch the next-task requests and remember which post we were looking at for when a delete/recommend-delete vote comes through.
+                // next-task is invoked when visiting the review queue
+                // task-reviewed is invoked when making a response
+                const isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
+                if (isReviewItem !== null && xhr.status === 200) {
+                    const review = JSON.parse(xhr.responseText);
+                    parseReviewDetails(review);
+                    return;
+                }
                 const matches = /(\d+)\/vote\/10|(\d+)\/recommend-delete/.exec(xhr.responseURL);
                 if (matches !== null && xhr.status === 200) {
-                    // Check we're reviewing an answer
-                    if ($('.answers-subheader').length > 0) {
-                        let postIdStr = matches[1];
-                        if (postIdStr === undefined) {
-                            postIdStr = matches[2];
-                        }
-
-                        const postId = parseInt(postIdStr, 10);
+                    const postIdStr = matches[1] || matches[2];
+                    const postId = parseInt(postIdStr, 10);
+                    const currentPostDetails = postDetails[postId];
+                    if (currentPostDetails && $('.answers-subheader').length > 0) {
                         const nattyApi = new NattyAPI(postId);
                         nattyApi.Watch();
-
-                        const questionTime = new Date($('.post-signature.owner .user-action-time span').attr('title'));
-                        const answerTime = new Date($('.post-signature .user-action-time span').attr('title'));
 
                         handleFlag({ ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
                             {
@@ -816,22 +829,13 @@ $(async () => {
                                 ReportDuplicateAnswer: () => Promise.resolve(false),
                                 ReportPlagiarism: () => Promise.resolve(false)
                             }
-                        ], answerTime, questionTime);
+                        ], currentPostDetails.answerTime, currentPostDetails.questionTime);
                     }
                 }
-            });
-        }
+            }
+        });
     });
 });
-
-// Credits: https://github.com/SOBotics/Userscripts/blob/master/Natty/NattyReporter.user.js#L101
-function addXHRListener(callback: (request: JQueryXHR) => void) {
-    const open = XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open = function () {
-        this.addEventListener('load', callback.bind(null, this), false);
-        open.apply(this, arguments);
-    };
-}
 
 // First attempt to retrieve the value from the local cache.
 // If it doesn't exist, check the cross domain cache, and store it locally

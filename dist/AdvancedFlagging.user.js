@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.24
+// @version      0.5.25
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2055,6 +2055,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     var copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
     var ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlags';
     var ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
+    var ConfigurationDetectAudits = 'AdvancedFlagging.Configuration.DetectAudits';
     function SetupStyles() {
         var scriptNode = document.createElement('style');
         scriptNode.type = 'text/css';
@@ -2126,13 +2127,16 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     var popupDelay = 2000;
     var toasterTimeout = null;
     var toasterFadeTimeout = null;
-    function displayToaster(message, colour) {
+    function displayToaster(message, colour, textColour) {
         var div = $('<div>')
             .css({
             'background-color': colour,
             'padding': '10px'
         })
             .text(message);
+        if (textColour) {
+            div.css('color', textColour);
+        }
         popupWrapper.append(div);
         popupWrapper.removeClass('hide').addClass('show').show();
         function hidePopup() {
@@ -2278,7 +2282,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                     commentUI.addShow(true, false);
                                     commentUI.showComments(data, null, false, true);
                                     $(document).trigger('comment', postId);
-                                }).catch(function (err) { return displayError('Failed to comment on post'); });
+                                }).catch(function (err) {
+                                    displayError('Failed to comment on post');
+                                    // tslint:disable-next-line:no-console
+                                    console.log(err);
+                                });
                             }
                             if (result.FlagPromise) {
                                 result.FlagPromise.then(function () {
@@ -2286,7 +2294,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                     reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
                                     reportedIcon.show();
                                     displaySuccess('Flagged');
-                                }).catch(function (err) { return displayError('Failed to flag post'); });
+                                }).catch(function (err) {
+                                    displayError('Failed to flag post');
+                                    // tslint:disable-next-line:no-console
+                                    console.log(err);
+                                });
                             }
                         }
                         catch (err) {
@@ -2689,12 +2701,34 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
         }); });
         var configWatchQueuesLabel = $('<label />').append(configWatchQueues).append('Watch for queue responses');
+        var configDetectAudits = $('<input type="checkbox" />');
+        getFromCaches(ConfigurationDetectAudits).then(function (isEnabled) {
+            if (isEnabled) {
+                configDetectAudits.prop('checked', true);
+            }
+        });
+        configDetectAudits.click(function (a) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+            var isChecked;
+            return tslib_1.__generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        isChecked = !!configDetectAudits.prop('checked');
+                        return [4 /*yield*/, storeInCaches(ConfigurationDetectAudits, isChecked)];
+                    case 1:
+                        _a.sent();
+                        window.location.reload();
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        var configDetectAuditsLabel = $('<label />').append(configDetectAudits).append('Detect audits');
         optionsDiv.append(optionsList);
         optionsList.append($('<li>').append(clearMetaSmokeConfig));
         optionsList.append($('<li>').append(manualMetaSmokeAuthUrl));
         optionsList.append($('<li>').append(manualRegisterMetaSmokeKey));
         optionsList.append($('<li>').append(configWatchFlagsLabel));
         optionsList.append($('<li>').append(configWatchQueuesLabel));
+        optionsList.append($('<li>').append(configDetectAuditsLabel));
     }
     $(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
         var _this = this;
@@ -2720,6 +2754,17 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     SetupPostPage();
                     SetupAdminTools();
                     SetupStyles();
+                    getFromCaches(ConfigurationDetectAudits).then(function (isEnabled) {
+                        RequestWatcher_1.WatchRequests().subscribe(function (xhr) {
+                            var isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
+                            if (isReviewItem !== null && xhr.status === 200) {
+                                var review = JSON.parse(xhr.responseText);
+                                if (isEnabled && review.isAudit) {
+                                    displayToaster('Beware! This is an audit!', '#cce5ff', '#004085');
+                                }
+                            }
+                        });
+                    });
                     document.body.appendChild(popupWrapper.get(0));
                     getFromCaches(ConfigurationWatchQueues).then(function (isEnabled) {
                         var postDetails = [];

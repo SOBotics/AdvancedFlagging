@@ -19,6 +19,7 @@ const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
 
 const ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlags';
 const ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
+const ConfigurationDetectAudits = 'AdvancedFlagging.Configuration.DetectAudits';
 
 declare const StackExchange: StackExchangeGlobal;
 declare const unsafeWindow: any;
@@ -137,13 +138,16 @@ const popupWrapper = $('<div>').addClass('hide').hide().attr('id', 'snackbar');
 const popupDelay = 2000;
 let toasterTimeout: number | null = null;
 let toasterFadeTimeout: number | null = null;
-function displayToaster(message: string, colour: string) {
+function displayToaster(message: string, colour: string, textColour?: string) {
     const div = $('<div>')
         .css({
             'background-color': colour,
             'padding': '10px'
         })
         .text(message);
+    if (textColour) {
+        div.css('color', textColour);
+    }
 
     popupWrapper.append(div);
     popupWrapper.removeClass('hide').addClass('show').show();
@@ -767,12 +771,26 @@ function SetupAdminTools() {
     });
     const configWatchQueuesLabel = $('<label />').append(configWatchQueues).append('Watch for queue responses');
 
+    const configDetectAudits = $('<input type="checkbox" />');
+    getFromCaches(ConfigurationDetectAudits).then((isEnabled) => {
+        if (isEnabled) {
+            configDetectAudits.prop('checked', true);
+        }
+    });
+    configDetectAudits.click(async a => {
+        const isChecked = !!configDetectAudits.prop('checked');
+        await storeInCaches(ConfigurationDetectAudits, isChecked);
+        window.location.reload();
+    });
+    const configDetectAuditsLabel = $('<label />').append(configDetectAudits).append('Detect audits');
+
     optionsDiv.append(optionsList);
     optionsList.append($('<li>').append(clearMetaSmokeConfig));
     optionsList.append($('<li>').append(manualMetaSmokeAuthUrl));
     optionsList.append($('<li>').append(manualRegisterMetaSmokeKey));
     optionsList.append($('<li>').append(configWatchFlagsLabel));
     optionsList.append($('<li>').append(configWatchQueuesLabel));
+    optionsList.append($('<li>').append(configDetectAuditsLabel));
 }
 
 $(async () => {
@@ -790,10 +808,22 @@ $(async () => {
 
     SetupStyles();
 
+    getFromCaches<boolean>(ConfigurationDetectAudits).then(isEnabled => {
+        WatchRequests().subscribe(xhr => {
+            const isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
+            if (isReviewItem !== null && xhr.status === 200) {
+                const review = JSON.parse(xhr.responseText);
+                if (isEnabled && review.isAudit) {
+                    displayToaster('Beware! This is an audit!', '#cce5ff', '#004085');
+                }
+            }
+        });
+    });
+
     document.body.appendChild(popupWrapper.get(0));
 
     getFromCaches<boolean>(ConfigurationWatchQueues).then(isEnabled => {
-        const postDetails: {questionTime: Date, answerTime: Date}[] = [];
+        const postDetails: { questionTime: Date, answerTime: Date }[] = [];
         WatchRequests().subscribe((xhr) => {
             if (isEnabled) {
                 const parseReviewDetails = (review: any) => {

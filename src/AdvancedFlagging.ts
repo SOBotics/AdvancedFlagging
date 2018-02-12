@@ -138,7 +138,7 @@ const popupWrapper = $('<div>').addClass('hide').hide().attr('id', 'snackbar');
 const popupDelay = 2000;
 let toasterTimeout: number | null = null;
 let toasterFadeTimeout: number | null = null;
-function displayToaster(message: string, colour: string, textColour?: string) {
+function displayToaster(message: string, colour: string, textColour?: string, duration?: number) {
     const div = $('<div>')
         .css({
             'background-color': colour,
@@ -165,7 +165,7 @@ function displayToaster(message: string, colour: string, textColour?: string) {
     if (toasterTimeout) {
         clearTimeout(toasterTimeout);
     }
-    toasterTimeout = setTimeout(hidePopup, popupDelay);
+    toasterTimeout = setTimeout(hidePopup, duration === undefined ? popupDelay : duration);
 }
 function displaySuccess(message: string) {
     displayToaster(message, '#00690c');
@@ -814,7 +814,11 @@ $(async () => {
             if (isReviewItem !== null && xhr.status === 200) {
                 const review = JSON.parse(xhr.responseText);
                 if (isEnabled && review.isAudit) {
-                    displayToaster('Beware! This is an audit!', '#cce5ff', '#004085');
+                    displayToaster('Beware! This is an audit!', '#cce5ff', '#004085', 5000);
+                    $('.review-actions').hide();
+                    setTimeout(() => {
+                        $('.review-actions').show();
+                    }, 5000);
                 }
             }
         });

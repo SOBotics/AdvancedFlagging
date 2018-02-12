@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.25
+// @version      0.5.26
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2127,7 +2127,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     var popupDelay = 2000;
     var toasterTimeout = null;
     var toasterFadeTimeout = null;
-    function displayToaster(message, colour, textColour) {
+    function displayToaster(message, colour, textColour, duration) {
         var div = $('<div>')
             .css({
             'background-color': colour,
@@ -2151,7 +2151,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         if (toasterTimeout) {
             clearTimeout(toasterTimeout);
         }
-        toasterTimeout = setTimeout(hidePopup, popupDelay);
+        toasterTimeout = setTimeout(hidePopup, duration === undefined ? popupDelay : duration);
     }
     function displaySuccess(message) {
         displayToaster(message, '#00690c');
@@ -2760,7 +2760,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             if (isReviewItem !== null && xhr.status === 200) {
                                 var review = JSON.parse(xhr.responseText);
                                 if (isEnabled && review.isAudit) {
-                                    displayToaster('Beware! This is an audit!', '#cce5ff', '#004085');
+                                    displayToaster('Beware! This is an audit!', '#cce5ff', '#004085', 5000);
+                                    $('.review-actions').hide();
+                                    setTimeout(function () {
+                                        $('.review-actions').show();
+                                    }, 5000);
                                 }
                             }
                         });

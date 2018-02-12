@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.26
+// @version      0.5.27
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2269,7 +2269,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                             text = text.substring(0, text.length - fromReviewText.length);
                                         }
                                         if (text === strippedComment_1) {
-                                            jEle.closest('tr').find('a.comment-up.comment-up-off').trigger('click');
+                                            jEle.closest('li').find('a.comment-up.comment-up-off').trigger('click');
                                         }
                                     });
                                 }

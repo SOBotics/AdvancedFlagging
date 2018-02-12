@@ -318,7 +318,7 @@ function BuildFlaggingDialog(element: JQuery,
                                     }
 
                                     if (text === strippedComment) {
-                                        jEle.closest('tr').find('a.comment-up.comment-up-off').trigger('click');
+                                        jEle.closest('li').find('a.comment-up.comment-up-off').trigger('click');
                                     }
                                 });
                             }

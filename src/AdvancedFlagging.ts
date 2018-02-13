@@ -450,7 +450,7 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
                     promise = reporter.ReportPlagiarism();
                     break;
                 default:
-                    promise = Promise.resolve(false);
+                    throw new Error('Could not find custom flag type: ' + flagType.DisplayName);
             }
         }
         if (promise) {

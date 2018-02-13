@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.28
+// @version      0.5.29
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2386,7 +2386,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         promise = reporter.ReportPlagiarism();
                         break;
                     default:
-                        promise = Promise.resolve(false);
+                        throw new Error('Could not find custom flag type: ' + flagType.DisplayName);
                 }
             }
             if (promise) {

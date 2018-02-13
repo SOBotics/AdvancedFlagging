@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.27
+// @version      0.5.28
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2304,6 +2304,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         catch (err) {
                             displayError(err);
                         }
+                    }
+                    var noFlag = flagType.ReportType === 'NoFlag';
+                    if (noFlag) {
+                        SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType);
+                        performedActionIcon.attr('title', "Performed action: " + flagType.DisplayName);
+                        performedActionIcon.show();
                     }
                     handleFlag(flagType, reporters, answerTime, questionTime);
                     dropDown.hide();

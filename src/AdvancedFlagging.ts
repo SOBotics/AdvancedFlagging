@@ -698,7 +698,7 @@ function getSmokeyIcon() {
     return $('<div>')
         .css({
             'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
-            'background': 'url("https://i.stack.imgur.com/WyV1l.png?s=128&g=1"', 'background-size': '100%'
+            'background': 'url("https://i.stack.imgur.com/7cmCt.png?s=128&g=1"', 'background-size': '100%'
         })
         .attr('title', 'Reported by Smokey')
         .hide();

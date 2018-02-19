@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.30
+// @version      0.5.31
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2589,7 +2589,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         return $('<div>')
             .css({
             'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
-            'background': 'url("https://i.stack.imgur.com/aMUMt.jpg?s=328&g=1"', 'background-size': '100%'
+            'background': 'url("https://i.stack.imgur.com/aMUMt.jpg?s=128&g=1"', 'background-size': '100%'
         })
             .attr('title', 'Reported by Natty')
             .hide();
@@ -2598,7 +2598,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         return $('<div>')
             .css({
             'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
-            'background': 'url("https://i.imgur.com/ZQwCGvB.png?s=328&g=1"', 'background-size': '100%'
+            'background': 'url("https://i.stack.imgur.com/A0JRA.png?s=128&g=1"', 'background-size': '100%'
         })
             .attr('title', 'Reported by Guttenberg')
             .hide();

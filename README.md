@@ -33,20 +33,42 @@ Currently, only TamperMonkey is officially supported
 
 AdvancedFlagging adds icons from Smokey, Natty and Guttenberg to posts which have been reported. In addition, flags made through the AdvancedFlagging interface are reported to Natty, Smokey, Guttenberg and GenericBot if required.
 
-## Smokey reports
-![Smokey reported and flagged](https://i.imgur.com/BIsyUue.png)  
-Here, Smokey has reported a post (the smokey icon), and the post was flagged via AdvancedFlagging (the red flag)
-Clicking the smokey icon takes the user to the reported post on MetaSmoke. Hovering the flag displays which flag was raised.
-  
-## Natty reports
-![Natty reported and flagged](https://i.imgur.com/ahg4HTN.png)  
-Here, Natty has reported a post (the dog icon), and the post was flagged via AdvancedFlagging (the red flag)
-Clicking the natty icon takes the user to the reported post on Sentinel. Hovering the flag displays which flag was raised.
+# Interface
 
-## Guttenberg reports
-![Guttenberg reported and flagged](https://i.imgur.com/bmN1cEs.png)  
-Here, Guttenberg has reported a post (the cat icon), and the post was flagged via AdvancedFlagging (the red flag)
-Clicking the Guttenberg opens the reports for *every* potential plagiarised source. 
+The interface looks like this:  
+![Picture of the interface](https://i.stack.imgur.com/HCLtr.png)  
+
+'Leave Comment' is ticked by default if there are no comments beneath the post to avoid comment spam.
+
+'Flag' is always ticked by default. Unticking this box will *not* post a flag to StackExchange when an action is taken. Feedback to all sources will, however, still be sent.
+
+'Looks Fine' reports a false positive to both Smokey, Natty and Guttenberg if they reported the post. 'Needs editing' reports to Natty if it was reported, and false positive to Smokey.
+
+These options add an additional icon to the post:
+
+![Picture of green tick](https://i.imgur.com/O4bHMEu.png)
+
+To indicate that the feedback was sent. All feedback sent provides a banner notification (see above) to confirm it was successfully sent.
+
+## Report icons
+Posts reported by each source will have an icon appended to the post. For example, here, Natty reported a post, and we've flagged it.  
+
+![Natty reported and flagged](https://i.imgur.com/ahg4HTN.png)
+
+### Smokey
+![Smokey Icon](https://i.stack.imgur.com/7cmCt.png?s=128&g=1)
+
+### Natty
+
+![Natty Icon](https://i.stack.imgur.com/aMUMt.jpg?s=128&g=1)  
+
+### Guttenberg
+
+![Guttenberg Icon](https://i.stack.imgur.com/A0JRA.png?s=128&g=1)
+
+## Specialized reports
+
+### Guttenberg reports
 
 When Guttenberg has detected a post, two additional options appear in the dropdown:
 
@@ -72,33 +94,37 @@ Please don't add the [same answer to multiple questions](http://meta.stackexchan
 'Looks fine', 'Needs editing', 'Vandalism' and any NAA response will register as a false positive to Guttenberg.
 
 
-## Teamwork
-
-![Smokey & Natty](https://i.imgur.com/LWW63j7.png)  
-When both bots report a post, both icons appear
-
----
-
-The interface looks like this:  
-![Picture of the interface](https://i.imgur.com/YJViJh9.png)  
-
-'Leave Comment' is ticked by default if there are no comments beneath the post to avoid comment spam.
-
-'Looks Fine' reports a false positive to both Smokey and Natty if they reported the post. Needs editing reports to Natty if it was reported, and false positive to Smokey.
-
-These options add an additional icon to the post:
-
-![Picture of green tick](https://i.imgur.com/O4bHMEu.png)
-
-To indicate that the feedback was sent. All feedback sent provides a banner notification (see above) to confirm it was successfully sent.
 
 # Configuration
 
 AdvancedFlagging has a configuration panel found at the bottom of StackExchange pages:
 
-![Picture of configuration](https://i.imgur.com/kySHkns.png)
+![Picture of configuration](https://i.stack.imgur.com/dpIx5.png)
 
-At present, it only handles clearing out the cache (queries to Smokey and Natty are only sent once), and clearing MetaSmoke configuration.
+## Clear MetaSmoke Configuration
+
+Resets all MetaSmoke configuration, including tokens
+
+## Get MetaSmoke key
+
+Redirects to MetaSmoke's oauth login. Used for manual key setup.
+
+## Manually register MetaSmoke key
+
+Present dialog box to manually input MetaSmoke key
+
+## Watch for manual flags
+
+Manual flags will be watched, and feedback will be sent (where applicable).
+
+## Watch for queue responses
+
+Responses in the Low Quality Posts queue will be watched, and feedback will be sent (where applicable)
+
+## Detect audits
+
+Display a banner when audits are detected in queues.
+
 
 # Building
 

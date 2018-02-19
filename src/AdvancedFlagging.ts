@@ -679,7 +679,7 @@ function getNattyIcon() {
     return $('<div>')
         .css({
             'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
-            'background': 'url("https://i.stack.imgur.com/aMUMt.jpg?s=328&g=1"', 'background-size': '100%'
+            'background': 'url("https://i.stack.imgur.com/aMUMt.jpg?s=128&g=1"', 'background-size': '100%'
         })
         .attr('title', 'Reported by Natty')
         .hide();
@@ -688,7 +688,7 @@ function getGuttenbergIcon() {
     return $('<div>')
         .css({
             'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
-            'background': 'url("https://i.imgur.com/ZQwCGvB.png?s=328&g=1"', 'background-size': '100%'
+            'background': 'url("https://i.stack.imgur.com/A0JRA.png?s=128&g=1"', 'background-size': '100%'
         })
         .attr('title', 'Reported by Guttenberg')
         .hide();

@@ -10,16 +10,17 @@ import { MetaSmokeAPI, MetaSmokeDisabledConfig } from '@userscriptTools/metasmok
 import { CrossDomainCache } from '@userscriptTools/caching/CrossDomainCache';
 import { CopyPastorAPI, CopyPastorFindTargetResponseItem } from '@userscriptTools/copypastorapi/CopyPastorAPI';
 import { WatchFlags, WatchRequests } from '@userscriptTools/sotools/RequestWatcher';
+import { SetupConfiguration } from 'Configuration';
 
 // tslint:disable-next-line:no-debugger
 debugger;
 
-const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
+export const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
 const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
 
-const ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlags';
-const ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
-const ConfigurationDetectAudits = 'AdvancedFlagging.Configuration.DetectAudits';
+export const ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlags';
+export const ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
+export const ConfigurationDetectAudits = 'AdvancedFlagging.Configuration.DetectAudits';
 
 declare const StackExchange: StackExchangeGlobal;
 declare const unsafeWindow: any;
@@ -167,7 +168,7 @@ function displayToaster(message: string, colour: string, textColour?: string, du
     }
     toasterTimeout = setTimeout(hidePopup, duration === undefined ? popupDelay : duration);
 }
-function displaySuccess(message: string) {
+export function displaySuccess(message: string) {
     displayToaster(message, '#00690c');
 }
 
@@ -720,86 +721,6 @@ function getDropdown() {
 
 const metaSmokeManualKey = 'MetaSmoke.ManualKey';
 
-function SetupAdminTools() {
-    const bottomBox = $('.-copyright, text-right').children('.g-column').children('.-list');
-    const optionsDiv = $('<div>')
-        .css('line-height', '18px')
-        .css('background-color', '#3b3b3c')
-        .css('text-align', 'right')
-        .css('padding', '5px')
-        .css('border-radius', '3px');
-    bottomBox.after(optionsDiv);
-
-    const title = $('<span>').css('color', '#c1cccc').text('AdvancedFlagging Admin');
-    optionsDiv.append(title);
-
-    const optionsList = $('<ul>').css({ 'list-style': 'none' }).css('margin', '0px');
-
-    const clearMetaSmokeConfig = $('<a />').text('Clear Metasmoke Configuration');
-    clearMetaSmokeConfig.click(async () => {
-        await MetaSmokeAPI.Reset();
-        location.reload();
-    });
-
-    const manualMetaSmokeAuthUrl = $('<a />').text('Get MetaSmoke key').attr('href', `https://metasmoke.erwaysoftware.com/oauth/request?key=${metaSmokeKey}`);
-    const manualRegisterMetaSmokeKey = $('<a />').text('Manually register MetaSmoke key');
-    manualRegisterMetaSmokeKey.click(async () => {
-        const prompt = window.prompt('Enter metasmoke key');
-        if (prompt) {
-            CrossDomainCache.StoreInCache(MetaSmokeDisabledConfig, false);
-            localStorage.setItem(metaSmokeManualKey, prompt);
-            location.reload();
-        }
-    });
-
-    const configWatchFlags = $('<input type="checkbox" />');
-    getFromCaches(ConfigurationWatchFlags).then((isEnabled) => {
-        if (isEnabled) {
-            configWatchFlags.prop('checked', true);
-        }
-    });
-    configWatchFlags.click(async a => {
-        const isChecked = !!configWatchFlags.prop('checked');
-        await storeInCaches(ConfigurationWatchFlags, isChecked);
-        window.location.reload();
-    });
-    const configWatchFlagsLabel = $('<label />').append(configWatchFlags).append('Watch for manual flags');
-
-    const configWatchQueues = $('<input type="checkbox" />');
-    getFromCaches(ConfigurationWatchQueues).then((isEnabled) => {
-        if (isEnabled) {
-            configWatchQueues.prop('checked', true);
-        }
-    });
-    configWatchQueues.click(async a => {
-        const isChecked = !!configWatchQueues.prop('checked');
-        await storeInCaches(ConfigurationWatchQueues, isChecked);
-        window.location.reload();
-    });
-    const configWatchQueuesLabel = $('<label />').append(configWatchQueues).append('Watch for queue responses');
-
-    const configDetectAudits = $('<input type="checkbox" />');
-    getFromCaches(ConfigurationDetectAudits).then((isEnabled) => {
-        if (isEnabled) {
-            configDetectAudits.prop('checked', true);
-        }
-    });
-    configDetectAudits.click(async a => {
-        const isChecked = !!configDetectAudits.prop('checked');
-        await storeInCaches(ConfigurationDetectAudits, isChecked);
-        window.location.reload();
-    });
-    const configDetectAuditsLabel = $('<label />').append(configDetectAudits).append('Detect audits');
-
-    optionsDiv.append(optionsList);
-    optionsList.append($('<li>').append(clearMetaSmokeConfig));
-    optionsList.append($('<li>').append(manualMetaSmokeAuthUrl));
-    optionsList.append($('<li>').append(manualRegisterMetaSmokeKey));
-    optionsList.append($('<li>').append(configWatchFlagsLabel));
-    optionsList.append($('<li>').append(configWatchQueuesLabel));
-    optionsList.append($('<li>').append(configDetectAuditsLabel));
-}
-
 $(async () => {
     CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
     const manualKey = localStorage.getItem(metaSmokeManualKey);
@@ -811,7 +732,7 @@ $(async () => {
     }
 
     SetupPostPage();
-    SetupAdminTools();
+    SetupConfiguration();
 
     SetupStyles();
 
@@ -888,14 +809,14 @@ $(async () => {
 
 // First attempt to retrieve the value from the local cache.
 // If it doesn't exist, check the cross domain cache, and store it locally
-async function getFromCaches<T>(key: string) {
+export async function getFromCaches<T>(key: string) {
     return SimpleCache.GetAndCache<T | undefined>(key, () => {
         return CrossDomainCache.GetFromCache<T>(key);
     });
 }
 
 // Store the value in both the local and global cache
-async function storeInCaches<T>(key: string, item: any) {
+export async function storeInCaches<T>(key: string, item: any) {
     await SimpleCache.StoreInCache<T>(key, item);
     await CrossDomainCache.StoreInCache<T>(key, item);
 }

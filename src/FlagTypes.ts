@@ -110,7 +110,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Me too',
                 ReportType: 'AnswerNotAnAnswer',
                 GetComment: () => 'Please don\'t add *"Me too"* as answers. It doesn\'t actually provide an answer to the question. ' +
-                    `If you have a different but related question, then [ask](//${window.location.hostname}$/questions/ask) it ` +
+                    `If you have a different but related question, then [ask](//stackoverflow.com/questions/ask) it ` +
                     '(reference this one if it will help provide context). If you\'re interested in this specific question, ' +
                     'you can [upvote](//stackoverflow.com/help/privileges/vote-up) it, leave a [comment](//stackoverflow.com/help/privileges/comment), ' +
                     'or start a [bounty](//stackoverflow.com/help/privileges/set-bounties) ' +

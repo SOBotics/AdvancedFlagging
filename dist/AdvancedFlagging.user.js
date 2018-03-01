@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.31
+// @version      0.5.32
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2871,12 +2871,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     var NattyAPI = /** @class */ (function () {
         function NattyAPI(answerId) {
             this.chat = new ChatApi_1.ChatApi();
+            this.subject = new Subject_1.Subject();
+            this.replaySubject = new ReplaySubject_1.ReplaySubject();
             this.answerId = answerId;
         }
         NattyAPI.prototype.Watch = function () {
             var _this = this;
-            this.subject = new Subject_1.Subject();
-            this.replaySubject = new ReplaySubject_1.ReplaySubject(1);
             this.subject.subscribe(this.replaySubject);
             if (sotools_1.IsStackOverflow()) {
                 SimpleCache_1.SimpleCache.GetAndCache("NattyApi.Feedback." + this.answerId, function () { return new Promise(function (resolve, reject) {
@@ -3014,7 +3014,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
         };
         NattyAPI.prototype.DaysBetween = function (first, second) {
-            return Math.round((second - first) / (1000 * 60 * 60 * 24));
+            return (second - first) / (1000 * 60 * 60 * 24);
         };
         return NattyAPI;
     }());

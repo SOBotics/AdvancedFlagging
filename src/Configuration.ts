@@ -1,8 +1,11 @@
-import { getFromCaches, storeInCaches, ConfigurationWatchFlags, ConfigurationWatchQueues, ConfigurationDetectAudits, displaySuccess, metaSmokeKey } from 'AdvancedFlagging';
+import { getFromCaches, storeInCaches, ConfigurationWatchFlags, ConfigurationWatchQueues, ConfigurationDetectAudits, displaySuccess, metaSmokeKey, ConfigurationEnabledFlags } from 'AdvancedFlagging';
 import { MetaSmokeAPI, MetaSmokeDisabledConfig } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
 import { CrossDomainCache } from '@userscriptTools/caching/CrossDomainCache';
+import { flagCategories } from 'FlagTypes';
 
-export function SetupConfiguration() {
+export async function SetupConfiguration() {
+    await SetupDefaults();
+
     const bottomBox = $('.-copyright, text-right').children('.g-column').children('.-list');
 
     const configurationDiv = $('<div>')
@@ -15,6 +18,27 @@ export function SetupConfiguration() {
 
     configurationDiv.append(configurationLink);
     bottomBox.append(configurationDiv);
+}
+
+function getFlagTypes() {
+    const flagTypes: { Id: number, DisplayName: string }[] = [];
+    flagCategories.forEach(flagCategory => {
+        flagCategory.FlagTypes.forEach(flagType => {
+            flagTypes.push({
+                Id: flagType.Id,
+                DisplayName: flagType.DisplayName
+            });
+        });
+    });
+    return flagTypes;
+}
+
+async function SetupDefaults() {
+    const configurationEnabledFlags = await getFromCaches<number[] | undefined>(ConfigurationEnabledFlags);
+    if (!configurationEnabledFlags) {
+        const flagTypeIds = getFlagTypes().map(f => f.Id);
+        storeInCaches(ConfigurationEnabledFlags, flagTypeIds);
+    }
 }
 
 async function BuildConfigurationOverlay() {
@@ -48,6 +72,10 @@ async function BuildConfigurationOverlay() {
             Items: await GetGeneralConfigItems()
         },
         {
+            SectionName: 'Flags',
+            Items: await GetFlagSettings()
+        },
+        {
             SectionName: 'Admin',
             Items: await GetAdminConfigItems()
         }
@@ -64,9 +92,11 @@ async function BuildConfigurationOverlay() {
 
         section.Items.forEach(item => {
             configElements.push(item);
-            const listItem = $('<li>').css('line-height', '18px');
-            listItem.append(item.element);
-            sectionWrapper.append(listItem);
+            if (item.element) {
+                const listItem = $('<li>').css('line-height', '18px');
+                listItem.append(item.element);
+                sectionWrapper.append(listItem);
+            }
         });
     });
 
@@ -79,13 +109,20 @@ async function BuildConfigurationOverlay() {
 
     okayButton.click((event) => {
         event.preventDefault();
+        let requiresReload = false;
         configElements.forEach(configElement => {
             if (configElement.onSave) {
                 configElement.onSave();
             }
+            requiresReload = !!configElement.requiresReload;
         });
         overlay.remove();
         displaySuccess('Configuration saved');
+        if (requiresReload) {
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        }
     });
     cancelButton.click((event) => {
         event.preventDefault();
@@ -108,13 +145,44 @@ async function GetGeneralConfigItems() {
     ]);
 }
 
+async function GetFlagSettings() {
+    const checkBoxes: { label: JQuery, checkBox: JQuery, Id: number }[] = [];
+    const flagTypeIds = await getFromCaches<number[]>(ConfigurationEnabledFlags) || [];
+    getFlagTypes().forEach(f => {
+        const checkBox = $('<input type="checkbox">');
+        const label = $('<label />')
+            .append(checkBox)
+            .append(f.DisplayName);
+        const storedValue = flagTypeIds.indexOf(f.Id) > -1;
+        if (storedValue) {
+            checkBox.prop('checked', true);
+        }
+        checkBoxes.push({
+            label,
+            checkBox,
+            Id: f.Id
+        });
+    });
+    const returnArr: ConfigElement[] = checkBoxes.map(f => ({ element: f.label }));
+    returnArr.push({
+        onSave: async () => {
+            // Something here
+            const updatedFlagTypes = checkBoxes.filter(cb => !!cb.checkBox.prop('checked')).map(cb => cb.Id);
+            await storeInCaches(ConfigurationEnabledFlags, updatedFlagTypes);
+        },
+        requiresReload: true
+    });
+    return returnArr;
+}
+
 async function GetAdminConfigItems() {
     return [
         {
             element: $('<a />').text('Clear Metasmoke Configuration')
                 .click(async () => {
                     await MetaSmokeAPI.Reset();
-                })
+                }),
+            requiresReload: true
         },
         {
             element: $('<a />').text('Get MetaSmoke key')
@@ -128,7 +196,8 @@ async function GetAdminConfigItems() {
                         CrossDomainCache.StoreInCache(MetaSmokeDisabledConfig, false);
                         localStorage.setItem('MetaSmoke.ManualKey', prompt);
                     }
-                })
+                }),
+            requiresReload: true
         }
     ];
 }
@@ -157,6 +226,7 @@ interface ConfigSection {
 }
 
 interface ConfigElement {
-    element: JQuery;
+    element?: JQuery;
     onSave?: () => Promise<void>;
+    requiresReload?: boolean;
 }

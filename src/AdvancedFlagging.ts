@@ -21,6 +21,7 @@ const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
 export const ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlags';
 export const ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
 export const ConfigurationDetectAudits = 'AdvancedFlagging.Configuration.DetectAudits';
+export const ConfigurationEnabledFlags = 'AdvancedFlagging.Configuration.EnabledFlags';
 
 declare const StackExchange: StackExchangeGlobal;
 declare const unsafeWindow: any;
@@ -186,7 +187,7 @@ interface Reporter {
     ReportDuplicateAnswer(): Promise<boolean>;
     ReportPlagiarism(): Promise<boolean>;
 }
-function BuildFlaggingDialog(element: JQuery,
+async function BuildFlaggingDialog(element: JQuery,
     postId: number,
     postType: 'Question' | 'Answer',
     reputation: number,
@@ -228,6 +229,8 @@ function BuildFlaggingDialog(element: JQuery,
         leaveCommentBox.prop('checked', true);
     }
 
+    const enabledFlagIds = await getFromCaches<number[]>(ConfigurationEnabledFlags);
+
     let hasCommentOptions = false;
     let firstCategory = true;
     flagCategories.forEach(flagCategory => {
@@ -266,21 +269,23 @@ function BuildFlaggingDialog(element: JQuery,
             };
 
             disableLink();
-            if (flagType.Enabled) {
-                copyPastorPromise.then(items => {
-                    // If it somehow changed within the promise, check again
-                    if (flagType.Enabled) {
-                        const hasItems = items.length > 0;
-                        const isEnabled = flagType.Enabled(hasItems);
-                        if (isEnabled) {
+            if (!enabledFlagIds || enabledFlagIds.indexOf(flagType.Id) > -1) {
+                if (flagType.Enabled) {
+                    copyPastorPromise.then(items => {
+                        // If it somehow changed within the promise, check again
+                        if (flagType.Enabled) {
+                            const hasItems = items.length > 0;
+                            const isEnabled = flagType.Enabled(hasItems);
+                            if (isEnabled) {
+                                enableLink();
+                            }
+                        } else {
                             enableLink();
                         }
-                    } else {
-                        enableLink();
-                    }
-                });
-            } else {
-                enableLink();
+                    });
+                } else {
+                    enableLink();
+                }
             }
 
             let commentText: string | undefined;
@@ -467,8 +472,8 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
 }
 
 let autoFlagging = false;
-function SetupPostPage() {
-    parseQuestionsAndAnswers(post => {
+async function SetupPostPage() {
+    parseQuestionsAndAnswers(async post => {
 
         let iconLocation: JQuery;
         let advancedFlaggingLink: JQuery | null = null;
@@ -593,6 +598,7 @@ function SetupPostPage() {
                         const matches = new RegExp(`/flags\/posts\/${post.postId}\/add\/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`).exec(xhr.responseURL);
                         if (matches !== null && xhr.status === 200) {
                             const flagType = {
+                                Id: 0,
                                 ReportType: matches[1] as 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther',
                                 DisplayName: matches[1]
                             };
@@ -607,7 +613,7 @@ function SetupPostPage() {
                 });
             });
 
-            const dropDown = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation as number, answerTime, questionTime,
+            const dropDown = await BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation as number, answerTime, questionTime,
                 deleted,
                 reportedIcon,
                 performedActionIcon,
@@ -731,8 +737,8 @@ $(async () => {
         await MetaSmokeAPI.Setup(metaSmokeKey);
     }
 
-    SetupPostPage();
-    SetupConfiguration();
+    await SetupConfiguration();
+    await SetupPostPage();
 
     SetupStyles();
 
@@ -788,7 +794,7 @@ $(async () => {
                         const nattyApi = new NattyAPI(postId);
                         nattyApi.Watch();
 
-                        handleFlag({ ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
+                        handleFlag({ Id: 0, ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
                             {
                                 name: 'Natty',
                                 ReportNaa: (answerDate: Date, questionDate: Date) => nattyApi.ReportNaa(answerDate, questionDate),

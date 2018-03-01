@@ -1,6 +1,7 @@
 import { CopyPastorFindTargetResponseItem } from '@userscriptTools/copypastorapi/CopyPastorAPI';
 
 export interface FlagType {
+    Id: number;
     DisplayName: string;
     ReportType: 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther';
     GetComment?(reputation: number): string;
@@ -24,10 +25,12 @@ export const flagCategories: FlagCategory[] = [
         AppliesTo: ['Answer', 'Question'],
         FlagTypes: [
             {
+                Id: 1,
                 DisplayName: 'Spam',
                 ReportType: 'PostSpam'
             },
             {
+                Id: 2,
                 DisplayName: 'Rude or Abusive',
                 ReportType: 'PostOffensive'
             }
@@ -38,12 +41,14 @@ export const flagCategories: FlagCategory[] = [
         AppliesTo: ['Answer'],
         FlagTypes: [
             {
+                Id: 3,
                 DisplayName: 'Plagiarism',
                 ReportType: 'PostOther',
                 Enabled: (hasDuplicatePostLinks) => hasDuplicatePostLinks,
                 GetCustomFlagText: (copyPastorItem) => `Possible plagiarism of another answer https:${copyPastorItem.target_url}, as can be seen here http://copypastor.sobotics.org/posts/${copyPastorItem.post_id}`
             },
             {
+                Id: 4,
                 DisplayName: 'Duplicate answer',
                 ReportType: 'PostOther',
                 Enabled: (hasDuplicatePostLinks) => hasDuplicatePostLinks,
@@ -57,6 +62,7 @@ export const flagCategories: FlagCategory[] = [
         AppliesTo: ['Answer'],
         FlagTypes: [
             {
+                Id: 5,
                 DisplayName: 'Link Only',
                 ReportType: 'AnswerNotAnAnswer',
                 GetComment: () => 'A link to a solution is welcome, but please ensure your answer is useful without it: ' +
@@ -66,6 +72,7 @@ export const flagCategories: FlagCategory[] = [
                     '[Answers that are little more than a link may be deleted.](//stackoverflow.com/help/deleted-answers)'
             },
             {
+                Id: 6,
                 DisplayName: 'Not an answer',
                 ReportType: 'AnswerNotAnAnswer',
                 GetComment: (reptuation) => reptuation < 50
@@ -81,6 +88,7 @@ export const flagCategories: FlagCategory[] = [
                     'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)'
             },
             {
+                Id: 7,
                 DisplayName: 'Thanks',
                 ReportType: 'AnswerNotAnAnswer',
                 GetComment: (reputation) => reputation < 15
@@ -98,6 +106,7 @@ export const flagCategories: FlagCategory[] = [
                     'See [Why is voting important](http://stackoverflow.com/help/why-vote).'
             },
             {
+                Id: 8,
                 DisplayName: 'Me too',
                 ReportType: 'AnswerNotAnAnswer',
                 GetComment: () => 'Please don\'t add *"Me too"* as answers. It doesn\'t actually provide an answer to the question. ' +
@@ -108,14 +117,22 @@ export const flagCategories: FlagCategory[] = [
                     'once you have enough [reputation](//stackoverflow.com/help/whats-reputation).',
             },
             {
+                Id: 9,
                 DisplayName: 'Library',
                 ReportType: 'AnswerNotAnAnswer',
                 GetComment: () => 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](http://meta.stackoverflow.com/a/251605) in the answer itself.'
             },
             {
+                Id: 10,
                 DisplayName: 'Comment',
                 ReportType: 'AnswerNotAnAnswer',
                 GetComment: () => 'This does not provide an answer to the question. Once you have sufficient [reputation](https://stackoverflow.com/help/whats-reputation) you will be able to [comment on any post](https://stackoverflow.com/help/privileges/comment); instead, [provide answers that don\'t require clarification from the asker](https://meta.stackexchange.com/questions/214173/why-do-i-need-50-reputation-to-comment-what-can-i-do-instead).'
+            },
+            {
+                Id: 14,
+                DisplayName: 'Duplicate',
+                ReportType: 'AnswerNotAnAnswer',
+                GetComment: () => 'Instead of posting an answer which merely links to another answer, please instead [flag the question](https://stackoverflow.com/help/privileges/flag-posts) as a duplicate.'
             }
         ]
     },
@@ -124,14 +141,17 @@ export const flagCategories: FlagCategory[] = [
         AppliesTo: ['Answer', 'Question'],
         FlagTypes: [
             {
+                Id: 11,
                 DisplayName: 'Looks Fine',
                 ReportType: 'NoFlag'
             },
             {
+                Id: 12,
                 DisplayName: 'Needs Editing',
                 ReportType: 'NoFlag'
             },
             {
+                Id: 13,
                 DisplayName: 'Vandalism',
                 ReportType: 'NoFlag'
             }

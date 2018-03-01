@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.32
+// @version      0.5.33
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -596,9 +596,9 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var isFunction_1 = __webpack_require__(12);
+var isFunction_1 = __webpack_require__(13);
 var Subscription_1 = __webpack_require__(5);
-var Observer_1 = __webpack_require__(14);
+var Observer_1 = __webpack_require__(15);
 var rxSubscriber_1 = __webpack_require__(8);
 /**
  * Implements the {@link Observer} interface and extends the
@@ -926,8 +926,8 @@ var __extends = (this && this.__extends) || function (d, b) {
 var Observable_1 = __webpack_require__(1);
 var Subscriber_1 = __webpack_require__(2);
 var Subscription_1 = __webpack_require__(5);
-var ObjectUnsubscribedError_1 = __webpack_require__(15);
-var SubjectSubscription_1 = __webpack_require__(16);
+var ObjectUnsubscribedError_1 = __webpack_require__(16);
+var SubjectSubscription_1 = __webpack_require__(17);
 var rxSubscriber_1 = __webpack_require__(8);
 /**
  * @class SubjectSubscriber<T>
@@ -1094,9 +1094,9 @@ exports.AnonymousSubject = AnonymousSubject;
 
 var isArray_1 = __webpack_require__(24);
 var isObject_1 = __webpack_require__(25);
-var isFunction_1 = __webpack_require__(12);
+var isFunction_1 = __webpack_require__(13);
 var tryCatch_1 = __webpack_require__(26);
-var errorObject_1 = __webpack_require__(13);
+var errorObject_1 = __webpack_require__(14);
 var UnsubscriptionError_1 = __webpack_require__(27);
 /**
  * Represents a disposable resource, such as the execution of an Observable. A
@@ -1575,8 +1575,8 @@ var Subject_1 = __webpack_require__(4);
 var queue_1 = __webpack_require__(31);
 var Subscription_1 = __webpack_require__(5);
 var observeOn_1 = __webpack_require__(38);
-var ObjectUnsubscribedError_1 = __webpack_require__(15);
-var SubjectSubscription_1 = __webpack_require__(16);
+var ObjectUnsubscribedError_1 = __webpack_require__(16);
+var SubjectSubscription_1 = __webpack_require__(17);
 /**
  * @class ReplaySubject<T>
  */
@@ -1806,7 +1806,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(21), __webpack_require__(3), __webpack_require__(7), __webpack_require__(22), __webpack_require__(20), __webpack_require__(19), __webpack_require__(10), __webpack_require__(45), __webpack_require__(49), __webpack_require__(53)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, FlagTypes_1, SimpleCache_1, sotools_1, NattyApi_1, GenericBotAPI_1, MetaSmokeAPI_1, CrossDomainCache_1, CopyPastorAPI_1, RequestWatcher_1, Configuration_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(12), __webpack_require__(3), __webpack_require__(7), __webpack_require__(22), __webpack_require__(21), __webpack_require__(20), __webpack_require__(10), __webpack_require__(45), __webpack_require__(49), __webpack_require__(53)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, FlagTypes_1, SimpleCache_1, sotools_1, NattyApi_1, GenericBotAPI_1, MetaSmokeAPI_1, CrossDomainCache_1, CopyPastorAPI_1, RequestWatcher_1, Configuration_1) {
     "use strict";
     var _this = this;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1817,6 +1817,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlags';
     exports.ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
     exports.ConfigurationDetectAudits = 'AdvancedFlagging.Configuration.DetectAudits';
+    exports.ConfigurationEnabledFlags = 'AdvancedFlagging.Configuration.EnabledFlags';
     function SetupStyles() {
         var scriptNode = document.createElement('style');
         scriptNode.type = 'text/css';
@@ -1922,195 +1923,208 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         displayToaster(message, '#ba1701');
     }
     function BuildFlaggingDialog(element, postId, postType, reputation, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorPromise) {
-        var getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
-        var linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
-        var dropDown = $('<dl />').css({
-            'margin': '0',
-            'z-index': '1',
-            'position': 'absolute',
-            'white-space': 'nowrap',
-            'background': '#FFF',
-            'padding': '5px',
-            'border': '1px solid #9fa6ad',
-            'box-shadow': '0 2px 4px rgba(36,39,41,0.3)',
-            'cursor': 'default'
-        }).hide();
-        var checkboxName = "comment_checkbox_" + postId;
-        var leaveCommentBox = $('<input />')
-            .attr('type', 'checkbox')
-            .attr('name', checkboxName);
-        var flagBox = $('<input />')
-            .attr('type', 'checkbox')
-            .attr('name', checkboxName)
-            .prop('checked', true);
-        var isStackOverflow = sotools_1.IsStackOverflow();
-        var comments = element.find('.comment-body');
-        if (comments.length === 0 && isStackOverflow) {
-            leaveCommentBox.prop('checked', true);
-        }
-        var hasCommentOptions = false;
-        var firstCategory = true;
-        FlagTypes_1.flagCategories.forEach(function (flagCategory) {
-            if (flagCategory.AppliesTo.indexOf(postType) === -1) {
-                return;
-            }
-            var divider = getDivider();
-            if (!firstCategory) {
-                dropDown.append(divider);
-            }
-            var activeLinks = flagCategory.FlagTypes.length;
-            flagCategory.FlagTypes.forEach(function (flagType) {
-                if (flagType.GetComment) {
-                    hasCommentOptions = true;
-                }
-                var dropdownItem = $('<dd />');
-                if (flagCategory.BoxStyle) {
-                    dropdownItem.css(flagCategory.BoxStyle);
-                }
-                var reportLink = $('<a />').css(linkStyle);
-                var disableLink = function () {
-                    activeLinks--;
-                    reportLink.hide();
-                    if (divider && activeLinks <= 0) {
-                        divider.hide();
-                    }
-                };
-                var enableLink = function () {
-                    activeLinks++;
-                    reportLink.show();
-                    if (divider && activeLinks > 0) {
-                        divider.show();
-                    }
-                };
-                disableLink();
-                if (flagType.Enabled) {
-                    copyPastorPromise.then(function (items) {
-                        // If it somehow changed within the promise, check again
-                        if (flagType.Enabled) {
-                            var hasItems = items.length > 0;
-                            var isEnabled = flagType.Enabled(hasItems);
-                            if (isEnabled) {
-                                enableLink();
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            var getDivider, linkStyle, dropDown, checkboxName, leaveCommentBox, flagBox, isStackOverflow, comments, enabledFlagIds, hasCommentOptions, firstCategory, commentBoxLabel, commentingRow, flagBoxLabel, flaggingRow;
+            return tslib_1.__generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
+                        linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
+                        dropDown = $('<dl />').css({
+                            'margin': '0',
+                            'z-index': '1',
+                            'position': 'absolute',
+                            'white-space': 'nowrap',
+                            'background': '#FFF',
+                            'padding': '5px',
+                            'border': '1px solid #9fa6ad',
+                            'box-shadow': '0 2px 4px rgba(36,39,41,0.3)',
+                            'cursor': 'default'
+                        }).hide();
+                        checkboxName = "comment_checkbox_" + postId;
+                        leaveCommentBox = $('<input />')
+                            .attr('type', 'checkbox')
+                            .attr('name', checkboxName);
+                        flagBox = $('<input />')
+                            .attr('type', 'checkbox')
+                            .attr('name', checkboxName)
+                            .prop('checked', true);
+                        isStackOverflow = sotools_1.IsStackOverflow();
+                        comments = element.find('.comment-body');
+                        if (comments.length === 0 && isStackOverflow) {
+                            leaveCommentBox.prop('checked', true);
+                        }
+                        return [4 /*yield*/, getFromCaches(exports.ConfigurationEnabledFlags)];
+                    case 1:
+                        enabledFlagIds = _a.sent();
+                        hasCommentOptions = false;
+                        firstCategory = true;
+                        FlagTypes_1.flagCategories.forEach(function (flagCategory) {
+                            if (flagCategory.AppliesTo.indexOf(postType) === -1) {
+                                return;
                             }
-                        }
-                        else {
-                            enableLink();
-                        }
-                    });
-                }
-                else {
-                    enableLink();
-                }
-                var commentText;
-                if (flagType.GetComment) {
-                    commentText = flagType.GetComment(reputation);
-                    reportLink.attr('title', commentText);
-                }
-                reportLink.click(function () {
-                    if (!deleted) {
-                        try {
-                            if (!leaveCommentBox.is(':checked')) {
-                                // Now we need to investigate the existing comments to upvote them.
-                                var commentTextItems = element.find('.comment-body .comment-copy').map(function (i, ele) { return $(ele).text(); });
-                                if (commentText) {
-                                    // Match [some text](http://somehyperlink.com)
-                                    var strippedComment_1 = commentText.replace(/\[([^\]]+)\]\(([^\]]+)\)/g, '$1');
-                                    // Match [edit]
-                                    strippedComment_1 = strippedComment_1.replace(/\[([^\]]+)\][^\(]*?/g, '$1');
-                                    // Strip out italics. _thanks_ => thanks
-                                    strippedComment_1 = strippedComment_1.replace(/_([^_]+)_/g, '$1');
-                                    // Strip out bolds. **thanks** => thanks
-                                    strippedComment_1 = strippedComment_1.replace(/\*\*([^\*]+)\*\*/g, '$1');
-                                    // Strip out italics. *thanks* => thanks
-                                    strippedComment_1 = strippedComment_1.replace(/\*([^\*]+)\*/g, '$1');
-                                    element.find('.comment-body .comment-copy').each(function (i, ele) {
-                                        var jEle = $(ele);
-                                        var text = jEle.text();
-                                        var fromReviewText = ' - From Review';
-                                        if (text.endsWith(fromReviewText)) {
-                                            text = text.substring(0, text.length - fromReviewText.length);
-                                        }
-                                        if (text === strippedComment_1) {
-                                            jEle.closest('li').find('a.comment-up.comment-up-off').trigger('click');
-                                        }
-                                    });
+                            var divider = getDivider();
+                            if (!firstCategory) {
+                                dropDown.append(divider);
+                            }
+                            var activeLinks = flagCategory.FlagTypes.length;
+                            flagCategory.FlagTypes.forEach(function (flagType) {
+                                if (flagType.GetComment) {
+                                    hasCommentOptions = true;
                                 }
-                                commentText = undefined;
-                            }
-                            var result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), commentText, copyPastorPromise);
-                            if (result.CommentPromise) {
-                                result.CommentPromise.then(function (data) {
-                                    var commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
-                                    commentUI.addShow(true, false);
-                                    commentUI.showComments(data, null, false, true);
-                                    $(document).trigger('comment', postId);
-                                }).catch(function (err) {
-                                    displayError('Failed to comment on post');
-                                    // tslint:disable-next-line:no-console
-                                    console.log(err);
+                                var dropdownItem = $('<dd />');
+                                if (flagCategory.BoxStyle) {
+                                    dropdownItem.css(flagCategory.BoxStyle);
+                                }
+                                var reportLink = $('<a />').css(linkStyle);
+                                var disableLink = function () {
+                                    activeLinks--;
+                                    reportLink.hide();
+                                    if (divider && activeLinks <= 0) {
+                                        divider.hide();
+                                    }
+                                };
+                                var enableLink = function () {
+                                    activeLinks++;
+                                    reportLink.show();
+                                    if (divider && activeLinks > 0) {
+                                        divider.show();
+                                    }
+                                };
+                                disableLink();
+                                if (!enabledFlagIds || enabledFlagIds.indexOf(flagType.Id) > -1) {
+                                    if (flagType.Enabled) {
+                                        copyPastorPromise.then(function (items) {
+                                            // If it somehow changed within the promise, check again
+                                            if (flagType.Enabled) {
+                                                var hasItems = items.length > 0;
+                                                var isEnabled = flagType.Enabled(hasItems);
+                                                if (isEnabled) {
+                                                    enableLink();
+                                                }
+                                            }
+                                            else {
+                                                enableLink();
+                                            }
+                                        });
+                                    }
+                                    else {
+                                        enableLink();
+                                    }
+                                }
+                                var commentText;
+                                if (flagType.GetComment) {
+                                    commentText = flagType.GetComment(reputation);
+                                    reportLink.attr('title', commentText);
+                                }
+                                reportLink.click(function () {
+                                    if (!deleted) {
+                                        try {
+                                            if (!leaveCommentBox.is(':checked')) {
+                                                // Now we need to investigate the existing comments to upvote them.
+                                                var commentTextItems = element.find('.comment-body .comment-copy').map(function (i, ele) { return $(ele).text(); });
+                                                if (commentText) {
+                                                    // Match [some text](http://somehyperlink.com)
+                                                    var strippedComment_1 = commentText.replace(/\[([^\]]+)\]\(([^\]]+)\)/g, '$1');
+                                                    // Match [edit]
+                                                    strippedComment_1 = strippedComment_1.replace(/\[([^\]]+)\][^\(]*?/g, '$1');
+                                                    // Strip out italics. _thanks_ => thanks
+                                                    strippedComment_1 = strippedComment_1.replace(/_([^_]+)_/g, '$1');
+                                                    // Strip out bolds. **thanks** => thanks
+                                                    strippedComment_1 = strippedComment_1.replace(/\*\*([^\*]+)\*\*/g, '$1');
+                                                    // Strip out italics. *thanks* => thanks
+                                                    strippedComment_1 = strippedComment_1.replace(/\*([^\*]+)\*/g, '$1');
+                                                    element.find('.comment-body .comment-copy').each(function (i, ele) {
+                                                        var jEle = $(ele);
+                                                        var text = jEle.text();
+                                                        var fromReviewText = ' - From Review';
+                                                        if (text.endsWith(fromReviewText)) {
+                                                            text = text.substring(0, text.length - fromReviewText.length);
+                                                        }
+                                                        if (text === strippedComment_1) {
+                                                            jEle.closest('li').find('a.comment-up.comment-up-off').trigger('click');
+                                                        }
+                                                    });
+                                                }
+                                                commentText = undefined;
+                                            }
+                                            var result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), commentText, copyPastorPromise);
+                                            if (result.CommentPromise) {
+                                                result.CommentPromise.then(function (data) {
+                                                    var commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
+                                                    commentUI.addShow(true, false);
+                                                    commentUI.showComments(data, null, false, true);
+                                                    $(document).trigger('comment', postId);
+                                                }).catch(function (err) {
+                                                    displayError('Failed to comment on post');
+                                                    // tslint:disable-next-line:no-console
+                                                    console.log(err);
+                                                });
+                                            }
+                                            if (result.FlagPromise) {
+                                                result.FlagPromise.then(function () {
+                                                    SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType);
+                                                    reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
+                                                    reportedIcon.show();
+                                                    displaySuccess('Flagged');
+                                                }).catch(function (err) {
+                                                    displayError('Failed to flag post');
+                                                    // tslint:disable-next-line:no-console
+                                                    console.log(err);
+                                                });
+                                            }
+                                        }
+                                        catch (err) {
+                                            displayError(err);
+                                        }
+                                    }
+                                    var noFlag = flagType.ReportType === 'NoFlag';
+                                    if (noFlag) {
+                                        SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType);
+                                        performedActionIcon.attr('title', "Performed action: " + flagType.DisplayName);
+                                        performedActionIcon.show();
+                                    }
+                                    handleFlag(flagType, reporters, answerTime, questionTime);
+                                    dropDown.hide();
                                 });
-                            }
-                            if (result.FlagPromise) {
-                                result.FlagPromise.then(function () {
-                                    SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType);
-                                    reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
-                                    reportedIcon.show();
-                                    displaySuccess('Flagged');
-                                }).catch(function (err) {
-                                    displayError('Failed to flag post');
-                                    // tslint:disable-next-line:no-console
-                                    console.log(err);
-                                });
-                            }
+                                reportLink.text(flagType.DisplayName);
+                                dropdownItem.append(reportLink);
+                                dropDown.append(dropdownItem);
+                            });
+                            firstCategory = false;
+                        });
+                        if (!isStackOverflow) {
+                            hasCommentOptions = false;
                         }
-                        catch (err) {
-                            displayError(err);
+                        dropDown.append(getDivider());
+                        if (hasCommentOptions) {
+                            commentBoxLabel = $('<label />').text('Leave comment')
+                                .attr('for', checkboxName)
+                                .css({
+                                'margin-right': '5px',
+                                'margin-left': '4px',
+                            });
+                            commentBoxLabel.click(function () { return leaveCommentBox.click(); });
+                            commentingRow = $('<dd />');
+                            commentingRow.append(commentBoxLabel);
+                            commentingRow.append(leaveCommentBox);
+                            dropDown.append(commentingRow);
                         }
-                    }
-                    var noFlag = flagType.ReportType === 'NoFlag';
-                    if (noFlag) {
-                        SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType);
-                        performedActionIcon.attr('title', "Performed action: " + flagType.DisplayName);
-                        performedActionIcon.show();
-                    }
-                    handleFlag(flagType, reporters, answerTime, questionTime);
-                    dropDown.hide();
-                });
-                reportLink.text(flagType.DisplayName);
-                dropdownItem.append(reportLink);
-                dropDown.append(dropdownItem);
+                        flagBoxLabel = $('<label />').text('Flag')
+                            .attr('for', checkboxName)
+                            .css({
+                            'margin-right': '5px',
+                            'margin-left': '4px',
+                        });
+                        flagBoxLabel.click(function () { return flagBox.click(); });
+                        flaggingRow = $('<dd />');
+                        flaggingRow.append(flagBoxLabel);
+                        flaggingRow.append(flagBox);
+                        dropDown.append(flaggingRow);
+                        return [2 /*return*/, dropDown];
+                }
             });
-            firstCategory = false;
         });
-        if (!isStackOverflow) {
-            hasCommentOptions = false;
-        }
-        dropDown.append(getDivider());
-        if (hasCommentOptions) {
-            var commentBoxLabel = $('<label />').text('Leave comment')
-                .attr('for', checkboxName)
-                .css({
-                'margin-right': '5px',
-                'margin-left': '4px',
-            });
-            commentBoxLabel.click(function () { return leaveCommentBox.click(); });
-            var commentingRow = $('<dd />');
-            commentingRow.append(commentBoxLabel);
-            commentingRow.append(leaveCommentBox);
-            dropDown.append(commentingRow);
-        }
-        var flagBoxLabel = $('<label />').text('Flag')
-            .attr('for', checkboxName)
-            .css({
-            'margin-right': '5px',
-            'margin-left': '4px',
-        });
-        flagBoxLabel.click(function () { return flagBox.click(); });
-        var flaggingRow = $('<dd />');
-        flaggingRow.append(flagBoxLabel);
-        flaggingRow.append(flagBox);
-        dropDown.append(flaggingRow);
-        return dropDown;
     }
     function handleFlag(flagType, reporters, answerTime, questionTime) {
         var rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
@@ -2167,171 +2181,185 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     var autoFlagging = false;
     function SetupPostPage() {
-        sotools_1.parseQuestionsAndAnswers(function (post) {
-            var iconLocation;
-            var advancedFlaggingLink = null;
-            var nattyIcon = getNattyIcon().click(function () {
-                window.open("https://sentinel.erwaysoftware.com/posts/aid/" + post.postId, '_blank');
-            });
-            var showFunc = function (element) { return element.show(); };
-            var copyPastorIcon = getGuttenbergIcon();
-            var copyPastorApi = new CopyPastorAPI_1.CopyPastorAPI(post.postId, copyPastorKey);
-            var copyPastorObservable = copyPastorApi.Watch();
-            var smokeyIcon = getSmokeyIcon();
-            var reporters = [];
-            if (post.type === 'Answer') {
-                var nattyApi_1 = new NattyApi_1.NattyAPI(post.postId);
-                nattyApi_1.Watch()
-                    .subscribe(function (reported) {
-                    if (reported) {
-                        showFunc(nattyIcon);
-                    }
-                    else {
-                        nattyIcon.hide();
-                    }
-                });
-                reporters.push({
-                    name: 'Natty',
-                    ReportNaa: function (answerDate, questionDate) { return nattyApi_1.ReportNaa(answerDate, questionDate); },
-                    ReportRedFlag: function () { return nattyApi_1.ReportRedFlag(); },
-                    ReportLooksFine: function () { return nattyApi_1.ReportLooksFine(); },
-                    ReportNeedsEditing: function () { return nattyApi_1.ReportNeedsEditing(); },
-                    ReportVandalism: function () { return Promise.resolve(false); },
-                    ReportDuplicateAnswer: function () { return Promise.resolve(false); },
-                    ReportPlagiarism: function () { return Promise.resolve(false); }
-                });
-                copyPastorObservable.subscribe(function (items) {
-                    if (items.length) {
-                        copyPastorIcon.attr('Title', "Reported by CopyPastor - " + items.length);
-                        showFunc(copyPastorIcon);
-                        copyPastorIcon.click(function () {
-                            return items.forEach(function (item) {
-                                window.open('http://copypastor.sobotics.org/posts/' + item.post_id);
-                            });
-                        });
-                    }
-                    else {
-                        copyPastorIcon.hide();
-                    }
-                });
-                reporters.push({
-                    name: 'Guttenberg',
-                    ReportNaa: function (answerDate, questionDate) { return copyPastorApi.ReportFalsePositive(); },
-                    ReportRedFlag: function () { return Promise.resolve(false); },
-                    ReportLooksFine: function () { return copyPastorApi.ReportFalsePositive(); },
-                    ReportNeedsEditing: function () { return copyPastorApi.ReportFalsePositive(); },
-                    ReportVandalism: function () { return copyPastorApi.ReportFalsePositive(); },
-                    ReportDuplicateAnswer: function () { return copyPastorApi.ReportTruePositive(); },
-                    ReportPlagiarism: function () { return copyPastorApi.ReportTruePositive(); }
-                });
-                var genericBotAPI_1 = new GenericBotAPI_1.GenericBotAPI(post.postId);
-                reporters.push({
-                    name: 'Generic Bot',
-                    ReportNaa: function (answerDate, questionDate) { return genericBotAPI_1.ReportNaa(); },
-                    ReportRedFlag: function () { return Promise.resolve(false); },
-                    ReportLooksFine: function () { return genericBotAPI_1.ReportLooksFine(); },
-                    ReportNeedsEditing: function () { return genericBotAPI_1.ReportNeedsEditing(); },
-                    ReportVandalism: function () { return Promise.resolve(true); },
-                    ReportDuplicateAnswer: function () { return Promise.resolve(false); },
-                    ReportPlagiarism: function () { return Promise.resolve(false); }
-                });
-            }
-            var metaSmoke = new MetaSmokeAPI_1.MetaSmokeAPI(post.postId, post.type);
-            metaSmoke.Watch()
-                .subscribe(function (id) {
-                if (id !== null) {
-                    smokeyIcon.click(function () {
-                        window.open("https://metasmoke.erwaysoftware.com/post/" + id, '_blank');
-                    });
-                    showFunc(smokeyIcon);
-                }
-                else {
-                    smokeyIcon.hide();
-                }
-            });
-            reporters.push({
-                name: 'Smokey',
-                ReportNaa: function (answerDate, questionDate) { return metaSmoke.ReportNaa(); },
-                ReportRedFlag: function () { return metaSmoke.ReportRedFlag(); },
-                ReportLooksFine: function () { return metaSmoke.ReportLooksFine(); },
-                ReportNeedsEditing: function () { return metaSmoke.ReportNeedsEditing(); },
-                ReportVandalism: function () { return metaSmoke.ReportVandalism(); },
-                ReportDuplicateAnswer: function () { return Promise.resolve(false); },
-                ReportPlagiarism: function () { return Promise.resolve(false); }
-            });
-            var performedActionIcon = getPerformedActionIcon();
-            var reportedIcon = getReportedIcon();
-            if (post.page === 'Question') {
-                // Now we setup the flagging dialog
-                iconLocation = post.element.find('.post-menu');
-                advancedFlaggingLink = $('<a />').text('Advanced Flagging');
-                var questionTime_1;
-                var answerTime_1;
-                if (post.type === 'Answer') {
-                    questionTime_1 = post.question.postTime;
-                    answerTime_1 = post.postTime;
-                }
-                else {
-                    questionTime_1 = post.postTime;
-                    answerTime_1 = post.postTime;
-                }
-                var deleted = post.element.hasClass('deleted-answer');
-                getFromCaches(exports.ConfigurationWatchFlags).then(function (isEnabled) {
-                    RequestWatcher_1.WatchFlags().subscribe(function (xhr) {
-                        if (isEnabled && !autoFlagging) {
-                            var matches = new RegExp("/flags/posts/" + post.postId + "/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)").exec(xhr.responseURL);
-                            if (matches !== null && xhr.status === 200) {
-                                var flagType = {
-                                    ReportType: matches[1],
-                                    DisplayName: matches[1]
-                                };
-                                handleFlag(flagType, reporters, answerTime_1, questionTime_1);
-                                SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.Flagged." + post.postId, flagType);
-                                reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
-                                reportedIcon.show();
-                                displaySuccess('Flagged');
-                            }
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return tslib_1.__generator(this, function (_a) {
+                sotools_1.parseQuestionsAndAnswers(function (post) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+                    var iconLocation, advancedFlaggingLink, nattyIcon, showFunc, copyPastorIcon, copyPastorApi, copyPastorObservable, smokeyIcon, reporters, nattyApi_1, genericBotAPI_1, metaSmoke, performedActionIcon, reportedIcon, questionTime_1, answerTime_1, deleted, dropDown_1, link_1, previousFlag, previousAction;
+                    return tslib_1.__generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                advancedFlaggingLink = null;
+                                nattyIcon = getNattyIcon().click(function () {
+                                    window.open("https://sentinel.erwaysoftware.com/posts/aid/" + post.postId, '_blank');
+                                });
+                                showFunc = function (element) { return element.show(); };
+                                copyPastorIcon = getGuttenbergIcon();
+                                copyPastorApi = new CopyPastorAPI_1.CopyPastorAPI(post.postId, copyPastorKey);
+                                copyPastorObservable = copyPastorApi.Watch();
+                                smokeyIcon = getSmokeyIcon();
+                                reporters = [];
+                                if (post.type === 'Answer') {
+                                    nattyApi_1 = new NattyApi_1.NattyAPI(post.postId);
+                                    nattyApi_1.Watch()
+                                        .subscribe(function (reported) {
+                                        if (reported) {
+                                            showFunc(nattyIcon);
+                                        }
+                                        else {
+                                            nattyIcon.hide();
+                                        }
+                                    });
+                                    reporters.push({
+                                        name: 'Natty',
+                                        ReportNaa: function (answerDate, questionDate) { return nattyApi_1.ReportNaa(answerDate, questionDate); },
+                                        ReportRedFlag: function () { return nattyApi_1.ReportRedFlag(); },
+                                        ReportLooksFine: function () { return nattyApi_1.ReportLooksFine(); },
+                                        ReportNeedsEditing: function () { return nattyApi_1.ReportNeedsEditing(); },
+                                        ReportVandalism: function () { return Promise.resolve(false); },
+                                        ReportDuplicateAnswer: function () { return Promise.resolve(false); },
+                                        ReportPlagiarism: function () { return Promise.resolve(false); }
+                                    });
+                                    copyPastorObservable.subscribe(function (items) {
+                                        if (items.length) {
+                                            copyPastorIcon.attr('Title', "Reported by CopyPastor - " + items.length);
+                                            showFunc(copyPastorIcon);
+                                            copyPastorIcon.click(function () {
+                                                return items.forEach(function (item) {
+                                                    window.open('http://copypastor.sobotics.org/posts/' + item.post_id);
+                                                });
+                                            });
+                                        }
+                                        else {
+                                            copyPastorIcon.hide();
+                                        }
+                                    });
+                                    reporters.push({
+                                        name: 'Guttenberg',
+                                        ReportNaa: function (answerDate, questionDate) { return copyPastorApi.ReportFalsePositive(); },
+                                        ReportRedFlag: function () { return Promise.resolve(false); },
+                                        ReportLooksFine: function () { return copyPastorApi.ReportFalsePositive(); },
+                                        ReportNeedsEditing: function () { return copyPastorApi.ReportFalsePositive(); },
+                                        ReportVandalism: function () { return copyPastorApi.ReportFalsePositive(); },
+                                        ReportDuplicateAnswer: function () { return copyPastorApi.ReportTruePositive(); },
+                                        ReportPlagiarism: function () { return copyPastorApi.ReportTruePositive(); }
+                                    });
+                                    genericBotAPI_1 = new GenericBotAPI_1.GenericBotAPI(post.postId);
+                                    reporters.push({
+                                        name: 'Generic Bot',
+                                        ReportNaa: function (answerDate, questionDate) { return genericBotAPI_1.ReportNaa(); },
+                                        ReportRedFlag: function () { return Promise.resolve(false); },
+                                        ReportLooksFine: function () { return genericBotAPI_1.ReportLooksFine(); },
+                                        ReportNeedsEditing: function () { return genericBotAPI_1.ReportNeedsEditing(); },
+                                        ReportVandalism: function () { return Promise.resolve(true); },
+                                        ReportDuplicateAnswer: function () { return Promise.resolve(false); },
+                                        ReportPlagiarism: function () { return Promise.resolve(false); }
+                                    });
+                                }
+                                metaSmoke = new MetaSmokeAPI_1.MetaSmokeAPI(post.postId, post.type);
+                                metaSmoke.Watch()
+                                    .subscribe(function (id) {
+                                    if (id !== null) {
+                                        smokeyIcon.click(function () {
+                                            window.open("https://metasmoke.erwaysoftware.com/post/" + id, '_blank');
+                                        });
+                                        showFunc(smokeyIcon);
+                                    }
+                                    else {
+                                        smokeyIcon.hide();
+                                    }
+                                });
+                                reporters.push({
+                                    name: 'Smokey',
+                                    ReportNaa: function (answerDate, questionDate) { return metaSmoke.ReportNaa(); },
+                                    ReportRedFlag: function () { return metaSmoke.ReportRedFlag(); },
+                                    ReportLooksFine: function () { return metaSmoke.ReportLooksFine(); },
+                                    ReportNeedsEditing: function () { return metaSmoke.ReportNeedsEditing(); },
+                                    ReportVandalism: function () { return metaSmoke.ReportVandalism(); },
+                                    ReportDuplicateAnswer: function () { return Promise.resolve(false); },
+                                    ReportPlagiarism: function () { return Promise.resolve(false); }
+                                });
+                                performedActionIcon = getPerformedActionIcon();
+                                reportedIcon = getReportedIcon();
+                                if (!(post.page === 'Question')) return [3 /*break*/, 2];
+                                // Now we setup the flagging dialog
+                                iconLocation = post.element.find('.post-menu');
+                                advancedFlaggingLink = $('<a />').text('Advanced Flagging');
+                                if (post.type === 'Answer') {
+                                    questionTime_1 = post.question.postTime;
+                                    answerTime_1 = post.postTime;
+                                }
+                                else {
+                                    questionTime_1 = post.postTime;
+                                    answerTime_1 = post.postTime;
+                                }
+                                deleted = post.element.hasClass('deleted-answer');
+                                getFromCaches(exports.ConfigurationWatchFlags).then(function (isEnabled) {
+                                    RequestWatcher_1.WatchFlags().subscribe(function (xhr) {
+                                        if (isEnabled && !autoFlagging) {
+                                            var matches = new RegExp("/flags/posts/" + post.postId + "/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)").exec(xhr.responseURL);
+                                            if (matches !== null && xhr.status === 200) {
+                                                var flagType = {
+                                                    Id: 0,
+                                                    ReportType: matches[1],
+                                                    DisplayName: matches[1]
+                                                };
+                                                handleFlag(flagType, reporters, answerTime_1, questionTime_1);
+                                                SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.Flagged." + post.postId, flagType);
+                                                reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
+                                                reportedIcon.show();
+                                                displaySuccess('Flagged');
+                                            }
+                                        }
+                                    });
+                                });
+                                return [4 /*yield*/, BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime_1, questionTime_1, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi.Promise())];
+                            case 1:
+                                dropDown_1 = _a.sent();
+                                advancedFlaggingLink.append(dropDown_1);
+                                $(window).click(function () {
+                                    dropDown_1.hide();
+                                });
+                                link_1 = advancedFlaggingLink;
+                                link_1.click(function (e) {
+                                    e.stopPropagation();
+                                    if (e.target === link_1.get(0)) {
+                                        dropDown_1.toggle();
+                                    }
+                                });
+                                iconLocation.append(advancedFlaggingLink);
+                                iconLocation.append(performedActionIcon);
+                                iconLocation.append(reportedIcon);
+                                iconLocation.append(nattyIcon);
+                                iconLocation.append(copyPastorIcon);
+                                iconLocation.append(smokeyIcon);
+                                return [3 /*break*/, 3];
+                            case 2:
+                                iconLocation = post.element.find('a.answer-hyperlink');
+                                iconLocation.after(smokeyIcon);
+                                iconLocation.after(copyPastorIcon);
+                                iconLocation.after(nattyIcon);
+                                iconLocation.after(reportedIcon);
+                                iconLocation.after(performedActionIcon);
+                                showFunc = function (element) { return element.css('display', 'inline-block'); };
+                                _a.label = 3;
+                            case 3:
+                                previousFlag = SimpleCache_1.SimpleCache.GetFromCache("AdvancedFlagging.Flagged." + post.postId);
+                                if (previousFlag) {
+                                    reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
+                                    showFunc(reportedIcon);
+                                }
+                                previousAction = SimpleCache_1.SimpleCache.GetFromCache("AdvancedFlagging.PerformedAction." + post.postId);
+                                if (previousAction && previousAction.ReportType === 'NoFlag') {
+                                    performedActionIcon.attr('title', "Previously performed action: " + previousAction.DisplayName);
+                                    showFunc(performedActionIcon);
+                                }
+                                return [2 /*return*/];
                         }
                     });
-                });
-                var dropDown_1 = BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime_1, questionTime_1, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi.Promise());
-                advancedFlaggingLink.append(dropDown_1);
-                $(window).click(function () {
-                    dropDown_1.hide();
-                });
-                var link_1 = advancedFlaggingLink;
-                link_1.click(function (e) {
-                    e.stopPropagation();
-                    if (e.target === link_1.get(0)) {
-                        dropDown_1.toggle();
-                    }
-                });
-                iconLocation.append(advancedFlaggingLink);
-                iconLocation.append(performedActionIcon);
-                iconLocation.append(reportedIcon);
-                iconLocation.append(nattyIcon);
-                iconLocation.append(copyPastorIcon);
-                iconLocation.append(smokeyIcon);
-            }
-            else {
-                iconLocation = post.element.find('a.answer-hyperlink');
-                iconLocation.after(smokeyIcon);
-                iconLocation.after(copyPastorIcon);
-                iconLocation.after(nattyIcon);
-                iconLocation.after(reportedIcon);
-                iconLocation.after(performedActionIcon);
-                showFunc = function (element) { return element.css('display', 'inline-block'); };
-            }
-            var previousFlag = SimpleCache_1.SimpleCache.GetFromCache("AdvancedFlagging.Flagged." + post.postId);
-            if (previousFlag) {
-                reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
-                showFunc(reportedIcon);
-            }
-            var previousAction = SimpleCache_1.SimpleCache.GetFromCache("AdvancedFlagging.PerformedAction." + post.postId);
-            if (previousAction && previousAction.ReportType === 'NoFlag') {
-                performedActionIcon.attr('title', "Previously performed action: " + previousAction.DisplayName);
-                showFunc(performedActionIcon);
-            }
+                }); });
+                return [2 /*return*/];
+            });
         });
     }
     function getPerformedActionIcon() {
@@ -2408,9 +2436,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 case 3:
                     _a.sent();
                     _a.label = 4;
-                case 4:
-                    SetupPostPage();
-                    Configuration_1.SetupConfiguration();
+                case 4: return [4 /*yield*/, Configuration_1.SetupConfiguration()];
+                case 5:
+                    _a.sent();
+                    return [4 /*yield*/, SetupPostPage()];
+                case 6:
+                    _a.sent();
                     SetupStyles();
                     getFromCaches(exports.ConfigurationDetectAudits).then(function (isEnabled) {
                         RequestWatcher_1.WatchRequests().subscribe(function (xhr) {
@@ -2459,7 +2490,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                     if (currentPostDetails && $('.answers-subheader').length > 0) {
                                         var nattyApi_2 = new NattyApi_1.NattyAPI(postId);
                                         nattyApi_2.Watch();
-                                        handleFlag({ ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
+                                        handleFlag({ Id: 0, ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
                                             {
                                                 name: 'Natty',
                                                 ReportNaa: function (answerDate, questionDate) { return nattyApi_2.ReportNaa(answerDate, questionDate); },
@@ -2517,6 +2548,156 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.flagCategories = [
+        {
+            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
+            AppliesTo: ['Answer', 'Question'],
+            FlagTypes: [
+                {
+                    Id: 1,
+                    DisplayName: 'Spam',
+                    ReportType: 'PostSpam'
+                },
+                {
+                    Id: 2,
+                    DisplayName: 'Rude or Abusive',
+                    ReportType: 'PostOffensive'
+                }
+            ]
+        },
+        {
+            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
+            AppliesTo: ['Answer'],
+            FlagTypes: [
+                {
+                    Id: 3,
+                    DisplayName: 'Plagiarism',
+                    ReportType: 'PostOther',
+                    Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
+                    GetCustomFlagText: function (copyPastorItem) { return "Possible plagiarism of another answer https:" + copyPastorItem.target_url + ", as can be seen here http://copypastor.sobotics.org/posts/" + copyPastorItem.post_id; }
+                },
+                {
+                    Id: 4,
+                    DisplayName: 'Duplicate answer',
+                    ReportType: 'PostOther',
+                    Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
+                    GetComment: function () { return 'Please don\'t add the [same answer to multiple questions](http://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.'; },
+                    GetCustomFlagText: function (copyPastorItem) { return "The answer is a repost of their other answer https:" + copyPastorItem.target_url + ", but as there are slight differences as seen here http://copypastor.sobotics.org/posts/" + copyPastorItem.post_id + ", an auto flag wouldn't be raised."; }
+                }
+            ]
+        },
+        {
+            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
+            AppliesTo: ['Answer'],
+            FlagTypes: [
+                {
+                    Id: 5,
+                    DisplayName: 'Link Only',
+                    ReportType: 'AnswerNotAnAnswer',
+                    GetComment: function () { return 'A link to a solution is welcome, but please ensure your answer is useful without it: ' +
+                        '[add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will ' +
+                        'have some idea what it is and why it’s there, then quote the most relevant part of the ' +
+                        'page you\'re linking to in case the target page is unavailable. ' +
+                        '[Answers that are little more than a link may be deleted.](//stackoverflow.com/help/deleted-answers)'; }
+                },
+                {
+                    Id: 6,
+                    DisplayName: 'Not an answer',
+                    ReportType: 'AnswerNotAnAnswer',
+                    GetComment: function (reptuation) { return reptuation < 50
+                        ? 'This does not provide an answer to the question. You can [search for similar questions](//stackoverflow.com/search), ' +
+                            'or refer to the related and linked questions on the right-hand side of the page to find an answer. ' +
+                            'If you have a related but different question, [ask a new question](//stackoverflow.com/questions/ask), ' +
+                            'and include a link to this one to help provide context. ' +
+                            'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)'
+                        : 'This post doesn\'t look like an attempt to answer this question. Every post here is expected to be ' +
+                            'an explicit attempt to *answer* this question; if you have a critique or need a clarification of ' +
+                            'the question or another answer, you can [post a comment](//stackoverflow.com/help/privileges/comment) ' +
+                            '(like this one) directly below it. Please remove this answer and create either a comment or a new question. ' +
+                            'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)'; }
+                },
+                {
+                    Id: 7,
+                    DisplayName: 'Thanks',
+                    ReportType: 'AnswerNotAnAnswer',
+                    GetComment: function (reputation) { return reputation < 15
+                        ? 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
+                            'and can be perceived as noise by its future visitors. Once you [earn](http://meta.stackoverflow.com/q/146472) ' +
+                            'enough [reputation](http://stackoverflow.com/help/whats-reputation), you will gain privileges to ' +
+                            '[upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
+                            'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
+                            'See [Why is voting important](http://stackoverflow.com/help/why-vote).'
+                        :
+                            'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
+                                'and can be perceived as noise by its future visitors. ' +
+                                'Instead, [upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
+                                'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
+                                'See [Why is voting important](http://stackoverflow.com/help/why-vote).'; }
+                },
+                {
+                    Id: 8,
+                    DisplayName: 'Me too',
+                    ReportType: 'AnswerNotAnAnswer',
+                    GetComment: function () { return 'Please don\'t add *"Me too"* as answers. It doesn\'t actually provide an answer to the question. ' +
+                        ("If you have a different but related question, then [ask](//" + window.location.hostname + "$/questions/ask) it ") +
+                        '(reference this one if it will help provide context). If you\'re interested in this specific question, ' +
+                        'you can [upvote](//stackoverflow.com/help/privileges/vote-up) it, leave a [comment](//stackoverflow.com/help/privileges/comment), ' +
+                        'or start a [bounty](//stackoverflow.com/help/privileges/set-bounties) ' +
+                        'once you have enough [reputation](//stackoverflow.com/help/whats-reputation).'; },
+                },
+                {
+                    Id: 9,
+                    DisplayName: 'Library',
+                    ReportType: 'AnswerNotAnAnswer',
+                    GetComment: function () { return 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](http://meta.stackoverflow.com/a/251605) in the answer itself.'; }
+                },
+                {
+                    Id: 10,
+                    DisplayName: 'Comment',
+                    ReportType: 'AnswerNotAnAnswer',
+                    GetComment: function () { return 'This does not provide an answer to the question. Once you have sufficient [reputation](https://stackoverflow.com/help/whats-reputation) you will be able to [comment on any post](https://stackoverflow.com/help/privileges/comment); instead, [provide answers that don\'t require clarification from the asker](https://meta.stackexchange.com/questions/214173/why-do-i-need-50-reputation-to-comment-what-can-i-do-instead).'; }
+                },
+                {
+                    Id: 14,
+                    DisplayName: 'Duplicate',
+                    ReportType: 'AnswerNotAnAnswer',
+                    GetComment: function () { return 'Instead of posting an answer which merely links to another answer, please instead [flag the question](https://stackoverflow.com/help/privileges/flag-posts) as a duplicate.'; }
+                }
+            ]
+        },
+        {
+            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
+            AppliesTo: ['Answer', 'Question'],
+            FlagTypes: [
+                {
+                    Id: 11,
+                    DisplayName: 'Looks Fine',
+                    ReportType: 'NoFlag'
+                },
+                {
+                    Id: 12,
+                    DisplayName: 'Needs Editing',
+                    ReportType: 'NoFlag'
+                },
+                {
+                    Id: 13,
+                    DisplayName: 'Vandalism',
+                    ReportType: 'NoFlag'
+                }
+            ]
+        }
+    ];
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
+/* 13 */
+/***/ (function(module, exports, __webpack_require__) {
+
 "use strict";
 
 function isFunction(x) {
@@ -2526,7 +2707,7 @@ exports.isFunction = isFunction;
 //# sourceMappingURL=isFunction.js.map
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2536,7 +2717,7 @@ exports.errorObject = { e: {} };
 //# sourceMappingURL=errorObject.js.map
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2550,7 +2731,7 @@ exports.empty = {
 //# sourceMappingURL=Observer.js.map
 
 /***/ }),
-/* 15 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2583,7 +2764,7 @@ exports.ObjectUnsubscribedError = ObjectUnsubscribedError;
 //# sourceMappingURL=ObjectUnsubscribedError.js.map
 
 /***/ }),
-/* 16 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2629,7 +2810,7 @@ exports.SubjectSubscription = SubjectSubscription;
 //# sourceMappingURL=SubjectSubscription.js.map
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, SimpleCache_1) {
@@ -2742,7 +2923,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ }),
-/* 18 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2753,10 +2934,10 @@ Observable_1.Observable.prototype.take = take_1.take;
 //# sourceMappingURL=take.js.map
 
 /***/ }),
-/* 19 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(4), __webpack_require__(9), __webpack_require__(10), __webpack_require__(3), __webpack_require__(18)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, Subject_1, ReplaySubject_1, CrossDomainCache_1, SimpleCache_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(4), __webpack_require__(9), __webpack_require__(10), __webpack_require__(3), __webpack_require__(19)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, Subject_1, ReplaySubject_1, CrossDomainCache_1, SimpleCache_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
@@ -3087,7 +3268,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ }),
-/* 20 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(7)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, sotools_1) {
@@ -3193,141 +3374,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ }),
-/* 21 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.flagCategories = [
-        {
-            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
-            AppliesTo: ['Answer', 'Question'],
-            FlagTypes: [
-                {
-                    DisplayName: 'Spam',
-                    ReportType: 'PostSpam'
-                },
-                {
-                    DisplayName: 'Rude or Abusive',
-                    ReportType: 'PostOffensive'
-                }
-            ]
-        },
-        {
-            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
-            AppliesTo: ['Answer'],
-            FlagTypes: [
-                {
-                    DisplayName: 'Plagiarism',
-                    ReportType: 'PostOther',
-                    Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
-                    GetCustomFlagText: function (copyPastorItem) { return "Possible plagiarism of another answer https:" + copyPastorItem.target_url + ", as can be seen here http://copypastor.sobotics.org/posts/" + copyPastorItem.post_id; }
-                },
-                {
-                    DisplayName: 'Duplicate answer',
-                    ReportType: 'PostOther',
-                    Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
-                    GetComment: function () { return 'Please don\'t add the [same answer to multiple questions](http://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.'; },
-                    GetCustomFlagText: function (copyPastorItem) { return "The answer is a repost of their other answer https:" + copyPastorItem.target_url + ", but as there are slight differences as seen here http://copypastor.sobotics.org/posts/" + copyPastorItem.post_id + ", an auto flag wouldn't be raised."; }
-                }
-            ]
-        },
-        {
-            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
-            AppliesTo: ['Answer'],
-            FlagTypes: [
-                {
-                    DisplayName: 'Link Only',
-                    ReportType: 'AnswerNotAnAnswer',
-                    GetComment: function () { return 'A link to a solution is welcome, but please ensure your answer is useful without it: ' +
-                        '[add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will ' +
-                        'have some idea what it is and why it’s there, then quote the most relevant part of the ' +
-                        'page you\'re linking to in case the target page is unavailable. ' +
-                        '[Answers that are little more than a link may be deleted.](//stackoverflow.com/help/deleted-answers)'; }
-                },
-                {
-                    DisplayName: 'Not an answer',
-                    ReportType: 'AnswerNotAnAnswer',
-                    GetComment: function (reptuation) { return reptuation < 50
-                        ? 'This does not provide an answer to the question. You can [search for similar questions](//stackoverflow.com/search), ' +
-                            'or refer to the related and linked questions on the right-hand side of the page to find an answer. ' +
-                            'If you have a related but different question, [ask a new question](//stackoverflow.com/questions/ask), ' +
-                            'and include a link to this one to help provide context. ' +
-                            'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)'
-                        : 'This post doesn\'t look like an attempt to answer this question. Every post here is expected to be ' +
-                            'an explicit attempt to *answer* this question; if you have a critique or need a clarification of ' +
-                            'the question or another answer, you can [post a comment](//stackoverflow.com/help/privileges/comment) ' +
-                            '(like this one) directly below it. Please remove this answer and create either a comment or a new question. ' +
-                            'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)'; }
-                },
-                {
-                    DisplayName: 'Thanks',
-                    ReportType: 'AnswerNotAnAnswer',
-                    GetComment: function (reputation) { return reputation < 15
-                        ? 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
-                            'and can be perceived as noise by its future visitors. Once you [earn](http://meta.stackoverflow.com/q/146472) ' +
-                            'enough [reputation](http://stackoverflow.com/help/whats-reputation), you will gain privileges to ' +
-                            '[upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
-                            'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
-                            'See [Why is voting important](http://stackoverflow.com/help/why-vote).'
-                        :
-                            'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
-                                'and can be perceived as noise by its future visitors. ' +
-                                'Instead, [upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
-                                'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
-                                'See [Why is voting important](http://stackoverflow.com/help/why-vote).'; }
-                },
-                {
-                    DisplayName: 'Me too',
-                    ReportType: 'AnswerNotAnAnswer',
-                    GetComment: function () { return 'Please don\'t add *"Me too"* as answers. It doesn\'t actually provide an answer to the question. ' +
-                        ("If you have a different but related question, then [ask](//" + window.location.hostname + "$/questions/ask) it ") +
-                        '(reference this one if it will help provide context). If you\'re interested in this specific question, ' +
-                        'you can [upvote](//stackoverflow.com/help/privileges/vote-up) it, leave a [comment](//stackoverflow.com/help/privileges/comment), ' +
-                        'or start a [bounty](//stackoverflow.com/help/privileges/set-bounties) ' +
-                        'once you have enough [reputation](//stackoverflow.com/help/whats-reputation).'; },
-                },
-                {
-                    DisplayName: 'Library',
-                    ReportType: 'AnswerNotAnAnswer',
-                    GetComment: function () { return 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](http://meta.stackoverflow.com/a/251605) in the answer itself.'; }
-                },
-                {
-                    DisplayName: 'Comment',
-                    ReportType: 'AnswerNotAnAnswer',
-                    GetComment: function () { return 'This does not provide an answer to the question. Once you have sufficient [reputation](https://stackoverflow.com/help/whats-reputation) you will be able to [comment on any post](https://stackoverflow.com/help/privileges/comment); instead, [provide answers that don\'t require clarification from the asker](https://meta.stackexchange.com/questions/214173/why-do-i-need-50-reputation-to-comment-what-can-i-do-instead).'; }
-                }
-            ]
-        },
-        {
-            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
-            AppliesTo: ['Answer', 'Question'],
-            FlagTypes: [
-                {
-                    DisplayName: 'Looks Fine',
-                    ReportType: 'NoFlag'
-                },
-                {
-                    DisplayName: 'Needs Editing',
-                    ReportType: 'NoFlag'
-                },
-                {
-                    DisplayName: 'Vandalism',
-                    ReportType: 'NoFlag'
-                }
-            ]
-        }
-    ];
-}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
-				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ }),
 /* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(4), __webpack_require__(9), __webpack_require__(7), __webpack_require__(3), __webpack_require__(17), __webpack_require__(18)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, Subject_1, ReplaySubject_1, sotools_1, SimpleCache_1, ChatApi_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(4), __webpack_require__(9), __webpack_require__(7), __webpack_require__(3), __webpack_require__(18), __webpack_require__(19)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, Subject_1, ReplaySubject_1, sotools_1, SimpleCache_1, ChatApi_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var nattyFeedbackUrl = 'http://logs.sobotics.org/napi/api/feedback';
@@ -3495,7 +3545,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 var Subscriber_1 = __webpack_require__(2);
 var rxSubscriber_1 = __webpack_require__(8);
-var Observer_1 = __webpack_require__(14);
+var Observer_1 = __webpack_require__(15);
 function toSubscriber(nextOrObserver, error, complete) {
     if (nextOrObserver) {
         if (nextOrObserver instanceof Subscriber_1.Subscriber) {
@@ -3540,7 +3590,7 @@ exports.isObject = isObject;
 
 "use strict";
 
-var errorObject_1 = __webpack_require__(13);
+var errorObject_1 = __webpack_require__(14);
 var tryCatchTarget;
 function tryCatcher() {
     try {
@@ -4822,7 +4872,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
 /* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(3), __webpack_require__(9), __webpack_require__(4), __webpack_require__(17), __webpack_require__(46)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, SimpleCache_1, ReplaySubject_1, Subject_1, ChatApi_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(3), __webpack_require__(9), __webpack_require__(4), __webpack_require__(18), __webpack_require__(46)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, SimpleCache_1, ReplaySubject_1, Subject_1, ChatApi_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var copyPastorServer = 'http://copypastor.sobotics.org';
@@ -5313,26 +5363,66 @@ var FilterSubscriber = (function (_super) {
 /* 53 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(11), __webpack_require__(19), __webpack_require__(10)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, AdvancedFlagging_1, MetaSmokeAPI_1, CrossDomainCache_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(11), __webpack_require__(20), __webpack_require__(10), __webpack_require__(12)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, AdvancedFlagging_1, MetaSmokeAPI_1, CrossDomainCache_1, FlagTypes_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function SetupConfiguration() {
-        var bottomBox = $('.-copyright, text-right').children('.g-column').children('.-list');
-        var configurationDiv = $('<div>')
-            .css('line-height', '18px')
-            .css('text-align', 'right')
-            .css('padding', '5px');
-        var configurationLink = $('<a href="javascript:void(0);">AdvancedFlagging configuration</a>');
-        configurationLink.click(function () { return BuildConfigurationOverlay(); });
-        configurationDiv.append(configurationLink);
-        bottomBox.append(configurationDiv);
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            var bottomBox, configurationDiv, configurationLink;
+            return tslib_1.__generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, SetupDefaults()];
+                    case 1:
+                        _a.sent();
+                        bottomBox = $('.-copyright, text-right').children('.g-column').children('.-list');
+                        configurationDiv = $('<div>')
+                            .css('line-height', '18px')
+                            .css('text-align', 'right')
+                            .css('padding', '5px');
+                        configurationLink = $('<a href="javascript:void(0);">AdvancedFlagging configuration</a>');
+                        configurationLink.click(function () { return BuildConfigurationOverlay(); });
+                        configurationDiv.append(configurationLink);
+                        bottomBox.append(configurationDiv);
+                        return [2 /*return*/];
+                }
+            });
+        });
     }
     exports.SetupConfiguration = SetupConfiguration;
+    function getFlagTypes() {
+        var flagTypes = [];
+        FlagTypes_1.flagCategories.forEach(function (flagCategory) {
+            flagCategory.FlagTypes.forEach(function (flagType) {
+                flagTypes.push({
+                    Id: flagType.Id,
+                    DisplayName: flagType.DisplayName
+                });
+            });
+        });
+        return flagTypes;
+    }
+    function SetupDefaults() {
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            var configurationEnabledFlags, flagTypeIds;
+            return tslib_1.__generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, AdvancedFlagging_1.getFromCaches(AdvancedFlagging_1.ConfigurationEnabledFlags)];
+                    case 1:
+                        configurationEnabledFlags = _a.sent();
+                        if (!configurationEnabledFlags) {
+                            flagTypeIds = getFlagTypes().map(function (f) { return f.Id; });
+                            AdvancedFlagging_1.storeInCaches(AdvancedFlagging_1.ConfigurationEnabledFlags, flagTypeIds);
+                        }
+                        return [2 /*return*/];
+                }
+            });
+        });
+    }
     function BuildConfigurationOverlay() {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var overlay, overlayContent, configElements, sections, _a, _b, _c, firstSection, submitButtons, okayButton, cancelButton;
-            return tslib_1.__generator(this, function (_d) {
-                switch (_d.label) {
+            var overlay, overlayContent, configElements, sections, _a, _b, _c, _d, firstSection, submitButtons, okayButton, cancelButton;
+            return tslib_1.__generator(this, function (_e) {
+                switch (_e.label) {
                     case 0:
                         overlay = $('<div>')
                             .css('position', 'fixed')
@@ -5358,17 +5448,26 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         return [4 /*yield*/, GetGeneralConfigItems()];
                     case 1:
                         _b = [
-                            (_a.Items = _d.sent(),
+                            (_a.Items = _e.sent(),
                                 _a)
                         ];
                         _c = {
+                            SectionName: 'Flags'
+                        };
+                        return [4 /*yield*/, GetFlagSettings()];
+                    case 2:
+                        _b = _b.concat([
+                            (_c.Items = _e.sent(),
+                                _c)
+                        ]);
+                        _d = {
                             SectionName: 'Admin'
                         };
                         return [4 /*yield*/, GetAdminConfigItems()];
-                    case 2:
+                    case 3:
                         sections = _b.concat([
-                            (_c.Items = _d.sent(),
-                                _c)
+                            (_d.Items = _e.sent(),
+                                _d)
                         ]);
                         firstSection = true;
                         sections.forEach(function (section) {
@@ -5381,9 +5480,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             overlayContent.append(sectionWrapper);
                             section.Items.forEach(function (item) {
                                 configElements.push(item);
-                                var listItem = $('<li>').css('line-height', '18px');
-                                listItem.append(item.element);
-                                sectionWrapper.append(listItem);
+                                if (item.element) {
+                                    var listItem = $('<li>').css('line-height', '18px');
+                                    listItem.append(item.element);
+                                    sectionWrapper.append(listItem);
+                                }
                             });
                         });
                         submitButtons = $('<div>')
@@ -5393,13 +5494,20 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             .css('margin-right', '15px');
                         okayButton.click(function (event) {
                             event.preventDefault();
+                            var requiresReload = false;
                             configElements.forEach(function (configElement) {
                                 if (configElement.onSave) {
                                     configElement.onSave();
                                 }
+                                requiresReload = !!configElement.requiresReload;
                             });
                             overlay.remove();
                             AdvancedFlagging_1.displaySuccess('Configuration saved');
+                            if (requiresReload) {
+                                setTimeout(function () {
+                                    window.location.reload();
+                                }, 500);
+                            }
                         });
                         cancelButton.click(function (event) {
                             event.preventDefault();
@@ -5426,6 +5534,54 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
         });
     }
+    function GetFlagSettings() {
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            var checkBoxes, flagTypeIds, returnArr;
+            return tslib_1.__generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        checkBoxes = [];
+                        return [4 /*yield*/, AdvancedFlagging_1.getFromCaches(AdvancedFlagging_1.ConfigurationEnabledFlags)];
+                    case 1:
+                        flagTypeIds = (_a.sent()) || [];
+                        getFlagTypes().forEach(function (f) {
+                            var checkBox = $('<input type="checkbox">');
+                            var label = $('<label />')
+                                .append(checkBox)
+                                .append(f.DisplayName);
+                            var storedValue = flagTypeIds.indexOf(f.Id) > -1;
+                            if (storedValue) {
+                                checkBox.prop('checked', true);
+                            }
+                            checkBoxes.push({
+                                label: label,
+                                checkBox: checkBox,
+                                Id: f.Id
+                            });
+                        });
+                        returnArr = checkBoxes.map(function (f) { return ({ element: f.label }); });
+                        returnArr.push({
+                            onSave: function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+                                var updatedFlagTypes;
+                                return tslib_1.__generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            updatedFlagTypes = checkBoxes.filter(function (cb) { return !!cb.checkBox.prop('checked'); }).map(function (cb) { return cb.Id; });
+                                            return [4 /*yield*/, AdvancedFlagging_1.storeInCaches(AdvancedFlagging_1.ConfigurationEnabledFlags, updatedFlagTypes)];
+                                        case 1:
+                                            _a.sent();
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); },
+                            requiresReload: true
+                        });
+                        return [2 /*return*/, returnArr];
+                }
+            });
+        });
+    }
     function GetAdminConfigItems() {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             var _this = this;
@@ -5442,7 +5598,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                             return [2 /*return*/];
                                     }
                                 });
-                            }); })
+                            }); }),
+                            requiresReload: true
                         },
                         {
                             element: $('<a />').text('Get MetaSmoke key')
@@ -5460,7 +5617,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                     }
                                     return [2 /*return*/];
                                 });
-                            }); })
+                            }); }),
+                            requiresReload: true
                         }
                     ]];
             });

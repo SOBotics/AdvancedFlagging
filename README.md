@@ -97,34 +97,45 @@ Please don't add the [same answer to multiple questions](http://meta.stackexchan
 
 # Configuration
 
-AdvancedFlagging has a configuration panel found at the bottom of StackExchange pages:
+AdvancedFlagging has a link to its configuration panel found at the bottom of StackExchange pages:
 
-![Picture of configuration](https://i.stack.imgur.com/dpIx5.png)
+![Picture of link to configuration](https://i.imgur.com/ZOSrfgv.png)
 
-## Clear MetaSmoke Configuration
+Clicking it opens the following modal box:
 
-Resets all MetaSmoke configuration, including tokens
+![Picture of configuration box](https://i.imgur.com/pRZBif9.png)
 
-## Get MetaSmoke key
+## General
 
-Redirects to MetaSmoke's oauth login. Used for manual key setup.
-
-## Manually register MetaSmoke key
-
-Present dialog box to manually input MetaSmoke key
-
-## Watch for manual flags
+### Watch for manual flags
 
 Manual flags will be watched, and feedback will be sent (where applicable).
 
-## Watch for queue responses
+### Watch for queue responses
 
 Responses in the Low Quality Posts queue will be watched, and feedback will be sent (where applicable)
 
-## Detect audits
+### Detect audits
 
 Display a banner when audits are detected in queues.
 
+## Flags
+
+Here, you can choose which flag options are present in the dropdown. This allows us to create far more options for flagging, without cluttering up the page for users who aren't interested in using them.
+
+## Admin
+
+### Clear MetaSmoke Configuration
+
+Resets all MetaSmoke configuration, including tokens
+
+### Get MetaSmoke key
+
+Redirects to MetaSmoke's oauth login. Used for manual key setup.
+
+### Manually register MetaSmoke key
+
+Present dialog box to manually input MetaSmoke key
 
 # Building
 

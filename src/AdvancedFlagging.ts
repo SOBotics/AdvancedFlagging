@@ -482,7 +482,7 @@ async function SetupPostPage() {
             window.open(`https://sentinel.erwaysoftware.com/posts/aid/${post.postId}`, '_blank');
         });
 
-        let showFunc = (element: JQuery) => element.show();
+        const showFunc = (element: JQuery) => element.css('display', 'inline-block');
 
         const copyPastorIcon = getGuttenbergIcon();
         const copyPastorApi = new CopyPastorAPI(post.postId, copyPastorKey);
@@ -649,8 +649,6 @@ async function SetupPostPage() {
             iconLocation.after(nattyIcon);
             iconLocation.after(reportedIcon);
             iconLocation.after(performedActionIcon);
-
-            showFunc = (element: JQuery) => element.css('display', 'inline-block');
         }
 
         const previousFlag = SimpleCache.GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${post.postId}`);

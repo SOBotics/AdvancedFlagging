@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.33
+// @version      0.5.34
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2193,7 +2193,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                 nattyIcon = getNattyIcon().click(function () {
                                     window.open("https://sentinel.erwaysoftware.com/posts/aid/" + post.postId, '_blank');
                                 });
-                                showFunc = function (element) { return element.show(); };
+                                showFunc = function (element) { return element.css('display', 'inline-block'); };
                                 copyPastorIcon = getGuttenbergIcon();
                                 copyPastorApi = new CopyPastorAPI_1.CopyPastorAPI(post.postId, copyPastorKey);
                                 copyPastorObservable = copyPastorApi.Watch();
@@ -2341,7 +2341,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                 iconLocation.after(nattyIcon);
                                 iconLocation.after(reportedIcon);
                                 iconLocation.after(performedActionIcon);
-                                showFunc = function (element) { return element.css('display', 'inline-block'); };
                                 _a.label = 3;
                             case 3:
                                 previousFlag = SimpleCache_1.SimpleCache.GetFromCache("AdvancedFlagging.Flagged." + post.postId);

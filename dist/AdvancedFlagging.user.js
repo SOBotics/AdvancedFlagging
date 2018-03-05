@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.35
+// @version      0.5.36
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2828,9 +2828,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     cachingKey = "StackExchange.ChatApi.FKey_" + roomId;
                     getterPromise = new Promise(function (resolve, reject) {
                         _this.GetChannelPage(roomId).then(function (channelPage) {
-                            var match = channelPage.match(/hidden" value="([\dabcdef]{32})/);
-                            if (match && match.length) {
-                                var fkey = match[1];
+                            var fkeyElement = $('#fkey', $(channelPage));
+                            if (fkeyElement) {
+                                var fkey = fkeyElement.val();
                                 resolve(fkey);
                             }
                             reject('Could not find fkey');

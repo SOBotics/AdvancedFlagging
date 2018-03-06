@@ -38,7 +38,7 @@ AdvancedFlagging adds icons from Smokey, Natty and Guttenberg to posts which hav
 The interface looks like this:  
 ![Picture of the interface](https://i.stack.imgur.com/HCLtr.png)  
 
-'Leave Comment' is ticked by default if there are no comments beneath the post to avoid comment spam.
+'Leave Comment' is ticked by default if there are no comments beneath the post to avoid comment spam. This is only available on Stack Overflow.
 
 'Flag' is always ticked by default. Unticking this box will *not* post a flag to StackExchange when an action is taken. Feedback to all sources will, however, still be sent.
 

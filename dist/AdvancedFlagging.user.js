@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.38
+// @version      0.5.39
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2828,10 +2828,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     cachingKey = "StackExchange.ChatApi.FKey_" + roomId;
                     getterPromise = new Promise(function (resolve, reject) {
                         _this.GetChannelPage(roomId).then(function (channelPage) {
-                            var match = channelPage.match(/hidden" value="([\dabcdef]{32})/);
-                            if (match && match.length) {
-                                var fkey = match[1];
+                            var fkeyElement = $(channelPage).filter('#fkey');
+                            if (fkeyElement.length > 0) {
+                                var fkey = fkeyElement.val();
                                 resolve(fkey);
+                                return;
                             }
                             reject('Could not find fkey');
                         });
@@ -3384,12 +3385,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     var NattyAPI = /** @class */ (function () {
         function NattyAPI(answerId) {
             this.chat = new ChatApi_1.ChatApi();
+            this.subject = new Subject_1.Subject();
+            this.replaySubject = new ReplaySubject_1.ReplaySubject();
             this.answerId = answerId;
         }
         NattyAPI.prototype.Watch = function () {
             var _this = this;
-            this.subject = new Subject_1.Subject();
-            this.replaySubject = new ReplaySubject_1.ReplaySubject(1);
             this.subject.subscribe(this.replaySubject);
             if (sotools_1.IsStackOverflow()) {
                 SimpleCache_1.SimpleCache.GetAndCache("NattyApi.Feedback." + this.answerId, function () { return new Promise(function (resolve, reject) {
@@ -3527,7 +3528,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
         };
         NattyAPI.prototype.DaysBetween = function (first, second) {
-            return Math.round((second - first) / (1000 * 60 * 60 * 24));
+            return (second - first) / (1000 * 60 * 60 * 24);
         };
         return NattyAPI;
     }());
@@ -5528,7 +5529,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return [2 /*return*/, Promise.all([
                         createConfigCheckbox('Watch for manual flags', AdvancedFlagging_1.ConfigurationWatchFlags),
                         createConfigCheckbox('Watch for queue responses', AdvancedFlagging_1.ConfigurationWatchQueues),
-                        createConfigCheckbox('Detect audits', AdvancedFlagging_1.ConfigurationDetectAudits),
                     ])];
             });
         });

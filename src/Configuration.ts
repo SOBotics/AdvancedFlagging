@@ -141,7 +141,6 @@ async function GetGeneralConfigItems() {
     return Promise.all([
         createConfigCheckbox('Watch for manual flags', ConfigurationWatchFlags),
         createConfigCheckbox('Watch for queue responses', ConfigurationWatchQueues),
-        createConfigCheckbox('Detect audits', ConfigurationDetectAudits),
     ]);
 }
 

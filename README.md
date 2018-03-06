@@ -115,10 +115,6 @@ Manual flags will be watched, and feedback will be sent (where applicable).
 
 Responses in the Low Quality Posts queue will be watched, and feedback will be sent (where applicable)
 
-### Detect audits
-
-Display a banner when audits are detected in queues.
-
 ## Flags
 
 Here, you can choose which flag options are present in the dropdown. This allows us to create far more options for flagging, without cluttering up the page for users who aren't interested in using them.

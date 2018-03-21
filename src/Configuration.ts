@@ -1,4 +1,4 @@
-import { getFromCaches, storeInCaches, ConfigurationWatchFlags, ConfigurationWatchQueues, ConfigurationDetectAudits, displaySuccess, metaSmokeKey, ConfigurationEnabledFlags } from 'AdvancedFlagging';
+import { getFromCaches, storeInCaches, ConfigurationWatchFlags, ConfigurationWatchQueues, ConfigurationDetectAudits, displaySuccess, metaSmokeKey, ConfigurationEnabledFlags, ConfigurationOpenOnHover } from 'AdvancedFlagging';
 import { MetaSmokeAPI, MetaSmokeDisabledConfig } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
 import { CrossDomainCache } from '@userscriptTools/caching/CrossDomainCache';
 import { flagCategories } from 'FlagTypes';
@@ -139,6 +139,7 @@ async function BuildConfigurationOverlay() {
 
 async function GetGeneralConfigItems() {
     return Promise.all([
+        createConfigCheckbox('Open dropdown on hover', ConfigurationOpenOnHover),
         createConfigCheckbox('Watch for manual flags', ConfigurationWatchFlags),
         createConfigCheckbox('Watch for queue responses', ConfigurationWatchQueues),
     ]);

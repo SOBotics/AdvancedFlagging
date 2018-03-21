@@ -18,6 +18,7 @@ debugger;
 export const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
 const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
 
+export const ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
 export const ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlags';
 export const ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
 export const ConfigurationDetectAudits = 'AdvancedFlagging.Configuration.DetectAudits';
@@ -627,12 +628,28 @@ async function SetupPostPage() {
                 dropDown.hide();
             });
             const link = advancedFlaggingLink;
-            link.click(e => {
-                e.stopPropagation();
-                if (e.target === link.get(0)) {
-                    dropDown.toggle();
-                }
-            });
+            getFromCaches<boolean>(ConfigurationOpenOnHover)
+                .then(openOnHover => {
+                    if (openOnHover) {
+                        link.hover(e => {
+                            e.stopPropagation();
+                            if (e.target === link.get(0)) {
+                                dropDown.show();
+                            }
+                        });
+                        link.mouseleave(e => {
+                            e.stopPropagation();
+                            dropDown.hide();
+                        });
+                    } else {
+                        link.click(e => {
+                            e.stopPropagation();
+                            if (e.target === link.get(0)) {
+                                dropDown.toggle();
+                            }
+                        });
+                    }
+                });
 
             iconLocation.append(advancedFlaggingLink);
             iconLocation.append(performedActionIcon);

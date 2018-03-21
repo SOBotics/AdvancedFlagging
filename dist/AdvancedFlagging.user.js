@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.40
+// @version      0.5.41
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1814,6 +1814,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     debugger;
     exports.metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
     var copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
+    exports.ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
     exports.ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlags';
     exports.ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
     exports.ConfigurationDetectAudits = 'AdvancedFlagging.Configuration.DetectAudits';
@@ -2321,10 +2322,27 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                     dropDown_1.hide();
                                 });
                                 link_1 = advancedFlaggingLink;
-                                link_1.click(function (e) {
-                                    e.stopPropagation();
-                                    if (e.target === link_1.get(0)) {
-                                        dropDown_1.toggle();
+                                getFromCaches(exports.ConfigurationOpenOnHover)
+                                    .then(function (openOnHover) {
+                                    if (openOnHover) {
+                                        link_1.hover(function (e) {
+                                            e.stopPropagation();
+                                            if (e.target === link_1.get(0)) {
+                                                dropDown_1.show();
+                                            }
+                                        });
+                                        link_1.mouseleave(function (e) {
+                                            e.stopPropagation();
+                                            dropDown_1.hide();
+                                        });
+                                    }
+                                    else {
+                                        link_1.click(function (e) {
+                                            e.stopPropagation();
+                                            if (e.target === link_1.get(0)) {
+                                                dropDown_1.toggle();
+                                            }
+                                        });
                                     }
                                 });
                                 iconLocation.append(advancedFlaggingLink);
@@ -5527,6 +5545,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             return tslib_1.__generator(this, function (_a) {
                 return [2 /*return*/, Promise.all([
+                        createConfigCheckbox('Open dropdown on hover', AdvancedFlagging_1.ConfigurationOpenOnHover),
                         createConfigCheckbox('Watch for manual flags', AdvancedFlagging_1.ConfigurationWatchFlags),
                         createConfigCheckbox('Watch for queue responses', AdvancedFlagging_1.ConfigurationWatchQueues),
                     ])];

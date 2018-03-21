@@ -6,18 +6,18 @@ import { flagCategories } from 'FlagTypes';
 export async function SetupConfiguration() {
     await SetupDefaults();
 
-    const bottomBox = $('.-copyright, text-right').children('.g-column').children('.-list');
+    const bottomBox = $('.site-footer--copyright').children('.-list');
 
     const configurationDiv = $('<div>')
         .css('line-height', '18px')
-        .css('text-align', 'right')
+        .css('text-align', 'left')
         .css('padding', '5px');
 
     const configurationLink = $('<a href="javascript:void(0);">AdvancedFlagging configuration</a>');
     configurationLink.click(() => BuildConfigurationOverlay());
 
     configurationDiv.append(configurationLink);
-    bottomBox.append(configurationDiv);
+    configurationDiv.insertAfter(bottomBox);
 }
 
 function getFlagTypes() {

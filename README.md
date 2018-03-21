@@ -103,7 +103,7 @@ AdvancedFlagging has a link to its configuration panel found at the bottom of St
 
 Clicking it opens the following modal box:
 
-![Picture of configuration box](https://i.imgur.com/pRZBif9.png)
+![Picture of configuration box](https://i.imgur.com/ImYtE0n.png)
 
 ## General
 

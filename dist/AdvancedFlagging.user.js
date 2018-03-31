@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.42
+// @version      0.5.43
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1819,6 +1819,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
     exports.ConfigurationDetectAudits = 'AdvancedFlagging.Configuration.DetectAudits';
     exports.ConfigurationEnabledFlags = 'AdvancedFlagging.Configuration.EnabledFlags';
+    exports.ConfigurationLinkDisabled = 'AdvancedFlagging.Configuration.LinkDisabled';
     function SetupStyles() {
         var scriptNode = document.createElement('style');
         scriptNode.type = 'text/css';
@@ -2186,7 +2187,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             var _this = this;
             return tslib_1.__generator(this, function (_a) {
                 sotools_1.parseQuestionsAndAnswers(function (post) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-                    var iconLocation, advancedFlaggingLink, nattyIcon, showFunc, copyPastorIcon, copyPastorApi, copyPastorObservable, smokeyIcon, reporters, nattyApi_1, genericBotAPI_1, metaSmoke, performedActionIcon, reportedIcon, questionTime_1, answerTime_1, deleted, dropDown_1, link_1, previousFlag, previousAction;
+                    var iconLocation, advancedFlaggingLink, nattyIcon, showFunc, copyPastorIcon, copyPastorApi, copyPastorObservable, smokeyIcon, reporters, nattyApi_1, genericBotAPI_1, metaSmoke, performedActionIcon, reportedIcon, questionTime_1, answerTime_1, deleted, linkDisabled, dropDown_1, link_1, previousFlag, previousAction;
                     return tslib_1.__generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
@@ -2282,7 +2283,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                 });
                                 performedActionIcon = getPerformedActionIcon();
                                 reportedIcon = getReportedIcon();
-                                if (!(post.page === 'Question')) return [3 /*break*/, 2];
+                                if (!(post.page === 'Question')) return [3 /*break*/, 4];
                                 // Now we setup the flagging dialog
                                 iconLocation = post.element.find('.post-menu');
                                 advancedFlaggingLink = $('<a />').text('Advanced Flagging');
@@ -2314,8 +2315,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                         }
                                     });
                                 });
-                                return [4 /*yield*/, BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime_1, questionTime_1, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi.Promise())];
+                                return [4 /*yield*/, getFromCaches(exports.ConfigurationLinkDisabled)];
                             case 1:
+                                linkDisabled = _a.sent();
+                                if (!!linkDisabled) return [3 /*break*/, 3];
+                                return [4 /*yield*/, BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime_1, questionTime_1, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi.Promise())];
+                            case 2:
                                 dropDown_1 = _a.sent();
                                 advancedFlaggingLink.append(dropDown_1);
                                 $(window).click(function () {
@@ -2346,21 +2351,23 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                     }
                                 });
                                 iconLocation.append(advancedFlaggingLink);
+                                _a.label = 3;
+                            case 3:
                                 iconLocation.append(performedActionIcon);
                                 iconLocation.append(reportedIcon);
                                 iconLocation.append(nattyIcon);
                                 iconLocation.append(copyPastorIcon);
                                 iconLocation.append(smokeyIcon);
-                                return [3 /*break*/, 3];
-                            case 2:
+                                return [3 /*break*/, 5];
+                            case 4:
                                 iconLocation = post.element.find('a.answer-hyperlink');
                                 iconLocation.after(smokeyIcon);
                                 iconLocation.after(copyPastorIcon);
                                 iconLocation.after(nattyIcon);
                                 iconLocation.after(reportedIcon);
                                 iconLocation.after(performedActionIcon);
-                                _a.label = 3;
-                            case 3:
+                                _a.label = 5;
+                            case 5:
                                 previousFlag = SimpleCache_1.SimpleCache.GetFromCache("AdvancedFlagging.Flagged." + post.postId);
                                 if (previousFlag) {
                                     reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
@@ -5548,6 +5555,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         createConfigCheckbox('Open dropdown on hover', AdvancedFlagging_1.ConfigurationOpenOnHover),
                         createConfigCheckbox('Watch for manual flags', AdvancedFlagging_1.ConfigurationWatchFlags),
                         createConfigCheckbox('Watch for queue responses', AdvancedFlagging_1.ConfigurationWatchQueues),
+                        createConfigCheckbox('Disable AdvancedFlagging link', AdvancedFlagging_1.ConfigurationLinkDisabled),
                     ])];
             });
         });

@@ -23,6 +23,7 @@ export const ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlag
 export const ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
 export const ConfigurationDetectAudits = 'AdvancedFlagging.Configuration.DetectAudits';
 export const ConfigurationEnabledFlags = 'AdvancedFlagging.Configuration.EnabledFlags';
+export const ConfigurationLinkDisabled = 'AdvancedFlagging.Configuration.LinkDisabled';
 
 declare const StackExchange: StackExchangeGlobal;
 declare const unsafeWindow: any;
@@ -614,44 +615,47 @@ async function SetupPostPage() {
                 });
             });
 
-            const dropDown = await BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation as number, answerTime, questionTime,
-                deleted,
-                reportedIcon,
-                performedActionIcon,
-                reporters,
-                copyPastorApi.Promise()
-            );
+            const linkDisabled = await getFromCaches(ConfigurationLinkDisabled);
+            if (!linkDisabled) {
+                const dropDown = await BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation as number, answerTime, questionTime,
+                    deleted,
+                    reportedIcon,
+                    performedActionIcon,
+                    reporters,
+                    copyPastorApi.Promise()
+                );
 
-            advancedFlaggingLink.append(dropDown);
+                advancedFlaggingLink.append(dropDown);
 
-            $(window).click(() => {
-                dropDown.hide();
-            });
-            const link = advancedFlaggingLink;
-            getFromCaches<boolean>(ConfigurationOpenOnHover)
-                .then(openOnHover => {
-                    if (openOnHover) {
-                        link.hover(e => {
-                            e.stopPropagation();
-                            if (e.target === link.get(0)) {
-                                dropDown.show();
-                            }
-                        });
-                        link.mouseleave(e => {
-                            e.stopPropagation();
-                            dropDown.hide();
-                        });
-                    } else {
-                        link.click(e => {
-                            e.stopPropagation();
-                            if (e.target === link.get(0)) {
-                                dropDown.toggle();
-                            }
-                        });
-                    }
+                $(window).click(() => {
+                    dropDown.hide();
                 });
+                const link = advancedFlaggingLink;
+                getFromCaches<boolean>(ConfigurationOpenOnHover)
+                    .then(openOnHover => {
+                        if (openOnHover) {
+                            link.hover(e => {
+                                e.stopPropagation();
+                                if (e.target === link.get(0)) {
+                                    dropDown.show();
+                                }
+                            });
+                            link.mouseleave(e => {
+                                e.stopPropagation();
+                                dropDown.hide();
+                            });
+                        } else {
+                            link.click(e => {
+                                e.stopPropagation();
+                                if (e.target === link.get(0)) {
+                                    dropDown.toggle();
+                                }
+                            });
+                        }
+                    });
+                iconLocation.append(advancedFlaggingLink);
+            }
 
-            iconLocation.append(advancedFlaggingLink);
             iconLocation.append(performedActionIcon);
             iconLocation.append(reportedIcon);
             iconLocation.append(nattyIcon);

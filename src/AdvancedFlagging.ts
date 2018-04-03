@@ -12,9 +12,6 @@ import { CopyPastorAPI, CopyPastorFindTargetResponseItem } from '@userscriptTool
 import { WatchFlags, WatchRequests } from '@userscriptTools/sotools/RequestWatcher';
 import { SetupConfiguration } from 'Configuration';
 
-// tslint:disable-next-line:no-debugger
-debugger;
-
 export const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
 const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
 

@@ -4,19 +4,20 @@ import { CrossDomainCache } from '@userscriptTools/caching/CrossDomainCache';
 import { flagCategories } from 'FlagTypes';
 
 export async function SetupConfiguration() {
-    await SetupDefaults();
-
     const bottomBox = $('.site-footer--copyright').children('.-list');
-
     const configurationDiv = $('<div>')
         .css('line-height', '18px')
         .css('text-align', 'left')
         .css('padding', '5px');
-
-    const configurationLink = $('<a href="javascript:void(0);">AdvancedFlagging configuration</a>');
-    configurationLink.click(() => BuildConfigurationOverlay());
-
-    configurationDiv.append(configurationLink);
+    if (await CrossDomainCache.CacheFailed) {
+        const cacheDisabledMessage = $('<p>Cache failed to initialize. AdvancedFlagging configuration disabled</p>');
+        configurationDiv.append(cacheDisabledMessage);
+    } else {
+        await SetupDefaults();
+        const configurationLink = $('<a href="javascript:void(0);">AdvancedFlagging configuration</a>');
+        configurationLink.click(() => BuildConfigurationOverlay());
+        configurationDiv.append(configurationLink);
+    }
     configurationDiv.insertAfter(bottomBox);
 }
 

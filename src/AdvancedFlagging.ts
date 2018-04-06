@@ -347,7 +347,10 @@ async function BuildFlaggingDialog(element: JQuery,
 
                         if (result.FlagPromise) {
                             result.FlagPromise.then(() => {
-                                SimpleCache.StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType);
+                                const expiryDate = new Date();
+                                expiryDate.setDate(expiryDate.getDate() + 30);
+
+                                SimpleCache.StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType, expiryDate);
                                 reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
                                 reportedIcon.show();
                                 displaySuccess('Flagged');
@@ -362,7 +365,10 @@ async function BuildFlaggingDialog(element: JQuery,
 
                 const noFlag = flagType.ReportType === 'NoFlag';
                 if (noFlag) {
-                    SimpleCache.StoreInCache(`AdvancedFlagging.PerformedAction.${postId}`, flagType);
+                    const expiryDate = new Date();
+                    expiryDate.setDate(expiryDate.getDate() + 30);
+
+                    SimpleCache.StoreInCache(`AdvancedFlagging.PerformedAction.${postId}`, flagType, expiryDate);
                     performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
                     performedActionIcon.show();
                 }
@@ -603,7 +609,9 @@ async function SetupPostPage() {
                             };
                             handleFlag(flagType, reporters, answerTime, questionTime);
 
-                            SimpleCache.StoreInCache(`AdvancedFlagging.Flagged.${post.postId}`, flagType);
+                            const expiryDate = new Date();
+                            expiryDate.setDate(expiryDate.getDate() + 30);
+                            SimpleCache.StoreInCache(`AdvancedFlagging.Flagged.${post.postId}`, flagType, expiryDate);
                             reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
                             reportedIcon.show();
                             displaySuccess('Flagged');
@@ -758,14 +766,41 @@ export async function storeInCaches<T>(key: string, item: any) {
 }
 
 $(async () => {
-    CrossDomainCache.InitializeCache(null as any);
-    // const manualKey = localStorage.getItem(metaSmokeManualKey);
-    // if (manualKey) {
-    //     localStorage.removeItem(metaSmokeManualKey);
-    //     await MetaSmokeAPI.Setup(metaSmokeKey, async () => manualKey);
-    // } else {
-    //     await MetaSmokeAPI.Setup(metaSmokeKey);
-    // }
+    SimpleCache.ClearExpiredKeys(/^AdvancedFlagging\./);
+    const clearUnexpirying = (val: string | null) => {
+        if (!val) {
+            return true;
+        }
+        try {
+            const jsonObj = JSON.parse(val);
+            if (!jsonObj.Expired) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch {
+            // Don't care
+        }
+        return true;
+    };
+    // tslint:disable-next-line:no-debugger
+    debugger;
+    SimpleCache.ClearAll(/^AdvancedFlagging\.Flagged\.\d+/, clearUnexpirying);
+    SimpleCache.ClearAll(/^AdvancedFlagging\.PerformedAction\.\d+/, clearUnexpirying);
+    SimpleCache.ClearAll(/^CopyPastor\.FindTarget\.\d+/, clearUnexpirying);
+    SimpleCache.ClearAll(/^MetaSmoke.WasReported/, clearUnexpirying);
+    SimpleCache.ClearAll(/^NattyApi.Feedback\.\d+/, clearUnexpirying);
+
+    await CrossDomainCache.InitializeCache(null as any);
+    if (!(await CrossDomainCache.CacheFailed)) {
+        const manualKey = localStorage.getItem(metaSmokeManualKey);
+        if (manualKey) {
+            localStorage.removeItem(metaSmokeManualKey);
+            await MetaSmokeAPI.Setup(metaSmokeKey, async () => manualKey);
+        } else {
+            await MetaSmokeAPI.Setup(metaSmokeKey);
+        }
+    }
 
     await SetupConfiguration();
     await SetupPostPage();

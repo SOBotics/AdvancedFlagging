@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.45
+// @version      0.5.46
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -887,6 +887,47 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         SimpleCache.ClearCache = function () {
             localStorage.clear();
         };
+        SimpleCache.ClearExpiredKeys = function (regex) {
+            var len = localStorage.length;
+            for (var i = len - 1; i >= 0; i--) {
+                var key = localStorage.key(i);
+                if (key) {
+                    if (!regex || key.match(regex)) {
+                        var jsonItem = localStorage.getItem(key);
+                        if (jsonItem) {
+                            try {
+                                var dataItem = JSON.parse(jsonItem);
+                                if ((dataItem.Expires && new Date(dataItem.Expires) < new Date())) {
+                                    localStorage.removeItem(key);
+                                }
+                            }
+                            catch (_a) {
+                                // Don't care
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        SimpleCache.ClearAll = function (regex, condition) {
+            var len = localStorage.length;
+            for (var i = len - 1; i >= 0; i--) {
+                var key = localStorage.key(i);
+                if (key) {
+                    if (key.match(regex)) {
+                        if (condition) {
+                            var val = localStorage.getItem(key);
+                            if (condition(val)) {
+                                localStorage.removeItem(key);
+                            }
+                        }
+                        else {
+                            localStorage.removeItem(key);
+                        }
+                    }
+                }
+            }
+        };
         SimpleCache.GetFromCache = function (cacheKey) {
             var jsonItem = localStorage.getItem(cacheKey);
             if (!jsonItem) {
@@ -1679,6 +1720,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         function CrossDomainCache() {
         }
         CrossDomainCache.InitializeCache = function (iframeUrl) {
+            var _this = this;
             CrossDomainCache.xdLocalStorageInitialized = new Promise(function (resolve, reject) {
                 try {
                     xdLocalStorage_1.XdLocalStorage.init({
@@ -1689,8 +1731,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     });
                 }
                 catch (_a) {
+                    _this.cacheFailed = true;
                     resolve();
-                    CrossDomainCache.cacheFailed = true;
                 }
             });
         };
@@ -1721,7 +1763,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
                         case 1:
                             _a.sent();
-                            if (CrossDomainCache.cacheFailed) {
+                            return [4 /*yield*/, CrossDomainCache.CacheFailed];
+                        case 2:
+                            if (_a.sent()) {
                                 return [2 /*return*/];
                             }
                             xdLocalStorage_1.XdLocalStorage.clear();
@@ -1737,7 +1781,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
                         case 1:
                             _a.sent();
-                            if (CrossDomainCache.cacheFailed) {
+                            return [4 /*yield*/, CrossDomainCache.CacheFailed];
+                        case 2:
+                            if (_a.sent()) {
                                 return [2 /*return*/, undefined];
                             }
                             return [2 /*return*/, new Promise(function (resolve, reject) {
@@ -1765,7 +1811,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
                         case 1:
                             _a.sent();
-                            if (CrossDomainCache.cacheFailed) {
+                            return [4 /*yield*/, CrossDomainCache.CacheFailed];
+                        case 2:
+                            if (_a.sent()) {
                                 return [2 /*return*/];
                             }
                             jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
@@ -1785,7 +1833,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
                         case 1:
                             _a.sent();
-                            if (CrossDomainCache.cacheFailed) {
+                            return [4 /*yield*/, CrossDomainCache.CacheFailed];
+                        case 2:
+                            if (_a.sent()) {
                                 return [2 /*return*/];
                             }
                             return [2 /*return*/, new Promise(function (resolve, reject) {
@@ -1793,6 +1843,18 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                         resolve();
                                     });
                                 })];
+                    }
+                });
+            });
+        };
+        CrossDomainCache.CacheFailed = function () {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
+                        case 1:
+                            _a.sent();
+                            return [2 /*return*/, this.cacheFailed];
                     }
                 });
             });
@@ -1813,7 +1875,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
             });
         };
-        CrossDomainCache.cacheFailed = false;
         return CrossDomainCache;
     }());
     exports.CrossDomainCache = CrossDomainCache;
@@ -2082,7 +2143,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                             }
                                             if (result.FlagPromise) {
                                                 result.FlagPromise.then(function () {
-                                                    SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType);
+                                                    var expiryDate = new Date();
+                                                    expiryDate.setDate(expiryDate.getDate() + 30);
+                                                    SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType, expiryDate);
                                                     reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
                                                     reportedIcon.show();
                                                     displaySuccess('Flagged');
@@ -2099,7 +2162,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                     }
                                     var noFlag = flagType.ReportType === 'NoFlag';
                                     if (noFlag) {
-                                        SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType);
+                                        var expiryDate = new Date();
+                                        expiryDate.setDate(expiryDate.getDate() + 30);
+                                        SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType, expiryDate);
                                         performedActionIcon.attr('title', "Performed action: " + flagType.DisplayName);
                                         performedActionIcon.show();
                                     }
@@ -2324,7 +2389,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                                     DisplayName: matches[1]
                                                 };
                                                 handleFlag(flagType, reporters, answerTime_1, questionTime_1);
-                                                SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.Flagged." + post.postId, flagType);
+                                                var expiryDate = new Date();
+                                                expiryDate.setDate(expiryDate.getDate() + 30);
+                                                SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.Flagged." + post.postId, flagType, expiryDate);
                                                 reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
                                                 reportedIcon.show();
                                                 displaySuccess('Flagged');
@@ -2487,29 +2554,61 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     exports.storeInCaches = storeInCaches;
     $(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+        var _this = this;
+        var clearUnexpirying, manualKey_1;
         return tslib_1.__generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    CrossDomainCache_1.CrossDomainCache.InitializeCache(null);
-                    // const manualKey = localStorage.getItem(metaSmokeManualKey);
-                    // if (manualKey) {
-                    //     localStorage.removeItem(metaSmokeManualKey);
-                    //     await MetaSmokeAPI.Setup(metaSmokeKey, async () => manualKey);
-                    // } else {
-                    //     await MetaSmokeAPI.Setup(metaSmokeKey);
-                    // }
-                    return [4 /*yield*/, Configuration_1.SetupConfiguration()];
+                    SimpleCache_1.SimpleCache.ClearExpiredKeys(/^AdvancedFlagging\./);
+                    clearUnexpirying = function (val) {
+                        if (!val) {
+                            return true;
+                        }
+                        try {
+                            var jsonObj = JSON.parse(val);
+                            if (!jsonObj.Expired) {
+                                return true;
+                            }
+                            else {
+                                return false;
+                            }
+                        }
+                        catch (_a) {
+                            // Don't care
+                        }
+                        return true;
+                    };
+                    // tslint:disable-next-line:no-debugger
+                    debugger;
+                    SimpleCache_1.SimpleCache.ClearAll(/^AdvancedFlagging\.Flagged\.\d+/, clearUnexpirying);
+                    SimpleCache_1.SimpleCache.ClearAll(/^AdvancedFlagging\.PerformedAction\.\d+/, clearUnexpirying);
+                    SimpleCache_1.SimpleCache.ClearAll(/^CopyPastor\.FindTarget\.\d+/, clearUnexpirying);
+                    SimpleCache_1.SimpleCache.ClearAll(/^MetaSmoke.WasReported/, clearUnexpirying);
+                    SimpleCache_1.SimpleCache.ClearAll(/^NattyApi.Feedback\.\d+/, clearUnexpirying);
+                    return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.InitializeCache(null)];
                 case 1:
-                    // const manualKey = localStorage.getItem(metaSmokeManualKey);
-                    // if (manualKey) {
-                    //     localStorage.removeItem(metaSmokeManualKey);
-                    //     await MetaSmokeAPI.Setup(metaSmokeKey, async () => manualKey);
-                    // } else {
-                    //     await MetaSmokeAPI.Setup(metaSmokeKey);
-                    // }
+                    _a.sent();
+                    return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.CacheFailed];
+                case 2:
+                    if (!!(_a.sent())) return [3 /*break*/, 6];
+                    manualKey_1 = localStorage.getItem(metaSmokeManualKey);
+                    if (!manualKey_1) return [3 /*break*/, 4];
+                    localStorage.removeItem(metaSmokeManualKey);
+                    return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(exports.metaSmokeKey, function () { return tslib_1.__awaiter(_this, void 0, void 0, function () { return tslib_1.__generator(this, function (_a) {
+                            return [2 /*return*/, manualKey_1];
+                        }); }); })];
+                case 3:
+                    _a.sent();
+                    return [3 /*break*/, 6];
+                case 4: return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(exports.metaSmokeKey)];
+                case 5:
+                    _a.sent();
+                    _a.label = 6;
+                case 6: return [4 /*yield*/, Configuration_1.SetupConfiguration()];
+                case 7:
                     _a.sent();
                     return [4 /*yield*/, SetupPostPage()];
-                case 2:
+                case 8:
                     _a.sent();
                     SetupStyles();
                     getFromCaches(exports.ConfigurationDetectAudits).then(function (isEnabled) {
@@ -3178,7 +3277,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         case 4:
                             result = _a.sent();
                             queryUrlStr = this.GetQueryUrl();
-                            SimpleCache_1.SimpleCache.StoreInCache(exports.MetaSmokeWasReportedConfig + "." + queryUrlStr, undefined);
+                            SimpleCache_1.SimpleCache.Unset(exports.MetaSmokeWasReportedConfig + "." + queryUrlStr);
                             return [4 /*yield*/, Delay(1000)];
                         case 5:
                             _a.sent();
@@ -3250,6 +3349,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         MetaSmokeAPI.prototype.QueryMetaSmokey = function () {
             var _this = this;
             var urlStr = this.GetQueryUrl();
+            var expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + 30);
             var resultPromise = SimpleCache_1.SimpleCache.GetAndCache(exports.MetaSmokeWasReportedConfig + "." + urlStr, function () { return new Promise(function (resolve, reject) {
                 MetaSmokeAPI.IsDisabled().then(function (isDisabled) {
                     if (isDisabled) {
@@ -3273,7 +3374,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         reject(error);
                     });
                 });
-            }); });
+            }); }, expiryDate);
             resultPromise
                 .then(function (r) { return _this.subject.next(r); })
                 .catch(function (err) { return _this.subject.error(err); });
@@ -3434,6 +3535,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             var _this = this;
             this.subject.subscribe(this.replaySubject);
             if (sotools_1.IsStackOverflow()) {
+                var expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + 30);
                 SimpleCache_1.SimpleCache.GetAndCache("NattyApi.Feedback." + this.answerId, function () { return new Promise(function (resolve, reject) {
                     GM_xmlhttpRequest({
                         method: 'GET',
@@ -3451,7 +3554,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             reject(response);
                         },
                     });
-                }); })
+                }); }, expiryDate)
                     .then(function (r) { return _this.subject.next(r); })
                     .catch(function (err) { return _this.subject.error(err); });
             }
@@ -3491,7 +3594,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             }
                             promise = this.chat.SendMessage(soboticsRoomId, "@Natty report http://stackoverflow.com/a/" + this.answerId);
                             return [4 /*yield*/, promise.then(function () {
-                                    SimpleCache_1.SimpleCache.StoreInCache("NattyApi.Feedback." + _this.answerId, true);
+                                    var expiryDate = new Date();
+                                    expiryDate.setDate(expiryDate.getDate() + 30);
+                                    SimpleCache_1.SimpleCache.StoreInCache("NattyApi.Feedback." + _this.answerId, true, expiryDate);
                                     _this.subject.next(true);
                                 })];
                         case 4:
@@ -4928,6 +5033,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             this.subject = new Subject_1.Subject();
             this.replaySubject = new ReplaySubject_1.ReplaySubject(1);
             this.subject.subscribe(this.replaySubject);
+            var expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + 30);
             SimpleCache_1.SimpleCache.GetAndCache("CopyPastor.FindTarget." + this.answerId, function () { return new Promise(function (resolve, reject) {
                 var url = copyPastorServer + "/posts/findTarget?url=//" + window.location.hostname + "/a/" + _this.answerId;
                 GM_xmlhttpRequest({
@@ -4946,7 +5053,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         reject(response);
                     },
                 });
-            }); })
+            }); }, expiryDate)
                 .then(function (r) { return _this.subject.next(r); })
                 .catch(function (err) { return _this.subject.error(err); });
             return this.subject;
@@ -5409,20 +5516,29 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     Object.defineProperty(exports, "__esModule", { value: true });
     function SetupConfiguration() {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var bottomBox, configurationDiv, configurationLink;
+            var bottomBox, configurationDiv, cacheDisabledMessage, configurationLink;
             return tslib_1.__generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, SetupDefaults()];
-                    case 1:
-                        _a.sent();
+                    case 0:
                         bottomBox = $('.site-footer--copyright').children('.-list');
                         configurationDiv = $('<div>')
                             .css('line-height', '18px')
                             .css('text-align', 'left')
                             .css('padding', '5px');
+                        return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.CacheFailed];
+                    case 1:
+                        if (!_a.sent()) return [3 /*break*/, 2];
+                        cacheDisabledMessage = $('<p>Cache failed to initialize. AdvancedFlagging configuration disabled</p>');
+                        configurationDiv.append(cacheDisabledMessage);
+                        return [3 /*break*/, 4];
+                    case 2: return [4 /*yield*/, SetupDefaults()];
+                    case 3:
+                        _a.sent();
                         configurationLink = $('<a href="javascript:void(0);">AdvancedFlagging configuration</a>');
                         configurationLink.click(function () { return BuildConfigurationOverlay(); });
                         configurationDiv.append(configurationLink);
+                        _a.label = 4;
+                    case 4:
                         configurationDiv.insertAfter(bottomBox);
                         return [2 /*return*/];
                 }

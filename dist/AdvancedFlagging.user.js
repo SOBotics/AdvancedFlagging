@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.44
+// @version      0.5.45
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1680,12 +1680,18 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         CrossDomainCache.InitializeCache = function (iframeUrl) {
             CrossDomainCache.xdLocalStorageInitialized = new Promise(function (resolve, reject) {
-                xdLocalStorage_1.XdLocalStorage.init({
-                    iframeUrl: iframeUrl,
-                    initCallback: function () {
-                        resolve();
-                    }
-                });
+                try {
+                    xdLocalStorage_1.XdLocalStorage.init({
+                        iframeUrl: iframeUrl,
+                        initCallback: function () {
+                            resolve();
+                        }
+                    });
+                }
+                catch (_a) {
+                    resolve();
+                    CrossDomainCache.cacheFailed = true;
+                }
             });
         };
         CrossDomainCache.GetAndCache = function (cacheKey, getterPromise, expiresAt) {
@@ -1715,6 +1721,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
                         case 1:
                             _a.sent();
+                            if (CrossDomainCache.cacheFailed) {
+                                return [2 /*return*/];
+                            }
                             xdLocalStorage_1.XdLocalStorage.clear();
                             return [2 /*return*/];
                     }
@@ -1728,6 +1737,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
                         case 1:
                             _a.sent();
+                            if (CrossDomainCache.cacheFailed) {
+                                return [2 /*return*/, undefined];
+                            }
                             return [2 /*return*/, new Promise(function (resolve, reject) {
                                     xdLocalStorage_1.XdLocalStorage.getItem(cacheKey, function (data) {
                                         if (data.value === undefined) {
@@ -1753,6 +1765,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
                         case 1:
                             _a.sent();
+                            if (CrossDomainCache.cacheFailed) {
+                                return [2 /*return*/];
+                            }
                             jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
                             return [2 /*return*/, new Promise(function (resolve, reject) {
                                     xdLocalStorage_1.XdLocalStorage.setItem(cacheKey, jsonStr, function () {
@@ -1770,6 +1785,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
                         case 1:
                             _a.sent();
+                            if (CrossDomainCache.cacheFailed) {
+                                return [2 /*return*/];
+                            }
                             return [2 /*return*/, new Promise(function (resolve, reject) {
                                     xdLocalStorage_1.XdLocalStorage.removeItem(cacheKey, function () {
                                         resolve();
@@ -1795,6 +1813,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
             });
         };
+        CrossDomainCache.cacheFailed = false;
         return CrossDomainCache;
     }());
     exports.CrossDomainCache = CrossDomainCache;
@@ -2438,31 +2457,59 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }).hide();
     }
     var metaSmokeManualKey = 'MetaSmoke.ManualKey';
+    // First attempt to retrieve the value from the local cache.
+    // If it doesn't exist, check the cross domain cache, and store it locally
+    function getFromCaches(key) {
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            return tslib_1.__generator(this, function (_a) {
+                return [2 /*return*/, SimpleCache_1.SimpleCache.GetAndCache(key, function () {
+                        return CrossDomainCache_1.CrossDomainCache.GetFromCache(key);
+                    })];
+            });
+        });
+    }
+    exports.getFromCaches = getFromCaches;
+    // Store the value in both the local and global cache
+    function storeInCaches(key, item) {
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            return tslib_1.__generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, SimpleCache_1.SimpleCache.StoreInCache(key, item)];
+                    case 1:
+                        _a.sent();
+                        return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.StoreInCache(key, item)];
+                    case 2:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    }
+    exports.storeInCaches = storeInCaches;
     $(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-        var _this = this;
-        var manualKey;
         return tslib_1.__generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    CrossDomainCache_1.CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
-                    manualKey = localStorage.getItem(metaSmokeManualKey);
-                    if (!manualKey) return [3 /*break*/, 2];
-                    localStorage.removeItem(metaSmokeManualKey);
-                    return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(exports.metaSmokeKey, function () { return tslib_1.__awaiter(_this, void 0, void 0, function () { return tslib_1.__generator(this, function (_a) {
-                            return [2 /*return*/, manualKey];
-                        }); }); })];
+                    CrossDomainCache_1.CrossDomainCache.InitializeCache(null);
+                    // const manualKey = localStorage.getItem(metaSmokeManualKey);
+                    // if (manualKey) {
+                    //     localStorage.removeItem(metaSmokeManualKey);
+                    //     await MetaSmokeAPI.Setup(metaSmokeKey, async () => manualKey);
+                    // } else {
+                    //     await MetaSmokeAPI.Setup(metaSmokeKey);
+                    // }
+                    return [4 /*yield*/, Configuration_1.SetupConfiguration()];
                 case 1:
-                    _a.sent();
-                    return [3 /*break*/, 4];
-                case 2: return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(exports.metaSmokeKey)];
-                case 3:
-                    _a.sent();
-                    _a.label = 4;
-                case 4: return [4 /*yield*/, Configuration_1.SetupConfiguration()];
-                case 5:
+                    // const manualKey = localStorage.getItem(metaSmokeManualKey);
+                    // if (manualKey) {
+                    //     localStorage.removeItem(metaSmokeManualKey);
+                    //     await MetaSmokeAPI.Setup(metaSmokeKey, async () => manualKey);
+                    // } else {
+                    //     await MetaSmokeAPI.Setup(metaSmokeKey);
+                    // }
                     _a.sent();
                     return [4 /*yield*/, SetupPostPage()];
-                case 6:
+                case 2:
                     _a.sent();
                     SetupStyles();
                     getFromCaches(exports.ConfigurationDetectAudits).then(function (isEnabled) {
@@ -2533,35 +2580,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             }
         });
     }); });
-    // First attempt to retrieve the value from the local cache.
-    // If it doesn't exist, check the cross domain cache, and store it locally
-    function getFromCaches(key) {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            return tslib_1.__generator(this, function (_a) {
-                return [2 /*return*/, SimpleCache_1.SimpleCache.GetAndCache(key, function () {
-                        return CrossDomainCache_1.CrossDomainCache.GetFromCache(key);
-                    })];
-            });
-        });
-    }
-    exports.getFromCaches = getFromCaches;
-    // Store the value in both the local and global cache
-    function storeInCaches(key, item) {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            return tslib_1.__generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, SimpleCache_1.SimpleCache.StoreInCache(key, item)];
-                    case 1:
-                        _a.sent();
-                        return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.StoreInCache(key, item)];
-                    case 2:
-                        _a.sent();
-                        return [2 /*return*/];
-                }
-            });
-        });
-    }
-    exports.storeInCaches = storeInCaches;
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 

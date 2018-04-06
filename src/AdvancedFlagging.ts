@@ -743,15 +743,29 @@ function getDropdown() {
 
 const metaSmokeManualKey = 'MetaSmoke.ManualKey';
 
+// First attempt to retrieve the value from the local cache.
+// If it doesn't exist, check the cross domain cache, and store it locally
+export async function getFromCaches<T>(key: string) {
+    return SimpleCache.GetAndCache<T | undefined>(key, () => {
+        return CrossDomainCache.GetFromCache<T>(key);
+    });
+}
+
+// Store the value in both the local and global cache
+export async function storeInCaches<T>(key: string, item: any) {
+    await SimpleCache.StoreInCache<T>(key, item);
+    await CrossDomainCache.StoreInCache<T>(key, item);
+}
+
 $(async () => {
-    CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
-    const manualKey = localStorage.getItem(metaSmokeManualKey);
-    if (manualKey) {
-        localStorage.removeItem(metaSmokeManualKey);
-        await MetaSmokeAPI.Setup(metaSmokeKey, async () => manualKey);
-    } else {
-        await MetaSmokeAPI.Setup(metaSmokeKey);
-    }
+    CrossDomainCache.InitializeCache(null as any);
+    // const manualKey = localStorage.getItem(metaSmokeManualKey);
+    // if (manualKey) {
+    //     localStorage.removeItem(metaSmokeManualKey);
+    //     await MetaSmokeAPI.Setup(metaSmokeKey, async () => manualKey);
+    // } else {
+    //     await MetaSmokeAPI.Setup(metaSmokeKey);
+    // }
 
     await SetupConfiguration();
     await SetupPostPage();
@@ -828,17 +842,3 @@ $(async () => {
         });
     });
 });
-
-// First attempt to retrieve the value from the local cache.
-// If it doesn't exist, check the cross domain cache, and store it locally
-export async function getFromCaches<T>(key: string) {
-    return SimpleCache.GetAndCache<T | undefined>(key, () => {
-        return CrossDomainCache.GetFromCache<T>(key);
-    });
-}
-
-// Store the value in both the local and global cache
-export async function storeInCaches<T>(key: string, item: any) {
-    await SimpleCache.StoreInCache<T>(key, item);
-    await CrossDomainCache.StoreInCache<T>(key, item);
-}

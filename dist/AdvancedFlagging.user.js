@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.46
+// @version      0.5.47
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2578,8 +2578,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         }
                         return true;
                     };
-                    // tslint:disable-next-line:no-debugger
-                    debugger;
                     SimpleCache_1.SimpleCache.ClearAll(/^AdvancedFlagging\.Flagged\.\d+/, clearUnexpirying);
                     SimpleCache_1.SimpleCache.ClearAll(/^AdvancedFlagging\.PerformedAction\.\d+/, clearUnexpirying);
                     SimpleCache_1.SimpleCache.ClearAll(/^CopyPastor\.FindTarget\.\d+/, clearUnexpirying);

@@ -783,8 +783,6 @@ $(async () => {
         }
         return true;
     };
-    // tslint:disable-next-line:no-debugger
-    debugger;
     SimpleCache.ClearAll(/^AdvancedFlagging\.Flagged\.\d+/, clearUnexpirying);
     SimpleCache.ClearAll(/^AdvancedFlagging\.PerformedAction\.\d+/, clearUnexpirying);
     SimpleCache.ClearAll(/^CopyPastor\.FindTarget\.\d+/, clearUnexpirying);

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.47
+// @version      0.5.48
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2583,7 +2583,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     SimpleCache_1.SimpleCache.ClearAll(/^CopyPastor\.FindTarget\.\d+/, clearUnexpirying);
                     SimpleCache_1.SimpleCache.ClearAll(/^MetaSmoke.WasReported/, clearUnexpirying);
                     SimpleCache_1.SimpleCache.ClearAll(/^NattyApi.Feedback\.\d+/, clearUnexpirying);
-                    return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.InitializeCache(null)];
+                    return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html')];
                 case 1:
                     _a.sent();
                     return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.CacheFailed];

@@ -790,7 +790,7 @@ $(async () => {
     SimpleCache.ClearAll(/^NattyApi.Feedback\.\d+/, clearUnexpirying);
 
     await CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
-    if (!(await CrossDomainCache.CacheFailed)) {
+    if (!(await CrossDomainCache.CacheFailed())) {
         const manualKey = localStorage.getItem(metaSmokeManualKey);
         if (manualKey) {
             localStorage.removeItem(metaSmokeManualKey);

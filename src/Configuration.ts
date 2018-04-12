@@ -9,7 +9,7 @@ export async function SetupConfiguration() {
         .css('line-height', '18px')
         .css('text-align', 'left')
         .css('padding', '5px');
-    if (await CrossDomainCache.CacheFailed) {
+    if (await CrossDomainCache.CacheFailed()) {
         const cacheDisabledMessage = $('<p>Cache failed to initialize. AdvancedFlagging configuration disabled</p>');
         configurationDiv.append(cacheDisabledMessage);
     } else {

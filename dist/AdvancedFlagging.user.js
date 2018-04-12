@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.49
+// @version      0.5.50
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1764,7 +1764,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
                         case 1:
                             _a.sent();
-                            return [4 /*yield*/, CrossDomainCache.CacheFailed];
+                            return [4 /*yield*/, CrossDomainCache.CacheFailed()];
                         case 2:
                             if (_a.sent()) {
                                 return [2 /*return*/];
@@ -1782,7 +1782,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
                         case 1:
                             _a.sent();
-                            return [4 /*yield*/, CrossDomainCache.CacheFailed];
+                            return [4 /*yield*/, CrossDomainCache.CacheFailed()];
                         case 2:
                             if (_a.sent()) {
                                 return [2 /*return*/, undefined];
@@ -1812,7 +1812,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
                         case 1:
                             _a.sent();
-                            return [4 /*yield*/, CrossDomainCache.CacheFailed];
+                            return [4 /*yield*/, CrossDomainCache.CacheFailed()];
                         case 2:
                             if (_a.sent()) {
                                 return [2 /*return*/];
@@ -1834,7 +1834,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
                         case 1:
                             _a.sent();
-                            return [4 /*yield*/, CrossDomainCache.CacheFailed];
+                            return [4 /*yield*/, CrossDomainCache.CacheFailed()];
                         case 2:
                             if (_a.sent()) {
                                 return [2 /*return*/];
@@ -2587,7 +2587,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html')];
                 case 1:
                     _a.sent();
-                    return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.CacheFailed];
+                    return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.CacheFailed()];
                 case 2:
                     if (!!(_a.sent())) return [3 /*break*/, 6];
                     manualKey_1 = localStorage.getItem(metaSmokeManualKey);
@@ -5524,7 +5524,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             .css('line-height', '18px')
                             .css('text-align', 'left')
                             .css('padding', '5px');
-                        return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.CacheFailed];
+                        return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.CacheFailed()];
                     case 1:
                         if (!_a.sent()) return [3 /*break*/, 2];
                         cacheDisabledMessage = $('<p>Cache failed to initialize. AdvancedFlagging configuration disabled</p>');

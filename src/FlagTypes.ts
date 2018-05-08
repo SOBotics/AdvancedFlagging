@@ -134,14 +134,12 @@ export const flagCategories: FlagCategory[] = [
                 ReportType: 'AnswerNotAnAnswer',
                 GetComment: () => 'Instead of posting an answer which merely links to another answer, please instead [flag the question](https://stackoverflow.com/help/privileges/flag-posts) as a duplicate.'
             },
-                 {
-                    Id: 17,
-                    DisplayName: 'Non English',
-                    ReportType: 'AnswerNotAnAnswer',
-                    GetComment: function() {
-                    return 'Please write your answer in English, since [stackoverflow](https://meta.stackexchange.com/questions/13676/do-posts-have-to-be-in-english-on-stack-exchange) is an English site.';
-                    }
-				}
+            {
+                Id: 17,
+                DisplayName: 'Non English',
+                ReportType: 'AnswerNotAnAnswer',
+                GetComment: () => 'Welcome to Stack Overflow. Please write your answer in English, since Stack Overflow is an [English site](https://meta.stackexchange.com/questions/13676).'
+            }
         ]
     },
     {

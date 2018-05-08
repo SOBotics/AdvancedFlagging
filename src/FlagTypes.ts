@@ -138,7 +138,7 @@ export const flagCategories: FlagCategory[] = [
                 Id: 17,
                 DisplayName: 'Non English',
                 ReportType: 'AnswerNotAnAnswer',
-                GetComment: () => 'Welcome to Stack Overflow. Please write your answer in English, since Stack Overflow is an [English site](https://meta.stackoverflow.com/a/297680).'
+                GetComment: () => 'Welcome to Stack Overflow. Please write your answer in English, as Stack Overflow is an [English only site](https://meta.stackoverflow.com/a/297680).'
             }
         ]
     },

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.51
+// @version      0.5.52
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2808,7 +2808,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     Id: 17,
                     DisplayName: 'Non English',
                     ReportType: 'AnswerNotAnAnswer',
-                    GetComment: function () { return 'Welcome to Stack Overflow. Please write your answer in English, since Stack Overflow is an [English site](https://meta.stackexchange.com/questions/13676).'; }
+                    GetComment: function () { return 'Welcome to Stack Overflow. Please write your answer in English, since Stack Overflow is an [English site](https://meta.stackoverflow.com/a/297680).'; }
                 }
             ]
         },

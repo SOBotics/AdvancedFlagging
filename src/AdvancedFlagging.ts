@@ -555,8 +555,8 @@ async function SetupPostPage() {
             });
 
         }
-        const metaSmoke = new MetaSmokeAPI(post.postId, post.type);
-        metaSmoke.Watch()
+        const metaSmoke = new MetaSmokeAPI();
+        metaSmoke.Watch(post.postId, post.type)
             .subscribe(id => {
                 if (id !== null) {
                     smokeyIcon.click(() => {
@@ -569,11 +569,11 @@ async function SetupPostPage() {
             });
         reporters.push({
             name: 'Smokey',
-            ReportNaa: (answerDate: Date, questionDate: Date) => metaSmoke.ReportNaa(),
-            ReportRedFlag: () => metaSmoke.ReportRedFlag(),
-            ReportLooksFine: () => metaSmoke.ReportLooksFine(),
-            ReportNeedsEditing: () => metaSmoke.ReportNeedsEditing(),
-            ReportVandalism: () => metaSmoke.ReportVandalism(),
+            ReportNaa: (answerDate: Date, questionDate: Date) => metaSmoke.ReportNaa(post.postId, post.type),
+            ReportRedFlag: () => metaSmoke.ReportRedFlag(post.postId, post.type),
+            ReportLooksFine: () => metaSmoke.ReportLooksFine(post.postId, post.type),
+            ReportNeedsEditing: () => metaSmoke.ReportNeedsEditing(post.postId, post.type),
+            ReportVandalism: () => metaSmoke.ReportVandalism(post.postId, post.type),
             ReportDuplicateAnswer: () => Promise.resolve(false),
             ReportPlagiarism: () => Promise.resolve(false)
         });
@@ -773,7 +773,7 @@ $(async () => {
         }
         try {
             const jsonObj = JSON.parse(val);
-            if (!jsonObj.Expired) {
+            if (!jsonObj.Expires) {
                 return true;
             } else {
                 return false;

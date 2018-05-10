@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.53
+// @version      0.5.54
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -597,7 +597,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var isFunction_1 = __webpack_require__(13);
-var Subscription_1 = __webpack_require__(5);
+var Subscription_1 = __webpack_require__(4);
 var Observer_1 = __webpack_require__(15);
 var rxSubscriber_1 = __webpack_require__(8);
 /**
@@ -959,180 +959,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 "use strict";
 
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-var Observable_1 = __webpack_require__(1);
-var Subscriber_1 = __webpack_require__(2);
-var Subscription_1 = __webpack_require__(5);
-var ObjectUnsubscribedError_1 = __webpack_require__(16);
-var SubjectSubscription_1 = __webpack_require__(17);
-var rxSubscriber_1 = __webpack_require__(8);
-/**
- * @class SubjectSubscriber<T>
- */
-var SubjectSubscriber = (function (_super) {
-    __extends(SubjectSubscriber, _super);
-    function SubjectSubscriber(destination) {
-        _super.call(this, destination);
-        this.destination = destination;
-    }
-    return SubjectSubscriber;
-}(Subscriber_1.Subscriber));
-exports.SubjectSubscriber = SubjectSubscriber;
-/**
- * @class Subject<T>
- */
-var Subject = (function (_super) {
-    __extends(Subject, _super);
-    function Subject() {
-        _super.call(this);
-        this.observers = [];
-        this.closed = false;
-        this.isStopped = false;
-        this.hasError = false;
-        this.thrownError = null;
-    }
-    Subject.prototype[rxSubscriber_1.rxSubscriber] = function () {
-        return new SubjectSubscriber(this);
-    };
-    Subject.prototype.lift = function (operator) {
-        var subject = new AnonymousSubject(this, this);
-        subject.operator = operator;
-        return subject;
-    };
-    Subject.prototype.next = function (value) {
-        if (this.closed) {
-            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
-        }
-        if (!this.isStopped) {
-            var observers = this.observers;
-            var len = observers.length;
-            var copy = observers.slice();
-            for (var i = 0; i < len; i++) {
-                copy[i].next(value);
-            }
-        }
-    };
-    Subject.prototype.error = function (err) {
-        if (this.closed) {
-            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
-        }
-        this.hasError = true;
-        this.thrownError = err;
-        this.isStopped = true;
-        var observers = this.observers;
-        var len = observers.length;
-        var copy = observers.slice();
-        for (var i = 0; i < len; i++) {
-            copy[i].error(err);
-        }
-        this.observers.length = 0;
-    };
-    Subject.prototype.complete = function () {
-        if (this.closed) {
-            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
-        }
-        this.isStopped = true;
-        var observers = this.observers;
-        var len = observers.length;
-        var copy = observers.slice();
-        for (var i = 0; i < len; i++) {
-            copy[i].complete();
-        }
-        this.observers.length = 0;
-    };
-    Subject.prototype.unsubscribe = function () {
-        this.isStopped = true;
-        this.closed = true;
-        this.observers = null;
-    };
-    Subject.prototype._trySubscribe = function (subscriber) {
-        if (this.closed) {
-            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
-        }
-        else {
-            return _super.prototype._trySubscribe.call(this, subscriber);
-        }
-    };
-    Subject.prototype._subscribe = function (subscriber) {
-        if (this.closed) {
-            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
-        }
-        else if (this.hasError) {
-            subscriber.error(this.thrownError);
-            return Subscription_1.Subscription.EMPTY;
-        }
-        else if (this.isStopped) {
-            subscriber.complete();
-            return Subscription_1.Subscription.EMPTY;
-        }
-        else {
-            this.observers.push(subscriber);
-            return new SubjectSubscription_1.SubjectSubscription(this, subscriber);
-        }
-    };
-    Subject.prototype.asObservable = function () {
-        var observable = new Observable_1.Observable();
-        observable.source = this;
-        return observable;
-    };
-    Subject.create = function (destination, source) {
-        return new AnonymousSubject(destination, source);
-    };
-    return Subject;
-}(Observable_1.Observable));
-exports.Subject = Subject;
-/**
- * @class AnonymousSubject<T>
- */
-var AnonymousSubject = (function (_super) {
-    __extends(AnonymousSubject, _super);
-    function AnonymousSubject(destination, source) {
-        _super.call(this);
-        this.destination = destination;
-        this.source = source;
-    }
-    AnonymousSubject.prototype.next = function (value) {
-        var destination = this.destination;
-        if (destination && destination.next) {
-            destination.next(value);
-        }
-    };
-    AnonymousSubject.prototype.error = function (err) {
-        var destination = this.destination;
-        if (destination && destination.error) {
-            this.destination.error(err);
-        }
-    };
-    AnonymousSubject.prototype.complete = function () {
-        var destination = this.destination;
-        if (destination && destination.complete) {
-            this.destination.complete();
-        }
-    };
-    AnonymousSubject.prototype._subscribe = function (subscriber) {
-        var source = this.source;
-        if (source) {
-            return this.source.subscribe(subscriber);
-        }
-        else {
-            return Subscription_1.Subscription.EMPTY;
-        }
-    };
-    return AnonymousSubject;
-}(Subject));
-exports.AnonymousSubject = AnonymousSubject;
-//# sourceMappingURL=Subject.js.map
-
-/***/ }),
-/* 5 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
 var isArray_1 = __webpack_require__(24);
 var isObject_1 = __webpack_require__(25);
 var isFunction_1 = __webpack_require__(13);
@@ -1325,6 +1151,180 @@ function flattenUnsubscriptionErrors(errors) {
     return errors.reduce(function (errs, err) { return errs.concat((err instanceof UnsubscriptionError_1.UnsubscriptionError) ? err.errors : err); }, []);
 }
 //# sourceMappingURL=Subscription.js.map
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var Observable_1 = __webpack_require__(1);
+var Subscriber_1 = __webpack_require__(2);
+var Subscription_1 = __webpack_require__(4);
+var ObjectUnsubscribedError_1 = __webpack_require__(16);
+var SubjectSubscription_1 = __webpack_require__(17);
+var rxSubscriber_1 = __webpack_require__(8);
+/**
+ * @class SubjectSubscriber<T>
+ */
+var SubjectSubscriber = (function (_super) {
+    __extends(SubjectSubscriber, _super);
+    function SubjectSubscriber(destination) {
+        _super.call(this, destination);
+        this.destination = destination;
+    }
+    return SubjectSubscriber;
+}(Subscriber_1.Subscriber));
+exports.SubjectSubscriber = SubjectSubscriber;
+/**
+ * @class Subject<T>
+ */
+var Subject = (function (_super) {
+    __extends(Subject, _super);
+    function Subject() {
+        _super.call(this);
+        this.observers = [];
+        this.closed = false;
+        this.isStopped = false;
+        this.hasError = false;
+        this.thrownError = null;
+    }
+    Subject.prototype[rxSubscriber_1.rxSubscriber] = function () {
+        return new SubjectSubscriber(this);
+    };
+    Subject.prototype.lift = function (operator) {
+        var subject = new AnonymousSubject(this, this);
+        subject.operator = operator;
+        return subject;
+    };
+    Subject.prototype.next = function (value) {
+        if (this.closed) {
+            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+        }
+        if (!this.isStopped) {
+            var observers = this.observers;
+            var len = observers.length;
+            var copy = observers.slice();
+            for (var i = 0; i < len; i++) {
+                copy[i].next(value);
+            }
+        }
+    };
+    Subject.prototype.error = function (err) {
+        if (this.closed) {
+            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+        }
+        this.hasError = true;
+        this.thrownError = err;
+        this.isStopped = true;
+        var observers = this.observers;
+        var len = observers.length;
+        var copy = observers.slice();
+        for (var i = 0; i < len; i++) {
+            copy[i].error(err);
+        }
+        this.observers.length = 0;
+    };
+    Subject.prototype.complete = function () {
+        if (this.closed) {
+            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+        }
+        this.isStopped = true;
+        var observers = this.observers;
+        var len = observers.length;
+        var copy = observers.slice();
+        for (var i = 0; i < len; i++) {
+            copy[i].complete();
+        }
+        this.observers.length = 0;
+    };
+    Subject.prototype.unsubscribe = function () {
+        this.isStopped = true;
+        this.closed = true;
+        this.observers = null;
+    };
+    Subject.prototype._trySubscribe = function (subscriber) {
+        if (this.closed) {
+            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+        }
+        else {
+            return _super.prototype._trySubscribe.call(this, subscriber);
+        }
+    };
+    Subject.prototype._subscribe = function (subscriber) {
+        if (this.closed) {
+            throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+        }
+        else if (this.hasError) {
+            subscriber.error(this.thrownError);
+            return Subscription_1.Subscription.EMPTY;
+        }
+        else if (this.isStopped) {
+            subscriber.complete();
+            return Subscription_1.Subscription.EMPTY;
+        }
+        else {
+            this.observers.push(subscriber);
+            return new SubjectSubscription_1.SubjectSubscription(this, subscriber);
+        }
+    };
+    Subject.prototype.asObservable = function () {
+        var observable = new Observable_1.Observable();
+        observable.source = this;
+        return observable;
+    };
+    Subject.create = function (destination, source) {
+        return new AnonymousSubject(destination, source);
+    };
+    return Subject;
+}(Observable_1.Observable));
+exports.Subject = Subject;
+/**
+ * @class AnonymousSubject<T>
+ */
+var AnonymousSubject = (function (_super) {
+    __extends(AnonymousSubject, _super);
+    function AnonymousSubject(destination, source) {
+        _super.call(this);
+        this.destination = destination;
+        this.source = source;
+    }
+    AnonymousSubject.prototype.next = function (value) {
+        var destination = this.destination;
+        if (destination && destination.next) {
+            destination.next(value);
+        }
+    };
+    AnonymousSubject.prototype.error = function (err) {
+        var destination = this.destination;
+        if (destination && destination.error) {
+            this.destination.error(err);
+        }
+    };
+    AnonymousSubject.prototype.complete = function () {
+        var destination = this.destination;
+        if (destination && destination.complete) {
+            this.destination.complete();
+        }
+    };
+    AnonymousSubject.prototype._subscribe = function (subscriber) {
+        var source = this.source;
+        if (source) {
+            return this.source.subscribe(subscriber);
+        }
+        else {
+            return Subscription_1.Subscription.EMPTY;
+        }
+    };
+    return AnonymousSubject;
+}(Subject));
+exports.AnonymousSubject = AnonymousSubject;
+//# sourceMappingURL=Subject.js.map
 
 /***/ }),
 /* 6 */
@@ -1612,9 +1612,9 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var Subject_1 = __webpack_require__(4);
+var Subject_1 = __webpack_require__(5);
 var queue_1 = __webpack_require__(31);
-var Subscription_1 = __webpack_require__(5);
+var Subscription_1 = __webpack_require__(4);
 var observeOn_1 = __webpack_require__(38);
 var ObjectUnsubscribedError_1 = __webpack_require__(16);
 var SubjectSubscription_1 = __webpack_require__(17);
@@ -2341,8 +2341,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                         ReportPlagiarism: function () { return Promise.resolve(false); }
                                     });
                                 }
-                                metaSmoke = new MetaSmokeAPI_1.MetaSmokeAPI(post.postId, post.type);
-                                metaSmoke.Watch()
+                                metaSmoke = new MetaSmokeAPI_1.MetaSmokeAPI();
+                                metaSmoke.Watch(post.postId, post.type)
                                     .subscribe(function (id) {
                                     if (id !== null) {
                                         smokeyIcon.click(function () {
@@ -2356,11 +2356,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                 });
                                 reporters.push({
                                     name: 'Smokey',
-                                    ReportNaa: function (answerDate, questionDate) { return metaSmoke.ReportNaa(); },
-                                    ReportRedFlag: function () { return metaSmoke.ReportRedFlag(); },
-                                    ReportLooksFine: function () { return metaSmoke.ReportLooksFine(); },
-                                    ReportNeedsEditing: function () { return metaSmoke.ReportNeedsEditing(); },
-                                    ReportVandalism: function () { return metaSmoke.ReportVandalism(); },
+                                    ReportNaa: function (answerDate, questionDate) { return metaSmoke.ReportNaa(post.postId, post.type); },
+                                    ReportRedFlag: function () { return metaSmoke.ReportRedFlag(post.postId, post.type); },
+                                    ReportLooksFine: function () { return metaSmoke.ReportLooksFine(post.postId, post.type); },
+                                    ReportNeedsEditing: function () { return metaSmoke.ReportNeedsEditing(post.postId, post.type); },
+                                    ReportVandalism: function () { return metaSmoke.ReportVandalism(post.postId, post.type); },
                                     ReportDuplicateAnswer: function () { return Promise.resolve(false); },
                                     ReportPlagiarism: function () { return Promise.resolve(false); }
                                 });
@@ -2567,7 +2567,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         }
                         try {
                             var jsonObj = JSON.parse(val);
-                            if (!jsonObj.Expired) {
+                            if (!jsonObj.Expires) {
                                 return true;
                             }
                             else {
@@ -2918,7 +2918,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var Subscription_1 = __webpack_require__(5);
+var Subscription_1 = __webpack_require__(4);
 /**
  * We need this JSDoc comment for affecting ESDoc.
  * @ignore
@@ -3082,7 +3082,7 @@ Observable_1.Observable.prototype.take = take_1.take;
 /* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(4), __webpack_require__(9), __webpack_require__(10), __webpack_require__(3), __webpack_require__(19)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, Subject_1, ReplaySubject_1, CrossDomainCache_1, SimpleCache_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(9), __webpack_require__(10), __webpack_require__(3), __webpack_require__(19)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, ReplaySubject_1, CrossDomainCache_1, SimpleCache_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
@@ -3096,9 +3096,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         });
     }
     var MetaSmokeAPI = /** @class */ (function () {
-        function MetaSmokeAPI(postId, postType) {
-            this.postId = postId;
-            this.postType = postType;
+        function MetaSmokeAPI() {
         }
         MetaSmokeAPI.Reset = function () {
             return tslib_1.__awaiter(this, void 0, void 0, function () {
@@ -3183,6 +3181,128 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
             });
         };
+        MetaSmokeAPI.QueryMetaSmoke = function (postId, postType) {
+            var url = MetaSmokeAPI.GetQueryUrl(postId, postType);
+            var existingResult = SimpleCache_1.SimpleCache.GetFromCache(exports.MetaSmokeWasReportedConfig + "." + url);
+            if (existingResult !== undefined) {
+                var key = MetaSmokeAPI.GetObservableKey(postId, postType);
+                var obs = MetaSmokeAPI.ObservableLookup[key];
+                if (obs) {
+                    obs.next(existingResult);
+                    // setTimeout(() => obs.next(existingResult), 100);
+                }
+                return;
+            }
+            if (this.pendingTimeout) {
+                clearTimeout(this.pendingTimeout);
+            }
+            this.pendingPosts.push({ postId: postId, postType: postType });
+            this.pendingTimeout = setTimeout(MetaSmokeAPI.QueryMetaSmokeInternal, 1000);
+        };
+        MetaSmokeAPI.QueryMetaSmokeInternal = function () {
+            var pendingPostLookup = {};
+            var urls = [];
+            try {
+                for (var _a = tslib_1.__values(MetaSmokeAPI.pendingPosts), _b = _a.next(); !_b.done; _b = _a.next()) {
+                    var pendingPost = _b.value;
+                    var url = MetaSmokeAPI.GetQueryUrl(pendingPost.postId, pendingPost.postType);
+                    pendingPostLookup[url] = { postId: pendingPost.postId, postType: pendingPost.postType };
+                    urls.push(url);
+                }
+            }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (_b && !_b.done && (_c = _a.return)) _c.call(_a);
+                }
+                finally { if (e_1) throw e_1.error; }
+            }
+            MetaSmokeAPI.pendingPosts = [];
+            var urlStr = urls.join();
+            var expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + 30);
+            MetaSmokeAPI.IsDisabled().then(function (isDisabled) {
+                if (isDisabled) {
+                    return;
+                }
+                $.ajax({
+                    type: 'GET',
+                    url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
+                    data: {
+                        urls: urlStr,
+                        key: "" + MetaSmokeAPI.appKey
+                    }
+                }).done(function (metaSmokeResult) {
+                    try {
+                        for (var _a = tslib_1.__values(metaSmokeResult.items), _b = _a.next(); !_b.done; _b = _a.next()) {
+                            var item = _b.value;
+                            var pendingPost = pendingPostLookup[item.link];
+                            if (pendingPost) {
+                                var key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
+                                var obs = MetaSmokeAPI.ObservableLookup[key];
+                                if (obs) {
+                                    obs.next(item.id);
+                                    SimpleCache_1.SimpleCache.StoreInCache(exports.MetaSmokeWasReportedConfig + "." + item.link, item.id, expiryDate);
+                                }
+                                delete pendingPostLookup[item.link];
+                            }
+                        }
+                    }
+                    catch (e_2_1) { e_2 = { error: e_2_1 }; }
+                    finally {
+                        try {
+                            if (_b && !_b.done && (_c = _a.return)) _c.call(_a);
+                        }
+                        finally { if (e_2) throw e_2.error; }
+                    }
+                    for (var url in pendingPostLookup) {
+                        if (pendingPostLookup.hasOwnProperty(url)) {
+                            var pendingPost = pendingPostLookup[url];
+                            var key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
+                            var obs = MetaSmokeAPI.ObservableLookup[key];
+                            if (obs) {
+                                obs.next(null);
+                                SimpleCache_1.SimpleCache.StoreInCache(exports.MetaSmokeWasReportedConfig + "." + url, null, expiryDate);
+                            }
+                        }
+                    }
+                    var e_2, _c;
+                }).fail(function (error) {
+                    for (var url in pendingPostLookup) {
+                        if (pendingPostLookup.hasOwnProperty(url)) {
+                            var pendingPost = pendingPostLookup[url];
+                            var key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
+                            var obs = MetaSmokeAPI.ObservableLookup[key];
+                            if (obs) {
+                                obs.error(error);
+                            }
+                        }
+                    }
+                });
+            });
+            var e_1, _c;
+        };
+        MetaSmokeAPI.GetQueryUrl = function (postId, postType) {
+            return postType === 'Answer'
+                ? "//" + window.location.hostname + "/a/" + postId
+                : "//" + window.location.hostname + "/questions/" + postId;
+        };
+        MetaSmokeAPI.GetSmokeyId = function (postId, postType) {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                var observableKey, observable;
+                return tslib_1.__generator(this, function (_a) {
+                    observableKey = this.GetObservableKey(postId, postType);
+                    observable = MetaSmokeAPI.ObservableLookup[observableKey];
+                    if (observable) {
+                        return [2 /*return*/, observable.take(1).toPromise()];
+                    }
+                    return [2 /*return*/, null];
+                });
+            });
+        };
+        MetaSmokeAPI.GetObservableKey = function (postId, postType) {
+            return JSON.stringify({ postId: postId, postType: postType });
+        };
         MetaSmokeAPI.getUserKey = function () {
             var _this = this;
             return SimpleCache_1.SimpleCache.GetAndCache(exports.MetaSmokeUserKeyConfig, function () {
@@ -3212,19 +3332,21 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 }); }); });
             });
         };
-        MetaSmokeAPI.prototype.Watch = function () {
-            this.subject = new Subject_1.Subject();
-            this.replaySubject = new ReplaySubject_1.ReplaySubject(1);
-            this.subject.subscribe(this.replaySubject);
-            this.QueryMetaSmokey();
-            return this.subject;
+        MetaSmokeAPI.prototype.Watch = function (postId, postType) {
+            var key = MetaSmokeAPI.GetObservableKey(postId, postType);
+            if (!MetaSmokeAPI.ObservableLookup[key]) {
+                var replaySubject = new ReplaySubject_1.ReplaySubject(1);
+                MetaSmokeAPI.ObservableLookup[key] = replaySubject;
+            }
+            MetaSmokeAPI.QueryMetaSmoke(postId, postType);
+            return MetaSmokeAPI.ObservableLookup[key];
         };
-        MetaSmokeAPI.prototype.ReportNaa = function () {
+        MetaSmokeAPI.prototype.ReportNaa = function (postId, postType) {
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 var smokeyid;
                 return tslib_1.__generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
+                        case 0: return [4 /*yield*/, MetaSmokeAPI.GetSmokeyId(postId, postType)];
                         case 1:
                             smokeyid = _a.sent();
                             if (!(smokeyid != null)) return [3 /*break*/, 3];
@@ -3237,13 +3359,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
             });
         };
-        MetaSmokeAPI.prototype.ReportRedFlag = function () {
+        MetaSmokeAPI.prototype.ReportRedFlag = function (postId, postType) {
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 var _this = this;
                 var smokeyid, urlStr_1, promise, result, queryUrlStr;
                 return tslib_1.__generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
+                        case 0: return [4 /*yield*/, MetaSmokeAPI.GetSmokeyId(postId, postType)];
                         case 1:
                             smokeyid = _a.sent();
                             if (!(smokeyid != null)) return [3 /*break*/, 3];
@@ -3252,9 +3374,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             _a.sent();
                             return [2 /*return*/, true];
                         case 3:
-                            urlStr_1 = this.postType === 'Answer'
-                                ? "//" + window.location.hostname + "/a/" + this.postId
-                                : "//" + window.location.hostname + "/q/" + this.postId;
+                            urlStr_1 = postType === 'Answer'
+                                ? "//" + window.location.hostname + "/a/" + postId
+                                : "//" + window.location.hostname + "/q/" + postId;
                             promise = new Promise(function (resolve, reject) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
                                 var userKey;
                                 return tslib_1.__generator(this, function (_a) {
@@ -3281,23 +3403,23 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             return [4 /*yield*/, promise];
                         case 4:
                             result = _a.sent();
-                            queryUrlStr = this.GetQueryUrl();
+                            queryUrlStr = MetaSmokeAPI.GetQueryUrl(postId, postType);
                             SimpleCache_1.SimpleCache.Unset(exports.MetaSmokeWasReportedConfig + "." + queryUrlStr);
                             return [4 /*yield*/, Delay(1000)];
                         case 5:
                             _a.sent();
-                            this.QueryMetaSmokey();
+                            MetaSmokeAPI.QueryMetaSmoke(postId, postType);
                             return [2 /*return*/, result];
                     }
                 });
             });
         };
-        MetaSmokeAPI.prototype.ReportLooksFine = function () {
+        MetaSmokeAPI.prototype.ReportLooksFine = function (postId, postType) {
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 var smokeyid;
                 return tslib_1.__generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
+                        case 0: return [4 /*yield*/, MetaSmokeAPI.GetSmokeyId(postId, postType)];
                         case 1:
                             smokeyid = _a.sent();
                             if (!(smokeyid != null)) return [3 /*break*/, 3];
@@ -3310,12 +3432,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
             });
         };
-        MetaSmokeAPI.prototype.ReportNeedsEditing = function () {
+        MetaSmokeAPI.prototype.ReportNeedsEditing = function (postId, postType) {
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 var smokeyid;
                 return tslib_1.__generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
+                        case 0: return [4 /*yield*/, MetaSmokeAPI.GetSmokeyId(postId, postType)];
                         case 1:
                             smokeyid = _a.sent();
                             if (!(smokeyid != null)) return [3 /*break*/, 3];
@@ -3328,12 +3450,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
             });
         };
-        MetaSmokeAPI.prototype.ReportVandalism = function () {
+        MetaSmokeAPI.prototype.ReportVandalism = function (postId, postType) {
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 var smokeyid;
                 return tslib_1.__generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.GetSmokeyId()];
+                        case 0: return [4 /*yield*/, MetaSmokeAPI.GetSmokeyId(postId, postType)];
                         case 1:
                             smokeyid = _a.sent();
                             if (!(smokeyid != null)) return [3 /*break*/, 3];
@@ -3343,51 +3465,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             return [2 /*return*/, true];
                         case 3: return [2 /*return*/, false];
                     }
-                });
-            });
-        };
-        MetaSmokeAPI.prototype.GetQueryUrl = function () {
-            return this.postType === 'Answer'
-                ? "//" + window.location.hostname + "/a/" + this.postId
-                : "//" + window.location.hostname + "/questions/" + this.postId;
-        };
-        MetaSmokeAPI.prototype.QueryMetaSmokey = function () {
-            var _this = this;
-            var urlStr = this.GetQueryUrl();
-            var expiryDate = new Date();
-            expiryDate.setDate(expiryDate.getDate() + 30);
-            var resultPromise = SimpleCache_1.SimpleCache.GetAndCache(exports.MetaSmokeWasReportedConfig + "." + urlStr, function () { return new Promise(function (resolve, reject) {
-                MetaSmokeAPI.IsDisabled().then(function (isDisabled) {
-                    if (isDisabled) {
-                        return;
-                    }
-                    $.ajax({
-                        type: 'GET',
-                        url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
-                        data: {
-                            urls: urlStr,
-                            key: "" + MetaSmokeAPI.appKey
-                        }
-                    }).done(function (metaSmokeResult) {
-                        if (metaSmokeResult.items.length > 0) {
-                            resolve(metaSmokeResult.items[0].id);
-                        }
-                        else {
-                            resolve(null);
-                        }
-                    }).fail(function (error) {
-                        reject(error);
-                    });
-                });
-            }); }, expiryDate);
-            resultPromise
-                .then(function (r) { return _this.subject.next(r); })
-                .catch(function (err) { return _this.subject.error(err); });
-        };
-        MetaSmokeAPI.prototype.GetSmokeyId = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                return tslib_1.__generator(this, function (_a) {
-                    return [2 /*return*/, this.replaySubject.take(1).toPromise()];
                 });
             });
         };
@@ -3407,6 +3484,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
             });
         };
+        MetaSmokeAPI.ObservableLookup = {};
+        MetaSmokeAPI.pendingPosts = [];
+        MetaSmokeAPI.pendingTimeout = null;
         return MetaSmokeAPI;
     }());
     exports.MetaSmokeAPI = MetaSmokeAPI;
@@ -3524,7 +3604,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(4), __webpack_require__(9), __webpack_require__(7), __webpack_require__(3), __webpack_require__(18), __webpack_require__(19)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, Subject_1, ReplaySubject_1, sotools_1, SimpleCache_1, ChatApi_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(5), __webpack_require__(9), __webpack_require__(7), __webpack_require__(3), __webpack_require__(18), __webpack_require__(19)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, Subject_1, ReplaySubject_1, sotools_1, SimpleCache_1, ChatApi_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var nattyFeedbackUrl = 'http://logs.sobotics.org/napi/api/feedback';
@@ -4151,7 +4231,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var Subscription_1 = __webpack_require__(5);
+var Subscription_1 = __webpack_require__(4);
 /**
  * A unit of work to be executed in a {@link Scheduler}. An action is typically
  * created from within a Scheduler and an RxJS user does not need to concern
@@ -5023,7 +5103,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
 /* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(3), __webpack_require__(9), __webpack_require__(4), __webpack_require__(18), __webpack_require__(46)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, SimpleCache_1, ReplaySubject_1, Subject_1, ChatApi_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(3), __webpack_require__(9), __webpack_require__(5), __webpack_require__(18), __webpack_require__(46)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, SimpleCache_1, ReplaySubject_1, Subject_1, ChatApi_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var copyPastorServer = 'http://copypastor.sobotics.org';
@@ -5311,7 +5391,7 @@ var MapSubscriber = (function (_super) {
 /* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(4), __webpack_require__(50)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, Subject_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(5), __webpack_require__(50)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, Subject_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function WatchFlags() {

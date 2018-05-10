@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.50
+// @version      0.5.53
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2803,6 +2803,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     DisplayName: 'Duplicate',
                     ReportType: 'AnswerNotAnAnswer',
                     GetComment: function () { return 'Instead of posting an answer which merely links to another answer, please instead [flag the question](https://stackoverflow.com/help/privileges/flag-posts) as a duplicate.'; }
+                },
+                {
+                    Id: 17,
+                    DisplayName: 'Non English',
+                    ReportType: 'AnswerNotAnAnswer',
+                    GetComment: function () { return 'Welcome to Stack Overflow. Please write your answer in English, as Stack Overflow is an [English only site](https://meta.stackoverflow.com/a/297680).'; }
                 }
             ]
         },

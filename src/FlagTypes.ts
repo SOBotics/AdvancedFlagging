@@ -133,6 +133,12 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Duplicate',
                 ReportType: 'AnswerNotAnAnswer',
                 GetComment: () => 'Instead of posting an answer which merely links to another answer, please instead [flag the question](https://stackoverflow.com/help/privileges/flag-posts) as a duplicate.'
+            },
+            {
+                Id: 17,
+                DisplayName: 'Non English',
+                ReportType: 'AnswerNotAnAnswer',
+                GetComment: () => 'Welcome to Stack Overflow. Please write your answer in English, as Stack Overflow is an [English only site](https://meta.stackoverflow.com/a/297680).'
             }
         ]
     },

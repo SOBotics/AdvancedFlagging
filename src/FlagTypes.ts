@@ -1,10 +1,15 @@
 import { CopyPastorFindTargetResponseItem } from '@userscriptTools/copypastorapi/CopyPastorAPI';
 
+export interface UserDetails {
+    Reputation: number;
+    AuthorName: string;
+}
+
 export interface FlagType {
     Id: number;
     DisplayName: string;
     ReportType: 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther';
-    GetComment?(reputation: number): string;
+    GetComment?(userDetails: UserDetails): string;
     Enabled?(hasDuplicatePostLinks: boolean): boolean;
     GetCustomFlagText?(copyPastorItem: CopyPastorFindTargetResponseItem): string;
 }
@@ -75,7 +80,7 @@ export const flagCategories: FlagCategory[] = [
                 Id: 6,
                 DisplayName: 'Not an answer',
                 ReportType: 'AnswerNotAnAnswer',
-                GetComment: (reptuation) => reptuation < 50
+                GetComment: (userDetails) => userDetails.Reputation < 50
                     ? 'This does not provide an answer to the question. You can [search for similar questions](//stackoverflow.com/search), ' +
                     'or refer to the related and linked questions on the right-hand side of the page to find an answer. ' +
                     'If you have a related but different question, [ask a new question](//stackoverflow.com/questions/ask), ' +
@@ -91,7 +96,7 @@ export const flagCategories: FlagCategory[] = [
                 Id: 7,
                 DisplayName: 'Thanks',
                 ReportType: 'AnswerNotAnAnswer',
-                GetComment: (reputation) => reputation < 15
+                GetComment: (userDetails) => userDetails.Reputation < 15
                     ? 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
                     'and can be perceived as noise by its future visitors. Once you [earn](http://meta.stackoverflow.com/q/146472) ' +
                     'enough [reputation](http://stackoverflow.com/help/whats-reputation), you will gain privileges to ' +

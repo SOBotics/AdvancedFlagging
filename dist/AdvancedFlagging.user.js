@@ -2003,7 +2003,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     function displayError(message) {
         displayToaster(message, '#ba1701');
     }
-    function BuildFlaggingDialog(element, postId, postType, reputation, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorPromise) {
+    function BuildFlaggingDialog(element, postId, postType, reputation, authorName, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorPromise) {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             var getDivider, linkStyle, dropDown, checkboxName, leaveCommentBox, flagBox, isStackOverflow, comments, enabledFlagIds, hasCommentOptions, firstCategory, commentBoxLabel, commentingRow, flagBoxLabel, flaggingRow;
             return tslib_1.__generator(this, function (_a) {
@@ -2095,7 +2095,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                 }
                                 var commentText;
                                 if (flagType.GetComment) {
-                                    commentText = flagType.GetComment(reputation);
+                                    commentText = flagType.GetComment({ Reputation: reputation, AuthorName: authorName });
                                     reportLink.attr('title', commentText);
                                 }
                                 reportLink.click(function () {
@@ -2404,7 +2404,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             case 1:
                                 linkDisabled = _a.sent();
                                 if (!!linkDisabled) return [3 /*break*/, 3];
-                                return [4 /*yield*/, BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, answerTime_1, questionTime_1, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi.Promise())];
+                                return [4 /*yield*/, BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, post.authorName, answerTime_1, questionTime_1, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi.Promise())];
                             case 2:
                                 dropDown_1 = _a.sent();
                                 advancedFlaggingLink.append(dropDown_1);
@@ -2745,7 +2745,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     Id: 6,
                     DisplayName: 'Not an answer',
                     ReportType: 'AnswerNotAnAnswer',
-                    GetComment: function (reptuation) { return reptuation < 50
+                    GetComment: function (userDetails) { return userDetails.Reputation < 50
                         ? 'This does not provide an answer to the question. You can [search for similar questions](//stackoverflow.com/search), ' +
                             'or refer to the related and linked questions on the right-hand side of the page to find an answer. ' +
                             'If you have a related but different question, [ask a new question](//stackoverflow.com/questions/ask), ' +
@@ -2761,7 +2761,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     Id: 7,
                     DisplayName: 'Thanks',
                     ReportType: 'AnswerNotAnAnswer',
-                    GetComment: function (reputation) { return reputation < 15
+                    GetComment: function (userDetails) { return userDetails.Reputation < 15
                         ? 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
                             'and can be perceived as noise by its future visitors. Once you [earn](http://meta.stackoverflow.com/q/146472) ' +
                             'enough [reputation](http://stackoverflow.com/help/whats-reputation), you will gain privileges to ' +

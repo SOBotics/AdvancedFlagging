@@ -190,6 +190,7 @@ async function BuildFlaggingDialog(element: JQuery,
     postId: number,
     postType: 'Question' | 'Answer',
     reputation: number,
+    authorName: string,
     answerTime: Date,
     questionTime: Date,
     deleted: boolean,
@@ -289,7 +290,7 @@ async function BuildFlaggingDialog(element: JQuery,
 
             let commentText: string | undefined;
             if (flagType.GetComment) {
-                commentText = flagType.GetComment(reputation);
+                commentText = flagType.GetComment({ Reputation: reputation, AuthorName: authorName });
                 reportLink.attr('title', commentText);
             }
 
@@ -622,7 +623,7 @@ async function SetupPostPage() {
 
             const linkDisabled = await getFromCaches(ConfigurationLinkDisabled);
             if (!linkDisabled) {
-                const dropDown = await BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation as number, answerTime, questionTime,
+                const dropDown = await BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation as number, post.authorName, answerTime, questionTime,
                     deleted,
                     reportedIcon,
                     performedActionIcon,

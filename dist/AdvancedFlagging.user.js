@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.54
+// @version      0.5.55
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -3627,12 +3627,17 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         method: 'GET',
                         url: nattyFeedbackUrl + "/" + _this.answerId,
                         onload: function (response) {
-                            var nattyResult = JSON.parse(response.responseText);
-                            if (nattyResult.items && nattyResult.items[0]) {
-                                resolve(true);
+                            if (response.status === 200) {
+                                var nattyResult = JSON.parse(response.responseText);
+                                if (nattyResult.items && nattyResult.items[0]) {
+                                    resolve(true);
+                                }
+                                else {
+                                    resolve(false);
+                                }
                             }
                             else {
-                                resolve(false);
+                                reject('Failed to retrieve natty report: ' + response.responseText);
                             }
                         },
                         onerror: function (response) {

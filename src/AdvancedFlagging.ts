@@ -767,7 +767,6 @@ export async function storeInCaches<T>(key: string, item: any) {
 }
 
 $(async () => {
-    SimpleCache.ClearExpiredKeys(/^AdvancedFlagging\./);
     const clearUnexpirying = (val: string | null) => {
         if (!val) {
             return true;
@@ -784,11 +783,18 @@ $(async () => {
         }
         return true;
     };
-    SimpleCache.ClearAll(/^AdvancedFlagging\.Flagged\.\d+/, clearUnexpirying);
-    SimpleCache.ClearAll(/^AdvancedFlagging\.PerformedAction\.\d+/, clearUnexpirying);
-    SimpleCache.ClearAll(/^CopyPastor\.FindTarget\.\d+/, clearUnexpirying);
-    SimpleCache.ClearAll(/^MetaSmoke.WasReported/, clearUnexpirying);
-    SimpleCache.ClearAll(/^NattyApi.Feedback\.\d+/, clearUnexpirying);
+
+    const keyRegexes = [
+        /^AdvancedFlagging\./,
+        /^CopyPastor\.FindTarget\.\d+/,
+        /^MetaSmoke.WasReported/,
+        /^NattyApi.Feedback\.\d+/
+    ];
+
+    keyRegexes.forEach(regex => {
+        SimpleCache.ClearExpiredKeys(regex);
+        SimpleCache.ClearAll(regex, clearUnexpirying);
+    });
 
     await CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
     if (!(await CrossDomainCache.CacheFailed())) {

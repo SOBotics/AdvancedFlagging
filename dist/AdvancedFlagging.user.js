@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.55
+// @version      0.5.56
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2556,11 +2556,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.storeInCaches = storeInCaches;
     $(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
         var _this = this;
-        var clearUnexpirying, manualKey_1;
+        var clearUnexpirying, keyRegexes, manualKey_1;
         return tslib_1.__generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    SimpleCache_1.SimpleCache.ClearExpiredKeys(/^AdvancedFlagging\./);
                     clearUnexpirying = function (val) {
                         if (!val) {
                             return true;
@@ -2579,11 +2578,16 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         }
                         return true;
                     };
-                    SimpleCache_1.SimpleCache.ClearAll(/^AdvancedFlagging\.Flagged\.\d+/, clearUnexpirying);
-                    SimpleCache_1.SimpleCache.ClearAll(/^AdvancedFlagging\.PerformedAction\.\d+/, clearUnexpirying);
-                    SimpleCache_1.SimpleCache.ClearAll(/^CopyPastor\.FindTarget\.\d+/, clearUnexpirying);
-                    SimpleCache_1.SimpleCache.ClearAll(/^MetaSmoke.WasReported/, clearUnexpirying);
-                    SimpleCache_1.SimpleCache.ClearAll(/^NattyApi.Feedback\.\d+/, clearUnexpirying);
+                    keyRegexes = [
+                        /^AdvancedFlagging\./,
+                        /^CopyPastor\.FindTarget\.\d+/,
+                        /^MetaSmoke.WasReported/,
+                        /^NattyApi.Feedback\.\d+/
+                    ];
+                    keyRegexes.forEach(function (regex) {
+                        SimpleCache_1.SimpleCache.ClearExpiredKeys(regex);
+                        SimpleCache_1.SimpleCache.ClearAll(regex, clearUnexpirying);
+                    });
                     return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html')];
                 case 1:
                     _a.sent();

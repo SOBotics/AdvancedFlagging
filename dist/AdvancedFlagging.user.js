@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.57
+// @version      0.5.58
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -887,12 +887,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         SimpleCache.ClearCache = function () {
             localStorage.clear();
         };
-        SimpleCache.ClearExpiredKeys = function (regex) {
+        SimpleCache.ClearExpiredKeys = function (regexes) {
             var len = localStorage.length;
-            for (var i = len - 1; i >= 0; i--) {
+            var _loop_1 = function (i) {
                 var key = localStorage.key(i);
                 if (key) {
-                    if (!regex || key.match(regex)) {
+                    if (!regexes || regexes.filter(function (r) { return key.match(r); }).length > 0) {
                         var jsonItem = localStorage.getItem(key);
                         if (jsonItem) {
                             try {
@@ -907,14 +907,17 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         }
                     }
                 }
+            };
+            for (var i = len - 1; i >= 0; i--) {
+                _loop_1(i);
             }
         };
-        SimpleCache.ClearAll = function (regex, condition) {
+        SimpleCache.ClearAll = function (regexes, condition) {
             var len = localStorage.length;
-            for (var i = len - 1; i >= 0; i--) {
+            var _loop_2 = function (i) {
                 var key = localStorage.key(i);
                 if (key) {
-                    if (key.match(regex)) {
+                    if (regexes.filter(function (r) { return key.match(r); }).length > 0) {
                         if (condition) {
                             var val = localStorage.getItem(key);
                             if (condition(val)) {
@@ -926,6 +929,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         }
                     }
                 }
+            };
+            for (var i = len - 1; i >= 0; i--) {
+                _loop_2(i);
             }
         };
         SimpleCache.GetFromCache = function (cacheKey) {
@@ -2584,10 +2590,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         /^MetaSmoke.WasReported/,
                         /^NattyApi.Feedback\.\d+/
                     ];
-                    keyRegexes.forEach(function (regex) {
-                        SimpleCache_1.SimpleCache.ClearExpiredKeys(regex);
-                        SimpleCache_1.SimpleCache.ClearAll(regex, clearUnexpirying);
-                    });
+                    SimpleCache_1.SimpleCache.ClearExpiredKeys(keyRegexes);
+                    SimpleCache_1.SimpleCache.ClearAll(keyRegexes, clearUnexpirying);
                     return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html')];
                 case 1:
                     _a.sent();

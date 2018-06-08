@@ -791,10 +791,8 @@ $(async () => {
         /^NattyApi.Feedback\.\d+/
     ];
 
-    keyRegexes.forEach(regex => {
-        SimpleCache.ClearExpiredKeys(regex);
-        SimpleCache.ClearAll(regex, clearUnexpirying);
-    });
+    SimpleCache.ClearExpiredKeys(keyRegexes);
+    SimpleCache.ClearAll(keyRegexes, clearUnexpirying);
 
     await CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
     if (!(await CrossDomainCache.CacheFailed())) {

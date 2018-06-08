@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.56
+// @version      0.5.57
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -3625,7 +3625,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             this.subject.subscribe(this.replaySubject);
             if (sotools_1.IsStackOverflow()) {
                 var expiryDate = new Date();
-                expiryDate.setDate(expiryDate.getDate() + 30);
+                expiryDate.setDate(expiryDate.getDate() + 1);
                 SimpleCache_1.SimpleCache.GetAndCache("NattyApi.Feedback." + this.answerId, function () { return new Promise(function (resolve, reject) {
                     GM_xmlhttpRequest({
                         method: 'GET',

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.58
+// @version      0.5.59
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -3631,27 +3631,40 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 var expiryDate = new Date();
                 expiryDate.setDate(expiryDate.getDate() + 1);
                 SimpleCache_1.SimpleCache.GetAndCache("NattyApi.Feedback." + this.answerId, function () { return new Promise(function (resolve, reject) {
-                    GM_xmlhttpRequest({
-                        method: 'GET',
-                        url: nattyFeedbackUrl + "/" + _this.answerId,
-                        onload: function (response) {
-                            if (response.status === 200) {
-                                var nattyResult = JSON.parse(response.responseText);
-                                if (nattyResult.items && nattyResult.items[0]) {
-                                    resolve(true);
+                    var numTries = 0;
+                    var onError = function (response) {
+                        numTries++;
+                        if (numTries < 3) {
+                            makeRequest();
+                        }
+                        else {
+                            reject('Failed to retrieve natty report: ' + response);
+                        }
+                    };
+                    var makeRequest = function () {
+                        GM_xmlhttpRequest({
+                            method: 'GET',
+                            url: nattyFeedbackUrl + "/" + _this.answerId,
+                            onload: function (response) {
+                                if (response.status === 200) {
+                                    var nattyResult = JSON.parse(response.responseText);
+                                    if (nattyResult.items && nattyResult.items[0]) {
+                                        resolve(true);
+                                    }
+                                    else {
+                                        resolve(false);
+                                    }
                                 }
                                 else {
-                                    resolve(false);
+                                    onError(response.responseText);
                                 }
-                            }
-                            else {
-                                reject('Failed to retrieve natty report: ' + response.responseText);
-                            }
-                        },
-                        onerror: function (response) {
-                            reject(response);
-                        },
-                    });
+                            },
+                            onerror: function (response) {
+                                onError(response);
+                            },
+                        });
+                    };
+                    makeRequest();
                 }); }, expiryDate)
                     .then(function (r) { return _this.subject.next(r); })
                     .catch(function (err) { return _this.subject.error(err); });

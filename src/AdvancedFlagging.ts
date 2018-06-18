@@ -461,6 +461,9 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
                 case 'Plagiarism':
                     promise = reporter.ReportPlagiarism();
                     break;
+                case 'Bad attribution':
+                    promise = reporter.ReportPlagiarism();
+                    break;
                 default:
                     throw new Error('Could not find custom flag type: ' + flagType.DisplayName);
             }

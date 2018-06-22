@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.58
+// @version      0.5.60
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2252,6 +2252,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     case 'Plagiarism':
                         promise = reporter.ReportPlagiarism();
                         break;
+                    case 'Bad attribution':
+                        promise = reporter.ReportPlagiarism();
+                        break;
                     default:
                         throw new Error('Could not find custom flag type: ' + flagType.DisplayName);
                 }
@@ -2732,6 +2735,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
                     GetComment: function () { return 'Please don\'t add the [same answer to multiple questions](http://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.'; },
                     GetCustomFlagText: function (copyPastorItem) { return "The answer is a repost of their other answer https:" + copyPastorItem.target_url + ", but as there are slight differences as seen here http://copypastor.sobotics.org/posts/" + copyPastorItem.post_id + ", an auto flag wouldn't be raised."; }
+                },
+                {
+                    Id: 18,
+                    DisplayName: 'Bad attribution',
+                    ReportType: 'PostOther',
+                    Enabled: function (hasDuplicatePostLinks) { return hasDuplicatePostLinks; },
+                    GetCustomFlagText: function (copyPastorItem) { return "This post is copied from [another answer](https:" + copyPastorItem.target_url + "), as can be seen [here](http://copypastor.sobotics.org/posts/" + copyPastorItem.post_id + "). The author only added a link to the other answer, which is [not the proper way of attribution](https://stackoverflow.blog/2009/06/25/attribution-required/)."; }
                 }
             ]
         },
@@ -3631,27 +3641,40 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 var expiryDate = new Date();
                 expiryDate.setDate(expiryDate.getDate() + 1);
                 SimpleCache_1.SimpleCache.GetAndCache("NattyApi.Feedback." + this.answerId, function () { return new Promise(function (resolve, reject) {
-                    GM_xmlhttpRequest({
-                        method: 'GET',
-                        url: nattyFeedbackUrl + "/" + _this.answerId,
-                        onload: function (response) {
-                            if (response.status === 200) {
-                                var nattyResult = JSON.parse(response.responseText);
-                                if (nattyResult.items && nattyResult.items[0]) {
-                                    resolve(true);
+                    var numTries = 0;
+                    var onError = function (response) {
+                        numTries++;
+                        if (numTries < 3) {
+                            makeRequest();
+                        }
+                        else {
+                            reject('Failed to retrieve natty report: ' + response);
+                        }
+                    };
+                    var makeRequest = function () {
+                        GM_xmlhttpRequest({
+                            method: 'GET',
+                            url: nattyFeedbackUrl + "/" + _this.answerId,
+                            onload: function (response) {
+                                if (response.status === 200) {
+                                    var nattyResult = JSON.parse(response.responseText);
+                                    if (nattyResult.items && nattyResult.items[0]) {
+                                        resolve(true);
+                                    }
+                                    else {
+                                        resolve(false);
+                                    }
                                 }
                                 else {
-                                    resolve(false);
+                                    onError(response.responseText);
                                 }
-                            }
-                            else {
-                                reject('Failed to retrieve natty report: ' + response.responseText);
-                            }
-                        },
-                        onerror: function (response) {
-                            reject(response);
-                        },
-                    });
+                            },
+                            onerror: function (response) {
+                                onError(response);
+                            },
+                        });
+                    };
+                    makeRequest();
                 }); }, expiryDate)
                     .then(function (r) { return _this.subject.next(r); })
                     .catch(function (err) { return _this.subject.error(err); });

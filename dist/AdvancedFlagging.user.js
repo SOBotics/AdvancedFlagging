@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.62
+// @version      0.5.63
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2566,37 +2566,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     function Setup() {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             var _this = this;
-            var clearUnexpirying, keyRegexes, manualKey_1;
+            var manualKey_1, clearUnexpirying, keyRegexes;
             return tslib_1.__generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0:
-                        clearUnexpirying = function (val) {
-                            if (!val) {
-                                return true;
-                            }
-                            try {
-                                var jsonObj = JSON.parse(val);
-                                if (!jsonObj.Expires) {
-                                    return true;
-                                }
-                                else {
-                                    return false;
-                                }
-                            }
-                            catch (_a) {
-                                // Don't care
-                            }
-                            return true;
-                        };
-                        keyRegexes = [
-                            /^AdvancedFlagging\./,
-                            /^CopyPastor\.FindTarget\.\d+/,
-                            /^MetaSmoke.WasReported/,
-                            /^NattyApi.Feedback\.\d+/
-                        ];
-                        SimpleCache_1.SimpleCache.ClearExpiredKeys(keyRegexes);
-                        SimpleCache_1.SimpleCache.ClearAll(keyRegexes, clearUnexpirying);
-                        return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html')];
+                    case 0: return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html')];
                     case 1:
                         _a.sent();
                         return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.CacheFailed()];
@@ -2615,13 +2588,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     case 5:
                         _a.sent();
                         _a.label = 6;
-                    case 6: return [4 /*yield*/, Configuration_1.SetupConfiguration()];
+                    case 6: return [4 /*yield*/, SetupPostPage()];
                     case 7:
                         _a.sent();
-                        return [4 /*yield*/, SetupPostPage()];
+                        SetupStyles();
+                        return [4 /*yield*/, Configuration_1.SetupConfiguration()];
                     case 8:
                         _a.sent();
-                        SetupStyles();
                         getFromCaches(exports.ConfigurationDetectAudits).then(function (isEnabled) {
                             RequestWatcher_1.WatchRequests().subscribe(function (xhr) {
                                 var isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
@@ -2686,6 +2659,32 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                 }
                             });
                         });
+                        clearUnexpirying = function (val) {
+                            if (!val) {
+                                return true;
+                            }
+                            try {
+                                var jsonObj = JSON.parse(val);
+                                if (!jsonObj.Expires) {
+                                    return true;
+                                }
+                                else {
+                                    return false;
+                                }
+                            }
+                            catch (_a) {
+                                // Don't care
+                            }
+                            return true;
+                        };
+                        keyRegexes = [
+                            /^AdvancedFlagging\./,
+                            /^CopyPastor\.FindTarget\.\d+/,
+                            /^MetaSmoke.WasReported/,
+                            /^NattyApi.Feedback\.\d+/
+                        ];
+                        SimpleCache_1.SimpleCache.ClearExpiredKeys(keyRegexes);
+                        SimpleCache_1.SimpleCache.ClearAll(keyRegexes, clearUnexpirying);
                         return [2 /*return*/];
                 }
             });

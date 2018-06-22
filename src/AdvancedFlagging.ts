@@ -770,33 +770,6 @@ export async function storeInCaches<T>(key: string, item: any) {
 }
 
 async function Setup() {
-    const clearUnexpirying = (val: string | null) => {
-        if (!val) {
-            return true;
-        }
-        try {
-            const jsonObj = JSON.parse(val);
-            if (!jsonObj.Expires) {
-                return true;
-            } else {
-                return false;
-            }
-        } catch {
-            // Don't care
-        }
-        return true;
-    };
-
-    const keyRegexes = [
-        /^AdvancedFlagging\./,
-        /^CopyPastor\.FindTarget\.\d+/,
-        /^MetaSmoke.WasReported/,
-        /^NattyApi.Feedback\.\d+/
-    ];
-
-    SimpleCache.ClearExpiredKeys(keyRegexes);
-    SimpleCache.ClearAll(keyRegexes, clearUnexpirying);
-
     await CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
     if (!(await CrossDomainCache.CacheFailed())) {
         const manualKey = localStorage.getItem(metaSmokeManualKey);
@@ -808,10 +781,10 @@ async function Setup() {
         }
     }
 
-    await SetupConfiguration();
     await SetupPostPage();
-
     SetupStyles();
+
+    await SetupConfiguration();
 
     getFromCaches<boolean>(ConfigurationDetectAudits).then(isEnabled => {
         WatchRequests().subscribe(xhr => {
@@ -882,6 +855,34 @@ async function Setup() {
             }
         });
     });
+
+    const clearUnexpirying = (val: string | null) => {
+        if (!val) {
+            return true;
+        }
+        try {
+            const jsonObj = JSON.parse(val);
+            if (!jsonObj.Expires) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch {
+            // Don't care
+        }
+        return true;
+    };
+
+    const keyRegexes = [
+        /^AdvancedFlagging\./,
+        /^CopyPastor\.FindTarget\.\d+/,
+        /^MetaSmoke.WasReported/,
+        /^NattyApi.Feedback\.\d+/
+    ];
+
+    SimpleCache.ClearExpiredKeys(keyRegexes);
+    SimpleCache.ClearAll(keyRegexes, clearUnexpirying);
+
 }
 
 $(async () => {

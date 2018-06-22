@@ -766,7 +766,7 @@ export async function storeInCaches<T>(key: string, item: any) {
     await CrossDomainCache.StoreInCache<T>(key, item);
 }
 
-$(async () => {
+async function Setup() {
     const clearUnexpirying = (val: string | null) => {
         if (!val) {
             return true;
@@ -879,4 +879,30 @@ $(async () => {
             }
         });
     });
+}
+
+$(async () => {
+    let started = false;
+    async function actionWatcher() {
+        if (!started) {
+            started = true;
+            // tslint:disable-next-line:no-console
+            console.log('I\'m starting!', new Date());
+            await Setup();
+        }
+        $(window).off('focus', actionWatcher);
+        $(window).off('mousemove', actionWatcher);
+    }
+
+    // If the window gains focus
+    $(window).focus(actionWatcher);
+    // Or we have mouse movement
+    $(window).mousemove(actionWatcher);
+
+    // Or the document is already focused,
+    // Then we execute the script.
+    // This is done to prevent DOSing dashboard apis, if a bunch of links are opened at once.
+    if (document.hasFocus && document.hasFocus()) {
+        await actionWatcher();
+    }
 });

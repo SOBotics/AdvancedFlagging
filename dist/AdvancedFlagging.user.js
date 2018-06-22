@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.60
+// @version      0.5.61
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2563,129 +2563,171 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         });
     }
     exports.storeInCaches = storeInCaches;
-    $(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-        var _this = this;
-        var clearUnexpirying, keyRegexes, manualKey_1;
-        return tslib_1.__generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    clearUnexpirying = function (val) {
-                        if (!val) {
-                            return true;
-                        }
-                        try {
-                            var jsonObj = JSON.parse(val);
-                            if (!jsonObj.Expires) {
+    function Setup() {
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            var clearUnexpirying, keyRegexes, manualKey_1;
+            return tslib_1.__generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        clearUnexpirying = function (val) {
+                            if (!val) {
                                 return true;
                             }
-                            else {
-                                return false;
-                            }
-                        }
-                        catch (_a) {
-                            // Don't care
-                        }
-                        return true;
-                    };
-                    keyRegexes = [
-                        /^AdvancedFlagging\./,
-                        /^CopyPastor\.FindTarget\.\d+/,
-                        /^MetaSmoke.WasReported/,
-                        /^NattyApi.Feedback\.\d+/
-                    ];
-                    SimpleCache_1.SimpleCache.ClearExpiredKeys(keyRegexes);
-                    SimpleCache_1.SimpleCache.ClearAll(keyRegexes, clearUnexpirying);
-                    return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html')];
-                case 1:
-                    _a.sent();
-                    return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.CacheFailed()];
-                case 2:
-                    if (!!(_a.sent())) return [3 /*break*/, 6];
-                    manualKey_1 = localStorage.getItem(metaSmokeManualKey);
-                    if (!manualKey_1) return [3 /*break*/, 4];
-                    localStorage.removeItem(metaSmokeManualKey);
-                    return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(exports.metaSmokeKey, function () { return tslib_1.__awaiter(_this, void 0, void 0, function () { return tslib_1.__generator(this, function (_a) {
-                            return [2 /*return*/, manualKey_1];
-                        }); }); })];
-                case 3:
-                    _a.sent();
-                    return [3 /*break*/, 6];
-                case 4: return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(exports.metaSmokeKey)];
-                case 5:
-                    _a.sent();
-                    _a.label = 6;
-                case 6: return [4 /*yield*/, Configuration_1.SetupConfiguration()];
-                case 7:
-                    _a.sent();
-                    return [4 /*yield*/, SetupPostPage()];
-                case 8:
-                    _a.sent();
-                    SetupStyles();
-                    getFromCaches(exports.ConfigurationDetectAudits).then(function (isEnabled) {
-                        RequestWatcher_1.WatchRequests().subscribe(function (xhr) {
-                            var isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
-                            if (isReviewItem !== null && xhr.status === 200) {
-                                var review = JSON.parse(xhr.responseText);
-                                if (isEnabled && review.isAudit) {
-                                    displayToaster('Beware! This is an audit!', '#cce5ff', '#004085', 5000);
-                                    $('.review-actions').hide();
-                                    setTimeout(function () {
-                                        $('.review-actions').show();
-                                    }, 5000);
+                            try {
+                                var jsonObj = JSON.parse(val);
+                                if (!jsonObj.Expires) {
+                                    return true;
+                                }
+                                else {
+                                    return false;
                                 }
                             }
-                        });
-                    });
-                    document.body.appendChild(popupWrapper.get(0));
-                    getFromCaches(exports.ConfigurationWatchQueues).then(function (isEnabled) {
-                        var postDetails = [];
-                        RequestWatcher_1.WatchRequests().subscribe(function (xhr) {
-                            if (isEnabled) {
-                                var parseReviewDetails = function (review) {
-                                    var postId = review.postId;
-                                    var content = $(review.content);
-                                    postDetails[postId] = {
-                                        questionTime: sotools_1.parseDate($('.post-signature.owner .user-action-time span', content).attr('title')),
-                                        answerTime: sotools_1.parseDate($('.post-signature .user-action-time span', content).attr('title'))
-                                    };
-                                };
-                                // We can't just parse the page after a recommend/delete request, as the page will have sometimes already updated
-                                // This means we're actually grabbing the information for the following review
-                                // So, we watch the next-task requests and remember which post we were looking at for when a delete/recommend-delete vote comes through.
-                                // next-task is invoked when visiting the review queue
-                                // task-reviewed is invoked when making a response
+                            catch (_a) {
+                                // Don't care
+                            }
+                            return true;
+                        };
+                        keyRegexes = [
+                            /^AdvancedFlagging\./,
+                            /^CopyPastor\.FindTarget\.\d+/,
+                            /^MetaSmoke.WasReported/,
+                            /^NattyApi.Feedback\.\d+/
+                        ];
+                        SimpleCache_1.SimpleCache.ClearExpiredKeys(keyRegexes);
+                        SimpleCache_1.SimpleCache.ClearAll(keyRegexes, clearUnexpirying);
+                        return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html')];
+                    case 1:
+                        _a.sent();
+                        return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.CacheFailed()];
+                    case 2:
+                        if (!!(_a.sent())) return [3 /*break*/, 6];
+                        manualKey_1 = localStorage.getItem(metaSmokeManualKey);
+                        if (!manualKey_1) return [3 /*break*/, 4];
+                        localStorage.removeItem(metaSmokeManualKey);
+                        return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(exports.metaSmokeKey, function () { return tslib_1.__awaiter(_this, void 0, void 0, function () { return tslib_1.__generator(this, function (_a) {
+                                return [2 /*return*/, manualKey_1];
+                            }); }); })];
+                    case 3:
+                        _a.sent();
+                        return [3 /*break*/, 6];
+                    case 4: return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(exports.metaSmokeKey)];
+                    case 5:
+                        _a.sent();
+                        _a.label = 6;
+                    case 6: return [4 /*yield*/, Configuration_1.SetupConfiguration()];
+                    case 7:
+                        _a.sent();
+                        return [4 /*yield*/, SetupPostPage()];
+                    case 8:
+                        _a.sent();
+                        SetupStyles();
+                        getFromCaches(exports.ConfigurationDetectAudits).then(function (isEnabled) {
+                            RequestWatcher_1.WatchRequests().subscribe(function (xhr) {
                                 var isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
                                 if (isReviewItem !== null && xhr.status === 200) {
                                     var review = JSON.parse(xhr.responseText);
-                                    parseReviewDetails(review);
-                                    return;
-                                }
-                                var matches = /(\d+)\/vote\/10|(\d+)\/recommend-delete/.exec(xhr.responseURL);
-                                if (matches !== null && xhr.status === 200) {
-                                    var postIdStr = matches[1] || matches[2];
-                                    var postId = parseInt(postIdStr, 10);
-                                    var currentPostDetails = postDetails[postId];
-                                    if (currentPostDetails && $('.answers-subheader').length > 0) {
-                                        var nattyApi_2 = new NattyApi_1.NattyAPI(postId);
-                                        nattyApi_2.Watch();
-                                        handleFlag({ Id: 0, ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
-                                            {
-                                                name: 'Natty',
-                                                ReportNaa: function (answerDate, questionDate) { return nattyApi_2.ReportNaa(answerDate, questionDate); },
-                                                ReportRedFlag: function () { return nattyApi_2.ReportRedFlag(); },
-                                                ReportLooksFine: function () { return nattyApi_2.ReportLooksFine(); },
-                                                ReportNeedsEditing: function () { return nattyApi_2.ReportNeedsEditing(); },
-                                                ReportVandalism: function () { return Promise.resolve(false); },
-                                                ReportDuplicateAnswer: function () { return Promise.resolve(false); },
-                                                ReportPlagiarism: function () { return Promise.resolve(false); }
-                                            }
-                                        ], currentPostDetails.answerTime, currentPostDetails.questionTime);
+                                    if (isEnabled && review.isAudit) {
+                                        displayToaster('Beware! This is an audit!', '#cce5ff', '#004085', 5000);
+                                        $('.review-actions').hide();
+                                        setTimeout(function () {
+                                            $('.review-actions').show();
+                                        }, 5000);
                                     }
                                 }
-                            }
+                            });
                         });
-                    });
-                    return [2 /*return*/];
+                        document.body.appendChild(popupWrapper.get(0));
+                        getFromCaches(exports.ConfigurationWatchQueues).then(function (isEnabled) {
+                            var postDetails = [];
+                            RequestWatcher_1.WatchRequests().subscribe(function (xhr) {
+                                if (isEnabled) {
+                                    var parseReviewDetails = function (review) {
+                                        var postId = review.postId;
+                                        var content = $(review.content);
+                                        postDetails[postId] = {
+                                            questionTime: sotools_1.parseDate($('.post-signature.owner .user-action-time span', content).attr('title')),
+                                            answerTime: sotools_1.parseDate($('.post-signature .user-action-time span', content).attr('title'))
+                                        };
+                                    };
+                                    // We can't just parse the page after a recommend/delete request, as the page will have sometimes already updated
+                                    // This means we're actually grabbing the information for the following review
+                                    // So, we watch the next-task requests and remember which post we were looking at for when a delete/recommend-delete vote comes through.
+                                    // next-task is invoked when visiting the review queue
+                                    // task-reviewed is invoked when making a response
+                                    var isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
+                                    if (isReviewItem !== null && xhr.status === 200) {
+                                        var review = JSON.parse(xhr.responseText);
+                                        parseReviewDetails(review);
+                                        return;
+                                    }
+                                    var matches = /(\d+)\/vote\/10|(\d+)\/recommend-delete/.exec(xhr.responseURL);
+                                    if (matches !== null && xhr.status === 200) {
+                                        var postIdStr = matches[1] || matches[2];
+                                        var postId = parseInt(postIdStr, 10);
+                                        var currentPostDetails = postDetails[postId];
+                                        if (currentPostDetails && $('.answers-subheader').length > 0) {
+                                            var nattyApi_2 = new NattyApi_1.NattyAPI(postId);
+                                            nattyApi_2.Watch();
+                                            handleFlag({ Id: 0, ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
+                                                {
+                                                    name: 'Natty',
+                                                    ReportNaa: function (answerDate, questionDate) { return nattyApi_2.ReportNaa(answerDate, questionDate); },
+                                                    ReportRedFlag: function () { return nattyApi_2.ReportRedFlag(); },
+                                                    ReportLooksFine: function () { return nattyApi_2.ReportLooksFine(); },
+                                                    ReportNeedsEditing: function () { return nattyApi_2.ReportNeedsEditing(); },
+                                                    ReportVandalism: function () { return Promise.resolve(false); },
+                                                    ReportDuplicateAnswer: function () { return Promise.resolve(false); },
+                                                    ReportPlagiarism: function () { return Promise.resolve(false); }
+                                                }
+                                            ], currentPostDetails.answerTime, currentPostDetails.questionTime);
+                                        }
+                                    }
+                                }
+                            });
+                        });
+                        return [2 /*return*/];
+                }
+            });
+        });
+    }
+    $(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+        function actionWatcher() {
+            return tslib_1.__awaiter(this, void 0, void 0, function () {
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            if (!!started) return [3 /*break*/, 2];
+                            started = true;
+                            // tslint:disable-next-line:no-console
+                            console.log('I\'m starting!', new Date());
+                            return [4 /*yield*/, Setup()];
+                        case 1:
+                            _a.sent();
+                            _a.label = 2;
+                        case 2:
+                            $(window).off('focus', actionWatcher);
+                            $(window).off('mousemove', actionWatcher);
+                            return [2 /*return*/];
+                    }
+                });
+            });
+        }
+        var started;
+        return tslib_1.__generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    started = false;
+                    // If the window gains focus
+                    $(window).focus(actionWatcher);
+                    // Or we have mouse movement
+                    $(window).mousemove(actionWatcher);
+                    if (!(document.hasFocus && document.hasFocus())) return [3 /*break*/, 2];
+                    return [4 /*yield*/, actionWatcher()];
+                case 1:
+                    _a.sent();
+                    _a.label = 2;
+                case 2: return [2 /*return*/];
             }
         });
     }); });

@@ -889,8 +889,6 @@ $(async () => {
     async function actionWatcher() {
         if (!started) {
             started = true;
-            // tslint:disable-next-line:no-console
-            console.log('I\'m starting!', new Date());
             await Setup();
         }
         $(window).off('focus', actionWatcher);

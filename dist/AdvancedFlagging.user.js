@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.61
+// @version      0.5.62
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2699,8 +2699,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         case 0:
                             if (!!started) return [3 /*break*/, 2];
                             started = true;
-                            // tslint:disable-next-line:no-console
-                            console.log('I\'m starting!', new Date());
                             return [4 /*yield*/, Setup()];
                         case 1:
                             _a.sent();

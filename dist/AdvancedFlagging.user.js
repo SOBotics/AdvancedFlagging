@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      0.5.64
+// @version      1.0.0
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2340,7 +2340,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     function Setup() {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             var _this = this;
-            var manualKey, auditDetectionEnabled, watchedQueuesEnabled, postDetails, clearUnexpirying, keyRegexes;
+            var manualKey, auditDetectionEnabled, watchedQueuesEnabled, postDetails;
             return tslib_1.__generator(this, function (_a) {
                 manualKey = localStorage.getItem(metaSmokeManualKey);
                 if (manualKey) {
@@ -2419,32 +2419,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         }
                     });
                 }
-                clearUnexpirying = function (val) {
-                    if (!val) {
-                        return true;
-                    }
-                    try {
-                        var jsonObj = JSON.parse(val);
-                        if (!jsonObj.Expires) {
-                            return true;
-                        }
-                        else {
-                            return false;
-                        }
-                    }
-                    catch (_a) {
-                        // Don't care
-                    }
-                    return true;
-                };
-                keyRegexes = [
-                    /^AdvancedFlagging\./,
-                    /^CopyPastor\.FindTarget\.\d+/,
-                    /^MetaSmoke.WasReported/,
-                    /^NattyApi.Feedback\.\d+/
-                ];
-                GreaseMonkeyCache_1.GreaseMonkeyCache.ClearExpiredKeys(keyRegexes);
-                GreaseMonkeyCache_1.GreaseMonkeyCache.ClearAll(keyRegexes, clearUnexpirying);
+                GreaseMonkeyCache_1.GreaseMonkeyCache.ClearExpiredKeys();
                 return [2 /*return*/];
             });
         });

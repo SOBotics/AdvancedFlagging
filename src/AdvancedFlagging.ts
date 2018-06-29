@@ -831,32 +831,7 @@ async function Setup() {
         });
     }
 
-    const clearUnexpirying = (val: string | null) => {
-        if (!val) {
-            return true;
-        }
-        try {
-            const jsonObj = JSON.parse(val);
-            if (!jsonObj.Expires) {
-                return true;
-            } else {
-                return false;
-            }
-        } catch {
-            // Don't care
-        }
-        return true;
-    };
-
-    const keyRegexes = [
-        /^AdvancedFlagging\./,
-        /^CopyPastor\.FindTarget\.\d+/,
-        /^MetaSmoke.WasReported/,
-        /^NattyApi.Feedback\.\d+/
-    ];
-
-    GreaseMonkeyCache.ClearExpiredKeys(keyRegexes);
-    GreaseMonkeyCache.ClearAll(keyRegexes, clearUnexpirying);
+    GreaseMonkeyCache.ClearExpiredKeys();
 }
 
 $(async () => {

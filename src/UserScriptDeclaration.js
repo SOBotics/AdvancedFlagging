@@ -17,4 +17,8 @@
 // @exclude      *://*.area51.stackexchange.com/*
 // @require      https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js
 // @grant        GM_xmlhttpRequest
+// @grant        GM_listValues
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_deleteValue
 // ==/UserScript==

@@ -1,7 +1,7 @@
-import { getFromCaches, storeInCaches, ConfigurationWatchFlags, ConfigurationWatchQueues, ConfigurationDetectAudits, displaySuccess, metaSmokeKey, ConfigurationEnabledFlags, ConfigurationOpenOnHover, ConfigurationLinkDisabled } from 'AdvancedFlagging';
+import { ConfigurationWatchFlags, ConfigurationWatchQueues, ConfigurationDetectAudits, displaySuccess, metaSmokeKey, ConfigurationEnabledFlags, ConfigurationOpenOnHover, ConfigurationLinkDisabled } from 'AdvancedFlagging';
 import { MetaSmokeAPI, MetaSmokeDisabledConfig } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
-import { CrossDomainCache } from '@userscriptTools/caching/CrossDomainCache';
 import { flagCategories } from 'FlagTypes';
+import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
 
 export async function SetupConfiguration() {
     const bottomBox = $('.site-footer--copyright').children('.-list');
@@ -9,15 +9,11 @@ export async function SetupConfiguration() {
         .css('line-height', '18px')
         .css('text-align', 'left')
         .css('padding', '5px');
-    if (await CrossDomainCache.CacheFailed()) {
-        const cacheDisabledMessage = $('<p>Cache failed to initialize. AdvancedFlagging configuration disabled</p>');
-        configurationDiv.append(cacheDisabledMessage);
-    } else {
-        await SetupDefaults();
-        const configurationLink = $('<a href="javascript:void(0);">AdvancedFlagging configuration</a>');
-        configurationLink.click(() => BuildConfigurationOverlay());
-        configurationDiv.append(configurationLink);
-    }
+
+    await SetupDefaults();
+    const configurationLink = $('<a href="javascript:void(0);">AdvancedFlagging configuration</a>');
+    configurationLink.click(() => BuildConfigurationOverlay());
+    configurationDiv.append(configurationLink);
     configurationDiv.insertAfter(bottomBox);
 }
 
@@ -35,10 +31,10 @@ function getFlagTypes() {
 }
 
 async function SetupDefaults() {
-    const configurationEnabledFlags = await getFromCaches<number[] | undefined>(ConfigurationEnabledFlags);
+    const configurationEnabledFlags = GreaseMonkeyCache.GetFromCache<number[]>(ConfigurationEnabledFlags);
     if (!configurationEnabledFlags) {
         const flagTypeIds = getFlagTypes().map(f => f.Id);
-        storeInCaches(ConfigurationEnabledFlags, flagTypeIds);
+        GreaseMonkeyCache.StoreInCache(ConfigurationEnabledFlags, flagTypeIds);
     }
 }
 
@@ -149,7 +145,7 @@ async function GetGeneralConfigItems() {
 
 async function GetFlagSettings() {
     const checkBoxes: { label: JQuery, checkBox: JQuery, Id: number }[] = [];
-    const flagTypeIds = await getFromCaches<number[]>(ConfigurationEnabledFlags) || [];
+    const flagTypeIds = GreaseMonkeyCache.GetFromCache<number[]>(ConfigurationEnabledFlags) || [];
     getFlagTypes().forEach(f => {
         const checkBox = $('<input type="checkbox">');
         const label = $('<label />')
@@ -170,7 +166,7 @@ async function GetFlagSettings() {
         onSave: async () => {
             // Something here
             const updatedFlagTypes = checkBoxes.filter(cb => !!cb.checkBox.prop('checked')).map(cb => cb.Id);
-            await storeInCaches(ConfigurationEnabledFlags, updatedFlagTypes);
+            GreaseMonkeyCache.StoreInCache(ConfigurationEnabledFlags, updatedFlagTypes);
         },
         requiresReload: true
     });
@@ -195,7 +191,7 @@ async function GetAdminConfigItems() {
                 .click(async () => {
                     const prompt = window.prompt('Enter metasmoke key');
                     if (prompt) {
-                        CrossDomainCache.StoreInCache(MetaSmokeDisabledConfig, false);
+                        GreaseMonkeyCache.StoreInCache(MetaSmokeDisabledConfig, false);
                         localStorage.setItem('MetaSmoke.ManualKey', prompt);
                     }
                 }),
@@ -209,7 +205,7 @@ async function createConfigCheckbox(text: string, configValue: string): Promise<
     const label = $('<label />')
         .append(checkBox)
         .append(text);
-    const storedValue = await getFromCaches(configValue);
+    const storedValue = GreaseMonkeyCache.GetFromCache(configValue);
     if (storedValue) {
         checkBox.prop('checked', true);
     }
@@ -217,7 +213,7 @@ async function createConfigCheckbox(text: string, configValue: string): Promise<
         element: label,
         onSave: async () => {
             const isChecked = !!checkBox.prop('checked');
-            await storeInCaches(configValue, isChecked);
+            GreaseMonkeyCache.StoreInCache(configValue, isChecked);
         }
     };
 }

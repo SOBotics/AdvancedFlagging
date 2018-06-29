@@ -17,6 +17,10 @@
 // @exclude      *://*.area51.stackexchange.com/*
 // @require      https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js
 // @grant        GM_xmlhttpRequest
+// @grant        GM_listValues
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_deleteValue
 // ==/UserScript==
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -80,7 +84,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 11);
+/******/ 	return __webpack_require__(__webpack_require__.s = 10);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -281,9 +285,9 @@ function __makeTemplateObject(cooked, raw) {
 "use strict";
 
 var root_1 = __webpack_require__(6);
-var toSubscriber_1 = __webpack_require__(23);
-var observable_1 = __webpack_require__(28);
-var pipe_1 = __webpack_require__(29);
+var toSubscriber_1 = __webpack_require__(22);
+var observable_1 = __webpack_require__(27);
+var pipe_1 = __webpack_require__(28);
 /**
  * A representation of any set of values over any amount of time. This is the most basic building block
  * of RxJS.
@@ -596,9 +600,9 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var isFunction_1 = __webpack_require__(13);
+var isFunction_1 = __webpack_require__(12);
 var Subscription_1 = __webpack_require__(4);
-var Observer_1 = __webpack_require__(15);
+var Observer_1 = __webpack_require__(14);
 var rxSubscriber_1 = __webpack_require__(8);
 /**
  * Implements the {@link Observer} interface and extends the
@@ -862,80 +866,63 @@ var SafeSubscriber = (function (_super) {
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var SimpleCache = /** @class */ (function () {
-        function SimpleCache() {
+    var GreaseMonkeyCache = /** @class */ (function () {
+        function GreaseMonkeyCache() {
         }
-        SimpleCache.GetAndCache = function (cacheKey, getterPromise, expiresAt) {
+        GreaseMonkeyCache.GetAndCache = function (cacheKey, getterPromise, expiresAt) {
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 var cachedItem, result;
                 return tslib_1.__generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
-                            cachedItem = SimpleCache.GetFromCache(cacheKey);
+                            cachedItem = GreaseMonkeyCache.GetFromCache(cacheKey);
                             if (cachedItem !== undefined) {
                                 return [2 /*return*/, cachedItem];
                             }
                             return [4 /*yield*/, getterPromise()];
                         case 1:
                             result = _a.sent();
-                            SimpleCache.StoreInCache(cacheKey, result, expiresAt);
+                            GreaseMonkeyCache.StoreInCache(cacheKey, result, expiresAt);
                             return [2 /*return*/, result];
                     }
                 });
             });
         };
-        SimpleCache.ClearCache = function () {
-            localStorage.clear();
-        };
-        SimpleCache.ClearExpiredKeys = function (regexes) {
-            var len = localStorage.length;
-            var _loop_1 = function (i) {
-                var key = localStorage.key(i);
-                if (key) {
-                    if (!regexes || regexes.filter(function (r) { return key.match(r); }).length > 0) {
-                        var jsonItem = localStorage.getItem(key);
-                        if (jsonItem) {
-                            try {
-                                var dataItem = JSON.parse(jsonItem);
-                                if ((dataItem.Expires && new Date(dataItem.Expires) < new Date())) {
-                                    localStorage.removeItem(key);
-                                }
+        GreaseMonkeyCache.ClearExpiredKeys = function (regexes) {
+            GM_listValues().forEach(function (key) {
+                if (!regexes || regexes.filter(function (r) { return key.match(r); }).length > 0) {
+                    var jsonItem = GM_getValue(key, undefined);
+                    if (jsonItem) {
+                        try {
+                            var dataItem = JSON.parse(jsonItem);
+                            if ((dataItem.Expires && new Date(dataItem.Expires) < new Date())) {
+                                GreaseMonkeyCache.Unset(key);
                             }
-                            catch (_a) {
-                                // Don't care
-                            }
+                        }
+                        catch (_a) {
+                            // Don't care
                         }
                     }
                 }
-            };
-            for (var i = len - 1; i >= 0; i--) {
-                _loop_1(i);
-            }
+            });
         };
-        SimpleCache.ClearAll = function (regexes, condition) {
-            var len = localStorage.length;
-            var _loop_2 = function (i) {
-                var key = localStorage.key(i);
-                if (key) {
-                    if (regexes.filter(function (r) { return key.match(r); }).length > 0) {
-                        if (condition) {
-                            var val = localStorage.getItem(key);
-                            if (condition(val)) {
-                                localStorage.removeItem(key);
-                            }
-                        }
-                        else {
-                            localStorage.removeItem(key);
+        GreaseMonkeyCache.ClearAll = function (regexes, condition) {
+            GM_listValues().forEach(function (key) {
+                if (regexes.filter(function (r) { return key.match(r); }).length > 0) {
+                    if (condition) {
+                        var val = GM_getValue(key, undefined);
+                        if (condition(val)) {
+                            GreaseMonkeyCache.Unset(key);
                         }
                     }
+                    else {
+                        GreaseMonkeyCache.Unset(key);
+                    }
                 }
-            };
-            for (var i = len - 1; i >= 0; i--) {
-                _loop_2(i);
-            }
+            });
         };
-        SimpleCache.GetFromCache = function (cacheKey) {
-            var jsonItem = localStorage.getItem(cacheKey);
+        GreaseMonkeyCache.GetFromCache = function (cacheKey) {
+            var jsonItem = GM_getValue(cacheKey, undefined);
             if (!jsonItem) {
                 return undefined;
             }
@@ -945,16 +932,16 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             }
             return dataItem.Data;
         };
-        SimpleCache.StoreInCache = function (cacheKey, item, expiresAt) {
+        GreaseMonkeyCache.StoreInCache = function (cacheKey, item, expiresAt) {
             var jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
-            localStorage.setItem(cacheKey, jsonStr);
+            GM_setValue(cacheKey, jsonStr);
         };
-        SimpleCache.Unset = function (cacheKey) {
-            localStorage.removeItem(cacheKey);
+        GreaseMonkeyCache.Unset = function (cacheKey) {
+            GM_deleteValue(cacheKey);
         };
-        return SimpleCache;
+        return GreaseMonkeyCache;
     }());
-    exports.SimpleCache = SimpleCache;
+    exports.GreaseMonkeyCache = GreaseMonkeyCache;
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
@@ -965,12 +952,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 "use strict";
 
-var isArray_1 = __webpack_require__(24);
-var isObject_1 = __webpack_require__(25);
-var isFunction_1 = __webpack_require__(13);
-var tryCatch_1 = __webpack_require__(26);
-var errorObject_1 = __webpack_require__(14);
-var UnsubscriptionError_1 = __webpack_require__(27);
+var isArray_1 = __webpack_require__(23);
+var isObject_1 = __webpack_require__(24);
+var isFunction_1 = __webpack_require__(12);
+var tryCatch_1 = __webpack_require__(25);
+var errorObject_1 = __webpack_require__(13);
+var UnsubscriptionError_1 = __webpack_require__(26);
 /**
  * Represents a disposable resource, such as the execution of an Observable. A
  * Subscription has one important method, `unsubscribe`, that takes no argument
@@ -1172,8 +1159,8 @@ var __extends = (this && this.__extends) || function (d, b) {
 var Observable_1 = __webpack_require__(1);
 var Subscriber_1 = __webpack_require__(2);
 var Subscription_1 = __webpack_require__(4);
-var ObjectUnsubscribedError_1 = __webpack_require__(16);
-var SubjectSubscription_1 = __webpack_require__(17);
+var ObjectUnsubscribedError_1 = __webpack_require__(15);
+var SubjectSubscription_1 = __webpack_require__(16);
 var rxSubscriber_1 = __webpack_require__(8);
 /**
  * @class SubjectSubscriber<T>
@@ -1619,11 +1606,11 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var Subject_1 = __webpack_require__(5);
-var queue_1 = __webpack_require__(31);
+var queue_1 = __webpack_require__(30);
 var Subscription_1 = __webpack_require__(4);
-var observeOn_1 = __webpack_require__(38);
-var ObjectUnsubscribedError_1 = __webpack_require__(16);
-var SubjectSubscription_1 = __webpack_require__(17);
+var observeOn_1 = __webpack_require__(37);
+var ObjectUnsubscribedError_1 = __webpack_require__(15);
+var SubjectSubscription_1 = __webpack_require__(16);
 /**
  * @class ReplaySubject<T>
  */
@@ -1719,181 +1706,7 @@ var ReplayEvent = (function () {
 /* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(44)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, xdLocalStorage_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var CrossDomainCache = /** @class */ (function () {
-        function CrossDomainCache() {
-        }
-        CrossDomainCache.InitializeCache = function (iframeUrl) {
-            var _this = this;
-            CrossDomainCache.xdLocalStorageInitialized = new Promise(function (resolve, reject) {
-                try {
-                    xdLocalStorage_1.XdLocalStorage.init({
-                        iframeUrl: iframeUrl,
-                        initCallback: function () {
-                            _this.cacheFailed = false;
-                            resolve();
-                        }
-                    });
-                }
-                catch (e) {
-                    _this.cacheFailed = true;
-                    resolve();
-                }
-            });
-        };
-        CrossDomainCache.GetAndCache = function (cacheKey, getterPromise, expiresAt) {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                var cachedItem, result;
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.GetFromCache(cacheKey)];
-                        case 1:
-                            cachedItem = _a.sent();
-                            if (cachedItem !== undefined) {
-                                return [2 /*return*/, cachedItem];
-                            }
-                            return [4 /*yield*/, getterPromise()];
-                        case 2:
-                            result = _a.sent();
-                            this.StoreInCache(cacheKey, result, expiresAt);
-                            return [2 /*return*/, result];
-                    }
-                });
-            });
-        };
-        CrossDomainCache.ClearCache = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
-                        case 1:
-                            _a.sent();
-                            return [4 /*yield*/, CrossDomainCache.CacheFailed()];
-                        case 2:
-                            if (_a.sent()) {
-                                return [2 /*return*/];
-                            }
-                            xdLocalStorage_1.XdLocalStorage.clear();
-                            return [2 /*return*/];
-                    }
-                });
-            });
-        };
-        CrossDomainCache.GetFromCache = function (cacheKey) {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
-                        case 1:
-                            _a.sent();
-                            return [4 /*yield*/, CrossDomainCache.CacheFailed()];
-                        case 2:
-                            if (_a.sent()) {
-                                return [2 /*return*/, undefined];
-                            }
-                            return [2 /*return*/, new Promise(function (resolve, reject) {
-                                    xdLocalStorage_1.XdLocalStorage.getItem(cacheKey, function (data) {
-                                        if (data.value === undefined) {
-                                            resolve();
-                                        }
-                                        var actualItem = JSON.parse(data.value);
-                                        if (actualItem === null || actualItem.Expires && new Date(actualItem.Expires) < new Date()) {
-                                            resolve();
-                                            return;
-                                        }
-                                        return resolve(actualItem.Data);
-                                    });
-                                })];
-                    }
-                });
-            });
-        };
-        CrossDomainCache.StoreInCache = function (cacheKey, item, expiresAt) {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                var jsonStr;
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
-                        case 1:
-                            _a.sent();
-                            return [4 /*yield*/, CrossDomainCache.CacheFailed()];
-                        case 2:
-                            if (_a.sent()) {
-                                return [2 /*return*/];
-                            }
-                            jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
-                            return [2 /*return*/, new Promise(function (resolve, reject) {
-                                    xdLocalStorage_1.XdLocalStorage.setItem(cacheKey, jsonStr, function () {
-                                        resolve();
-                                    });
-                                })];
-                    }
-                });
-            });
-        };
-        CrossDomainCache.Unset = function (cacheKey) {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
-                        case 1:
-                            _a.sent();
-                            return [4 /*yield*/, CrossDomainCache.CacheFailed()];
-                        case 2:
-                            if (_a.sent()) {
-                                return [2 /*return*/];
-                            }
-                            return [2 /*return*/, new Promise(function (resolve, reject) {
-                                    xdLocalStorage_1.XdLocalStorage.removeItem(cacheKey, function () {
-                                        resolve();
-                                    });
-                                })];
-                    }
-                });
-            });
-        };
-        CrossDomainCache.CacheFailed = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCache.AwaitInitialization()];
-                        case 1:
-                            _a.sent();
-                            return [2 /*return*/, this.cacheFailed];
-                    }
-                });
-            });
-        };
-        CrossDomainCache.AwaitInitialization = function () {
-            return tslib_1.__awaiter(this, void 0, void 0, function () {
-                return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            if (CrossDomainCache.xdLocalStorageInitialized === null) {
-                                throw Error('Cache must be initialized before use');
-                            }
-                            return [4 /*yield*/, CrossDomainCache.xdLocalStorageInitialized];
-                        case 1:
-                            _a.sent();
-                            return [2 /*return*/];
-                    }
-                });
-            });
-        };
-        return CrossDomainCache;
-    }());
-    exports.CrossDomainCache = CrossDomainCache;
-}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
-				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ }),
-/* 11 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(12), __webpack_require__(3), __webpack_require__(7), __webpack_require__(22), __webpack_require__(21), __webpack_require__(20), __webpack_require__(10), __webpack_require__(45), __webpack_require__(49), __webpack_require__(53)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, FlagTypes_1, SimpleCache_1, sotools_1, NattyApi_1, GenericBotAPI_1, MetaSmokeAPI_1, CrossDomainCache_1, CopyPastorAPI_1, RequestWatcher_1, Configuration_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(11), __webpack_require__(7), __webpack_require__(21), __webpack_require__(20), __webpack_require__(19), __webpack_require__(43), __webpack_require__(47), __webpack_require__(51), __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, FlagTypes_1, sotools_1, NattyApi_1, GenericBotAPI_1, MetaSmokeAPI_1, CopyPastorAPI_1, RequestWatcher_1, Configuration_1, GreaseMonkeyCache_1) {
     "use strict";
     var _this = this;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1929,7 +1742,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         if (flagRequired) {
             if (flag.ReportType !== 'NoFlag') {
-                var wasFlagged = SimpleCache_1.SimpleCache.GetFromCache("AdvancedFlagging.Flagged." + postId);
+                var wasFlagged = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache("AdvancedFlagging.Flagged." + postId);
                 if (!wasFlagged) {
                     if (flag.ReportType === 'PostOther') {
                         // Do something here
@@ -2013,207 +1826,202 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             var getDivider, linkStyle, dropDown, checkboxName, leaveCommentBox, flagBox, isStackOverflow, comments, enabledFlagIds, hasCommentOptions, firstCategory, commentBoxLabel, commentingRow, flagBoxLabel, flaggingRow;
             return tslib_1.__generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
-                        linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
-                        dropDown = $('<dl />').css({
-                            'margin': '0',
-                            'z-index': '1',
-                            'position': 'absolute',
-                            'white-space': 'nowrap',
-                            'background': '#FFF',
-                            'padding': '5px',
-                            'border': '1px solid #9fa6ad',
-                            'box-shadow': '0 2px 4px rgba(36,39,41,0.3)',
-                            'cursor': 'default'
-                        }).hide();
-                        checkboxName = "comment_checkbox_" + postId;
-                        leaveCommentBox = $('<input />')
-                            .attr('type', 'checkbox')
-                            .attr('name', checkboxName);
-                        flagBox = $('<input />')
-                            .attr('type', 'checkbox')
-                            .attr('name', checkboxName)
-                            .prop('checked', true);
-                        isStackOverflow = sotools_1.IsStackOverflow();
-                        comments = element.find('.comment-body');
-                        if (comments.length === 0 && isStackOverflow) {
-                            leaveCommentBox.prop('checked', true);
+                getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
+                linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
+                dropDown = $('<dl />').css({
+                    'margin': '0',
+                    'z-index': '1',
+                    'position': 'absolute',
+                    'white-space': 'nowrap',
+                    'background': '#FFF',
+                    'padding': '5px',
+                    'border': '1px solid #9fa6ad',
+                    'box-shadow': '0 2px 4px rgba(36,39,41,0.3)',
+                    'cursor': 'default'
+                }).hide();
+                checkboxName = "comment_checkbox_" + postId;
+                leaveCommentBox = $('<input />')
+                    .attr('type', 'checkbox')
+                    .attr('name', checkboxName);
+                flagBox = $('<input />')
+                    .attr('type', 'checkbox')
+                    .attr('name', checkboxName)
+                    .prop('checked', true);
+                isStackOverflow = sotools_1.IsStackOverflow();
+                comments = element.find('.comment-body');
+                if (comments.length === 0 && isStackOverflow) {
+                    leaveCommentBox.prop('checked', true);
+                }
+                enabledFlagIds = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationEnabledFlags);
+                hasCommentOptions = false;
+                firstCategory = true;
+                FlagTypes_1.flagCategories.forEach(function (flagCategory) {
+                    if (flagCategory.AppliesTo.indexOf(postType) === -1) {
+                        return;
+                    }
+                    var divider = getDivider();
+                    if (!firstCategory) {
+                        dropDown.append(divider);
+                    }
+                    var activeLinks = flagCategory.FlagTypes.length;
+                    flagCategory.FlagTypes.forEach(function (flagType) {
+                        if (flagType.GetComment) {
+                            hasCommentOptions = true;
                         }
-                        return [4 /*yield*/, getFromCaches(exports.ConfigurationEnabledFlags)];
-                    case 1:
-                        enabledFlagIds = _a.sent();
-                        hasCommentOptions = false;
-                        firstCategory = true;
-                        FlagTypes_1.flagCategories.forEach(function (flagCategory) {
-                            if (flagCategory.AppliesTo.indexOf(postType) === -1) {
-                                return;
+                        var dropdownItem = $('<dd />');
+                        if (flagCategory.BoxStyle) {
+                            dropdownItem.css(flagCategory.BoxStyle);
+                        }
+                        var reportLink = $('<a />').css(linkStyle);
+                        var disableLink = function () {
+                            activeLinks--;
+                            reportLink.hide();
+                            if (divider && activeLinks <= 0) {
+                                divider.hide();
                             }
-                            var divider = getDivider();
-                            if (!firstCategory) {
-                                dropDown.append(divider);
+                        };
+                        var enableLink = function () {
+                            activeLinks++;
+                            reportLink.show();
+                            if (divider && activeLinks > 0) {
+                                divider.show();
                             }
-                            var activeLinks = flagCategory.FlagTypes.length;
-                            flagCategory.FlagTypes.forEach(function (flagType) {
-                                if (flagType.GetComment) {
-                                    hasCommentOptions = true;
-                                }
-                                var dropdownItem = $('<dd />');
-                                if (flagCategory.BoxStyle) {
-                                    dropdownItem.css(flagCategory.BoxStyle);
-                                }
-                                var reportLink = $('<a />').css(linkStyle);
-                                var disableLink = function () {
-                                    activeLinks--;
-                                    reportLink.hide();
-                                    if (divider && activeLinks <= 0) {
-                                        divider.hide();
-                                    }
-                                };
-                                var enableLink = function () {
-                                    activeLinks++;
-                                    reportLink.show();
-                                    if (divider && activeLinks > 0) {
-                                        divider.show();
-                                    }
-                                };
-                                disableLink();
-                                if (!enabledFlagIds || enabledFlagIds.indexOf(flagType.Id) > -1) {
+                        };
+                        disableLink();
+                        if (!enabledFlagIds || enabledFlagIds.indexOf(flagType.Id) > -1) {
+                            if (flagType.Enabled) {
+                                copyPastorPromise.then(function (items) {
+                                    // If it somehow changed within the promise, check again
                                     if (flagType.Enabled) {
-                                        copyPastorPromise.then(function (items) {
-                                            // If it somehow changed within the promise, check again
-                                            if (flagType.Enabled) {
-                                                var hasItems = items.length > 0;
-                                                var isEnabled = flagType.Enabled(hasItems);
-                                                if (isEnabled) {
-                                                    enableLink();
-                                                }
-                                            }
-                                            else {
-                                                enableLink();
-                                            }
-                                        });
+                                        var hasItems = items.length > 0;
+                                        var isEnabled = flagType.Enabled(hasItems);
+                                        if (isEnabled) {
+                                            enableLink();
+                                        }
                                     }
                                     else {
                                         enableLink();
                                     }
-                                }
-                                var commentText;
-                                if (flagType.GetComment) {
-                                    commentText = flagType.GetComment({ Reputation: reputation, AuthorName: authorName });
-                                    reportLink.attr('title', commentText);
-                                }
-                                reportLink.click(function () {
-                                    if (!deleted) {
-                                        try {
-                                            if (!leaveCommentBox.is(':checked')) {
-                                                // Now we need to investigate the existing comments to upvote them.
-                                                var commentTextItems = element.find('.comment-body .comment-copy').map(function (i, ele) { return $(ele).text(); });
-                                                if (commentText) {
-                                                    // Match [some text](http://somehyperlink.com)
-                                                    var strippedComment_1 = commentText.replace(/\[([^\]]+)\]\(([^\]]+)\)/g, '$1');
-                                                    // Match [edit]
-                                                    strippedComment_1 = strippedComment_1.replace(/\[([^\]]+)\][^\(]*?/g, '$1');
-                                                    // Strip out italics. _thanks_ => thanks
-                                                    strippedComment_1 = strippedComment_1.replace(/_([^_]+)_/g, '$1');
-                                                    // Strip out bolds. **thanks** => thanks
-                                                    strippedComment_1 = strippedComment_1.replace(/\*\*([^\*]+)\*\*/g, '$1');
-                                                    // Strip out italics. *thanks* => thanks
-                                                    strippedComment_1 = strippedComment_1.replace(/\*([^\*]+)\*/g, '$1');
-                                                    element.find('.comment-body .comment-copy').each(function (i, ele) {
-                                                        var jEle = $(ele);
-                                                        var text = jEle.text();
-                                                        var fromReviewText = ' - From Review';
-                                                        if (text.endsWith(fromReviewText)) {
-                                                            text = text.substring(0, text.length - fromReviewText.length);
-                                                        }
-                                                        if (text === strippedComment_1) {
-                                                            jEle.closest('li').find('a.comment-up.comment-up-off').trigger('click');
-                                                        }
-                                                    });
-                                                }
-                                                commentText = undefined;
-                                            }
-                                            var result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), commentText, copyPastorPromise);
-                                            if (result.CommentPromise) {
-                                                result.CommentPromise.then(function (data) {
-                                                    var commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
-                                                    commentUI.addShow(true, false);
-                                                    commentUI.showComments(data, null, false, true);
-                                                    $(document).trigger('comment', postId);
-                                                }).catch(function (err) {
-                                                    displayError('Failed to comment on post');
-                                                    // tslint:disable-next-line:no-console
-                                                    console.log(err);
-                                                });
-                                            }
-                                            if (result.FlagPromise) {
-                                                result.FlagPromise.then(function () {
-                                                    var expiryDate = new Date();
-                                                    expiryDate.setDate(expiryDate.getDate() + 30);
-                                                    SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType, expiryDate);
-                                                    reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
-                                                    reportedIcon.show();
-                                                    displaySuccess('Flagged');
-                                                }).catch(function (err) {
-                                                    displayError('Failed to flag post');
-                                                    // tslint:disable-next-line:no-console
-                                                    console.log(err);
-                                                });
-                                            }
-                                        }
-                                        catch (err) {
-                                            displayError(err);
-                                        }
-                                    }
-                                    var noFlag = flagType.ReportType === 'NoFlag';
-                                    if (noFlag) {
-                                        var expiryDate = new Date();
-                                        expiryDate.setDate(expiryDate.getDate() + 30);
-                                        SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType, expiryDate);
-                                        performedActionIcon.attr('title', "Performed action: " + flagType.DisplayName);
-                                        performedActionIcon.show();
-                                    }
-                                    handleFlag(flagType, reporters, answerTime, questionTime);
-                                    dropDown.hide();
                                 });
-                                reportLink.text(flagType.DisplayName);
-                                dropdownItem.append(reportLink);
-                                dropDown.append(dropdownItem);
-                            });
-                            firstCategory = false;
-                        });
-                        if (!isStackOverflow) {
-                            hasCommentOptions = false;
+                            }
+                            else {
+                                enableLink();
+                            }
                         }
-                        dropDown.append(getDivider());
-                        if (hasCommentOptions) {
-                            commentBoxLabel = $('<label />').text('Leave comment')
-                                .attr('for', checkboxName)
-                                .css({
-                                'margin-right': '5px',
-                                'margin-left': '4px',
-                            });
-                            commentBoxLabel.click(function () { return leaveCommentBox.click(); });
-                            commentingRow = $('<dd />');
-                            commentingRow.append(commentBoxLabel);
-                            commentingRow.append(leaveCommentBox);
-                            dropDown.append(commentingRow);
+                        var commentText;
+                        if (flagType.GetComment) {
+                            commentText = flagType.GetComment({ Reputation: reputation, AuthorName: authorName });
+                            reportLink.attr('title', commentText);
                         }
-                        flagBoxLabel = $('<label />').text('Flag')
-                            .attr('for', checkboxName)
-                            .css({
-                            'margin-right': '5px',
-                            'margin-left': '4px',
+                        reportLink.click(function () {
+                            if (!deleted) {
+                                try {
+                                    if (!leaveCommentBox.is(':checked')) {
+                                        // Now we need to investigate the existing comments to upvote them.
+                                        var commentTextItems = element.find('.comment-body .comment-copy').map(function (i, ele) { return $(ele).text(); });
+                                        if (commentText) {
+                                            // Match [some text](http://somehyperlink.com)
+                                            var strippedComment_1 = commentText.replace(/\[([^\]]+)\]\(([^\]]+)\)/g, '$1');
+                                            // Match [edit]
+                                            strippedComment_1 = strippedComment_1.replace(/\[([^\]]+)\][^\(]*?/g, '$1');
+                                            // Strip out italics. _thanks_ => thanks
+                                            strippedComment_1 = strippedComment_1.replace(/_([^_]+)_/g, '$1');
+                                            // Strip out bolds. **thanks** => thanks
+                                            strippedComment_1 = strippedComment_1.replace(/\*\*([^\*]+)\*\*/g, '$1');
+                                            // Strip out italics. *thanks* => thanks
+                                            strippedComment_1 = strippedComment_1.replace(/\*([^\*]+)\*/g, '$1');
+                                            element.find('.comment-body .comment-copy').each(function (i, ele) {
+                                                var jEle = $(ele);
+                                                var text = jEle.text();
+                                                var fromReviewText = ' - From Review';
+                                                if (text.endsWith(fromReviewText)) {
+                                                    text = text.substring(0, text.length - fromReviewText.length);
+                                                }
+                                                if (text === strippedComment_1) {
+                                                    jEle.closest('li').find('a.comment-up.comment-up-off').trigger('click');
+                                                }
+                                            });
+                                        }
+                                        commentText = undefined;
+                                    }
+                                    var result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), commentText, copyPastorPromise);
+                                    if (result.CommentPromise) {
+                                        result.CommentPromise.then(function (data) {
+                                            var commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
+                                            commentUI.addShow(true, false);
+                                            commentUI.showComments(data, null, false, true);
+                                            $(document).trigger('comment', postId);
+                                        }).catch(function (err) {
+                                            displayError('Failed to comment on post');
+                                            // tslint:disable-next-line:no-console
+                                            console.log(err);
+                                        });
+                                    }
+                                    if (result.FlagPromise) {
+                                        result.FlagPromise.then(function () {
+                                            var expiryDate = new Date();
+                                            expiryDate.setDate(expiryDate.getDate() + 30);
+                                            GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType, expiryDate);
+                                            reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
+                                            reportedIcon.show();
+                                            displaySuccess('Flagged');
+                                        }).catch(function (err) {
+                                            displayError('Failed to flag post');
+                                            // tslint:disable-next-line:no-console
+                                            console.log(err);
+                                        });
+                                    }
+                                }
+                                catch (err) {
+                                    displayError(err);
+                                }
+                            }
+                            var noFlag = flagType.ReportType === 'NoFlag';
+                            if (noFlag) {
+                                var expiryDate = new Date();
+                                expiryDate.setDate(expiryDate.getDate() + 30);
+                                GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache("AdvancedFlagging.PerformedAction." + postId, flagType, expiryDate);
+                                performedActionIcon.attr('title', "Performed action: " + flagType.DisplayName);
+                                performedActionIcon.show();
+                            }
+                            handleFlag(flagType, reporters, answerTime, questionTime);
+                            dropDown.hide();
                         });
-                        flagBoxLabel.click(function () { return flagBox.click(); });
-                        flaggingRow = $('<dd />');
-                        flaggingRow.append(flagBoxLabel);
-                        flaggingRow.append(flagBox);
-                        dropDown.append(flaggingRow);
-                        return [2 /*return*/, dropDown];
+                        reportLink.text(flagType.DisplayName);
+                        dropdownItem.append(reportLink);
+                        dropDown.append(dropdownItem);
+                    });
+                    firstCategory = false;
+                });
+                if (!isStackOverflow) {
+                    hasCommentOptions = false;
                 }
+                dropDown.append(getDivider());
+                if (hasCommentOptions) {
+                    commentBoxLabel = $('<label />').text('Leave comment')
+                        .attr('for', checkboxName)
+                        .css({
+                        'margin-right': '5px',
+                        'margin-left': '4px',
+                    });
+                    commentBoxLabel.click(function () { return leaveCommentBox.click(); });
+                    commentingRow = $('<dd />');
+                    commentingRow.append(commentBoxLabel);
+                    commentingRow.append(leaveCommentBox);
+                    dropDown.append(commentingRow);
+                }
+                flagBoxLabel = $('<label />').text('Flag')
+                    .attr('for', checkboxName)
+                    .css({
+                    'margin-right': '5px',
+                    'margin-left': '4px',
+                });
+                flagBoxLabel.click(function () { return flagBox.click(); });
+                flaggingRow = $('<dd />');
+                flaggingRow.append(flagBoxLabel);
+                flaggingRow.append(flagBox);
+                dropDown.append(flaggingRow);
+                return [2 /*return*/, dropDown];
             });
         });
     }
@@ -2279,7 +2087,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             var _this = this;
             return tslib_1.__generator(this, function (_a) {
                 sotools_1.parseQuestionsAndAnswers(function (post) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-                    var iconLocation, advancedFlaggingLink, nattyIcon, showFunc, copyPastorIcon, copyPastorApi, copyPastorObservable, smokeyIcon, reporters, nattyApi_1, genericBotAPI_1, metaSmoke, performedActionIcon, reportedIcon, questionTime_1, answerTime_1, deleted, linkDisabled, dropDown_1, link_1, previousFlag, previousAction;
+                    var iconLocation, advancedFlaggingLink, nattyIcon, showFunc, copyPastorIcon, copyPastorApi, copyPastorObservable, smokeyIcon, reporters, nattyApi_1, genericBotAPI_1, metaSmoke, performedActionIcon, reportedIcon, questionTime_1, answerTime_1, deleted, isEnabled_1, linkDisabled, dropDown_1, link_1, openOnHover, previousFlag, previousAction;
                     return tslib_1.__generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
@@ -2375,7 +2183,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                 });
                                 performedActionIcon = getPerformedActionIcon();
                                 reportedIcon = getReportedIcon();
-                                if (!(post.page === 'Question')) return [3 /*break*/, 4];
+                                if (!(post.page === 'Question')) return [3 /*break*/, 3];
                                 // Now we setup the flagging dialog
                                 iconLocation = post.element.find('.post-menu');
                                 advancedFlaggingLink = $('<a />').text('Advanced Flagging');
@@ -2388,86 +2196,81 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                     answerTime_1 = post.postTime;
                                 }
                                 deleted = post.element.hasClass('deleted-answer');
-                                getFromCaches(exports.ConfigurationWatchFlags).then(function (isEnabled) {
-                                    RequestWatcher_1.WatchFlags().subscribe(function (xhr) {
-                                        if (isEnabled && !autoFlagging) {
-                                            var matches = new RegExp("/flags/posts/" + post.postId + "/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)").exec(xhr.responseURL);
-                                            if (matches !== null && xhr.status === 200) {
-                                                var flagType = {
-                                                    Id: 0,
-                                                    ReportType: matches[1],
-                                                    DisplayName: matches[1]
-                                                };
-                                                handleFlag(flagType, reporters, answerTime_1, questionTime_1);
-                                                var expiryDate = new Date();
-                                                expiryDate.setDate(expiryDate.getDate() + 30);
-                                                SimpleCache_1.SimpleCache.StoreInCache("AdvancedFlagging.Flagged." + post.postId, flagType, expiryDate);
-                                                reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
-                                                reportedIcon.show();
-                                                displaySuccess('Flagged');
-                                            }
+                                isEnabled_1 = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationWatchFlags);
+                                RequestWatcher_1.WatchFlags().subscribe(function (xhr) {
+                                    if (isEnabled_1 && !autoFlagging) {
+                                        var matches = new RegExp("/flags/posts/" + post.postId + "/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)").exec(xhr.responseURL);
+                                        if (matches !== null && xhr.status === 200) {
+                                            var flagType = {
+                                                Id: 0,
+                                                ReportType: matches[1],
+                                                DisplayName: matches[1]
+                                            };
+                                            handleFlag(flagType, reporters, answerTime_1, questionTime_1);
+                                            var expiryDate = new Date();
+                                            expiryDate.setDate(expiryDate.getDate() + 30);
+                                            GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache("AdvancedFlagging.Flagged." + post.postId, flagType, expiryDate);
+                                            reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
+                                            reportedIcon.show();
+                                            displaySuccess('Flagged');
                                         }
-                                    });
+                                    }
                                 });
-                                return [4 /*yield*/, getFromCaches(exports.ConfigurationLinkDisabled)];
-                            case 1:
-                                linkDisabled = _a.sent();
-                                if (!!linkDisabled) return [3 /*break*/, 3];
+                                linkDisabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationLinkDisabled);
+                                if (!!linkDisabled) return [3 /*break*/, 2];
                                 return [4 /*yield*/, BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, post.authorName, answerTime_1, questionTime_1, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi.Promise())];
-                            case 2:
+                            case 1:
                                 dropDown_1 = _a.sent();
                                 advancedFlaggingLink.append(dropDown_1);
                                 $(window).click(function () {
                                     dropDown_1.hide();
                                 });
                                 link_1 = advancedFlaggingLink;
-                                getFromCaches(exports.ConfigurationOpenOnHover)
-                                    .then(function (openOnHover) {
-                                    if (openOnHover) {
-                                        link_1.hover(function (e) {
-                                            e.stopPropagation();
-                                            if (e.target === link_1.get(0)) {
-                                                dropDown_1.show();
-                                            }
-                                        });
-                                        link_1.mouseleave(function (e) {
-                                            e.stopPropagation();
-                                            dropDown_1.hide();
-                                        });
-                                    }
-                                    else {
-                                        link_1.click(function (e) {
-                                            e.stopPropagation();
-                                            if (e.target === link_1.get(0)) {
-                                                dropDown_1.toggle();
-                                            }
-                                        });
-                                    }
-                                });
+                                openOnHover = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationOpenOnHover);
+                                if (openOnHover) {
+                                    link_1.hover(function (e) {
+                                        e.stopPropagation();
+                                        if (e.target === link_1.get(0)) {
+                                            dropDown_1.show();
+                                        }
+                                    });
+                                    link_1.mouseleave(function (e) {
+                                        e.stopPropagation();
+                                        dropDown_1.hide();
+                                    });
+                                }
+                                else {
+                                    link_1.click(function (e) {
+                                        e.stopPropagation();
+                                        if (e.target === link_1.get(0)) {
+                                            dropDown_1.toggle();
+                                        }
+                                    });
+                                }
                                 iconLocation.append(advancedFlaggingLink);
-                                _a.label = 3;
-                            case 3:
+                                _a.label = 2;
+                            case 2:
                                 iconLocation.append(performedActionIcon);
                                 iconLocation.append(reportedIcon);
                                 iconLocation.append(nattyIcon);
                                 iconLocation.append(copyPastorIcon);
                                 iconLocation.append(smokeyIcon);
-                                return [3 /*break*/, 5];
-                            case 4:
+                                return [3 /*break*/, 4];
+                            case 3:
                                 iconLocation = post.element.find('a.answer-hyperlink');
                                 iconLocation.after(smokeyIcon);
                                 iconLocation.after(copyPastorIcon);
                                 iconLocation.after(nattyIcon);
                                 iconLocation.after(reportedIcon);
                                 iconLocation.after(performedActionIcon);
-                                _a.label = 5;
-                            case 5:
-                                previousFlag = SimpleCache_1.SimpleCache.GetFromCache("AdvancedFlagging.Flagged." + post.postId);
+                                _a.label = 4;
+                            case 4:
+                                previousFlag = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache("AdvancedFlagging.Flagged." + post.postId);
                                 if (previousFlag) {
                                     reportedIcon.attr('title', "Previously flagged as " + previousFlag.ReportType);
                                     showFunc(reportedIcon);
                                 }
-                                previousAction = SimpleCache_1.SimpleCache.GetFromCache("AdvancedFlagging.PerformedAction." + post.postId);
+                                previousAction = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache("AdvancedFlagging.PerformedAction." + post.postId);
                                 if (previousAction && previousAction.ReportType === 'NoFlag') {
                                     performedActionIcon.attr('title', "Previously performed action: " + previousAction.DisplayName);
                                     showFunc(performedActionIcon);
@@ -2534,159 +2337,112 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }).hide();
     }
     var metaSmokeManualKey = 'MetaSmoke.ManualKey';
-    // First attempt to retrieve the value from the local cache.
-    // If it doesn't exist, check the cross domain cache, and store it locally
-    function getFromCaches(key) {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            return tslib_1.__generator(this, function (_a) {
-                return [2 /*return*/, SimpleCache_1.SimpleCache.GetAndCache(key, function () {
-                        return CrossDomainCache_1.CrossDomainCache.GetFromCache(key);
-                    })];
-            });
-        });
-    }
-    exports.getFromCaches = getFromCaches;
-    // Store the value in both the local and global cache
-    function storeInCaches(key, item) {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            return tslib_1.__generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, SimpleCache_1.SimpleCache.StoreInCache(key, item)];
-                    case 1:
-                        _a.sent();
-                        return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.StoreInCache(key, item)];
-                    case 2:
-                        _a.sent();
-                        return [2 /*return*/];
-                }
-            });
-        });
-    }
-    exports.storeInCaches = storeInCaches;
     $(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
         var _this = this;
-        var clearUnexpirying, keyRegexes, manualKey_1;
+        var clearUnexpirying, keyRegexes, manualKey, detectAuditsEnabled, watchQueuesEnabled, postDetails;
         return tslib_1.__generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    clearUnexpirying = function (val) {
-                        if (!val) {
-                            return true;
-                        }
-                        try {
-                            var jsonObj = JSON.parse(val);
-                            if (!jsonObj.Expires) {
-                                return true;
-                            }
-                            else {
-                                return false;
-                            }
-                        }
-                        catch (_a) {
-                            // Don't care
-                        }
+            clearUnexpirying = function (val) {
+                if (!val) {
+                    return true;
+                }
+                try {
+                    var jsonObj = JSON.parse(val);
+                    if (!jsonObj.Expires) {
                         return true;
-                    };
-                    keyRegexes = [
-                        /^AdvancedFlagging\./,
-                        /^CopyPastor\.FindTarget\.\d+/,
-                        /^MetaSmoke.WasReported/,
-                        /^NattyApi.Feedback\.\d+/
-                    ];
-                    SimpleCache_1.SimpleCache.ClearExpiredKeys(keyRegexes);
-                    SimpleCache_1.SimpleCache.ClearAll(keyRegexes, clearUnexpirying);
-                    return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html')];
-                case 1:
-                    _a.sent();
-                    return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.CacheFailed()];
-                case 2:
-                    if (!!(_a.sent())) return [3 /*break*/, 6];
-                    manualKey_1 = localStorage.getItem(metaSmokeManualKey);
-                    if (!manualKey_1) return [3 /*break*/, 4];
-                    localStorage.removeItem(metaSmokeManualKey);
-                    return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(exports.metaSmokeKey, function () { return tslib_1.__awaiter(_this, void 0, void 0, function () { return tslib_1.__generator(this, function (_a) {
-                            return [2 /*return*/, manualKey_1];
-                        }); }); })];
-                case 3:
-                    _a.sent();
-                    return [3 /*break*/, 6];
-                case 4: return [4 /*yield*/, MetaSmokeAPI_1.MetaSmokeAPI.Setup(exports.metaSmokeKey)];
-                case 5:
-                    _a.sent();
-                    _a.label = 6;
-                case 6: return [4 /*yield*/, Configuration_1.SetupConfiguration()];
-                case 7:
-                    _a.sent();
-                    return [4 /*yield*/, SetupPostPage()];
-                case 8:
-                    _a.sent();
-                    SetupStyles();
-                    getFromCaches(exports.ConfigurationDetectAudits).then(function (isEnabled) {
-                        RequestWatcher_1.WatchRequests().subscribe(function (xhr) {
-                            var isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
-                            if (isReviewItem !== null && xhr.status === 200) {
-                                var review = JSON.parse(xhr.responseText);
-                                if (isEnabled && review.isAudit) {
-                                    displayToaster('Beware! This is an audit!', '#cce5ff', '#004085', 5000);
-                                    $('.review-actions').hide();
-                                    setTimeout(function () {
-                                        $('.review-actions').show();
-                                    }, 5000);
-                                }
-                            }
-                        });
-                    });
-                    document.body.appendChild(popupWrapper.get(0));
-                    getFromCaches(exports.ConfigurationWatchQueues).then(function (isEnabled) {
-                        var postDetails = [];
-                        RequestWatcher_1.WatchRequests().subscribe(function (xhr) {
-                            if (isEnabled) {
-                                var parseReviewDetails = function (review) {
-                                    var postId = review.postId;
-                                    var content = $(review.content);
-                                    postDetails[postId] = {
-                                        questionTime: sotools_1.parseDate($('.post-signature.owner .user-action-time span', content).attr('title')),
-                                        answerTime: sotools_1.parseDate($('.post-signature .user-action-time span', content).attr('title'))
-                                    };
-                                };
-                                // We can't just parse the page after a recommend/delete request, as the page will have sometimes already updated
-                                // This means we're actually grabbing the information for the following review
-                                // So, we watch the next-task requests and remember which post we were looking at for when a delete/recommend-delete vote comes through.
-                                // next-task is invoked when visiting the review queue
-                                // task-reviewed is invoked when making a response
-                                var isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
-                                if (isReviewItem !== null && xhr.status === 200) {
-                                    var review = JSON.parse(xhr.responseText);
-                                    parseReviewDetails(review);
-                                    return;
-                                }
-                                var matches = /(\d+)\/vote\/10|(\d+)\/recommend-delete/.exec(xhr.responseURL);
-                                if (matches !== null && xhr.status === 200) {
-                                    var postIdStr = matches[1] || matches[2];
-                                    var postId = parseInt(postIdStr, 10);
-                                    var currentPostDetails = postDetails[postId];
-                                    if (currentPostDetails && $('.answers-subheader').length > 0) {
-                                        var nattyApi_2 = new NattyApi_1.NattyAPI(postId);
-                                        nattyApi_2.Watch();
-                                        handleFlag({ Id: 0, ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
-                                            {
-                                                name: 'Natty',
-                                                ReportNaa: function (answerDate, questionDate) { return nattyApi_2.ReportNaa(answerDate, questionDate); },
-                                                ReportRedFlag: function () { return nattyApi_2.ReportRedFlag(); },
-                                                ReportLooksFine: function () { return nattyApi_2.ReportLooksFine(); },
-                                                ReportNeedsEditing: function () { return nattyApi_2.ReportNeedsEditing(); },
-                                                ReportVandalism: function () { return Promise.resolve(false); },
-                                                ReportDuplicateAnswer: function () { return Promise.resolve(false); },
-                                                ReportPlagiarism: function () { return Promise.resolve(false); }
-                                            }
-                                        ], currentPostDetails.answerTime, currentPostDetails.questionTime);
-                                    }
-                                }
-                            }
-                        });
-                    });
-                    return [2 /*return*/];
+                    }
+                    else {
+                        return false;
+                    }
+                }
+                catch (_a) {
+                    // Don't care
+                }
+                return true;
+            };
+            keyRegexes = [
+                /^AdvancedFlagging\./,
+                /^CopyPastor\.FindTarget\.\d+/,
+                /^MetaSmoke.WasReported/,
+                /^NattyApi.Feedback\.\d+/
+            ];
+            manualKey = localStorage.getItem(metaSmokeManualKey);
+            if (manualKey) {
+                localStorage.removeItem(metaSmokeManualKey);
+                MetaSmokeAPI_1.MetaSmokeAPI.Setup(exports.metaSmokeKey, function () { return tslib_1.__awaiter(_this, void 0, void 0, function () { return tslib_1.__generator(this, function (_a) {
+                    return [2 /*return*/, manualKey];
+                }); }); });
             }
+            else {
+                MetaSmokeAPI_1.MetaSmokeAPI.Setup(exports.metaSmokeKey);
+            }
+            Configuration_1.SetupConfiguration();
+            SetupPostPage();
+            SetupStyles();
+            detectAuditsEnabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationDetectAudits);
+            RequestWatcher_1.WatchRequests().subscribe(function (xhr) {
+                var isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
+                if (isReviewItem !== null && xhr.status === 200) {
+                    var review = JSON.parse(xhr.responseText);
+                    if (detectAuditsEnabled && review.isAudit) {
+                        displayToaster('Beware! This is an audit!', '#cce5ff', '#004085', 5000);
+                        $('.review-actions').hide();
+                        setTimeout(function () {
+                            $('.review-actions').show();
+                        }, 5000);
+                    }
+                }
+            });
+            document.body.appendChild(popupWrapper.get(0));
+            watchQueuesEnabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationWatchQueues);
+            postDetails = [];
+            if (watchQueuesEnabled) {
+                RequestWatcher_1.WatchRequests().subscribe(function (xhr) {
+                    var parseReviewDetails = function (review) {
+                        var postId = review.postId;
+                        var content = $(review.content);
+                        postDetails[postId] = {
+                            questionTime: sotools_1.parseDate($('.post-signature.owner .user-action-time span', content).attr('title')),
+                            answerTime: sotools_1.parseDate($('.post-signature .user-action-time span', content).attr('title'))
+                        };
+                    };
+                    // We can't just parse the page after a recommend/delete request, as the page will have sometimes already updated
+                    // This means we're actually grabbing the information for the following review
+                    // So, we watch the next-task requests and remember which post we were looking at for when a delete/recommend-delete vote comes through.
+                    // next-task is invoked when visiting the review queue
+                    // task-reviewed is invoked when making a response
+                    var isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
+                    if (isReviewItem !== null && xhr.status === 200) {
+                        var review = JSON.parse(xhr.responseText);
+                        parseReviewDetails(review);
+                        return;
+                    }
+                    var matches = /(\d+)\/vote\/10|(\d+)\/recommend-delete/.exec(xhr.responseURL);
+                    if (matches !== null && xhr.status === 200) {
+                        var postIdStr = matches[1] || matches[2];
+                        var postId = parseInt(postIdStr, 10);
+                        var currentPostDetails = postDetails[postId];
+                        if (currentPostDetails && $('.answers-subheader').length > 0) {
+                            var nattyApi_2 = new NattyApi_1.NattyAPI(postId);
+                            nattyApi_2.Watch();
+                            handleFlag({ Id: 0, ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
+                                {
+                                    name: 'Natty',
+                                    ReportNaa: function (answerDate, questionDate) { return nattyApi_2.ReportNaa(answerDate, questionDate); },
+                                    ReportRedFlag: function () { return nattyApi_2.ReportRedFlag(); },
+                                    ReportLooksFine: function () { return nattyApi_2.ReportLooksFine(); },
+                                    ReportNeedsEditing: function () { return nattyApi_2.ReportNeedsEditing(); },
+                                    ReportVandalism: function () { return Promise.resolve(false); },
+                                    ReportDuplicateAnswer: function () { return Promise.resolve(false); },
+                                    ReportPlagiarism: function () { return Promise.resolve(false); }
+                                }
+                            ], currentPostDetails.answerTime, currentPostDetails.questionTime);
+                        }
+                    }
+                });
+            }
+            GreaseMonkeyCache_1.GreaseMonkeyCache.ClearExpiredKeys(keyRegexes);
+            GreaseMonkeyCache_1.GreaseMonkeyCache.ClearAll(keyRegexes, clearUnexpirying);
+            return [2 /*return*/];
         });
     }); });
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
@@ -2694,7 +2450,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ }),
-/* 12 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports) {
@@ -2857,7 +2613,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ }),
-/* 13 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2869,7 +2625,7 @@ exports.isFunction = isFunction;
 //# sourceMappingURL=isFunction.js.map
 
 /***/ }),
-/* 14 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2879,7 +2635,7 @@ exports.errorObject = { e: {} };
 //# sourceMappingURL=errorObject.js.map
 
 /***/ }),
-/* 15 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2893,7 +2649,7 @@ exports.empty = {
 //# sourceMappingURL=Observer.js.map
 
 /***/ }),
-/* 16 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2926,7 +2682,7 @@ exports.ObjectUnsubscribedError = ObjectUnsubscribedError;
 //# sourceMappingURL=ObjectUnsubscribedError.js.map
 
 /***/ }),
-/* 17 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2972,10 +2728,10 @@ exports.SubjectSubscription = SubjectSubscription;
 //# sourceMappingURL=SubjectSubscription.js.map
 
 /***/ }),
-/* 18 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, SimpleCache_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, GreaseMonkeyCache_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var ChatApi = /** @class */ (function () {
@@ -3002,7 +2758,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     });
                     expiryDate = new Date();
                     expiryDate.setDate(expiryDate.getDate() + 1);
-                    return [2 /*return*/, SimpleCache_1.SimpleCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate)];
+                    return [2 /*return*/, GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate)];
                 });
             });
         };
@@ -3025,7 +2781,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     });
                     expiryDate = new Date();
                     expiryDate.setDate(expiryDate.getDate() + 1);
-                    return [2 /*return*/, SimpleCache_1.SimpleCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate)];
+                    return [2 /*return*/, GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate)];
                 });
             });
         };
@@ -3076,7 +2832,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
             var expiryDate = new Date();
             expiryDate.setDate(expiryDate.getDate() + 1);
-            return SimpleCache_1.SimpleCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate);
+            return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate);
         };
         return ChatApi;
     }());
@@ -3086,21 +2842,21 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ }),
-/* 19 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 var Observable_1 = __webpack_require__(1);
-var take_1 = __webpack_require__(40);
+var take_1 = __webpack_require__(39);
 Observable_1.Observable.prototype.take = take_1.take;
 //# sourceMappingURL=take.js.map
 
 /***/ }),
-/* 20 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(9), __webpack_require__(10), __webpack_require__(3), __webpack_require__(19)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, ReplaySubject_1, CrossDomainCache_1, SimpleCache_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(9), __webpack_require__(3), __webpack_require__(18)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, ReplaySubject_1, GreaseMonkeyCache_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
@@ -3119,17 +2875,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         MetaSmokeAPI.Reset = function () {
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.Unset(exports.MetaSmokeDisabledConfig)];
-                        case 1:
-                            _a.sent();
-                            return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.Unset(exports.MetaSmokeUserKeyConfig)];
-                        case 2:
-                            _a.sent();
-                            SimpleCache_1.SimpleCache.Unset(exports.MetaSmokeDisabledConfig);
-                            SimpleCache_1.SimpleCache.Unset(exports.MetaSmokeUserKeyConfig);
-                            return [2 /*return*/];
-                    }
+                    GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(exports.MetaSmokeDisabledConfig);
+                    GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(exports.MetaSmokeUserKeyConfig);
+                    return [2 /*return*/];
                 });
             });
         };
@@ -3137,15 +2885,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 var cachedDisabled;
                 return tslib_1.__generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.GetFromCache(exports.MetaSmokeDisabledConfig)];
-                        case 1:
-                            cachedDisabled = _a.sent();
-                            if (cachedDisabled === undefined) {
-                                return [2 /*return*/, false];
-                            }
-                            return [2 /*return*/, cachedDisabled];
+                    cachedDisabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.MetaSmokeDisabledConfig);
+                    if (cachedDisabled === undefined) {
+                        return [2 /*return*/, false];
                     }
+                    return [2 /*return*/, cachedDisabled];
                 });
             });
         };
@@ -3165,7 +2909,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                             return [2 /*return*/];
                                         }
                                         if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, see footer of Stack Overflow.')) {
-                                            CrossDomainCache_1.CrossDomainCache.StoreInCache(exports.MetaSmokeDisabledConfig, true);
+                                            GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(exports.MetaSmokeDisabledConfig, true);
                                             return [2 /*return*/];
                                         }
                                         window.open(metaSmokeOAuthUrl, '_blank');
@@ -3201,7 +2945,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         };
         MetaSmokeAPI.QueryMetaSmoke = function (postId, postType) {
             var url = MetaSmokeAPI.GetQueryUrl(postId, postType);
-            var existingResult = SimpleCache_1.SimpleCache.GetFromCache(exports.MetaSmokeWasReportedConfig + "." + url);
+            var existingResult = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.MetaSmokeWasReportedConfig + "." + url);
             if (existingResult !== undefined) {
                 var key = MetaSmokeAPI.GetObservableKey(postId, postType);
                 var obs = MetaSmokeAPI.ObservableLookup[key];
@@ -3260,7 +3004,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                 var obs = MetaSmokeAPI.ObservableLookup[key];
                                 if (obs) {
                                     obs.next(item.id);
-                                    SimpleCache_1.SimpleCache.StoreInCache(exports.MetaSmokeWasReportedConfig + "." + item.link, item.id, expiryDate);
+                                    GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(exports.MetaSmokeWasReportedConfig + "." + item.link, item.id, expiryDate);
                                 }
                                 delete pendingPostLookup[item.link];
                             }
@@ -3280,7 +3024,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             var obs = MetaSmokeAPI.ObservableLookup[key];
                             if (obs) {
                                 obs.next(null);
-                                SimpleCache_1.SimpleCache.StoreInCache(exports.MetaSmokeWasReportedConfig + "." + url, null, expiryDate);
+                                GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(exports.MetaSmokeWasReportedConfig + "." + url, null, expiryDate);
                             }
                         }
                     }
@@ -3323,32 +3067,30 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         };
         MetaSmokeAPI.getUserKey = function () {
             var _this = this;
-            return SimpleCache_1.SimpleCache.GetAndCache(exports.MetaSmokeUserKeyConfig, function () {
-                return CrossDomainCache_1.CrossDomainCache.GetAndCache(exports.MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-                    var prom, code;
-                    return tslib_1.__generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                prom = MetaSmokeAPI.actualPromise;
-                                if (prom === undefined) {
-                                    prom = MetaSmokeAPI.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + MetaSmokeAPI.appKey);
-                                    MetaSmokeAPI.actualPromise = prom;
-                                }
-                                return [4 /*yield*/, prom];
-                            case 1:
-                                code = _a.sent();
-                                if (code) {
-                                    $.ajax({
-                                        url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeAPI.appKey + '&code=' + code,
-                                        method: 'GET'
-                                    }).done(function (data) { return resolve(data.token); })
-                                        .fail(function (err) { return reject(err); });
-                                }
-                                return [2 /*return*/];
-                        }
-                    });
-                }); }); });
-            });
+            return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(exports.MetaSmokeUserKeyConfig, function () { return new Promise(function (resolve, reject) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+                var prom, code;
+                return tslib_1.__generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            prom = MetaSmokeAPI.actualPromise;
+                            if (prom === undefined) {
+                                prom = MetaSmokeAPI.codeGetter("https://metasmoke.erwaysoftware.com/oauth/request?key=" + MetaSmokeAPI.appKey);
+                                MetaSmokeAPI.actualPromise = prom;
+                            }
+                            return [4 /*yield*/, prom];
+                        case 1:
+                            code = _a.sent();
+                            if (code) {
+                                $.ajax({
+                                    url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeAPI.appKey + '&code=' + code,
+                                    method: 'GET'
+                                }).done(function (data) { return resolve(data.token); })
+                                    .fail(function (err) { return reject(err); });
+                            }
+                            return [2 /*return*/];
+                    }
+                });
+            }); }); });
         };
         MetaSmokeAPI.prototype.Watch = function (postId, postType) {
             var key = MetaSmokeAPI.GetObservableKey(postId, postType);
@@ -3422,7 +3164,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         case 4:
                             result = _a.sent();
                             queryUrlStr = MetaSmokeAPI.GetQueryUrl(postId, postType);
-                            SimpleCache_1.SimpleCache.Unset(exports.MetaSmokeWasReportedConfig + "." + queryUrlStr);
+                            GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(exports.MetaSmokeWasReportedConfig + "." + queryUrlStr);
                             return [4 /*yield*/, Delay(1000)];
                         case 5:
                             _a.sent();
@@ -3513,7 +3255,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ }),
-/* 21 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(7)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, sotools_1) {
@@ -3619,10 +3361,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ }),
-/* 22 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(5), __webpack_require__(9), __webpack_require__(7), __webpack_require__(3), __webpack_require__(18), __webpack_require__(19)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, Subject_1, ReplaySubject_1, sotools_1, SimpleCache_1, ChatApi_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(5), __webpack_require__(9), __webpack_require__(7), __webpack_require__(17), __webpack_require__(3), __webpack_require__(18)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, Subject_1, ReplaySubject_1, sotools_1, ChatApi_1, GreaseMonkeyCache_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var nattyFeedbackUrl = 'http://logs.sobotics.org/napi/api/feedback';
@@ -3640,7 +3382,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             if (sotools_1.IsStackOverflow()) {
                 var expiryDate = new Date();
                 expiryDate.setDate(expiryDate.getDate() + 1);
-                SimpleCache_1.SimpleCache.GetAndCache("NattyApi.Feedback." + this.answerId, function () { return new Promise(function (resolve, reject) {
+                GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache("NattyApi.Feedback." + this.answerId, function () { return new Promise(function (resolve, reject) {
                     var numTries = 0;
                     var onError = function (response) {
                         numTries++;
@@ -3717,7 +3459,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             return [4 /*yield*/, promise.then(function () {
                                     var expiryDate = new Date();
                                     expiryDate.setDate(expiryDate.getDate() + 30);
-                                    SimpleCache_1.SimpleCache.StoreInCache("NattyApi.Feedback." + _this.answerId, true, expiryDate);
+                                    GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache("NattyApi.Feedback." + _this.answerId, true, expiryDate);
                                     _this.subject.next(true);
                                 })];
                         case 4:
@@ -3805,14 +3547,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ }),
-/* 23 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 var Subscriber_1 = __webpack_require__(2);
 var rxSubscriber_1 = __webpack_require__(8);
-var Observer_1 = __webpack_require__(15);
+var Observer_1 = __webpack_require__(14);
 function toSubscriber(nextOrObserver, error, complete) {
     if (nextOrObserver) {
         if (nextOrObserver instanceof Subscriber_1.Subscriber) {
@@ -3831,7 +3573,7 @@ exports.toSubscriber = toSubscriber;
 //# sourceMappingURL=toSubscriber.js.map
 
 /***/ }),
-/* 24 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3840,7 +3582,7 @@ exports.isArray = Array.isArray || (function (x) { return x && typeof x.length =
 //# sourceMappingURL=isArray.js.map
 
 /***/ }),
-/* 25 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3852,12 +3594,12 @@ exports.isObject = isObject;
 //# sourceMappingURL=isObject.js.map
 
 /***/ }),
-/* 26 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
-var errorObject_1 = __webpack_require__(14);
+var errorObject_1 = __webpack_require__(13);
 var tryCatchTarget;
 function tryCatcher() {
     try {
@@ -3877,7 +3619,7 @@ exports.tryCatch = tryCatch;
 //# sourceMappingURL=tryCatch.js.map
 
 /***/ }),
-/* 27 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3908,7 +3650,7 @@ exports.UnsubscriptionError = UnsubscriptionError;
 //# sourceMappingURL=UnsubscriptionError.js.map
 
 /***/ }),
-/* 28 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3940,12 +3682,12 @@ exports.$$observable = exports.observable;
 //# sourceMappingURL=observable.js.map
 
 /***/ }),
-/* 29 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
-var noop_1 = __webpack_require__(30);
+var noop_1 = __webpack_require__(29);
 /* tslint:enable:max-line-length */
 function pipe() {
     var fns = [];
@@ -3971,7 +3713,7 @@ exports.pipeFromArray = pipeFromArray;
 //# sourceMappingURL=pipe.js.map
 
 /***/ }),
-/* 30 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3982,13 +3724,13 @@ exports.noop = noop;
 //# sourceMappingURL=noop.js.map
 
 /***/ }),
-/* 31 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
-var QueueAction_1 = __webpack_require__(32);
-var QueueScheduler_1 = __webpack_require__(35);
+var QueueAction_1 = __webpack_require__(31);
+var QueueScheduler_1 = __webpack_require__(34);
 /**
  *
  * Queue Scheduler
@@ -4054,7 +3796,7 @@ exports.queue = new QueueScheduler_1.QueueScheduler(QueueAction_1.QueueAction);
 //# sourceMappingURL=queue.js.map
 
 /***/ }),
-/* 32 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4064,7 +3806,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var AsyncAction_1 = __webpack_require__(33);
+var AsyncAction_1 = __webpack_require__(32);
 /**
  * We need this JSDoc comment for affecting ESDoc.
  * @ignore
@@ -4109,7 +3851,7 @@ exports.QueueAction = QueueAction;
 //# sourceMappingURL=QueueAction.js.map
 
 /***/ }),
-/* 33 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4120,7 +3862,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var root_1 = __webpack_require__(6);
-var Action_1 = __webpack_require__(34);
+var Action_1 = __webpack_require__(33);
 /**
  * We need this JSDoc comment for affecting ESDoc.
  * @ignore
@@ -4257,7 +3999,7 @@ exports.AsyncAction = AsyncAction;
 //# sourceMappingURL=AsyncAction.js.map
 
 /***/ }),
-/* 34 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4307,7 +4049,7 @@ exports.Action = Action;
 //# sourceMappingURL=Action.js.map
 
 /***/ }),
-/* 35 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4317,7 +4059,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var AsyncScheduler_1 = __webpack_require__(36);
+var AsyncScheduler_1 = __webpack_require__(35);
 var QueueScheduler = (function (_super) {
     __extends(QueueScheduler, _super);
     function QueueScheduler() {
@@ -4329,7 +4071,7 @@ exports.QueueScheduler = QueueScheduler;
 //# sourceMappingURL=QueueScheduler.js.map
 
 /***/ }),
-/* 36 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4339,7 +4081,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var Scheduler_1 = __webpack_require__(37);
+var Scheduler_1 = __webpack_require__(36);
 var AsyncScheduler = (function (_super) {
     __extends(AsyncScheduler, _super);
     function AsyncScheduler() {
@@ -4386,7 +4128,7 @@ exports.AsyncScheduler = AsyncScheduler;
 //# sourceMappingURL=AsyncScheduler.js.map
 
 /***/ }),
-/* 37 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4441,7 +4183,7 @@ exports.Scheduler = Scheduler;
 //# sourceMappingURL=Scheduler.js.map
 
 /***/ }),
-/* 38 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4452,7 +4194,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var Subscriber_1 = __webpack_require__(2);
-var Notification_1 = __webpack_require__(39);
+var Notification_1 = __webpack_require__(38);
 /**
  *
  * Re-emits all notifications from source Observable with specified scheduler.
@@ -4562,7 +4304,7 @@ exports.ObserveOnMessage = ObserveOnMessage;
 //# sourceMappingURL=observeOn.js.map
 
 /***/ }),
-/* 39 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4695,12 +4437,12 @@ exports.Notification = Notification;
 //# sourceMappingURL=Notification.js.map
 
 /***/ }),
-/* 40 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
-var take_1 = __webpack_require__(41);
+var take_1 = __webpack_require__(40);
 /**
  * Emits only the first `count` values emitted by the source Observable.
  *
@@ -4741,7 +4483,7 @@ exports.take = take;
 //# sourceMappingURL=take.js.map
 
 /***/ }),
-/* 41 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4752,8 +4494,8 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var Subscriber_1 = __webpack_require__(2);
-var ArgumentOutOfRangeError_1 = __webpack_require__(42);
-var EmptyObservable_1 = __webpack_require__(43);
+var ArgumentOutOfRangeError_1 = __webpack_require__(41);
+var EmptyObservable_1 = __webpack_require__(42);
 /**
  * Emits only the first `count` values emitted by the source Observable.
  *
@@ -4838,7 +4580,7 @@ var TakeSubscriber = (function (_super) {
 //# sourceMappingURL=take.js.map
 
 /***/ }),
-/* 42 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4872,7 +4614,7 @@ exports.ArgumentOutOfRangeError = ArgumentOutOfRangeError;
 //# sourceMappingURL=ArgumentOutOfRangeError.js.map
 
 /***/ }),
-/* 43 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4959,187 +4701,10 @@ exports.EmptyObservable = EmptyObservable;
 //# sourceMappingURL=EmptyObservable.js.map
 
 /***/ }),
-/* 44 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
- * xdLocalStorage is a port of https://github.com/ofirdagan/cross-domain-local-storage to typescript using modules
- */
-/**
- * Created by dagan on 07/04/2014.
- */
-!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var XdLocalStorage = /** @class */ (function () {
-        function XdLocalStorage() {
-        }
-        XdLocalStorage.init = function (customOptions) {
-            if (!customOptions.iframeUrl) {
-                throw Error('You must specify iframeUrl');
-            }
-            var validatedOptions = {
-                iframeId: customOptions.iframeId,
-                iframeUrl: customOptions.iframeUrl,
-                initCallback: customOptions.initCallback
-            };
-            if (XdLocalStorage.wasInitFlag) {
-                return;
-            }
-            XdLocalStorage.wasInitFlag = true;
-            if (XdLocalStorage.isDomReady()) {
-                XdLocalStorage.internalInit(validatedOptions);
-            }
-            else {
-                if (document.addEventListener) {
-                    // All browsers expect IE < 9
-                    document.addEventListener('readystatechange', function () {
-                        if (XdLocalStorage.isDomReady()) {
-                            XdLocalStorage.internalInit(validatedOptions);
-                        }
-                    });
-                }
-                else {
-                    // IE < 9
-                    document.attachEvent('readystatechange', function () {
-                        if (XdLocalStorage.isDomReady()) {
-                            XdLocalStorage.internalInit(validatedOptions);
-                        }
-                    });
-                }
-            }
-        };
-        XdLocalStorage.setItem = function (key, value, callback) {
-            if (!XdLocalStorage.isApiReady()) {
-                return;
-            }
-            XdLocalStorage.buildMessage('set', key, value, callback);
-        };
-        XdLocalStorage.getItem = function (key, callback) {
-            if (!XdLocalStorage.isApiReady()) {
-                return;
-            }
-            XdLocalStorage.buildMessage('get', key, null, callback);
-        };
-        XdLocalStorage.removeItem = function (key, callback) {
-            if (!XdLocalStorage.isApiReady()) {
-                return;
-            }
-            XdLocalStorage.buildMessage('remove', key, null, callback);
-        };
-        XdLocalStorage.key = function (index, callback) {
-            if (!XdLocalStorage.isApiReady()) {
-                return;
-            }
-            XdLocalStorage.buildMessage('key', index, null, callback);
-        };
-        XdLocalStorage.getSize = function (callback) {
-            if (!XdLocalStorage.isApiReady()) {
-                return;
-            }
-            XdLocalStorage.buildMessage('size', null, null, callback);
-        };
-        XdLocalStorage.getLength = function (callback) {
-            if (!XdLocalStorage.isApiReady()) {
-                return;
-            }
-            XdLocalStorage.buildMessage('length', null, null, callback);
-        };
-        XdLocalStorage.clear = function (callback) {
-            if (!XdLocalStorage.isApiReady()) {
-                return;
-            }
-            XdLocalStorage.buildMessage('clear', null, null, callback);
-        };
-        XdLocalStorage.wasInit = function () {
-            return XdLocalStorage.wasInitFlag;
-        };
-        XdLocalStorage.applyCallback = function (data) {
-            if (XdLocalStorage.requests[data.id]) {
-                XdLocalStorage.requests[data.id](data);
-                delete XdLocalStorage.requests[data.id];
-            }
-        };
-        XdLocalStorage.receiveMessage = function (event) {
-            var data;
-            try {
-                data = JSON.parse(event.data);
-            }
-            catch (err) {
-                // not our message, can ignore
-            }
-            if (data && data.namespace === XdLocalStorage.MESSAGE_NAMESPACE) {
-                if (data.id === 'iframe-ready') {
-                    XdLocalStorage.iframeReady = true;
-                    XdLocalStorage.options.initCallback();
-                }
-                else {
-                    XdLocalStorage.applyCallback(data);
-                }
-            }
-        };
-        XdLocalStorage.buildMessage = function (action, key, value, callback) {
-            XdLocalStorage.requestId++;
-            XdLocalStorage.requests[XdLocalStorage.requestId] = callback;
-            var data = {
-                namespace: XdLocalStorage.MESSAGE_NAMESPACE,
-                id: XdLocalStorage.requestId,
-                action: action,
-                key: key,
-                value: value
-            };
-            XdLocalStorage.iframe.contentWindow.postMessage(JSON.stringify(data), '*');
-        };
-        XdLocalStorage.internalInit = function (customOptions) {
-            XdLocalStorage.options = tslib_1.__assign({}, XdLocalStorage.defaultOptions, customOptions);
-            var temp = document.createElement('div');
-            if (window.addEventListener) {
-                window.addEventListener('message', XdLocalStorage.receiveMessage, false);
-            }
-            else {
-                window.attachEvent('onmessage', XdLocalStorage.receiveMessage);
-            }
-            temp.innerHTML = '<iframe id="' + XdLocalStorage.options.iframeId + '" src=' + XdLocalStorage.options.iframeUrl + ' style="display: none;"></iframe>';
-            document.body.appendChild(temp);
-            var element = document.getElementById(XdLocalStorage.options.iframeId);
-            if (element) {
-                XdLocalStorage.iframe = element;
-            }
-        };
-        XdLocalStorage.isApiReady = function () {
-            if (!XdLocalStorage.wasInitFlag) {
-                return false;
-            }
-            if (!XdLocalStorage.iframeReady) {
-                return false;
-            }
-            return true;
-        };
-        XdLocalStorage.isDomReady = function () {
-            return (document.readyState === 'complete');
-        };
-        XdLocalStorage.MESSAGE_NAMESPACE = 'cross-domain-local-message';
-        XdLocalStorage.defaultOptions = {
-            iframeId: 'cross-domain-iframe',
-            // tslint:disable-next-line:no-empty
-            initCallback: function () { }
-        };
-        XdLocalStorage.requestId = 1;
-        XdLocalStorage.requests = {};
-        XdLocalStorage.wasInitFlag = false;
-        XdLocalStorage.iframeReady = true;
-        return XdLocalStorage;
-    }());
-    exports.XdLocalStorage = XdLocalStorage;
-}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
-				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ }),
-/* 45 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(3), __webpack_require__(9), __webpack_require__(5), __webpack_require__(18), __webpack_require__(46)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, SimpleCache_1, ReplaySubject_1, Subject_1, ChatApi_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(9), __webpack_require__(5), __webpack_require__(17), __webpack_require__(3), __webpack_require__(44)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, ReplaySubject_1, Subject_1, ChatApi_1, GreaseMonkeyCache_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var copyPastorServer = 'http://copypastor.sobotics.org';
@@ -5156,7 +4721,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             this.subject.subscribe(this.replaySubject);
             var expiryDate = new Date();
             expiryDate.setDate(expiryDate.getDate() + 30);
-            SimpleCache_1.SimpleCache.GetAndCache("CopyPastor.FindTarget." + this.answerId, function () { return new Promise(function (resolve, reject) {
+            GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache("CopyPastor.FindTarget." + this.answerId, function () { return new Promise(function (resolve, reject) {
                 var url = copyPastorServer + "/posts/findTarget?url=//" + window.location.hostname + "/a/" + _this.answerId;
                 GM_xmlhttpRequest({
                     method: 'GET',
@@ -5272,23 +4837,23 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ }),
-/* 46 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 var Observable_1 = __webpack_require__(1);
-var map_1 = __webpack_require__(47);
+var map_1 = __webpack_require__(45);
 Observable_1.Observable.prototype.map = map_1.map;
 //# sourceMappingURL=map.js.map
 
 /***/ }),
-/* 47 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
-var map_1 = __webpack_require__(48);
+var map_1 = __webpack_require__(46);
 /**
  * Applies a given `project` function to each value emitted by the source
  * Observable, and emits the resulting values as an Observable.
@@ -5329,7 +4894,7 @@ exports.map = map;
 //# sourceMappingURL=map.js.map
 
 /***/ }),
-/* 48 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5424,10 +4989,10 @@ var MapSubscriber = (function (_super) {
 //# sourceMappingURL=map.js.map
 
 /***/ }),
-/* 49 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(5), __webpack_require__(50)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, Subject_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(5), __webpack_require__(48)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, Subject_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function WatchFlags() {
@@ -5465,23 +5030,23 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ }),
-/* 50 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 var Observable_1 = __webpack_require__(1);
-var filter_1 = __webpack_require__(51);
+var filter_1 = __webpack_require__(49);
 Observable_1.Observable.prototype.filter = filter_1.filter;
 //# sourceMappingURL=filter.js.map
 
 /***/ }),
-/* 51 */
+/* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
-var filter_1 = __webpack_require__(52);
+var filter_1 = __webpack_require__(50);
 /* tslint:enable:max-line-length */
 /**
  * Filter items emitted by the source Observable by only emitting those that
@@ -5529,7 +5094,7 @@ exports.filter = filter;
 //# sourceMappingURL=filter.js.map
 
 /***/ }),
-/* 52 */
+/* 50 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5629,15 +5194,15 @@ var FilterSubscriber = (function (_super) {
 //# sourceMappingURL=filter.js.map
 
 /***/ }),
-/* 53 */
+/* 51 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(11), __webpack_require__(20), __webpack_require__(10), __webpack_require__(12)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, AdvancedFlagging_1, MetaSmokeAPI_1, CrossDomainCache_1, FlagTypes_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(10), __webpack_require__(19), __webpack_require__(11), __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, AdvancedFlagging_1, MetaSmokeAPI_1, FlagTypes_1, GreaseMonkeyCache_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function SetupConfiguration() {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var bottomBox, configurationDiv, cacheDisabledMessage, configurationLink;
+            var bottomBox, configurationDiv, configurationLink;
             return tslib_1.__generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -5646,20 +5211,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             .css('line-height', '18px')
                             .css('text-align', 'left')
                             .css('padding', '5px');
-                        return [4 /*yield*/, CrossDomainCache_1.CrossDomainCache.CacheFailed()];
+                        return [4 /*yield*/, SetupDefaults()];
                     case 1:
-                        if (!_a.sent()) return [3 /*break*/, 2];
-                        cacheDisabledMessage = $('<p>Cache failed to initialize. AdvancedFlagging configuration disabled</p>');
-                        configurationDiv.append(cacheDisabledMessage);
-                        return [3 /*break*/, 4];
-                    case 2: return [4 /*yield*/, SetupDefaults()];
-                    case 3:
                         _a.sent();
                         configurationLink = $('<a href="javascript:void(0);">AdvancedFlagging configuration</a>');
                         configurationLink.click(function () { return BuildConfigurationOverlay(); });
                         configurationDiv.append(configurationLink);
-                        _a.label = 4;
-                    case 4:
                         configurationDiv.insertAfter(bottomBox);
                         return [2 /*return*/];
                 }
@@ -5683,16 +5240,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             var configurationEnabledFlags, flagTypeIds;
             return tslib_1.__generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, AdvancedFlagging_1.getFromCaches(AdvancedFlagging_1.ConfigurationEnabledFlags)];
-                    case 1:
-                        configurationEnabledFlags = _a.sent();
-                        if (!configurationEnabledFlags) {
-                            flagTypeIds = getFlagTypes().map(function (f) { return f.Id; });
-                            AdvancedFlagging_1.storeInCaches(AdvancedFlagging_1.ConfigurationEnabledFlags, flagTypeIds);
-                        }
-                        return [2 /*return*/];
+                configurationEnabledFlags = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(AdvancedFlagging_1.ConfigurationEnabledFlags);
+                if (!configurationEnabledFlags) {
+                    flagTypeIds = getFlagTypes().map(function (f) { return f.Id; });
+                    GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(AdvancedFlagging_1.ConfigurationEnabledFlags, flagTypeIds);
                 }
+                return [2 /*return*/];
             });
         });
     }
@@ -5818,46 +5371,36 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             var _this = this;
             var checkBoxes, flagTypeIds, returnArr;
             return tslib_1.__generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        checkBoxes = [];
-                        return [4 /*yield*/, AdvancedFlagging_1.getFromCaches(AdvancedFlagging_1.ConfigurationEnabledFlags)];
-                    case 1:
-                        flagTypeIds = (_a.sent()) || [];
-                        getFlagTypes().forEach(function (f) {
-                            var checkBox = $('<input type="checkbox">');
-                            var label = $('<label />')
-                                .append(checkBox)
-                                .append(f.DisplayName);
-                            var storedValue = flagTypeIds.indexOf(f.Id) > -1;
-                            if (storedValue) {
-                                checkBox.prop('checked', true);
-                            }
-                            checkBoxes.push({
-                                label: label,
-                                checkBox: checkBox,
-                                Id: f.Id
-                            });
+                checkBoxes = [];
+                flagTypeIds = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(AdvancedFlagging_1.ConfigurationEnabledFlags) || [];
+                getFlagTypes().forEach(function (f) {
+                    var checkBox = $('<input type="checkbox">');
+                    var label = $('<label />')
+                        .append(checkBox)
+                        .append(f.DisplayName);
+                    var storedValue = flagTypeIds.indexOf(f.Id) > -1;
+                    if (storedValue) {
+                        checkBox.prop('checked', true);
+                    }
+                    checkBoxes.push({
+                        label: label,
+                        checkBox: checkBox,
+                        Id: f.Id
+                    });
+                });
+                returnArr = checkBoxes.map(function (f) { return ({ element: f.label }); });
+                returnArr.push({
+                    onSave: function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+                        var updatedFlagTypes;
+                        return tslib_1.__generator(this, function (_a) {
+                            updatedFlagTypes = checkBoxes.filter(function (cb) { return !!cb.checkBox.prop('checked'); }).map(function (cb) { return cb.Id; });
+                            GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(AdvancedFlagging_1.ConfigurationEnabledFlags, updatedFlagTypes);
+                            return [2 /*return*/];
                         });
-                        returnArr = checkBoxes.map(function (f) { return ({ element: f.label }); });
-                        returnArr.push({
-                            onSave: function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-                                var updatedFlagTypes;
-                                return tslib_1.__generator(this, function (_a) {
-                                    switch (_a.label) {
-                                        case 0:
-                                            updatedFlagTypes = checkBoxes.filter(function (cb) { return !!cb.checkBox.prop('checked'); }).map(function (cb) { return cb.Id; });
-                                            return [4 /*yield*/, AdvancedFlagging_1.storeInCaches(AdvancedFlagging_1.ConfigurationEnabledFlags, updatedFlagTypes)];
-                                        case 1:
-                                            _a.sent();
-                                            return [2 /*return*/];
-                                    }
-                                });
-                            }); },
-                            requiresReload: true
-                        });
-                        return [2 /*return*/, returnArr];
-                }
+                    }); },
+                    requiresReload: true
+                });
+                return [2 /*return*/, returnArr];
             });
         });
     }
@@ -5891,7 +5434,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                 return tslib_1.__generator(this, function (_a) {
                                     prompt = window.prompt('Enter metasmoke key');
                                     if (prompt) {
-                                        CrossDomainCache_1.CrossDomainCache.StoreInCache(MetaSmokeAPI_1.MetaSmokeDisabledConfig, false);
+                                        GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(MetaSmokeAPI_1.MetaSmokeDisabledConfig, false);
                                         localStorage.setItem('MetaSmoke.ManualKey', prompt);
                                     }
                                     return [2 /*return*/];
@@ -5908,35 +5451,25 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             var _this = this;
             var checkBox, label, storedValue;
             return tslib_1.__generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        checkBox = $('<input type="checkbox">');
-                        label = $('<label />')
-                            .append(checkBox)
-                            .append(text);
-                        return [4 /*yield*/, AdvancedFlagging_1.getFromCaches(configValue)];
-                    case 1:
-                        storedValue = _a.sent();
-                        if (storedValue) {
-                            checkBox.prop('checked', true);
-                        }
-                        return [2 /*return*/, {
-                                element: label,
-                                onSave: function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-                                    var isChecked;
-                                    return tslib_1.__generator(this, function (_a) {
-                                        switch (_a.label) {
-                                            case 0:
-                                                isChecked = !!checkBox.prop('checked');
-                                                return [4 /*yield*/, AdvancedFlagging_1.storeInCaches(configValue, isChecked)];
-                                            case 1:
-                                                _a.sent();
-                                                return [2 /*return*/];
-                                        }
-                                    });
-                                }); }
-                            }];
+                checkBox = $('<input type="checkbox">');
+                label = $('<label />')
+                    .append(checkBox)
+                    .append(text);
+                storedValue = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(configValue);
+                if (storedValue) {
+                    checkBox.prop('checked', true);
                 }
+                return [2 /*return*/, {
+                        element: label,
+                        onSave: function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+                            var isChecked;
+                            return tslib_1.__generator(this, function (_a) {
+                                isChecked = !!checkBox.prop('checked');
+                                GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(configValue, isChecked);
+                                return [2 /*return*/];
+                            });
+                        }); }
+                    }];
             });
         });
     }

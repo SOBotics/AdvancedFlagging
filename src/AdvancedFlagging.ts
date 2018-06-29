@@ -2,15 +2,14 @@ import * as jquery from 'jquery';
 
 import { FlagType, flagCategories } from './FlagTypes';
 import { StackExchangeGlobal } from '@userscriptTools/sotools/StackExchangeConfiguration';
-import { SimpleCache } from '@userscriptTools/caching/SimpleCache';
 import { IsStackOverflow, parseQuestionsAndAnswers, parseDate } from '@userscriptTools/sotools/sotools';
 import { NattyAPI } from '@userscriptTools/nattyapi/NattyApi';
 import { GenericBotAPI } from '@userscriptTools/genericbotapi/GenericBotAPI';
 import { MetaSmokeAPI, MetaSmokeDisabledConfig } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
-import { CrossDomainCache } from '@userscriptTools/caching/CrossDomainCache';
 import { CopyPastorAPI, CopyPastorFindTargetResponseItem } from '@userscriptTools/copypastorapi/CopyPastorAPI';
 import { WatchFlags, WatchRequests } from '@userscriptTools/sotools/RequestWatcher';
 import { SetupConfiguration } from 'Configuration';
+import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
 
 export const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
 const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
@@ -90,7 +89,7 @@ function handleFlagAndComment(postId: number, flag: FlagType,
 
     if (flagRequired) {
         if (flag.ReportType !== 'NoFlag') {
-            const wasFlagged = SimpleCache.GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`);
+            const wasFlagged = GreaseMonkeyCache.GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`);
             if (!wasFlagged) {
                 if (flag.ReportType === 'PostOther') {
                     // Do something here
@@ -229,7 +228,7 @@ async function BuildFlaggingDialog(element: JQuery,
         leaveCommentBox.prop('checked', true);
     }
 
-    const enabledFlagIds = await getFromCaches<number[]>(ConfigurationEnabledFlags);
+    const enabledFlagIds = GreaseMonkeyCache.GetFromCache<number[]>(ConfigurationEnabledFlags);
 
     let hasCommentOptions = false;
     let firstCategory = true;
@@ -351,7 +350,7 @@ async function BuildFlaggingDialog(element: JQuery,
                                 const expiryDate = new Date();
                                 expiryDate.setDate(expiryDate.getDate() + 30);
 
-                                SimpleCache.StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType, expiryDate);
+                                GreaseMonkeyCache.StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType, expiryDate);
                                 reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
                                 reportedIcon.show();
                                 displaySuccess('Flagged');
@@ -369,7 +368,7 @@ async function BuildFlaggingDialog(element: JQuery,
                     const expiryDate = new Date();
                     expiryDate.setDate(expiryDate.getDate() + 30);
 
-                    SimpleCache.StoreInCache(`AdvancedFlagging.PerformedAction.${postId}`, flagType, expiryDate);
+                    GreaseMonkeyCache.StoreInCache(`AdvancedFlagging.PerformedAction.${postId}`, flagType, expiryDate);
                     performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
                     performedActionIcon.show();
                 }
@@ -601,30 +600,29 @@ async function SetupPostPage() {
             }
             const deleted = post.element.hasClass('deleted-answer');
 
-            getFromCaches<boolean>(ConfigurationWatchFlags).then(isEnabled => {
-                WatchFlags().subscribe(xhr => {
-                    if (isEnabled && !autoFlagging) {
-                        const matches = new RegExp(`/flags\/posts\/${post.postId}\/add\/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`).exec(xhr.responseURL);
-                        if (matches !== null && xhr.status === 200) {
-                            const flagType = {
-                                Id: 0,
-                                ReportType: matches[1] as 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther',
-                                DisplayName: matches[1]
-                            };
-                            handleFlag(flagType, reporters, answerTime, questionTime);
+            const isEnabled = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationWatchFlags);
+            WatchFlags().subscribe(xhr => {
+                if (isEnabled && !autoFlagging) {
+                    const matches = new RegExp(`/flags\/posts\/${post.postId}\/add\/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`).exec(xhr.responseURL);
+                    if (matches !== null && xhr.status === 200) {
+                        const flagType = {
+                            Id: 0,
+                            ReportType: matches[1] as 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther',
+                            DisplayName: matches[1]
+                        };
+                        handleFlag(flagType, reporters, answerTime, questionTime);
 
-                            const expiryDate = new Date();
-                            expiryDate.setDate(expiryDate.getDate() + 30);
-                            SimpleCache.StoreInCache(`AdvancedFlagging.Flagged.${post.postId}`, flagType, expiryDate);
-                            reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
-                            reportedIcon.show();
-                            displaySuccess('Flagged');
-                        }
+                        const expiryDate = new Date();
+                        expiryDate.setDate(expiryDate.getDate() + 30);
+                        GreaseMonkeyCache.StoreInCache(`AdvancedFlagging.Flagged.${post.postId}`, flagType, expiryDate);
+                        reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
+                        reportedIcon.show();
+                        displaySuccess('Flagged');
                     }
-                });
+                }
             });
 
-            const linkDisabled = await getFromCaches(ConfigurationLinkDisabled);
+            const linkDisabled = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationLinkDisabled);
             if (!linkDisabled) {
                 const dropDown = await BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation as number, post.authorName, answerTime, questionTime,
                     deleted,
@@ -640,28 +638,26 @@ async function SetupPostPage() {
                     dropDown.hide();
                 });
                 const link = advancedFlaggingLink;
-                getFromCaches<boolean>(ConfigurationOpenOnHover)
-                    .then(openOnHover => {
-                        if (openOnHover) {
-                            link.hover(e => {
-                                e.stopPropagation();
-                                if (e.target === link.get(0)) {
-                                    dropDown.show();
-                                }
-                            });
-                            link.mouseleave(e => {
-                                e.stopPropagation();
-                                dropDown.hide();
-                            });
-                        } else {
-                            link.click(e => {
-                                e.stopPropagation();
-                                if (e.target === link.get(0)) {
-                                    dropDown.toggle();
-                                }
-                            });
+                const openOnHover = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationOpenOnHover);
+                if (openOnHover) {
+                    link.hover(e => {
+                        e.stopPropagation();
+                        if (e.target === link.get(0)) {
+                            dropDown.show();
                         }
                     });
+                    link.mouseleave(e => {
+                        e.stopPropagation();
+                        dropDown.hide();
+                    });
+                } else {
+                    link.click(e => {
+                        e.stopPropagation();
+                        if (e.target === link.get(0)) {
+                            dropDown.toggle();
+                        }
+                    });
+                }
                 iconLocation.append(advancedFlaggingLink);
             }
 
@@ -681,13 +677,13 @@ async function SetupPostPage() {
             iconLocation.after(performedActionIcon);
         }
 
-        const previousFlag = SimpleCache.GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${post.postId}`);
+        const previousFlag = GreaseMonkeyCache.GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${post.postId}`);
         if (previousFlag) {
             reportedIcon.attr('title', `Previously flagged as ${previousFlag.ReportType}`);
             showFunc(reportedIcon);
         }
 
-        const previousAction = SimpleCache.GetFromCache<FlagType>(`AdvancedFlagging.PerformedAction.${post.postId}`);
+        const previousAction = GreaseMonkeyCache.GetFromCache<FlagType>(`AdvancedFlagging.PerformedAction.${post.postId}`);
         if (previousAction && previousAction.ReportType === 'NoFlag') {
             performedActionIcon.attr('title', `Previously performed action: ${previousAction.DisplayName}`);
             showFunc(performedActionIcon);
@@ -755,20 +751,6 @@ function getDropdown() {
 
 const metaSmokeManualKey = 'MetaSmoke.ManualKey';
 
-// First attempt to retrieve the value from the local cache.
-// If it doesn't exist, check the cross domain cache, and store it locally
-export async function getFromCaches<T>(key: string) {
-    return SimpleCache.GetAndCache<T | undefined>(key, () => {
-        return CrossDomainCache.GetFromCache<T>(key);
-    });
-}
-
-// Store the value in both the local and global cache
-export async function storeInCaches<T>(key: string, item: any) {
-    await SimpleCache.StoreInCache<T>(key, item);
-    await CrossDomainCache.StoreInCache<T>(key, item);
-}
-
 $(async () => {
     const clearUnexpirying = (val: string | null) => {
         if (!val) {
@@ -787,99 +769,94 @@ $(async () => {
         return true;
     };
 
+    const manualKey = localStorage.getItem(metaSmokeManualKey);
+    if (manualKey) {
+        localStorage.removeItem(metaSmokeManualKey);
+        MetaSmokeAPI.Setup(metaSmokeKey, async () => manualKey);
+    } else {
+        MetaSmokeAPI.Setup(metaSmokeKey);
+    }
+
+    SetupConfiguration();
+    SetupPostPage();
+
+    SetupStyles();
+
+    const detectAuditsEnabled = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationDetectAudits);
+    WatchRequests().subscribe(xhr => {
+        const isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
+        if (isReviewItem !== null && xhr.status === 200) {
+            const review = JSON.parse(xhr.responseText);
+            if (detectAuditsEnabled && review.isAudit) {
+                displayToaster('Beware! This is an audit!', '#cce5ff', '#004085', 5000);
+                $('.review-actions').hide();
+                setTimeout(() => {
+                    $('.review-actions').show();
+                }, 5000);
+            }
+        }
+    });
+
+    document.body.appendChild(popupWrapper.get(0));
+
+    const watchQueuesEnabled = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationWatchQueues);
+    const postDetails: { questionTime: Date, answerTime: Date }[] = [];
+    if (watchQueuesEnabled) {
+        WatchRequests().subscribe((xhr) => {
+
+            const parseReviewDetails = (review: any) => {
+                const postId = review.postId;
+                const content = $(review.content);
+                postDetails[postId] = {
+                    questionTime: parseDate($('.post-signature.owner .user-action-time span', content).attr('title')),
+                    answerTime: parseDate($('.post-signature .user-action-time span', content).attr('title'))
+                };
+            };
+
+            // We can't just parse the page after a recommend/delete request, as the page will have sometimes already updated
+            // This means we're actually grabbing the information for the following review
+
+            // So, we watch the next-task requests and remember which post we were looking at for when a delete/recommend-delete vote comes through.
+            // next-task is invoked when visiting the review queue
+            // task-reviewed is invoked when making a response
+            const isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
+            if (isReviewItem !== null && xhr.status === 200) {
+                const review = JSON.parse(xhr.responseText);
+                parseReviewDetails(review);
+                return;
+            }
+            const matches = /(\d+)\/vote\/10|(\d+)\/recommend-delete/.exec(xhr.responseURL);
+            if (matches !== null && xhr.status === 200) {
+                const postIdStr = matches[1] || matches[2];
+                const postId = parseInt(postIdStr, 10);
+                const currentPostDetails = postDetails[postId];
+                if (currentPostDetails && $('.answers-subheader').length > 0) {
+                    const nattyApi = new NattyAPI(postId);
+                    nattyApi.Watch();
+
+                    handleFlag({ Id: 0, ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
+                        {
+                            name: 'Natty',
+                            ReportNaa: (answerDate: Date, questionDate: Date) => nattyApi.ReportNaa(answerDate, questionDate),
+                            ReportRedFlag: () => nattyApi.ReportRedFlag(),
+                            ReportLooksFine: () => nattyApi.ReportLooksFine(),
+                            ReportNeedsEditing: () => nattyApi.ReportNeedsEditing(),
+                            ReportVandalism: () => Promise.resolve(false),
+                            ReportDuplicateAnswer: () => Promise.resolve(false),
+                            ReportPlagiarism: () => Promise.resolve(false)
+                        }
+                    ], currentPostDetails.answerTime, currentPostDetails.questionTime);
+                }
+            }
+        });
+    }
+
     const keyRegexes = [
         /^AdvancedFlagging\./,
         /^CopyPastor\.FindTarget\.\d+/,
         /^MetaSmoke.WasReported/,
         /^NattyApi.Feedback\.\d+/
     ];
-
-    SimpleCache.ClearExpiredKeys(keyRegexes);
-    SimpleCache.ClearAll(keyRegexes, clearUnexpirying);
-
-    await CrossDomainCache.InitializeCache('https://metasmoke.erwaysoftware.com/xdom_storage.html');
-    if (!(await CrossDomainCache.CacheFailed())) {
-        const manualKey = localStorage.getItem(metaSmokeManualKey);
-        if (manualKey) {
-            localStorage.removeItem(metaSmokeManualKey);
-            await MetaSmokeAPI.Setup(metaSmokeKey, async () => manualKey);
-        } else {
-            await MetaSmokeAPI.Setup(metaSmokeKey);
-        }
-    }
-
-    await SetupConfiguration();
-    await SetupPostPage();
-
-    SetupStyles();
-
-    getFromCaches<boolean>(ConfigurationDetectAudits).then(isEnabled => {
-        WatchRequests().subscribe(xhr => {
-            const isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
-            if (isReviewItem !== null && xhr.status === 200) {
-                const review = JSON.parse(xhr.responseText);
-                if (isEnabled && review.isAudit) {
-                    displayToaster('Beware! This is an audit!', '#cce5ff', '#004085', 5000);
-                    $('.review-actions').hide();
-                    setTimeout(() => {
-                        $('.review-actions').show();
-                    }, 5000);
-                }
-            }
-        });
-    });
-
-    document.body.appendChild(popupWrapper.get(0));
-
-    getFromCaches<boolean>(ConfigurationWatchQueues).then(isEnabled => {
-        const postDetails: { questionTime: Date, answerTime: Date }[] = [];
-        WatchRequests().subscribe((xhr) => {
-            if (isEnabled) {
-                const parseReviewDetails = (review: any) => {
-                    const postId = review.postId;
-                    const content = $(review.content);
-                    postDetails[postId] = {
-                        questionTime: parseDate($('.post-signature.owner .user-action-time span', content).attr('title')),
-                        answerTime: parseDate($('.post-signature .user-action-time span', content).attr('title'))
-                    };
-                };
-
-                // We can't just parse the page after a recommend/delete request, as the page will have sometimes already updated
-                // This means we're actually grabbing the information for the following review
-
-                // So, we watch the next-task requests and remember which post we were looking at for when a delete/recommend-delete vote comes through.
-                // next-task is invoked when visiting the review queue
-                // task-reviewed is invoked when making a response
-                const isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
-                if (isReviewItem !== null && xhr.status === 200) {
-                    const review = JSON.parse(xhr.responseText);
-                    parseReviewDetails(review);
-                    return;
-                }
-                const matches = /(\d+)\/vote\/10|(\d+)\/recommend-delete/.exec(xhr.responseURL);
-                if (matches !== null && xhr.status === 200) {
-                    const postIdStr = matches[1] || matches[2];
-                    const postId = parseInt(postIdStr, 10);
-                    const currentPostDetails = postDetails[postId];
-                    if (currentPostDetails && $('.answers-subheader').length > 0) {
-                        const nattyApi = new NattyAPI(postId);
-                        nattyApi.Watch();
-
-                        handleFlag({ Id: 0, ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
-                            {
-                                name: 'Natty',
-                                ReportNaa: (answerDate: Date, questionDate: Date) => nattyApi.ReportNaa(answerDate, questionDate),
-                                ReportRedFlag: () => nattyApi.ReportRedFlag(),
-                                ReportLooksFine: () => nattyApi.ReportLooksFine(),
-                                ReportNeedsEditing: () => nattyApi.ReportNeedsEditing(),
-                                ReportVandalism: () => Promise.resolve(false),
-                                ReportDuplicateAnswer: () => Promise.resolve(false),
-                                ReportPlagiarism: () => Promise.resolve(false)
-                            }
-                        ], currentPostDetails.answerTime, currentPostDetails.questionTime);
-                    }
-                }
-            }
-        });
-    });
+    GreaseMonkeyCache.ClearExpiredKeys(keyRegexes);
+    GreaseMonkeyCache.ClearAll(keyRegexes, clearUnexpirying);
 });

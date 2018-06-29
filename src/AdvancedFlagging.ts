@@ -1,11 +1,9 @@
-import * as jquery from 'jquery';
-
 import { FlagType, flagCategories } from './FlagTypes';
 import { StackExchangeGlobal } from '@userscriptTools/sotools/StackExchangeConfiguration';
 import { IsStackOverflow, parseQuestionsAndAnswers, parseDate } from '@userscriptTools/sotools/sotools';
 import { NattyAPI } from '@userscriptTools/nattyapi/NattyApi';
 import { GenericBotAPI } from '@userscriptTools/genericbotapi/GenericBotAPI';
-import { MetaSmokeAPI, MetaSmokeDisabledConfig } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
+import { MetaSmokeAPI } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
 import { CopyPastorAPI, CopyPastorFindTargetResponseItem } from '@userscriptTools/copypastorapi/CopyPastorAPI';
 import { WatchFlags, WatchRequests } from '@userscriptTools/sotools/RequestWatcher';
 import { SetupConfiguration } from 'Configuration';
@@ -22,7 +20,6 @@ export const ConfigurationEnabledFlags = 'AdvancedFlagging.Configuration.Enabled
 export const ConfigurationLinkDisabled = 'AdvancedFlagging.Configuration.LinkDisabled';
 
 declare const StackExchange: StackExchangeGlobal;
-declare const unsafeWindow: any;
 
 function SetupStyles() {
     const scriptNode = document.createElement('style');
@@ -751,24 +748,7 @@ function getDropdown() {
 
 const metaSmokeManualKey = 'MetaSmoke.ManualKey';
 
-$(async () => {
-    const clearUnexpirying = (val: string | null) => {
-        if (!val) {
-            return true;
-        }
-        try {
-            const jsonObj = JSON.parse(val);
-            if (!jsonObj.Expires) {
-                return true;
-            } else {
-                return false;
-            }
-        } catch {
-            // Don't care
-        }
-        return true;
-    };
-
+async function Setup() {
     const manualKey = localStorage.getItem(metaSmokeManualKey);
     if (manualKey) {
         localStorage.removeItem(metaSmokeManualKey);
@@ -777,33 +757,33 @@ $(async () => {
         MetaSmokeAPI.Setup(metaSmokeKey);
     }
 
-    SetupConfiguration();
     SetupPostPage();
-
     SetupStyles();
+    SetupConfiguration();
 
-    const detectAuditsEnabled = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationDetectAudits);
-    WatchRequests().subscribe(xhr => {
-        const isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
-        if (isReviewItem !== null && xhr.status === 200) {
-            const review = JSON.parse(xhr.responseText);
-            if (detectAuditsEnabled && review.isAudit) {
-                displayToaster('Beware! This is an audit!', '#cce5ff', '#004085', 5000);
-                $('.review-actions').hide();
-                setTimeout(() => {
-                    $('.review-actions').show();
-                }, 5000);
+    const auditDetectionEnabled = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationDetectAudits);
+    if (auditDetectionEnabled) {
+        WatchRequests().subscribe(xhr => {
+            const isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
+            if (isReviewItem !== null && xhr.status === 200) {
+                const review = JSON.parse(xhr.responseText);
+                if (review.isAudit) {
+                    displayToaster('Beware! This is an audit!', '#cce5ff', '#004085', 5000);
+                    $('.review-actions').hide();
+                    setTimeout(() => {
+                        $('.review-actions').show();
+                    }, 5000);
+                }
             }
-        }
-    });
+        });
+    }
 
     document.body.appendChild(popupWrapper.get(0));
 
-    const watchQueuesEnabled = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationWatchQueues);
+    const watchedQueuesEnabled = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationWatchQueues);
     const postDetails: { questionTime: Date, answerTime: Date }[] = [];
-    if (watchQueuesEnabled) {
+    if (watchedQueuesEnabled) {
         WatchRequests().subscribe((xhr) => {
-
             const parseReviewDetails = (review: any) => {
                 const postId = review.postId;
                 const content = $(review.content);
@@ -851,12 +831,54 @@ $(async () => {
         });
     }
 
+    const clearUnexpirying = (val: string | null) => {
+        if (!val) {
+            return true;
+        }
+        try {
+            const jsonObj = JSON.parse(val);
+            if (!jsonObj.Expires) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch {
+            // Don't care
+        }
+        return true;
+    };
+
     const keyRegexes = [
         /^AdvancedFlagging\./,
         /^CopyPastor\.FindTarget\.\d+/,
         /^MetaSmoke.WasReported/,
         /^NattyApi.Feedback\.\d+/
     ];
+
     GreaseMonkeyCache.ClearExpiredKeys(keyRegexes);
     GreaseMonkeyCache.ClearAll(keyRegexes, clearUnexpirying);
+}
+
+$(async () => {
+    let started = false;
+    async function actionWatcher() {
+        if (!started) {
+            started = true;
+            await Setup();
+        }
+        $(window).off('focus', actionWatcher);
+        $(window).off('mousemove', actionWatcher);
+    }
+
+    // If the window gains focus
+    $(window).focus(actionWatcher);
+    // Or we have mouse movement
+    $(window).mousemove(actionWatcher);
+
+    // Or the document is already focused,
+    // Then we execute the script.
+    // This is done to prevent DOSing dashboard apis, if a bunch of links are opened at once.
+    if (document.hasFocus && document.hasFocus()) {
+        await actionWatcher();
+    }
 });

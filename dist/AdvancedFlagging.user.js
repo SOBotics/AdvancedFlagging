@@ -2340,7 +2340,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     function Setup() {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             var _this = this;
-            var manualKey, auditDetectionEnabled, watchedQueuesEnabled, postDetails;
+            var manualKey, watchedQueuesEnabled, postDetails;
             return tslib_1.__generator(this, function (_a) {
                 manualKey = localStorage.getItem(metaSmokeManualKey);
                 if (manualKey) {
@@ -2355,22 +2355,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 SetupPostPage();
                 SetupStyles();
                 Configuration_1.SetupConfiguration();
-                auditDetectionEnabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationDetectAudits);
-                if (auditDetectionEnabled) {
-                    RequestWatcher_1.WatchRequests().subscribe(function (xhr) {
-                        var isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
-                        if (isReviewItem !== null && xhr.status === 200) {
-                            var review = JSON.parse(xhr.responseText);
-                            if (review.isAudit) {
-                                displayToaster('Beware! This is an audit!', '#cce5ff', '#004085', 5000);
-                                $('.review-actions').hide();
-                                setTimeout(function () {
-                                    $('.review-actions').show();
-                                }, 5000);
-                            }
-                        }
-                    });
-                }
                 document.body.appendChild(popupWrapper.get(0));
                 watchedQueuesEnabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationWatchQueues);
                 postDetails = [];

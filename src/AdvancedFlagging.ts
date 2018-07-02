@@ -298,7 +298,7 @@ async function BuildFlaggingDialog(element: JQuery,
                             const commentTextItems = element.find('.comment-body .comment-copy').map((i, ele) => $(ele).text());
                             if (commentText) {
                                 // Match [some text](http://somehyperlink.com)
-                                let strippedComment = commentText.replace(/\[([^\]]+)\]\(([^\]]+)\)/g, '$1');
+                                let strippedComment = commentText.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '$1');
                                 // Match [edit]
                                 strippedComment = strippedComment.replace(/\[([^\]]+)\][^\(]*?/g, '$1');
 

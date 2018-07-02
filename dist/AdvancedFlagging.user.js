@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.0.0
+// @version      1.0.1
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1921,7 +1921,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                         var commentTextItems = element.find('.comment-body .comment-copy').map(function (i, ele) { return $(ele).text(); });
                                         if (commentText) {
                                             // Match [some text](http://somehyperlink.com)
-                                            var strippedComment_1 = commentText.replace(/\[([^\]]+)\]\(([^\]]+)\)/g, '$1');
+                                            var strippedComment_1 = commentText.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '$1');
                                             // Match [edit]
                                             strippedComment_1 = strippedComment_1.replace(/\[([^\]]+)\][^\(]*?/g, '$1');
                                             // Strip out italics. _thanks_ => thanks

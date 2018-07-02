@@ -761,23 +761,6 @@ async function Setup() {
     SetupStyles();
     SetupConfiguration();
 
-    const auditDetectionEnabled = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationDetectAudits);
-    if (auditDetectionEnabled) {
-        WatchRequests().subscribe(xhr => {
-            const isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
-            if (isReviewItem !== null && xhr.status === 200) {
-                const review = JSON.parse(xhr.responseText);
-                if (review.isAudit) {
-                    displayToaster('Beware! This is an audit!', '#cce5ff', '#004085', 5000);
-                    $('.review-actions').hide();
-                    setTimeout(() => {
-                        $('.review-actions').show();
-                    }, 5000);
-                }
-            }
-        });
-    }
-
     document.body.appendChild(popupWrapper.get(0));
 
     const watchedQueuesEnabled = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationWatchQueues);

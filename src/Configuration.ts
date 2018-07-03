@@ -196,6 +196,15 @@ async function GetAdminConfigItems() {
                     }
                 }),
             requiresReload: true
+        }, {
+            element: $('<a />').text('Clear chat FKey')
+                .click(async () => {
+                    // Hard-code SOBotics for now
+                    const roomId = 111347;
+                    const fkeyCacheKey = `StackExchange.ChatApi.FKey_${roomId}`;
+                    GreaseMonkeyCache.Unset(fkeyCacheKey);
+                }),
+            requiresReload: true
         }
     ];
 }

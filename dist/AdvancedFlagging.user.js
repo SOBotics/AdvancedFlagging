@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.0.1
+// @version      1.0.2
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2740,6 +2740,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             if (chatUrl === void 0) { chatUrl = 'https://chat.stackoverflow.com'; }
             this.chatRoomUrl = "" + chatUrl;
         }
+        ChatApi.GetExpiryDate = function () {
+            var expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + 1);
+            return expiryDate;
+        };
         ChatApi.prototype.GetChannelFKey = function (roomId) {
             return tslib_1.__awaiter(this, void 0, void 0, function () {
                 var _this = this;
@@ -2757,8 +2762,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             reject('Could not find fkey');
                         });
                     });
-                    expiryDate = new Date();
-                    expiryDate.setDate(expiryDate.getDate() + 1);
+                    expiryDate = ChatApi.GetExpiryDate();
                     return [2 /*return*/, GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate)];
                 });
             });
@@ -2780,42 +2784,55 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             reject('Could not find user id');
                         });
                     });
-                    expiryDate = new Date();
-                    expiryDate.setDate(expiryDate.getDate() + 1);
+                    expiryDate = ChatApi.GetExpiryDate();
                     return [2 /*return*/, GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate)];
                 });
             });
         };
         ChatApi.prototype.SendMessage = function (roomId, message, providedFkey) {
             var _this = this;
-            var fkeyPromise = providedFkey
-                ? Promise.resolve(providedFkey)
-                : this.GetChannelFKey(roomId);
-            return fkeyPromise.then(function (fKey) {
-                return new Promise(function (resolve, reject) {
-                    GM_xmlhttpRequest({
-                        method: 'POST',
-                        url: _this.chatRoomUrl + "/chats/" + roomId + "/messages/new",
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        data: 'text=' + encodeURIComponent(message) + '&fkey=' + fKey,
-                        onload: function (response) {
-                            if (response.status !== 200) {
-                                reject(response.statusText);
-                            }
-                            else {
-                                resolve();
-                            }
-                        },
-                        onerror: function (response) {
-                            reject(response);
-                        },
+            return new Promise(function (resolve, reject) {
+                var requestFunc = function () {
+                    var fkeyPromise = providedFkey
+                        ? Promise.resolve(providedFkey)
+                        : _this.GetChannelFKey(roomId);
+                    return fkeyPromise.then(function (fKey) {
+                        GM_xmlhttpRequest({
+                            method: 'POST',
+                            url: _this.chatRoomUrl + "/chats/" + roomId + "/messages/new",
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            data: 'text=' + encodeURIComponent(message) + '&fkey=' + fKey,
+                            onload: function (response) {
+                                if (response.status !== 200) {
+                                    onFailure(response.statusText);
+                                }
+                                else {
+                                    resolve();
+                                }
+                            },
+                            onerror: function (response) {
+                                onFailure(response);
+                            },
+                        });
                     });
-                });
+                };
+                var numTries = 0;
+                var onFailure = function (errorMessage) {
+                    numTries++;
+                    if (numTries < 3) {
+                        var fkeyCacheKey = "StackExchange.ChatApi.FKey_" + roomId;
+                        GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(fkeyCacheKey);
+                        requestFunc();
+                    }
+                    else {
+                        reject(errorMessage);
+                    }
+                };
+                requestFunc();
             });
         };
         ChatApi.prototype.GetChannelPage = function (roomId) {
             var _this = this;
-            var cachingKey = "StackExchange.ChatApi.ChannelData_" + roomId;
             var getterPromise = new Promise(function (resolve, reject) {
                 GM_xmlhttpRequest({
                     method: 'GET',
@@ -2831,9 +2848,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     onerror: function (data) { return reject(data); }
                 });
             });
-            var expiryDate = new Date();
-            expiryDate.setDate(expiryDate.getDate() + 1);
-            return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(cachingKey, function () { return getterPromise; }, expiryDate);
+            return getterPromise;
         };
         return ChatApi;
     }());
@@ -5438,6 +5453,18 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                         GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(MetaSmokeAPI_1.MetaSmokeDisabledConfig, false);
                                         localStorage.setItem('MetaSmoke.ManualKey', prompt);
                                     }
+                                    return [2 /*return*/];
+                                });
+                            }); }),
+                            requiresReload: true
+                        }, {
+                            element: $('<a />').text('Clear chat FKey')
+                                .click(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+                                var roomId, fkeyCacheKey;
+                                return tslib_1.__generator(this, function (_a) {
+                                    roomId = 111347;
+                                    fkeyCacheKey = "StackExchange.ChatApi.FKey_" + roomId;
+                                    GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(fkeyCacheKey);
                                     return [2 /*return*/];
                                 });
                             }); }),

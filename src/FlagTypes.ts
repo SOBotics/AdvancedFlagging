@@ -138,7 +138,12 @@ export const flagCategories: FlagCategory[] = [
                 Id: 10,
                 DisplayName: 'Comment',
                 ReportType: 'AnswerNotAnAnswer',
-                GetComment: () => 'This does not provide an answer to the question. Once you have sufficient [reputation](https://stackoverflow.com/help/whats-reputation) you will be able to [comment on any post](https://stackoverflow.com/help/privileges/comment); instead, [provide answers that don\'t require clarification from the asker](https://meta.stackexchange.com/questions/214173/why-do-i-need-50-reputation-to-comment-what-can-i-do-instead).'
+                GetComment: (userDetails) => userDetails.Reputation < 50
+                    ? 'This does not provide an answer to the question. Once you have sufficient [reputation](https://stackoverflow.com/help/whats-reputation) ' +
+                    'you will be able to [comment on any post](https://stackoverflow.com/help/privileges/comment); instead, ' +
+                    '[provide answers that don\'t require clarification from the asker](https://meta.stackexchange.com/questions/214173/why-do-i-need-50-reputation-to-comment-what-can-i-do-instead).'
+                    : 
+                    'This does not provide an answer to the question. A comment should be written instead.'
             },
             {
                 Id: 14,

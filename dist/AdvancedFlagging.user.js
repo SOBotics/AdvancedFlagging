@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.0.3
+// @version      1.0.4
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1730,6 +1730,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
     var copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
     exports.ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
+    exports.ConfigurationDefaultNoFlag = 'AdvancedFlagging.Configuration.DefaultNoFlag';
     exports.ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlags';
     exports.ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
     exports.ConfigurationDetectAudits = 'AdvancedFlagging.Configuration.DetectAudits';
@@ -1841,7 +1842,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     function BuildFlaggingDialog(element, postId, postType, reputation, authorName, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorPromise) {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var getDivider, linkStyle, dropDown, checkboxName, leaveCommentBox, flagBox, isStackOverflow, comments, enabledFlagIds, hasCommentOptions, firstCategory, commentBoxLabel, commentingRow, flagBoxLabel, flaggingRow;
+            var getDivider, linkStyle, dropDown, checkboxName, leaveCommentBox, flagBox, isStackOverflow, comments, enabledFlagIds, hasCommentOptions, firstCategory, commentBoxLabel, commentingRow, flagBoxLabel, flaggingRow, defaultNoFlag;
             return tslib_1.__generator(this, function (_a) {
                 getDivider = function () { return $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' }); };
                 linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
@@ -2035,6 +2036,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
                 flagBoxLabel.click(function () { return flagBox.click(); });
                 flaggingRow = $('<dd />');
+                defaultNoFlag = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationDefaultNoFlag);
+                if (defaultNoFlag) {
+                    flagBox.prop('checked', false);
+                }
                 flaggingRow.append(flagBoxLabel);
                 flaggingRow.append(flagBox);
                 dropDown.append(flaggingRow);
@@ -5395,6 +5400,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         createConfigCheckbox('Watch for manual flags', AdvancedFlagging_1.ConfigurationWatchFlags),
                         createConfigCheckbox('Watch for queue responses', AdvancedFlagging_1.ConfigurationWatchQueues),
                         createConfigCheckbox('Disable AdvancedFlagging link', AdvancedFlagging_1.ConfigurationLinkDisabled),
+                        createConfigCheckbox('Uncheck \'flag\' by default', AdvancedFlagging_1.ConfigurationDefaultNoFlag)
                     ])];
             });
         });

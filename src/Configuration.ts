@@ -1,4 +1,4 @@
-import { ConfigurationWatchFlags, ConfigurationWatchQueues, ConfigurationDetectAudits, displaySuccess, metaSmokeKey, ConfigurationEnabledFlags, ConfigurationOpenOnHover, ConfigurationLinkDisabled } from 'AdvancedFlagging';
+import { ConfigurationWatchFlags, ConfigurationWatchQueues, ConfigurationDetectAudits, displaySuccess, metaSmokeKey, ConfigurationEnabledFlags, ConfigurationOpenOnHover, ConfigurationLinkDisabled, ConfigurationDefaultNoFlag } from 'AdvancedFlagging';
 import { MetaSmokeAPI, MetaSmokeDisabledConfig } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
 import { flagCategories } from 'FlagTypes';
 import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
@@ -140,6 +140,7 @@ async function GetGeneralConfigItems() {
         createConfigCheckbox('Watch for manual flags', ConfigurationWatchFlags),
         createConfigCheckbox('Watch for queue responses', ConfigurationWatchQueues),
         createConfigCheckbox('Disable AdvancedFlagging link', ConfigurationLinkDisabled),
+        createConfigCheckbox('Uncheck \'flag\' by default', ConfigurationDefaultNoFlag)
     ]);
 }
 

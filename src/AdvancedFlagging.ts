@@ -13,6 +13,7 @@ export const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20
 const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
 
 export const ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
+export const ConfigurationDefaultNoFlag = 'AdvancedFlagging.Configuration.DefaultNoFlag';
 export const ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlags';
 export const ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
 export const ConfigurationDetectAudits = 'AdvancedFlagging.Configuration.DetectAudits';
@@ -417,6 +418,12 @@ async function BuildFlaggingDialog(element: JQuery,
     flagBoxLabel.click(() => flagBox.click());
 
     const flaggingRow = $('<dd />');
+
+    const defaultNoFlag = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationDefaultNoFlag);
+    if (defaultNoFlag) {
+        flagBox.prop('checked', false);
+    }
+
     flaggingRow.append(flagBoxLabel);
     flaggingRow.append(flagBox);
 

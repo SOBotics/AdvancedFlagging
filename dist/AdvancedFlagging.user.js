@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.0.4
+// @version      1.0.5
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2425,7 +2425,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         }
                     });
                 }
-                GreaseMonkeyCache_1.GreaseMonkeyCache.ClearExpiredKeys();
                 return [2 /*return*/];
             });
         });
@@ -5448,6 +5447,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             var _this = this;
             return tslib_1.__generator(this, function (_a) {
                 return [2 /*return*/, [
+                        {
+                            element: $('<a />').text('Clear expired items from cache')
+                                .click(function () {
+                                GreaseMonkeyCache_1.GreaseMonkeyCache.ClearExpiredKeys();
+                            }),
+                            requiresReload: true
+                        },
                         {
                             element: $('<a />').text('Clear Metasmoke Configuration')
                                 .click(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {

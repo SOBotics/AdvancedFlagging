@@ -177,6 +177,13 @@ async function GetFlagSettings() {
 async function GetAdminConfigItems() {
     return [
         {
+            element: $('<a />').text('Clear expired items from cache')
+                .click(() => {
+                    GreaseMonkeyCache.ClearExpiredKeys();
+                }),
+            requiresReload: true
+        },
+        {
             element: $('<a />').text('Clear Metasmoke Configuration')
                 .click(async () => {
                     await MetaSmokeAPI.Reset();

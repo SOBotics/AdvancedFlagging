@@ -820,8 +820,6 @@ async function Setup() {
             }
         });
     }
-
-    GreaseMonkeyCache.ClearExpiredKeys();
 }
 
 $(async () => {

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.0.5
+// @version      1.0.6
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1551,9 +1551,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             parseFlagsPage(callback);
             return;
         }
-        if (isModPage()) {
-            parseModPage(callback);
-        }
+        // if (isModPage()) {
+        //     parseModPage(callback);
+        // }
         parseGenericPage(callback);
     }
     exports.parseQuestionsAndAnswers = parseQuestionsAndAnswers;

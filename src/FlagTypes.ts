@@ -143,7 +143,7 @@ export const flagCategories: FlagCategory[] = [
                     'you will be able to [comment on any post](https://stackoverflow.com/help/privileges/comment); instead, ' +
                     '[provide answers that don\'t require clarification from the asker](https://meta.stackexchange.com/questions/214173/why-do-i-need-50-reputation-to-comment-what-can-i-do-instead).'
                     :
-                    'This does not provide an answer to the question. A comment should be written instead.'
+                    'This does not provide an answer to the question. Please write a comment instead.'
             },
             {
                 Id: 14,

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.0.7
+// @version      1.0.8
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1367,7 +1367,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     exports.isNatoPage = isNatoPage;
     function isModPage() {
-        return !!window.location.href.match(/\/admin\/dashboard/);
+        return !!window.location.href.match(/\/admin/);
     }
     exports.isModPage = isModPage;
     function parseNatoPage(callback) {
@@ -1496,16 +1496,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
         }
     }
-    function parseModPage(callback) {
-        parseGenericPage(function (post) {
-            callback({
-                type: post.type,
-                element: post.element.closest('.mod-post-header'),
-                page: post.page,
-                postId: post.postId,
-            });
-        });
-    }
     function parseGenericPage(callback) {
         var questionNodes = $('.question-hyperlink');
         for (var i = 0; i < questionNodes.length; i++) {
@@ -1547,13 +1537,16 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             parseQuestionPage(callback);
             return;
         }
+        if (StackExchange.options.user.isModerator) {
+            return;
+        }
         if (isFlagsPage()) {
             parseFlagsPage(callback);
             return;
         }
-        // if (isModPage()) {
-        //     parseModPage(callback);
-        // }
+        if (isModPage()) {
+            return;
+        }
         parseGenericPage(callback);
     }
     exports.parseQuestionsAndAnswers = parseQuestionsAndAnswers;

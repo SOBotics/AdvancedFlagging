@@ -295,8 +295,6 @@ async function BuildFlaggingDialog(element: JQuery,
                 if (!deleted) {
                     try {
                         if (!leaveCommentBox.is(':checked')) {
-                            // Now we need to investigate the existing comments to upvote them.
-                            const commentTextItems = element.find('.comment-body .comment-copy').map((i, ele) => $(ele).text());
                             if (commentText) {
                                 // Match [some text](http://somehyperlink.com)
                                 let strippedComment = commentText.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '$1');
@@ -312,7 +310,7 @@ async function BuildFlaggingDialog(element: JQuery,
                                 // Strip out italics. *thanks* => thanks
                                 strippedComment = strippedComment.replace(/\*([^\*]+)\*/g, '$1');
 
-                                element.find('.comment-body .comment-copy').each((i, ele) => {
+                                element.find('.comment-body .comment-copy').each((ele) => {
                                     const jEle = $(ele);
                                     let text = jEle.text();
                                     const fromReviewText = ' - From Review';
@@ -476,9 +474,9 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
                 if (didReport) {
                     displaySuccess(`Feedback sent to ${reporter.name}`);
                 }
-            }).catch(error => {
-                displayError(`Failed to send feedback to ${reporter.name}.`);
-            });
+            }).catch(() => {
+                    displayError(`Failed to send feedback to ${reporter.name}.`);
+                });
         }
     }
 }
@@ -543,7 +541,7 @@ async function SetupPostPage() {
 
             reporters.push({
                 name: 'Guttenberg',
-                ReportNaa: (answerDate: Date, questionDate: Date) => copyPastorApi.ReportFalsePositive(),
+                ReportNaa: () => copyPastorApi.ReportFalsePositive(),
                 ReportRedFlag: () => Promise.resolve(false),
                 ReportLooksFine: () => copyPastorApi.ReportFalsePositive(),
                 ReportNeedsEditing: () => copyPastorApi.ReportFalsePositive(),
@@ -555,7 +553,7 @@ async function SetupPostPage() {
             const genericBotAPI = new GenericBotAPI(post.postId);
             reporters.push({
                 name: 'Generic Bot',
-                ReportNaa: (answerDate: Date, questionDate: Date) => genericBotAPI.ReportNaa(),
+                ReportNaa: () => genericBotAPI.ReportNaa(),
                 ReportRedFlag: () => Promise.resolve(false),
                 ReportLooksFine: () => genericBotAPI.ReportLooksFine(),
                 ReportNeedsEditing: () => genericBotAPI.ReportNeedsEditing(),
@@ -579,7 +577,7 @@ async function SetupPostPage() {
             });
         reporters.push({
             name: 'Smokey',
-            ReportNaa: (answerDate: Date, questionDate: Date) => metaSmoke.ReportNaa(post.postId, post.type),
+            ReportNaa: () => metaSmoke.ReportNaa(post.postId, post.type),
             ReportRedFlag: () => metaSmoke.ReportRedFlag(post.postId, post.type),
             ReportLooksFine: () => metaSmoke.ReportLooksFine(post.postId, post.type),
             ReportNeedsEditing: () => metaSmoke.ReportNeedsEditing(post.postId, post.type),
@@ -740,20 +738,6 @@ function getSmokeyIcon() {
         })
         .attr('title', 'Reported by Smokey')
         .hide();
-}
-
-function getDropdown() {
-    $('<dl />').css({
-        'margin': '0',
-        'z-index': '1',
-        'position': 'absolute',
-        'white-space': 'nowrap',
-        'background': '#FFF',
-        'padding': '5px',
-        'border': '1px solid #9fa6ad',
-        'box-shadow': '0 2px 4px rgba(36,39,41,0.3)',
-        'cursor': 'default'
-    }).hide();
 }
 
 const metaSmokeManualKey = 'MetaSmoke.ManualKey';

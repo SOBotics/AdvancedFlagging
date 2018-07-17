@@ -1928,8 +1928,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             if (!deleted) {
                                 try {
                                     if (!leaveCommentBox.is(':checked')) {
-                                        // Now we need to investigate the existing comments to upvote them.
-                                        var commentTextItems = element.find('.comment-body .comment-copy').map(function (i, ele) { return $(ele).text(); });
                                         if (commentText) {
                                             // Match [some text](http://somehyperlink.com)
                                             var strippedComment_1 = commentText.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '$1');
@@ -1941,7 +1939,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                             strippedComment_1 = strippedComment_1.replace(/\*\*([^\*]+)\*\*/g, '$1');
                                             // Strip out italics. *thanks* => thanks
                                             strippedComment_1 = strippedComment_1.replace(/\*([^\*]+)\*/g, '$1');
-                                            element.find('.comment-body .comment-copy').each(function (i, ele) {
+                                            element.find('.comment-body .comment-copy').each(function (ele) {
                                                 var jEle = $(ele);
                                                 var text = jEle.text();
                                                 var fromReviewText = ' - From Review';
@@ -2087,7 +2085,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     if (didReport) {
                         displaySuccess("Feedback sent to " + reporter.name);
                     }
-                }).catch(function (error) {
+                }).catch(function () {
                     displayError("Failed to send feedback to " + reporter.name + ".");
                 });
             }
@@ -2156,7 +2154,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                     });
                                     reporters.push({
                                         name: 'Guttenberg',
-                                        ReportNaa: function (answerDate, questionDate) { return copyPastorApi.ReportFalsePositive(); },
+                                        ReportNaa: function () { return copyPastorApi.ReportFalsePositive(); },
                                         ReportRedFlag: function () { return Promise.resolve(false); },
                                         ReportLooksFine: function () { return copyPastorApi.ReportFalsePositive(); },
                                         ReportNeedsEditing: function () { return copyPastorApi.ReportFalsePositive(); },
@@ -2167,7 +2165,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                     genericBotAPI_1 = new GenericBotAPI_1.GenericBotAPI(post.postId);
                                     reporters.push({
                                         name: 'Generic Bot',
-                                        ReportNaa: function (answerDate, questionDate) { return genericBotAPI_1.ReportNaa(); },
+                                        ReportNaa: function () { return genericBotAPI_1.ReportNaa(); },
                                         ReportRedFlag: function () { return Promise.resolve(false); },
                                         ReportLooksFine: function () { return genericBotAPI_1.ReportLooksFine(); },
                                         ReportNeedsEditing: function () { return genericBotAPI_1.ReportNeedsEditing(); },
@@ -2191,7 +2189,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                 });
                                 reporters.push({
                                     name: 'Smokey',
-                                    ReportNaa: function (answerDate, questionDate) { return metaSmoke.ReportNaa(post.postId, post.type); },
+                                    ReportNaa: function () { return metaSmoke.ReportNaa(post.postId, post.type); },
                                     ReportRedFlag: function () { return metaSmoke.ReportRedFlag(post.postId, post.type); },
                                     ReportLooksFine: function () { return metaSmoke.ReportLooksFine(post.postId, post.type); },
                                     ReportNeedsEditing: function () { return metaSmoke.ReportNeedsEditing(post.postId, post.type); },
@@ -2340,19 +2338,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         })
             .attr('title', 'Reported by Smokey')
             .hide();
-    }
-    function getDropdown() {
-        $('<dl />').css({
-            'margin': '0',
-            'z-index': '1',
-            'position': 'absolute',
-            'white-space': 'nowrap',
-            'background': '#FFF',
-            'padding': '5px',
-            'border': '1px solid #9fa6ad',
-            'box-shadow': '0 2px 4px rgba(36,39,41,0.3)',
-            'cursor': 'default'
-        }).hide();
     }
     var metaSmokeManualKey = 'MetaSmoke.ManualKey';
     function Setup() {

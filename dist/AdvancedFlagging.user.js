@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.0.8
+// @version      1.0.9
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -2106,6 +2106,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     return tslib_1.__generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
+                                if (!post.element.length) {
+                                    return [2 /*return*/];
+                                }
                                 advancedFlaggingLink = null;
                                 nattyIcon = getNattyIcon().click(function () {
                                     window.open("https://sentinel.erwaysoftware.com/posts/aid/" + post.postId, '_blank');

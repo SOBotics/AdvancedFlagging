@@ -486,6 +486,9 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
 let autoFlagging = false;
 async function SetupPostPage() {
     parseQuestionsAndAnswers(async post => {
+        if (!post.element.length) {
+            return;
+        }
 
         let iconLocation: JQuery;
         let advancedFlaggingLink: JQuery | null = null;

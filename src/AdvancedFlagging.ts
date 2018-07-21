@@ -348,7 +348,7 @@ async function BuildFlaggingDialog(element: JQuery,
 
                                 GreaseMonkeyCache.StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType, expiryDate);
                                 reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
-                                reportedIcon.show();
+                                reportedIcon.css('display', 'inline-block');
                                 displaySuccess('Flagged');
                             }).catch(err => {
                                 displayError('Failed to flag post');
@@ -475,8 +475,8 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
                     displaySuccess(`Feedback sent to ${reporter.name}`);
                 }
             }).catch(() => {
-                    displayError(`Failed to send feedback to ${reporter.name}.`);
-                });
+                displayError(`Failed to send feedback to ${reporter.name}.`);
+            });
         }
     }
 }
@@ -621,7 +621,7 @@ async function SetupPostPage() {
                         expiryDate.setDate(expiryDate.getDate() + 30);
                         GreaseMonkeyCache.StoreInCache(`AdvancedFlagging.Flagged.${post.postId}`, flagType, expiryDate);
                         reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
-                        reportedIcon.show();
+                        showFunc(reportedIcon);
                         displaySuccess('Flagged');
                     }
                 }
@@ -705,9 +705,10 @@ function getPerformedActionIcon() {
 }
 
 function getReportedIcon() {
-    return $('<div>').addClass('comment-flag')
-        .css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' })
-        .css({ cursor: 'default' })
+    return $('<div>')
+        .addClass('comment-flag')
+        .css({ color: '#C91D2E', cursor: 'default' })
+        .append('<svg aria-hidden="true" class="svg-icon iconFlag" width="18" height="18" viewBox="0 0 18 18"><path d="M3 2v14h2v-6h3.6l.4 1h6V3H9.5L9 2z"></path></svg>')
         .hide();
 }
 

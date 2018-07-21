@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.0.9
+// @version      1.0.10
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1972,7 +1972,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                             expiryDate.setDate(expiryDate.getDate() + 30);
                                             GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache("AdvancedFlagging.Flagged." + postId, flagType, expiryDate);
                                             reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
-                                            reportedIcon.show();
+                                            reportedIcon.css('display', 'inline-block');
                                             displaySuccess('Flagged');
                                         }).catch(function (err) {
                                             displayError('Failed to flag post');
@@ -2227,7 +2227,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                             expiryDate.setDate(expiryDate.getDate() + 30);
                                             GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache("AdvancedFlagging.Flagged." + post.postId, flagType, expiryDate);
                                             reportedIcon.attr('title', "Flagged as " + flagType.ReportType);
-                                            reportedIcon.show();
+                                            showFunc(reportedIcon);
                                             displaySuccess('Flagged');
                                         }
                                     }
@@ -2307,9 +2307,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             .hide();
     }
     function getReportedIcon() {
-        return $('<div>').addClass('comment-flag')
-            .css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' })
-            .css({ cursor: 'default' })
+        return $('<div>')
+            .addClass('comment-flag')
+            .css({ color: '#C91D2E', cursor: 'default' })
+            .append('<svg aria-hidden="true" class="svg-icon iconFlag" width="18" height="18" viewBox="0 0 18 18"><path d="M3 2v14h2v-6h3.6l.4 1h6V3H9.5L9 2z"></path></svg>')
             .hide();
     }
     function getNattyIcon() {
@@ -3284,7 +3285,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(7)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, sotools_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var genericBotUrl = 'https://so.floern.com/api/trackpost.php';
     var genericBotKey = 'Cm45BSrt51FR3ju';
     var GenericBotAPI = /** @class */ (function () {
         function GenericBotAPI(answerId) {

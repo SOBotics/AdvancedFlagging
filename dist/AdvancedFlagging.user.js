@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.0.11
+// @version      1.0.12
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1939,7 +1939,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                             strippedComment_1 = strippedComment_1.replace(/\*\*([^\*]+)\*\*/g, '$1');
                                             // Strip out italics. *thanks* => thanks
                                             strippedComment_1 = strippedComment_1.replace(/\*([^\*]+)\*/g, '$1');
-                                            element.find('.comment-body .comment-copy').each(function (ele) {
+                                            element.find('.comment-body .comment-copy').each(function (index, ele) {
                                                 var jEle = $(ele);
                                                 var text = jEle.text();
                                                 var fromReviewText = ' - From Review';

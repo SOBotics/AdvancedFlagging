@@ -310,7 +310,7 @@ async function BuildFlaggingDialog(element: JQuery,
                                 // Strip out italics. *thanks* => thanks
                                 strippedComment = strippedComment.replace(/\*([^\*]+)\*/g, '$1');
 
-                                element.find('.comment-body .comment-copy').each((ele) => {
+                                element.find('.comment-body .comment-copy').each((index, ele) => {
                                     const jEle = $(ele);
                                     let text = jEle.text();
                                     const fromReviewText = ' - From Review';

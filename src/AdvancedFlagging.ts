@@ -767,7 +767,7 @@ async function Setup() {
                 const content = $(review.content);
                 postDetails[postId] = {
                     questionTime: parseDate($('.post-signature.owner .user-action-time span', content).attr('title')),
-                    answerTime: parseDate($('.post-signature .user-action-time span', content).attr('title'))
+                    answerTime: parseDate($('.user-info .user-action-time span', content).attr('title'))
                 };
             };
 

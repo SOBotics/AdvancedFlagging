@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.0.10
+// @version      1.0.11
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -1399,9 +1399,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     function parseQuestionPage(callback) {
         function getPostDetails(node) {
             var score = parseInt(node.find('.vote-count-post').text(), 10);
-            var authorReputation = parseReputation(node.find('.post-signature .reputation-score').last());
-            var _a = parseAuthorDetails(node.find('.post-signature .user-details').last()), authorName = _a.authorName, authorId = _a.authorId;
-            var postTime = parseActionDate(node.find('.post-signature .relativetime').last());
+            var authorReputation = parseReputation(node.find('.user-info .reputation-score').last());
+            var _a = parseAuthorDetails(node.find('.user-info .user-details').last()), authorName = _a.authorName, authorId = _a.authorId;
+            var postTime = parseActionDate(node.find('.user-info .relativetime').last());
             return { score: score, authorReputation: authorReputation, authorName: authorName, authorId: authorId, postTime: postTime };
         }
         var question;
@@ -2369,7 +2369,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             var content = $(review.content);
                             postDetails[postId] = {
                                 questionTime: sotools_1.parseDate($('.post-signature.owner .user-action-time span', content).attr('title')),
-                                answerTime: sotools_1.parseDate($('.post-signature .user-action-time span', content).attr('title'))
+                                answerTime: sotools_1.parseDate($('.user-info .user-action-time span', content).attr('title'))
                             };
                         };
                         // We can't just parse the page after a recommend/delete request, as the page will have sometimes already updated

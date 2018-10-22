@@ -2311,7 +2311,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                             showFunc(copyPastorIcon);
                                             copyPastorIcon.click(function () {
                                                 return items.forEach(function (item) {
-                                                    window.open('http://copypastor.sobotics.org/posts/' + item.post_id);
+                                                    window.open('https://copypastor.sobotics.org/posts/' + item.post_id);
                                                 });
                                             });
                                         }
@@ -5106,7 +5106,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(3), __webpack_require__(9), __webpack_require__(5), __webpack_require__(18), __webpack_require__(46)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, tslib_1, SimpleCache_1, ReplaySubject_1, Subject_1, ChatApi_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var copyPastorServer = 'http://copypastor.sobotics.org';
+    var copyPastorServer = 'https://copypastor.sobotics.org';
     var soboticsRoomId = 111347;
     var CopyPastorAPI = /** @class */ (function () {
         function CopyPastorAPI(answerId, key) {

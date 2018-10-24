@@ -50,7 +50,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Plagiarism',
                 ReportType: 'PostOther',
                 Enabled: (hasDuplicatePostLinks) => hasDuplicatePostLinks,
-                GetCustomFlagText: (copyPastorItem) => `Possible plagiarism of another answer https:${copyPastorItem.target_url}, as can be seen here http://copypastor.sobotics.org/posts/${copyPastorItem.post_id}`
+                GetCustomFlagText: (copyPastorItem) => `Possible plagiarism of another answer https:${copyPastorItem.target_url}, as can be seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}`
             },
             {
                 Id: 4,
@@ -58,14 +58,14 @@ export const flagCategories: FlagCategory[] = [
                 ReportType: 'PostOther',
                 Enabled: (hasDuplicatePostLinks) => hasDuplicatePostLinks,
                 GetComment: () => 'Please don\'t add the [same answer to multiple questions](http://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.',
-                GetCustomFlagText: (copyPastorItem) => `The answer is a repost of their other answer https:${copyPastorItem.target_url}, but as there are slight differences as seen here http://copypastor.sobotics.org/posts/${copyPastorItem.post_id}, an auto flag wouldn't be raised.`
+                GetCustomFlagText: (copyPastorItem) => `The answer is a repost of their other answer https:${copyPastorItem.target_url}, but as there are slight differences as seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}, an auto flag wouldn't be raised.`
             },
             {
                 Id: 18,
                 DisplayName: 'Bad attribution',
                 ReportType: 'PostOther',
                 Enabled: (hasDuplicatePostLinks) => hasDuplicatePostLinks,
-                GetCustomFlagText: (copyPastorItem) => `This post is copied from [another answer](https:${copyPastorItem.target_url}), as can be seen [here](http://copypastor.sobotics.org/posts/${copyPastorItem.post_id}). The author only added a link to the other answer, which is [not the proper way of attribution](https://stackoverflow.blog/2009/06/25/attribution-required/).`
+                GetCustomFlagText: (copyPastorItem) => `This post is copied from [another answer](https:${copyPastorItem.target_url}), as can be seen [here](https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}). The author only added a link to the other answer, which is [not the proper way of attribution](https://stackoverflow.blog/2009/06/25/attribution-required/).`
             }
         ]
     },

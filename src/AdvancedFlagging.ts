@@ -531,7 +531,7 @@ async function SetupPostPage() {
                     showFunc(copyPastorIcon);
                     copyPastorIcon.click(() =>
                         items.forEach(item => {
-                            window.open('http://copypastor.sobotics.org/posts/' + item.post_id);
+                            window.open('https://copypastor.sobotics.org/posts/' + item.post_id);
                         })
                     );
                 } else {

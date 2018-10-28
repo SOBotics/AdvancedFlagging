@@ -200,7 +200,7 @@ async function BuildFlaggingDialog(element: JQuery,
     const linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
     const dropDown = $('<dl />').css({
         'margin': '0',
-        'z-index': '1',
+        'z-index': '3',
         'position': 'absolute',
         'white-space': 'nowrap',
         'background': '#FFF',

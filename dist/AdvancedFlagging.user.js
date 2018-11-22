@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.0.16
+// @version      1.1.1
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -803,7 +803,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
         }
     }
-    $(async () => {
+    $(() => {
         let started = false;
         async function actionWatcher() {
             if (!started) {
@@ -821,7 +821,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         // Then we execute the script.
         // This is done to prevent DOSing dashboard apis, if a bunch of links are opened at once.
         if (document.hasFocus && document.hasFocus()) {
-            await actionWatcher();
+            actionWatcher();
         }
     });
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
@@ -13332,7 +13332,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 207 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(4), __webpack_require__(205)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, rxjs_1, GreaseMonkeyCache_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(4), __webpack_require__(104), __webpack_require__(205)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, rxjs_1, operators_1, GreaseMonkeyCache_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
@@ -13478,7 +13478,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             const observableKey = this.GetObservableKey(postId, postType);
             const observable = MetaSmokeAPI.ObservableLookup[observableKey];
             if (observable) {
-                return observable.take(1).toPromise();
+                return observable.pipe(operators_1.take(1)).toPromise();
             }
             return null;
         }

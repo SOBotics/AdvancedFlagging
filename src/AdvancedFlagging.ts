@@ -810,7 +810,7 @@ async function Setup() {
     }
 }
 
-$(async () => {
+$(() => {
     let started = false;
     async function actionWatcher() {
         if (!started) {
@@ -830,6 +830,6 @@ $(async () => {
     // Then we execute the script.
     // This is done to prevent DOSing dashboard apis, if a bunch of links are opened at once.
     if (document.hasFocus && document.hasFocus()) {
-        await actionWatcher();
+        actionWatcher();
     }
 });

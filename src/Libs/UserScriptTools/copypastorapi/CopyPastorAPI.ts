@@ -18,9 +18,9 @@ export type CopyPastorFindTargetResponse = {
     status: 'success';
     posts: CopyPastorFindTargetResponseItem[];
 } | {
-        status: 'failure';
-        message: string;
-    };
+    status: 'failure';
+    message: string;
+};
 
 export class CopyPastorAPI {
     private subject: Subject<CopyPastorFindTargetResponseItem[]>;
@@ -35,7 +35,8 @@ export class CopyPastorAPI {
     public Watch(): Observable<CopyPastorFindTargetResponseItem[]> {
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 30);
-        GreaseMonkeyCache.GetAndCache(`CopyPastor.FindTarget.${this.answerId}`, () => new Promise<CopyPastorFindTargetResponseItem[]>((resolve, reject) => {
+
+        new Promise<CopyPastorFindTargetResponseItem[]>((resolve, reject) => {
             const url = `${copyPastorServer}/posts/findTarget?url=//${window.location.hostname}/a/${this.answerId}`;
             GM_xmlhttpRequest({
                 method: 'GET',
@@ -52,9 +53,9 @@ export class CopyPastorAPI {
                     reject(response);
                 },
             });
-        }), expiryDate)
-            .then(r => this.subject.next(r))
-            .catch(err => this.subject.error(err));
+        })
+        .then(r => this.subject.next(r))
+        .catch(err => this.subject.error(err));
 
         return this.subject;
     }

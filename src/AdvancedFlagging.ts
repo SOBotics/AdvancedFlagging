@@ -87,45 +87,40 @@ function handleFlagAndComment(postId: number, flag: FlagType,
 
     if (flagRequired) {
         if (flag.ReportType !== 'NoFlag') {
-            const wasFlagged = GreaseMonkeyCache.GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${postId}`);
-            if (!wasFlagged) {
-                if (flag.ReportType === 'PostOther') {
-                    // Do something here
-                    result.FlagPromise = new Promise((resolve, reject) => {
-                        copyPastorPromise.then(copyPastorResults => {
-                            if (flag.GetCustomFlagText && copyPastorResults.length > 0) {
-                                const flagText = flag.GetCustomFlagText(copyPastorResults[0]);
-                                autoFlagging = true;
-                                $.ajax({
-                                    url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
-                                    type: 'POST',
-                                    data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
-                                }).done((data) => {
-                                    setTimeout(() => autoFlagging = false, 500);
-                                    resolve(data);
-                                }).fail((jqXHR, textStatus, errorThrown) => {
-                                    reject({ jqXHR, textStatus, errorThrown });
-                                });
-                            }
-                        });
-
+            if (flag.ReportType === 'PostOther') {
+                result.FlagPromise = new Promise((resolve, reject) => {
+                    copyPastorPromise.then(copyPastorResults => {
+                        if (flag.GetCustomFlagText && copyPastorResults.length > 0) {
+                            const flagText = flag.GetCustomFlagText(copyPastorResults[0]);
+                            autoFlagging = true;
+                            $.ajax({
+                                url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
+                                type: 'POST',
+                                data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
+                            }).done((data) => {
+                                setTimeout(() => autoFlagging = false, 500);
+                                resolve(data);
+                            }).fail((jqXHR, textStatus, errorThrown) => {
+                                reject({ jqXHR, textStatus, errorThrown });
+                            });
+                        }
                     });
 
-                } else {
-                    result.FlagPromise = new Promise((resolve, reject) => {
-                        autoFlagging = true;
-                        $.ajax({
-                            url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
-                            type: 'POST',
-                            data: { fkey: StackExchange.options.user.fkey, otherText: '' }
-                        }).done((data) => {
-                            setTimeout(() => autoFlagging = false, 500);
-                            resolve(data);
-                        }).fail((jqXHR, textStatus, errorThrown) => {
-                            reject({ jqXHR, textStatus, errorThrown });
-                        });
+                });
+            } else {
+                result.FlagPromise = new Promise((resolve, reject) => {
+                    autoFlagging = true;
+                    $.ajax({
+                        url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
+                        type: 'POST',
+                        data: { fkey: StackExchange.options.user.fkey, otherText: '' }
+                    }).done((data) => {
+                        setTimeout(() => autoFlagging = false, 500);
+                        resolve(data);
+                    }).fail((jqXHR, textStatus, errorThrown) => {
+                        reject({ jqXHR, textStatus, errorThrown });
                     });
-                }
+                });
             }
         }
     }
@@ -345,8 +340,6 @@ async function BuildFlaggingDialog(element: JQuery,
                             result.FlagPromise.then(() => {
                                 const expiryDate = new Date();
                                 expiryDate.setDate(expiryDate.getDate() + 30);
-
-                                GreaseMonkeyCache.StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType, expiryDate);
                                 reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
                                 reportedIcon.css('display', 'inline-block');
                                 displaySuccess('Flagged');
@@ -363,8 +356,6 @@ async function BuildFlaggingDialog(element: JQuery,
                 if (noFlag) {
                     const expiryDate = new Date();
                     expiryDate.setDate(expiryDate.getDate() + 30);
-
-                    GreaseMonkeyCache.StoreInCache(`AdvancedFlagging.PerformedAction.${postId}`, flagType, expiryDate);
                     performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
                     performedActionIcon.show();
                 }
@@ -619,7 +610,6 @@ async function SetupPostPage() {
 
                         const expiryDate = new Date();
                         expiryDate.setDate(expiryDate.getDate() + 30);
-                        GreaseMonkeyCache.StoreInCache(`AdvancedFlagging.Flagged.${post.postId}`, flagType, expiryDate);
                         reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
                         showFunc(reportedIcon);
                         displaySuccess('Flagged');
@@ -680,18 +670,6 @@ async function SetupPostPage() {
             iconLocation.after(nattyIcon);
             iconLocation.after(reportedIcon);
             iconLocation.after(performedActionIcon);
-        }
-
-        const previousFlag = GreaseMonkeyCache.GetFromCache<FlagType>(`AdvancedFlagging.Flagged.${post.postId}`);
-        if (previousFlag) {
-            reportedIcon.attr('title', `Previously flagged as ${previousFlag.ReportType}`);
-            showFunc(reportedIcon);
-        }
-
-        const previousAction = GreaseMonkeyCache.GetFromCache<FlagType>(`AdvancedFlagging.PerformedAction.${post.postId}`);
-        if (previousAction && previousAction.ReportType === 'NoFlag') {
-            performedActionIcon.attr('title', `Previously performed action: ${previousAction.DisplayName}`);
-            showFunc(performedActionIcon);
         }
     });
 }

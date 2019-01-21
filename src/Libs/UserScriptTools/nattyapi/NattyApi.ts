@@ -41,7 +41,7 @@ export class NattyAPI {
         if (IsStackOverflow()) {
             const expiryDate = new Date();
             expiryDate.setDate(expiryDate.getDate() + 1);
-            GreaseMonkeyCache.GetAndCache(`NattyApi.Feedback.${this.answerId}`, () => new Promise<boolean>((resolve, reject) => {
+            new Promise<boolean>((resolve, reject) => {
                 let numTries = 0;
                 const onError = (response: any) => {
                     numTries++;
@@ -75,7 +75,7 @@ export class NattyAPI {
                 };
 
                 makeRequest();
-            }), expiryDate)
+            })
                 .then(r => this.subject.next(r))
                 .catch(err => this.subject.error(err));
         }
@@ -110,7 +110,6 @@ export class NattyAPI {
             await promise.then(() => {
                 const expiryDate = new Date();
                 expiryDate.setDate(expiryDate.getDate() + 30);
-                GreaseMonkeyCache.StoreInCache(`NattyApi.Feedback.${this.answerId}`, true, expiryDate);
                 this.subject.next(true);
             });
             return true;

@@ -81,17 +81,6 @@ export class MetaSmokeAPI {
     private static pendingPosts: { postId: number, postType: 'Answer' | 'Question' }[] = [];
     private static pendingTimeout: number | null = null;
     private static QueryMetaSmoke(postId: number, postType: 'Answer' | 'Question') {
-        const url = MetaSmokeAPI.GetQueryUrl(postId, postType);
-        const existingResult = GreaseMonkeyCache.GetFromCache<number | null>(`${MetaSmokeWasReportedConfig}.${url}`);
-        if (existingResult !== undefined) {
-            const key = MetaSmokeAPI.GetObservableKey(postId, postType);
-            const obs = MetaSmokeAPI.ObservableLookup[key];
-            if (obs) {
-                obs.next(existingResult);
-                // setTimeout(() => obs.next(existingResult), 100);
-            }
-            return;
-        }
         if (this.pendingTimeout) {
             clearTimeout(this.pendingTimeout);
         }
@@ -131,7 +120,6 @@ export class MetaSmokeAPI {
                         const obs = MetaSmokeAPI.ObservableLookup[key];
                         if (obs) {
                             obs.next(item.id);
-                            GreaseMonkeyCache.StoreInCache<number | null>(`${MetaSmokeWasReportedConfig}.${item.link}`, item.id, expiryDate);
                         }
                         delete pendingPostLookup[item.link];
                     }
@@ -143,7 +131,6 @@ export class MetaSmokeAPI {
                         const obs = MetaSmokeAPI.ObservableLookup[key];
                         if (obs) {
                             obs.next(null);
-                            GreaseMonkeyCache.StoreInCache<number | null>(`${MetaSmokeWasReportedConfig}.${url}`, null, expiryDate);
                         }
                     }
                 }
@@ -247,7 +234,6 @@ export class MetaSmokeAPI {
             const result = await promise;
             const queryUrlStr = MetaSmokeAPI.GetQueryUrl(postId, postType);
 
-            GreaseMonkeyCache.Unset(`${MetaSmokeWasReportedConfig}.${queryUrlStr}`);
             await Delay(1000);
             MetaSmokeAPI.QueryMetaSmoke(postId, postType);
             return result;

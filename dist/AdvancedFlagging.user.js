@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.1.1
+// @version      1.2.0
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -178,44 +178,40 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         if (flagRequired) {
             if (flag.ReportType !== 'NoFlag') {
-                const wasFlagged = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(`AdvancedFlagging.Flagged.${postId}`);
-                if (!wasFlagged) {
-                    if (flag.ReportType === 'PostOther') {
-                        // Do something here
-                        result.FlagPromise = new Promise((resolve, reject) => {
-                            copyPastorPromise.then(copyPastorResults => {
-                                if (flag.GetCustomFlagText && copyPastorResults.length > 0) {
-                                    const flagText = flag.GetCustomFlagText(copyPastorResults[0]);
-                                    autoFlagging = true;
-                                    $.ajax({
-                                        url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
-                                        type: 'POST',
-                                        data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
-                                    }).done((data) => {
-                                        setTimeout(() => autoFlagging = false, 500);
-                                        resolve(data);
-                                    }).fail((jqXHR, textStatus, errorThrown) => {
-                                        reject({ jqXHR, textStatus, errorThrown });
-                                    });
-                                }
-                            });
+                if (flag.ReportType === 'PostOther') {
+                    result.FlagPromise = new Promise((resolve, reject) => {
+                        copyPastorPromise.then(copyPastorResults => {
+                            if (flag.GetCustomFlagText && copyPastorResults.length > 0) {
+                                const flagText = flag.GetCustomFlagText(copyPastorResults[0]);
+                                autoFlagging = true;
+                                $.ajax({
+                                    url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
+                                    type: 'POST',
+                                    data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
+                                }).done((data) => {
+                                    setTimeout(() => autoFlagging = false, 500);
+                                    resolve(data);
+                                }).fail((jqXHR, textStatus, errorThrown) => {
+                                    reject({ jqXHR, textStatus, errorThrown });
+                                });
+                            }
                         });
-                    }
-                    else {
-                        result.FlagPromise = new Promise((resolve, reject) => {
-                            autoFlagging = true;
-                            $.ajax({
-                                url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
-                                type: 'POST',
-                                data: { fkey: StackExchange.options.user.fkey, otherText: '' }
-                            }).done((data) => {
-                                setTimeout(() => autoFlagging = false, 500);
-                                resolve(data);
-                            }).fail((jqXHR, textStatus, errorThrown) => {
-                                reject({ jqXHR, textStatus, errorThrown });
-                            });
+                    });
+                }
+                else {
+                    result.FlagPromise = new Promise((resolve, reject) => {
+                        autoFlagging = true;
+                        $.ajax({
+                            url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
+                            type: 'POST',
+                            data: { fkey: StackExchange.options.user.fkey, otherText: '' }
+                        }).done((data) => {
+                            setTimeout(() => autoFlagging = false, 500);
+                            resolve(data);
+                        }).fail((jqXHR, textStatus, errorThrown) => {
+                            reject({ jqXHR, textStatus, errorThrown });
                         });
-                    }
+                    });
                 }
             }
         }
@@ -392,7 +388,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                 result.FlagPromise.then(() => {
                                     const expiryDate = new Date();
                                     expiryDate.setDate(expiryDate.getDate() + 30);
-                                    GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(`AdvancedFlagging.Flagged.${postId}`, flagType, expiryDate);
                                     reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
                                     reportedIcon.css('display', 'inline-block');
                                     displaySuccess('Flagged');
@@ -411,7 +406,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     if (noFlag) {
                         const expiryDate = new Date();
                         expiryDate.setDate(expiryDate.getDate() + 30);
-                        GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(`AdvancedFlagging.PerformedAction.${postId}`, flagType, expiryDate);
                         performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
                         performedActionIcon.show();
                     }
@@ -636,7 +630,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             handleFlag(flagType, reporters, answerTime, questionTime);
                             const expiryDate = new Date();
                             expiryDate.setDate(expiryDate.getDate() + 30);
-                            GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(`AdvancedFlagging.Flagged.${post.postId}`, flagType, expiryDate);
                             reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
                             showFunc(reportedIcon);
                             displaySuccess('Flagged');
@@ -687,16 +680,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 iconLocation.after(nattyIcon);
                 iconLocation.after(reportedIcon);
                 iconLocation.after(performedActionIcon);
-            }
-            const previousFlag = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(`AdvancedFlagging.Flagged.${post.postId}`);
-            if (previousFlag) {
-                reportedIcon.attr('title', `Previously flagged as ${previousFlag.ReportType}`);
-                showFunc(reportedIcon);
-            }
-            const previousAction = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(`AdvancedFlagging.PerformedAction.${post.postId}`);
-            if (previousAction && previousAction.ReportType === 'NoFlag') {
-                performedActionIcon.attr('title', `Previously performed action: ${previousAction.DisplayName}`);
-                showFunc(performedActionIcon);
             }
         });
     }
@@ -1241,7 +1224,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(4), __webpack_require__(104), __webpack_require__(2), __webpack_require__(204), __webpack_require__(205)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, rxjs_1, operators_1, sotools_1, ChatApi_1, GreaseMonkeyCache_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(4), __webpack_require__(104), __webpack_require__(2), __webpack_require__(204)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, rxjs_1, operators_1, sotools_1, ChatApi_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const nattyFeedbackUrl = 'http://logs.sobotics.org/napi/api/feedback';
@@ -1258,7 +1241,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             if (sotools_1.IsStackOverflow()) {
                 const expiryDate = new Date();
                 expiryDate.setDate(expiryDate.getDate() + 1);
-                GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(`NattyApi.Feedback.${this.answerId}`, () => new Promise((resolve, reject) => {
+                new Promise((resolve, reject) => {
                     let numTries = 0;
                     const onError = (response) => {
                         numTries++;
@@ -1293,7 +1276,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         });
                     };
                     makeRequest();
-                }), expiryDate)
+                })
                     .then(r => this.subject.next(r))
                     .catch(err => this.subject.error(err));
             }
@@ -1326,7 +1309,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 await promise.then(() => {
                     const expiryDate = new Date();
                     expiryDate.setDate(expiryDate.getDate() + 30);
-                    GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(`NattyApi.Feedback.${this.answerId}`, true, expiryDate);
                     this.subject.next(true);
                 });
                 return true;
@@ -13391,17 +13373,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
         }
         static QueryMetaSmoke(postId, postType) {
-            const url = MetaSmokeAPI.GetQueryUrl(postId, postType);
-            const existingResult = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(`${exports.MetaSmokeWasReportedConfig}.${url}`);
-            if (existingResult !== undefined) {
-                const key = MetaSmokeAPI.GetObservableKey(postId, postType);
-                const obs = MetaSmokeAPI.ObservableLookup[key];
-                if (obs) {
-                    obs.next(existingResult);
-                    // setTimeout(() => obs.next(existingResult), 100);
-                }
-                return;
-            }
             if (this.pendingTimeout) {
                 clearTimeout(this.pendingTimeout);
             }
@@ -13439,7 +13410,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             const obs = MetaSmokeAPI.ObservableLookup[key];
                             if (obs) {
                                 obs.next(item.id);
-                                GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(`${exports.MetaSmokeWasReportedConfig}.${item.link}`, item.id, expiryDate);
                             }
                             delete pendingPostLookup[item.link];
                         }
@@ -13451,7 +13421,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             const obs = MetaSmokeAPI.ObservableLookup[key];
                             if (obs) {
                                 obs.next(null);
-                                GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(`${exports.MetaSmokeWasReportedConfig}.${url}`, null, expiryDate);
                             }
                         }
                     }
@@ -13546,7 +13515,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
                 const result = await promise;
                 const queryUrlStr = MetaSmokeAPI.GetQueryUrl(postId, postType);
-                GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(`${exports.MetaSmokeWasReportedConfig}.${queryUrlStr}`);
                 await Delay(1000);
                 MetaSmokeAPI.QueryMetaSmoke(postId, postType);
                 return result;
@@ -13605,7 +13573,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 208 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(4), __webpack_require__(104), __webpack_require__(204), __webpack_require__(205)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, rxjs_1, operators_1, ChatApi_1, GreaseMonkeyCache_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(4), __webpack_require__(104), __webpack_require__(204)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, rxjs_1, operators_1, ChatApi_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const copyPastorServer = 'https://copypastor.sobotics.org';
@@ -13621,7 +13589,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         Watch() {
             const expiryDate = new Date();
             expiryDate.setDate(expiryDate.getDate() + 30);
-            GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(`CopyPastor.FindTarget.${this.answerId}`, () => new Promise((resolve, reject) => {
+            new Promise((resolve, reject) => {
                 const url = `${copyPastorServer}/posts/findTarget?url=//${window.location.hostname}/a/${this.answerId}`;
                 GM_xmlhttpRequest({
                     method: 'GET',
@@ -13639,7 +13607,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         reject(response);
                     },
                 });
-            }), expiryDate)
+            })
                 .then(r => this.subject.next(r))
                 .catch(err => this.subject.error(err));
             return this.subject;

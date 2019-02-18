@@ -55,7 +55,7 @@ export class MetaSmokeAPI {
                 const returnCode = await new Promise<string | undefined>((resolve) => {
                     const handleFDSCCode = () => {
                         $(window).off('focus', handleFDSCCode);
-                        const code = window.prompt('Once you\'ve authenticated FDSC with metasmoke, you\'ll be given a code; enter it here.');
+                        const code = window.prompt('Once you\'ve authenticated Advanced Flagging with metasmoke, you\'ll be given a code; enter it here.');
                         if (!code) {
                             resolve();
                         } else {

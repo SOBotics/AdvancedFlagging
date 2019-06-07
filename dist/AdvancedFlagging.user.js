@@ -2593,7 +2593,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     ReportType: 'AnswerNotAnAnswer',
                     GetComment: function () { return 'Welcome to Stack Overflow. Please write your answer in English, as Stack Overflow is an [English only site](https://meta.stackoverflow.com/a/297680).'; }
                 },
-				{
+		{
                     Id: 18,
                     DisplayName: 'Edit Question',
                     ReportType: 'AnswerNotAnAnswer',

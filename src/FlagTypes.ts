@@ -156,6 +156,12 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Non English',
                 ReportType: 'AnswerNotAnAnswer',
                 GetComment: () => 'Welcome to Stack Overflow. Please write your answer in English, as Stack Overflow is an [English only site](https://meta.stackoverflow.com/a/297680).'
+            },
+            {
+                Id: 18,
+                DisplayName: 'Should be an edit',
+                ReportType: 'AnswerNotAnAnswer',
+                GetComment: () => 'Please use the edit link on your question to add additional information. The Post Answer button should be used only for complete answers to the question.'
             }
         ]
     },

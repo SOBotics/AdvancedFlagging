@@ -119,6 +119,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
     exports.ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
     exports.ConfigurationDefaultNoFlag = 'AdvancedFlagging.Configuration.DefaultNoFlag';
+    exports.ConfigurationDefaultNoComment = 'AdvancedFlagging.Configuration.DefaultNoComment';
     exports.ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlags';
     exports.ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
     exports.ConfigurationDetectAudits = 'AdvancedFlagging.Configuration.DetectAudits';
@@ -279,7 +280,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         const isStackOverflow = sotools_1.IsStackOverflow();
         const comments = element.find('.comment-body');
         if (comments.length === 0 && isStackOverflow) {
-            leaveCommentBox.prop('checked', false);
+            leaveCommentBox.prop('checked', true);
         }
         const enabledFlagIds = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationEnabledFlags);
         let hasCommentOptions = false;
@@ -446,6 +447,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         const defaultNoFlag = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationDefaultNoFlag);
         if (defaultNoFlag) {
             flagBox.prop('checked', false);
+        }
+        const defaultNoComment = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationDefaultNoComment);
+        if (defaultNoComment) {
+            leaveCommentBox.prop('checked', false);
         }
         flaggingRow.append(flagBoxLabel);
         flaggingRow.append(flagBox);
@@ -13865,6 +13870,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             createConfigCheckbox('Watch for manual flags', AdvancedFlagging_1.ConfigurationWatchFlags),
             createConfigCheckbox('Watch for queue responses', AdvancedFlagging_1.ConfigurationWatchQueues),
             createConfigCheckbox('Disable AdvancedFlagging link', AdvancedFlagging_1.ConfigurationLinkDisabled),
+            createConfigCheckbox('Uncheck \'Comment\' by default', AdvancedFlagging_1.ConfigurationDefaultNoComment),
             createConfigCheckbox('Uncheck \'flag\' by default', AdvancedFlagging_1.ConfigurationDefaultNoFlag)
         ]);
     }

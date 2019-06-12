@@ -218,7 +218,7 @@ async function BuildFlaggingDialog(element: JQuery,
 
     const comments = element.find('.comment-body');
     if (comments.length === 0 && isStackOverflow) {
-        leaveCommentBox.prop('checked', true);
+        leaveCommentBox.prop('checked', false);
     }
 
     const enabledFlagIds = GreaseMonkeyCache.GetFromCache<number[]>(ConfigurationEnabledFlags);

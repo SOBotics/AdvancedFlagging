@@ -218,7 +218,9 @@ async function BuildFlaggingDialog(element: JQuery,
     const isStackOverflow = IsStackOverflow();
 
     const comments = element.find('.comment-body');
-    if (comments.length === 0 && isStackOverflow) {
+    const defaultNoComment = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationDefaultNoComment);
+
+    if (!defaultNoComment && comments.length === 0 && isStackOverflow) {
         leaveCommentBox.prop('checked', true);
     }
 
@@ -412,10 +414,6 @@ async function BuildFlaggingDialog(element: JQuery,
     const defaultNoFlag = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationDefaultNoFlag);
     if (defaultNoFlag) {
         flagBox.prop('checked', false);
-    }
-    const defaultNoComment = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationDefaultNoComment);
-    if (defaultNoComment) {
-        leaveCommentBox.prop('checked', false);
     }
 
     flaggingRow.append(flagBoxLabel);

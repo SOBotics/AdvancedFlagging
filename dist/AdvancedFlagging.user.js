@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.2.2
+// @version      1.2.3
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -853,7 +853,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     DisplayName: 'Duplicate answer',
                     ReportType: 'PostOther',
                     Enabled: (hasDuplicatePostLinks) => hasDuplicatePostLinks,
-                    GetComment: () => 'Please don\'t add the [same answer to multiple questions](http://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.',
+                    GetComment: () => 'Please don\'t add the [same answer to multiple questions](https://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.',
                     GetCustomFlagText: (copyPastorItem) => `The answer is a repost of their other answer https:${copyPastorItem.target_url}, but as there are slight differences as seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}, an auto flag wouldn't be raised.`
                 },
                 {
@@ -901,17 +901,17 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     ReportType: 'AnswerNotAnAnswer',
                     GetComment: (userDetails) => userDetails.Reputation < 15
                         ? 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
-                            'and can be perceived as noise by its future visitors. Once you [earn](http://meta.stackoverflow.com/q/146472) ' +
-                            'enough [reputation](http://stackoverflow.com/help/whats-reputation), you will gain privileges to ' +
-                            '[upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
+                            'and can be perceived as noise by its future visitors. Once you [earn](https://meta.stackoverflow.com/q/146472) ' +
+                            'enough [reputation](https://stackoverflow.com/help/whats-reputation), you will gain privileges to ' +
+                            '[upvote answers](https://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
                             'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
-                            'See [Why is voting important](http://stackoverflow.com/help/why-vote).'
+                            'See [Why is voting important](https://stackoverflow.com/help/why-vote).'
                         :
                             'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
                                 'and can be perceived as noise by its future visitors. ' +
-                                'Instead, [upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
+                                'Instead, [upvote answers](https://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
                                 'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
-                                'See [Why is voting important](http://stackoverflow.com/help/why-vote).'
+                                'See [Why is voting important](https://stackoverflow.com/help/why-vote).'
                 },
                 {
                     Id: 8,
@@ -928,7 +928,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     Id: 9,
                     DisplayName: 'Library',
                     ReportType: 'AnswerNotAnAnswer',
-                    GetComment: () => 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](http://meta.stackoverflow.com/a/251605) in the answer itself.'
+                    GetComment: () => 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](https://meta.stackoverflow.com/a/251605) in the answer itself.'
                 },
                 {
                     Id: 10,
@@ -1298,7 +1298,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return false;
             }
             if (await this.WasReported()) {
-                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} tp`);
+                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} tp`);
                 return true;
             }
             else {
@@ -1313,7 +1313,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 if (answerAge > 30 || daysPostedAfterQuestion < 30) {
                     return false;
                 }
-                const promise = this.chat.SendMessage(soboticsRoomId, `@Natty report http://stackoverflow.com/a/${this.answerId}`);
+                const promise = this.chat.SendMessage(soboticsRoomId, `@Natty report https://stackoverflow.com/a/${this.answerId}`);
                 await promise.then(() => {
                     const expiryDate = new Date();
                     expiryDate.setDate(expiryDate.getDate() + 30);
@@ -1327,7 +1327,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return false;
             }
             if (await this.WasReported()) {
-                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} tp`);
+                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} tp`);
                 return true;
             }
             return false;
@@ -1337,7 +1337,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return false;
             }
             if (await this.WasReported()) {
-                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} fp`);
+                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} fp`);
                 return true;
             }
             return false;
@@ -1347,7 +1347,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return false;
             }
             if (await this.WasReported()) {
-                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} ne`);
+                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} ne`);
                 return true;
             }
             return false;

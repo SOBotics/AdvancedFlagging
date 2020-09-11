@@ -15,6 +15,7 @@
 // @exclude      *://chat.stackoverflow.com/*
 // @exclude      *://blog.stackoverflow.com/*
 // @exclude      *://*.area51.stackexchange.com/*
+// @exclude      *://data.stackexchange.com/*
 // @require      https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js
 // @grant        GM_xmlhttpRequest
 // @grant        GM_listValues

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.2.4
+// @version      1.2.3
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -167,7 +167,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         if (commentText) {
             result.CommentPromise = new Promise((resolve, reject) => {
                 $.ajax({
-                    url: `//stackoverflow.com/posts/${postId}/comments`,
+                    url: `/posts/${postId}/comments`,
                     type: 'POST',
                     data: { fkey: StackExchange.options.user.fkey, comment: commentText }
                 }).done((data) => {
@@ -853,7 +853,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     DisplayName: 'Duplicate answer',
                     ReportType: 'PostOther',
                     Enabled: (hasDuplicatePostLinks) => hasDuplicatePostLinks,
-                    GetComment: () => 'Please don\'t add the [same answer to multiple questions](http://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.',
+                    GetComment: () => 'Please don\'t add the [same answer to multiple questions](https://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.',
                     GetCustomFlagText: (copyPastorItem) => `The answer is a repost of their other answer https:${copyPastorItem.target_url}, but as there are slight differences as seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}, an auto flag wouldn't be raised.`
                 },
                 {
@@ -877,23 +877,23 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         '[add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will ' +
                         'have some idea what it is and why it’s there, then quote the most relevant part of the ' +
                         'page you\'re linking to in case the target page is unavailable. ' +
-                        '[Answers that are little more than a link may be deleted.](//stackoverflow.com/help/deleted-answers)'
+                        '[Answers that are little more than a link may be deleted.](/help/deleted-answers)'
                 },
                 {
                     Id: 6,
                     DisplayName: 'Not an answer',
                     ReportType: 'AnswerNotAnAnswer',
                     GetComment: (userDetails) => userDetails.Reputation < 50
-                        ? 'This does not provide an answer to the question. You can [search for similar questions](//stackoverflow.com/search), ' +
+                        ? 'This does not provide an answer to the question. You can [search for similar questions](/search), ' +
                             'or refer to the related and linked questions on the right-hand side of the page to find an answer. ' +
-                            'If you have a related but different question, [ask a new question](//stackoverflow.com/questions/ask), ' +
+                            'If you have a related but different question, [ask a new question](/questions/ask), ' +
                             'and include a link to this one to help provide context. ' +
-                            'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)'
+                            'See: [Ask questions, get answers, no distractions](/tour)'
                         : 'This post doesn\'t look like an attempt to answer this question. Every post here is expected to be ' +
                             'an explicit attempt to *answer* this question; if you have a critique or need a clarification of ' +
-                            'the question or another answer, you can [post a comment](//stackoverflow.com/help/privileges/comment) ' +
+                            'the question or another answer, you can [post a comment](/help/privileges/comment) ' +
                             '(like this one) directly below it. Please remove this answer and create either a comment or a new question. ' +
-                            'See: [Ask questions, get answers, no distractions](//stackoverflow.com/tour)'
+                            'See: [Ask questions, get answers, no distractions](/tour)'
                 },
                 {
                     Id: 7,
@@ -901,42 +901,42 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     ReportType: 'AnswerNotAnAnswer',
                     GetComment: (userDetails) => userDetails.Reputation < 15
                         ? 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
-                            'and can be perceived as noise by its future visitors. Once you [earn](http://meta.stackoverflow.com/q/146472) ' +
-                            'enough [reputation](http://stackoverflow.com/help/whats-reputation), you will gain privileges to ' +
-                            '[upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
+                            'and can be perceived as noise by its future visitors. Once you [earn](https://meta.stackoverflow.com/q/146472) ' +
+                            'enough [reputation](/help/whats-reputation), you will gain privileges to ' +
+                            '[upvote answers](/help/privileges/vote-up) you like. This way future visitors of the question ' +
                             'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
-                            'See [Why is voting important](http://stackoverflow.com/help/why-vote).'
+                            'See [Why is voting important](/help/why-vote).'
                         :
                             'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
                                 'and can be perceived as noise by its future visitors. ' +
-                                'Instead, [upvote answers](http://stackoverflow.com/help/privileges/vote-up) you like. This way future visitors of the question ' +
+                                'Instead, [upvote answers](/help/privileges/vote-up) you like. This way future visitors of the question ' +
                                 'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
-                                'See [Why is voting important](http://stackoverflow.com/help/why-vote).'
+                                'See [Why is voting important](/help/why-vote).'
                 },
                 {
                     Id: 8,
                     DisplayName: 'Me too',
                     ReportType: 'AnswerNotAnAnswer',
                     GetComment: () => 'Please don\'t add *"Me too"* as answers. It doesn\'t actually provide an answer to the question. ' +
-                        `If you have a different but related question, then [ask](//stackoverflow.com/questions/ask) it ` +
+                        `If you have a different but related question, then [ask](/questions/ask) it ` +
                         '(reference this one if it will help provide context). If you\'re interested in this specific question, ' +
-                        'you can [upvote](//stackoverflow.com/help/privileges/vote-up) it, leave a [comment](//stackoverflow.com/help/privileges/comment), ' +
-                        'or start a [bounty](//stackoverflow.com/help/privileges/set-bounties) ' +
-                        'once you have enough [reputation](//stackoverflow.com/help/whats-reputation).',
+                        'you can [upvote](/help/privileges/vote-up) it, leave a [comment](/help/privileges/comment), ' +
+                        'or start a [bounty](/help/privileges/set-bounties) ' +
+                        'once you have enough [reputation](/help/whats-reputation).',
                 },
                 {
                     Id: 9,
                     DisplayName: 'Library',
                     ReportType: 'AnswerNotAnAnswer',
-                    GetComment: () => 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](http://meta.stackoverflow.com/a/251605) in the answer itself.'
+                    GetComment: () => 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](https://meta.stackoverflow.com/a/251605) in the answer itself.'
                 },
                 {
                     Id: 10,
                     DisplayName: 'Comment',
                     ReportType: 'AnswerNotAnAnswer',
                     GetComment: (userDetails) => userDetails.Reputation < 50
-                        ? 'This does not provide an answer to the question. Once you have sufficient [reputation](https://stackoverflow.com/help/whats-reputation) ' +
-                            'you will be able to [comment on any post](https://stackoverflow.com/help/privileges/comment); instead, ' +
+                        ? 'This does not provide an answer to the question. Once you have sufficient [reputation](/help/whats-reputation) ' +
+                            'you will be able to [comment on any post](/help/privileges/comment); instead, ' +
                             '[provide answers that don\'t require clarification from the asker](https://meta.stackexchange.com/questions/214173/why-do-i-need-50-reputation-to-comment-what-can-i-do-instead).'
                         :
                             'This does not provide an answer to the question. Please write a comment instead.'
@@ -945,7 +945,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     Id: 14,
                     DisplayName: 'Duplicate',
                     ReportType: 'AnswerNotAnAnswer',
-                    GetComment: () => 'Instead of posting an answer which merely links to another answer, please instead [flag the question](https://stackoverflow.com/help/privileges/flag-posts) as a duplicate.'
+                    GetComment: () => 'Instead of posting an answer which merely links to another answer, please instead [flag the question](/help/privileges/flag-posts) as a duplicate.'
                 },
                 {
                     Id: 17,
@@ -1298,7 +1298,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return false;
             }
             if (await this.WasReported()) {
-                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} tp`);
+                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} tp`);
                 return true;
             }
             else {
@@ -1313,7 +1313,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 if (answerAge > 30 || daysPostedAfterQuestion < 30) {
                     return false;
                 }
-                const promise = this.chat.SendMessage(soboticsRoomId, `@Natty report http://stackoverflow.com/a/${this.answerId}`);
+                const promise = this.chat.SendMessage(soboticsRoomId, `@Natty report https://stackoverflow.com/a/${this.answerId}`);
                 await promise.then(() => {
                     const expiryDate = new Date();
                     expiryDate.setDate(expiryDate.getDate() + 30);
@@ -1327,7 +1327,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return false;
             }
             if (await this.WasReported()) {
-                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} tp`);
+                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} tp`);
                 return true;
             }
             return false;
@@ -1337,7 +1337,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return false;
             }
             if (await this.WasReported()) {
-                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} fp`);
+                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} fp`);
                 return true;
             }
             return false;
@@ -1347,7 +1347,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return false;
             }
             if (await this.WasReported()) {
-                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} ne`);
+                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} ne`);
                 return true;
             }
             return false;

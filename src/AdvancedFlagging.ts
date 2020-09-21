@@ -75,7 +75,7 @@ function handleFlagAndComment(postId: number, flag: FlagType,
     if (commentText) {
         result.CommentPromise = new Promise((resolve, reject) => {
             $.ajax({
-                url: `//stackoverflow.com/posts/${postId}/comments`,
+                url: `/posts/${postId}/comments`,
                 type: 'POST',
                 data: { fkey: StackExchange.options.user.fkey, comment: commentText }
             }).done((data) => {

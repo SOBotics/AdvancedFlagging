@@ -91,7 +91,7 @@ export class NattyAPI {
             return false;
         }
         if (await this.WasReported()) {
-            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} tp`);
+            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} tp`);
             return true;
         } else {
             const answerAge = this.DaysBetween(answerDate, new Date());
@@ -106,7 +106,7 @@ export class NattyAPI {
                 return false;
             }
 
-            const promise = this.chat.SendMessage(soboticsRoomId, `@Natty report http://stackoverflow.com/a/${this.answerId}`);
+            const promise = this.chat.SendMessage(soboticsRoomId, `@Natty report https://stackoverflow.com/a/${this.answerId}`);
             await promise.then(() => {
                 const expiryDate = new Date();
                 expiryDate.setDate(expiryDate.getDate() + 30);
@@ -120,7 +120,7 @@ export class NattyAPI {
             return false;
         }
         if (await this.WasReported()) {
-            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} tp`);
+            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} tp`);
             return true;
         }
         return false;
@@ -130,7 +130,7 @@ export class NattyAPI {
             return false;
         }
         if (await this.WasReported()) {
-            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} fp`);
+            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} fp`);
             return true;
         }
         return false;
@@ -140,7 +140,7 @@ export class NattyAPI {
             return false;
         }
         if (await this.WasReported()) {
-            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback http://stackoverflow.com/a/${this.answerId} ne`);
+            await this.chat.SendMessage(soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} ne`);
             return true;
         }
         return false;

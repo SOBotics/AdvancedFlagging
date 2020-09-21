@@ -13283,14 +13283,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 if (!sotools_1.IsStackOverflow()) {
                     resolve(false);
                 }
-                if ($('#answer-' + this.answerId + ' .post-text').length === 0) {
+                if ($('#answer-' + this.answerId + ' .js-post-body').length === 0) {
                     resolve(false);
                 }
                 if ($('.top-bar .my-profile .gravatar-wrapper-24').length === 0) {
                     reject('Flag Tracker: Could not find username.');
                 }
                 const flaggerName = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
-                const contentHash = this.computeContentHash($('#answer-' + this.answerId + ' .post-text').html().trim());
+                const contentHash = this.computeContentHash($('#answer-' + this.answerId + ' .js-post-body').html().trim());
                 GM_xmlhttpRequest({
                     method: 'POST',
                     url: 'https://so.floern.com/api/trackpost.php',

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.3.0
+// @version      1.3.1
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -608,7 +608,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             const reportedIcon = getReportedIcon();
             if (post.page === 'Question') {
                 // Now we setup the flagging dialog
-                iconLocation = post.element.find('.post-menu');
+                iconLocation = post.element.find('.js-post-menu');
                 advancedFlaggingLink = $('<a />').text('Advanced Flagging');
                 let questionTime;
                 let answerTime;

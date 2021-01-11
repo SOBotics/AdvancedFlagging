@@ -585,7 +585,7 @@ async function SetupPostPage() {
 
         if (post.page === 'Question') {
             // Now we setup the flagging dialog
-            iconLocation = post.element.find('.post-menu');
+            iconLocation = post.element.find('.js-post-menu');
             advancedFlaggingLink = $('<a />').text('Advanced Flagging');
 
             let questionTime: Date;

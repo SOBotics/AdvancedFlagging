@@ -18,7 +18,7 @@
     ],
     "baseUrl": "src",
     "paths": {
-      "@userscriptTools/*": ["Libs/UserscriptTools/*"]
+      "@userscriptTools/*": ["Libs/UserScriptTools/*"]
     }
   }
 }

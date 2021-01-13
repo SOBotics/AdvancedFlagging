@@ -3,6 +3,8 @@ import { MetaSmokeAPI, MetaSmokeDisabledConfig } from '@userscriptTools/metasmok
 import { flagCategories } from 'FlagTypes';
 import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
 
+declare const Stacks: any;
+
 export async function SetupConfiguration() {
     const bottomBox = $('.site-footer--copyright').children('.-list');
     const configurationDiv = $('<div>')
@@ -11,8 +13,9 @@ export async function SetupConfiguration() {
         .css('padding', '5px');
 
     await SetupDefaults();
-    const configurationLink = $('<a href="javascript:void(0);">AdvancedFlagging configuration</a>');
-    configurationLink.click(() => BuildConfigurationOverlay());
+    await BuildConfigurationOverlay();
+    const configurationLink = $('<a id="af-modal-button">AdvancedFlagging configuration</a>');
+    $(document).on('click', '#af-modal-button', () => Stacks.showModal(document.querySelector('#af-config')));
     configurationDiv.append(configurationLink);
     configurationDiv.insertAfter(bottomBox);
 }
@@ -39,30 +42,24 @@ async function SetupDefaults() {
 }
 
 async function BuildConfigurationOverlay() {
-    const overlay = $('<div>')
-        .css('position', 'fixed')
-        .css('padding-top', '100px')
-        .css('left', 0)
-        .css('top', 0)
-        .css('width', '100%')
-        .css('height', '100%')
-        .css('overflow', 'auto')
-        .css('background-color', '#cccccc')
-        .css('background-color', 'rgba(0,0,0,0.4)')
-        ;
-
-    const overlayContent = $('<div>')
-        .css('background-color', '#fefefe')
-        .css('margin', 'auto')
-        .css('padding', '20px')
-        .css('border', '1px solid #888')
-        .css('width', '80%')
-        ;
+    const overlayModal = $(
+        '<aside class="s-modal" id="af-config" role="dialog" aria-labelledby="af-modal-title"'
+        + '       aria-describedby="af-modal-description" aria-hidden="true"'
+        + '    data-controller="s-modal" data-target="s-modal.modal">'
+        + '    <div class="s-modal--dialog s-modal__full w60" role="document">'
+        + '        <h1 class="s-modal--header fw-body c-movey" id="af-modal-title">AdvancedFlagging configuration</h1>'
+        + '        <div class="s-modal--body fs-body2" id="af-modal-description"></div>'
+        + '        <div class="grid gs8 gsx s-modal--footer">'
+        + '            <button class="grid--cell s-btn s-btn__primary" type="button">Save changes</button>'
+        + '            <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>'
+        + '        </div>'
+        + '        <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide">'
+        + '            <svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14"><path d="M12 3.41L10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41z"></path></svg>'
+        + '        </button>'
+        + '    </div>'
+        + '</aside>');
 
     const configElements: ConfigElement[] = [];
-
-    overlayContent.append('<h1>AdvancedFlagging configuration</h1>');
-
     const sections: ConfigSection[] = [
         {
             SectionName: 'General',
@@ -77,33 +74,25 @@ async function BuildConfigurationOverlay() {
             Items: await GetAdminConfigItems()
         }
     ];
+
     let firstSection = true;
     sections.forEach(section => {
         if (!firstSection) {
-            overlayContent.append('<hr />');
+            overlayModal.find('#af-modal-description').append('<hr>');
         }
-        overlayContent.append(`<h2>${section.SectionName}</h2>`);
         firstSection = false;
-        const sectionWrapper = $('<ul>').css('list-style', 'none');
-        overlayContent.append(sectionWrapper);
-
+        const sectionWrapper = $('<fieldset>').attr('class', 'grid gs8 gsy fd-column af-section-' + section.SectionName.toLowerCase())
+            .html(`<h2 class="grid--cell">${section.SectionName}</h2>`);
+        overlayModal.find('#af-modal-description').append(sectionWrapper);
         section.Items.forEach(item => {
             configElements.push(item);
             if (item.element) {
-                const listItem = $('<li>').css('line-height', '18px');
-                listItem.append(item.element);
-                sectionWrapper.append(listItem);
+                sectionWrapper.append(item.element);
             }
         });
     });
 
-    const submitButtons = $('<div>')
-        .css('text-align', 'right');
-
-    const okayButton = $('<input type="button" value="Save changes">');
-    const cancelButton = $('<a href="#">Cancel</a>')
-        .css('margin-right', '15px');
-
+    const okayButton = overlayModal.find('.s-btn__primary');
     okayButton.click((event) => {
         event.preventDefault();
         let requiresReload = false;
@@ -113,7 +102,6 @@ async function BuildConfigurationOverlay() {
             }
             requiresReload = !!configElement.requiresReload;
         });
-        overlay.remove();
         displaySuccess('Configuration saved');
         if (requiresReload) {
             setTimeout(() => {
@@ -121,17 +109,13 @@ async function BuildConfigurationOverlay() {
             }, 500);
         }
     });
-    cancelButton.click((event) => {
-        event.preventDefault();
-        overlay.remove();
-    });
 
-    submitButtons.append(cancelButton);
-    submitButtons.append(okayButton);
-
-    overlayContent.append(submitButtons);
-    overlay.append(overlayContent);
-    $(document.body).append(overlay);
+    $('body').append(overlayModal);
+    $('label[for="flag-type-12"]').parent().removeClass('w25').css('width', '18.3%'); // because without it, the CSS breaks
+    const flagOptions = $('.af-section-flags').children('div');
+    for (let i = 0; i < flagOptions.length; i += 5) {
+        flagOptions.slice(i, i + 5).wrapAll('<div class="grid--cell"><div class="grid gs16"></div></div>');
+    }
 }
 
 async function GetGeneralConfigItems() {
@@ -146,24 +130,29 @@ async function GetGeneralConfigItems() {
 }
 
 async function GetFlagSettings() {
-    const checkBoxes: { label: JQuery, checkBox: JQuery, Id: number }[] = [];
+    const checkBoxes: { configHTML: JQuery, checkBox: JQuery, Id: number }[] = [];
     const flagTypeIds = GreaseMonkeyCache.GetFromCache<number[]>(ConfigurationEnabledFlags) || [];
+    const flagHTML = (id: string, name: string) =>
+        $('<div class="grid gs8 gsx w25">'
+        + '  <div class="grid--cell"><input class="s-checkbox" type="checkbox" id="' + id + '"></div>'
+        + '  <label class="grid--cell s-label fw-normal" for="' + id + '">' + name + '</label>'
+        + '</div>');
+
     getFlagTypes().forEach(f => {
-        const checkBox = $('<input type="checkbox">');
-        const label = $('<label />')
-            .append(checkBox)
-            .append(f.DisplayName);
+        const configHTML = flagHTML('flag-type-' + f.Id, f.DisplayName);
         const storedValue = flagTypeIds.indexOf(f.Id) > -1;
+        const checkBox = configHTML.find('input');
         if (storedValue) {
             checkBox.prop('checked', true);
         }
         checkBoxes.push({
-            label,
+            configHTML,
             checkBox,
             Id: f.Id
         });
     });
-    const returnArr: ConfigElement[] = checkBoxes.map(f => ({ element: f.label }));
+
+    const returnArr: ConfigElement[] = checkBoxes.map(f => ({ element: f.configHTML }));
     returnArr.push({
         onSave: async () => {
             // Something here
@@ -178,59 +167,63 @@ async function GetFlagSettings() {
 async function GetAdminConfigItems() {
     return [
         {
-            element: $('<a />').text('Clear expired items from cache')
-                .click(() => {
-                    GreaseMonkeyCache.ClearExpiredKeys();
-                }),
+            element: $('<a>').text('Clear expired items from cache').click(() => GreaseMonkeyCache.ClearExpiredKeys())
+                             .wrap('<div class="grid--cell">').parent(),
             requiresReload: true
         },
         {
-            element: $('<a />').text('Clear Metasmoke Configuration')
-                .click(async () => {
-                    await MetaSmokeAPI.Reset();
-                }),
+            element: $('<a>').text('Clear Metasmoke Configuration').click(async () => { await MetaSmokeAPI.Reset(); })
+                             .wrap('<div class="grid--cell">').parent(),
             requiresReload: true
         },
         {
-            element: $('<a />').text('Get MetaSmoke key')
-                .attr('href', `https://metasmoke.erwaysoftware.com/oauth/request?key=${metaSmokeKey}`)
+            element: $('<a>').text('Get MetaSmoke key')
+                             .attr('href', `https://metasmoke.erwaysoftware.com/oauth/request?key=${metaSmokeKey}`)
+                             .wrap('<div class="grid--cell">').parent()
         },
         {
-            element: $('<a />').text('Manually register MetaSmoke key')
+            element: $('<a>').text('Manually register MetaSmoke key')
                 .click(async () => {
                     const prompt = window.prompt('Enter metasmoke key');
                     if (prompt) {
                         GreaseMonkeyCache.StoreInCache(MetaSmokeDisabledConfig, false);
                         localStorage.setItem('MetaSmoke.ManualKey', prompt);
                     }
-                }),
+                })
+                .wrap('<div class="grid--cell">').parent(),
             requiresReload: true
         }, {
-            element: $('<a />').text('Clear chat FKey')
+            element: $('<a>').text('Clear chat FKey')
                 .click(async () => {
                     // Hard-code SOBotics for now
                     const roomId = 111347;
                     const fkeyCacheKey = `StackExchange.ChatApi.FKey_${roomId}`;
                     GreaseMonkeyCache.Unset(fkeyCacheKey);
-                }),
+                })
+                .wrap('<div class="grid--cell">').parent(),
             requiresReload: true
         }
     ];
 }
 
 async function createConfigCheckbox(text: string, configValue: string): Promise<ConfigElement> {
-    const checkBox = $('<input type="checkbox">');
-    const label = $('<label />')
-        .append(checkBox)
-        .append(text);
+    const optionId = text.toLowerCase().replace(/\s/g, '_');
+    const configHTML = $('<div>'
+                       + '  <div class="grid gs8 gsx">'
+                       + '    <div class="grid--cell"><input class="s-checkbox" type="checkbox" id="' + optionId + '"/></div>'
+                       + '    <label class="grid--cell s-label fw-normal" for="' + optionId + '">' + text + '</label>'
+                       + '  </div>'
+                       + '</div>');
+    const input = configHTML.find('input');
     const storedValue = GreaseMonkeyCache.GetFromCache(configValue);
     if (storedValue) {
-        checkBox.prop('checked', true);
+        input.prop('checked', true);
     }
+
     return {
-        element: label,
+        element: configHTML,
         onSave: async () => {
-            const isChecked = !!checkBox.prop('checked');
+            const isChecked = !!input.prop('checked');
             GreaseMonkeyCache.StoreInCache(configValue, isChecked);
         }
     };

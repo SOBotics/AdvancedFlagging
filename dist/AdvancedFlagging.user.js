@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.3.1
+// @version      1.3.2
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -130,6 +130,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     function SetupStyles() {
         const scriptNode = document.createElement('style');
         scriptNode.type = 'text/css';
+        scriptNode.id = 'advanced-flagging-styles';
         scriptNode.textContent = `
 #snackbar {
     min-width: 250px;
@@ -159,6 +160,78 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     -ms-transition: opacity 1s ease-in;
     -moz-transition: opacity 1s ease-in;
     -webkit-transition: opacity 1s ease-in;
+}
+
+.advanced-flagging-dialog {
+    margin: 0;
+    z-index: 3;
+    position: absolute;
+    white-space: nowrap;
+    background: #FFF;
+    padding: 5px;
+    border: 1px solid #9fa6ad;
+    box-shadow: 0 2px 4px rgba(36,39,41,0.3);
+    cursor: default
+}
+
+.advanced-flagging-hr {
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+.advanced-flagging-label-options {
+    margin-right: 5px;
+    margin-left: 4px;
+}
+
+.advanced-flagging-icon {
+    width: 15px;
+    height: 15px;
+    margin-left: 5px;
+    margin-top: 5px;
+    vertical-align: text-bottom;
+    cursor: pointer;
+    background-size: 100%;
+}
+
+.advanced-flagging-natty-icon {
+    background-image: url("https://i.stack.imgur.com/aMUMt.jpg?s=128&g=1");
+}
+
+.advanced-flaggin-gut-icon {
+    background-image: url("https://i.stack.imgur.com/A0JRA.png?s=128&g=1");
+}
+
+.advanced-flagging-smokey-icon {
+    background-image: url("https://i.stack.imgur.com/7cmCt.png?s=128&g=1");
+}
+
+.advanced-flagging-dropdown-item {
+    padding: 1px 5px;
+}
+
+.advanced-flagging-danger-item {
+    background-color: rgba(241, 148, 148, 0.6);
+}
+
+.advanced-flagging-report-link {
+    display: inline-block;
+    margin-top: 5px;
+    width: auto;
+}
+
+.advanced-flagging-performed-action {
+    margin-left: 5px;
+    background-position: -20px -320px;
+    visibility: visible;
+    width: 15px;
+    height: 15px;
+    cursor: default;
+}
+
+.advanced-flagging-flag-icon {
+    color: #C91D2E;
+    cursor: default;
 }
 `;
         const target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
@@ -258,32 +331,17 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         displayToaster(message, '#ba1701');
     }
     async function BuildFlaggingDialog(element, postId, postType, reputation, authorName, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorPromise) {
-        const getDivider = () => $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' });
-        const linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
-        const dropDown = $('<dl />').css({
-            'margin': '0',
-            'z-index': '3',
-            'position': 'absolute',
-            'white-space': 'nowrap',
-            'background': '#FFF',
-            'padding': '5px',
-            'border': '1px solid #9fa6ad',
-            'box-shadow': '0 2px 4px rgba(36,39,41,0.3)',
-            'cursor': 'default'
-        }).hide();
+        const getDivider = () => $('<hr>').attr('class', 'advanced-flagging-hr');
+        const dropDown = $('<dl>').attr('class', 'advanced-flagging-dialog s-anchors s-anchors__default d-none');
         const checkboxName = `comment_checkbox_${postId}`;
-        const leaveCommentBox = $('<input />')
-            .attr('type', 'checkbox')
-            .attr('name', checkboxName);
-        const flagBox = $('<input />')
-            .attr('type', 'checkbox')
-            .attr('name', checkboxName)
-            .prop('checked', true);
+        const leaveCommentBox = $('<input>').attr('type', 'checkbox').attr('name', checkboxName).attr('class', 's-checkbox').wrap('<div class="grid--cell"></div>').parent();
+        const flagBox = leaveCommentBox.clone();
+        flagBox.find('input').prop('checked', true);
         const isStackOverflow = sotools_1.IsStackOverflow();
         const comments = element.find('.comment-body');
         const defaultNoComment = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationDefaultNoComment);
         if (!defaultNoComment && comments.length === 0 && isStackOverflow) {
-            leaveCommentBox.prop('checked', true);
+            leaveCommentBox.find('input').prop('checked', true);
         }
         const enabledFlagIds = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationEnabledFlags);
         let hasCommentOptions = false;
@@ -301,23 +359,23 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 if (flagType.GetComment) {
                     hasCommentOptions = true;
                 }
-                const dropdownItem = $('<dd />');
-                if (flagCategory.BoxStyle) {
-                    dropdownItem.css(flagCategory.BoxStyle);
+                const dropdownItem = $('<dd>').attr('class', 'advanced-flagging-dropdown-item');
+                if (flagCategory.IsDangerous) {
+                    dropdownItem.addClass('advanced-flagging-danger-item');
                 }
-                const reportLink = $('<a />').css(linkStyle);
+                const reportLink = $('<a>').attr('class', 'advanced-flagging-report-link');
                 const disableLink = () => {
                     activeLinks--;
-                    reportLink.hide();
+                    reportLink.addClass('d-none').removeClass('d-block');
                     if (divider && activeLinks <= 0) {
-                        divider.hide();
+                        divider.addClass('d-none').removeClass('d-block');
                     }
                 };
                 const enableLink = () => {
                     activeLinks++;
-                    reportLink.show();
+                    reportLink.addClass('d-block').removeClass('d-none');
                     if (divider && activeLinks > 0) {
-                        divider.show();
+                        divider.addClass('d-block').removeClass('d-none');
                     }
                 };
                 disableLink();
@@ -349,7 +407,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 reportLink.click(() => {
                     if (!deleted) {
                         try {
-                            if (!leaveCommentBox.is(':checked')) {
+                            if (!leaveCommentBox.find('input').is(':checked')) {
                                 if (commentText) {
                                     // Match [some text](http://somehyperlink.com)
                                     let strippedComment = commentText.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '$1');
@@ -375,7 +433,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                 }
                                 commentText = undefined;
                             }
-                            const result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), commentText, copyPastorPromise);
+                            const result = handleFlagAndComment(postId, flagType, flagBox.find('input').is(':checked'), commentText, copyPastorPromise);
                             if (result.CommentPromise) {
                                 result.CommentPromise.then((data) => {
                                     const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
@@ -393,7 +451,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                     const expiryDate = new Date();
                                     expiryDate.setDate(expiryDate.getDate() + 30);
                                     reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
-                                    reportedIcon.css('display', 'inline-block');
+                                    reportedIcon.addClass('d-inline-block').removeClass('d-none');
                                     displaySuccess('Flagged');
                                 }).catch(err => {
                                     displayError('Failed to flag post');
@@ -411,10 +469,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         const expiryDate = new Date();
                         expiryDate.setDate(expiryDate.getDate() + 30);
                         performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
-                        performedActionIcon.show();
+                        performedActionIcon.addClass('d-block').removeClass('d-none');
                     }
                     handleFlag(flagType, reporters, answerTime, questionTime);
-                    dropDown.hide();
+                    dropDown.removeClass('d-block').addClass('d-none');
                 });
                 reportLink.text(flagType.DisplayName);
                 dropdownItem.append(reportLink);
@@ -427,33 +485,27 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         dropDown.append(getDivider());
         if (hasCommentOptions) {
-            const commentBoxLabel = $('<label />').text('Leave comment')
+            const commentBoxLabel = $('<label>').text('Leave comment')
                 .attr('for', checkboxName)
-                .css({
-                'margin-right': '5px',
-                'margin-left': '4px',
-            });
-            commentBoxLabel.click(() => leaveCommentBox.click());
+                .attr('class', 'advanced-flagging-label-options grid--cell s-label fw-normal');
             const commentingRow = $('<dd />');
-            commentingRow.append(commentBoxLabel);
             commentingRow.append(leaveCommentBox);
+            commentingRow.append(commentBoxLabel);
             dropDown.append(commentingRow);
+            commentingRow.children().wrapAll('<div class="grid gs8"></div>');
         }
-        const flagBoxLabel = $('<label />').text('Flag')
+        const flagBoxLabel = $('<label>').text('Flag')
             .attr('for', checkboxName)
-            .css({
-            'margin-right': '5px',
-            'margin-left': '4px',
-        });
-        flagBoxLabel.click(() => flagBox.click());
+            .attr('class', 'advanced-flagging-label-options grid--cell s-label fw-normal');
         const flaggingRow = $('<dd />');
         const defaultNoFlag = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationDefaultNoFlag);
         if (defaultNoFlag) {
-            flagBox.prop('checked', false);
+            flagBox.find('input').prop('checked', false);
         }
-        flaggingRow.append(flagBoxLabel);
         flaggingRow.append(flagBox);
+        flaggingRow.append(flagBoxLabel);
         dropDown.append(flaggingRow);
+        flaggingRow.children().wrapAll('<div class="grid gs8"></div>');
         return dropDown;
     }
     function handleFlag(flagType, reporters, answerTime, questionTime) {
@@ -520,7 +572,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             const nattyIcon = getNattyIcon().click(() => {
                 window.open(`https://sentinel.erwaysoftware.com/posts/aid/${post.postId}`, '_blank');
             });
-            const showFunc = (element) => element.css('display', 'inline-block');
+            const showFunc = (element) => element.addClass('d-inline-block').removeClass('d-none');
             const copyPastorIcon = getGuttenbergIcon();
             const copyPastorApi = new CopyPastorAPI_1.CopyPastorAPI(post.postId, copyPastorKey);
             const copyPastorObservable = copyPastorApi.Watch();
@@ -534,7 +586,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         showFunc(nattyIcon);
                     }
                     else {
-                        nattyIcon.hide();
+                        nattyIcon.addClass('d-none');
                     }
                 });
                 reporters.push({
@@ -556,7 +608,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         }));
                     }
                     else {
-                        copyPastorIcon.hide();
+                        copyPastorIcon.addClass('d-none');
                     }
                 });
                 reporters.push({
@@ -591,7 +643,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     showFunc(smokeyIcon);
                 }
                 else {
-                    smokeyIcon.hide();
+                    smokeyIcon.addClass('d-none');
                 }
             });
             reporters.push({
@@ -608,8 +660,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             const reportedIcon = getReportedIcon();
             if (post.page === 'Question') {
                 // Now we setup the flagging dialog
-                iconLocation = post.element.find('.js-post-menu');
-                advancedFlaggingLink = $('<a />').text('Advanced Flagging');
+                iconLocation = iconLocation = post.element.find('.js-post-menu').children().first();
+                advancedFlaggingLink = $('<button>').attr('type', 'button')
+                    .attr('class', 's-btn s-btn__link advanced-flagging-link').text('Advanced Flagging');
                 let questionTime;
                 let answerTime;
                 if (post.type === 'Answer') {
@@ -645,7 +698,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     const dropDown = await BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, post.authorName, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi.Promise());
                     advancedFlaggingLink.append(dropDown);
                     $(window).click(() => {
-                        dropDown.hide();
+                        dropDown.removeClass('d-block').addClass('d-none');
                     });
                     const link = advancedFlaggingLink;
                     const openOnHover = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationOpenOnHover);
@@ -653,12 +706,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         link.hover(e => {
                             e.stopPropagation();
                             if (e.target === link.get(0)) {
-                                dropDown.show();
+                                dropDown.removeClass('d-none').addClass('d-block');
                             }
                         });
                         link.mouseleave(e => {
                             e.stopPropagation();
-                            dropDown.hide();
+                            dropDown.removeClass('d-block').addClass('d-none');
                         });
                     }
                     else {
@@ -669,7 +722,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             }
                         });
                     }
-                    iconLocation.append(advancedFlaggingLink);
+                    iconLocation.append($('<div>').attr('class', 'grid--cell').append(advancedFlaggingLink));
                 }
                 iconLocation.append(performedActionIcon);
                 iconLocation.append(reportedIcon);
@@ -688,45 +741,21 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         });
     }
     function getPerformedActionIcon() {
-        return $('<div>').addClass('comment-flag')
-            .css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' })
-            .css({ 'width': '15px', 'height': '15px', 'background-position': '-20px -320px' })
-            .css({ cursor: 'default' })
-            .hide();
+        return $('<div>').attr('class', 'comment-flag advanced-flagging-performed-action d-none');
     }
     function getReportedIcon() {
         return $('<div>')
-            .addClass('comment-flag')
-            .css({ color: '#C91D2E', cursor: 'default' })
-            .append('<svg aria-hidden="true" class="svg-icon iconFlag" width="18" height="18" viewBox="0 0 18 18"><path d="M3 2v14h2v-6h3.6l.4 1h6V3H9.5L9 2z"></path></svg>')
-            .hide();
+            .attr('class', 'comment-flag advanced-flagging-flag-icon d-none')
+            .append('<svg aria-hidden="true" class="svg-icon iconFlag" width="18" height="18" viewBox="0 0 18 18"><path d="M3 2v14h2v-6h3.6l.4 1h6V3H9.5L9 2z"></path></svg>');
     }
     function getNattyIcon() {
-        return $('<div>')
-            .css({
-            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
-            'background': 'url("https://i.stack.imgur.com/aMUMt.jpg?s=128&g=1"', 'background-size': '100%'
-        })
-            .attr('title', 'Reported by Natty')
-            .hide();
+        return $('<div>').attr('title', 'Reported by Natty').attr('class', 'advanced-flagging-icon advanced-flagging-natty-icon d-none');
     }
     function getGuttenbergIcon() {
-        return $('<div>')
-            .css({
-            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
-            'background': 'url("https://i.stack.imgur.com/A0JRA.png?s=128&g=1"', 'background-size': '100%'
-        })
-            .attr('title', 'Reported by Guttenberg')
-            .hide();
+        return $('<div>').attr('title', 'Reported by Guttenberg').attr('class', 'advanced-flagging-icon advanced-flagging-gut-icon d-none');
     }
     function getSmokeyIcon() {
-        return $('<div>')
-            .css({
-            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
-            'background': 'url("https://i.stack.imgur.com/7cmCt.png?s=128&g=1"', 'background-size': '100%'
-        })
-            .attr('title', 'Reported by Smokey')
-            .hide();
+        return $('<div>').attr('title', 'Reported by Smokey').attr('class', 'advanced-flagging-icon advanced-flagging-smokey-icon d-none');
     }
     const metaSmokeManualKey = 'MetaSmoke.ManualKey';
     async function Setup() {
@@ -824,7 +853,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.flagCategories = [
         {
-            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
+            IsDangerous: true,
             AppliesTo: ['Answer', 'Question'],
             FlagTypes: [
                 {
@@ -840,7 +869,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             ]
         },
         {
-            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
+            IsDangerous: true,
             AppliesTo: ['Answer'],
             FlagTypes: [
                 {
@@ -868,7 +897,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             ]
         },
         {
-            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
+            IsDangerous: false,
             AppliesTo: ['Answer'],
             FlagTypes: [
                 {
@@ -964,7 +993,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             ]
         },
         {
-            BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
+            IsDangerous: false,
             AppliesTo: ['Answer', 'Question'],
             FlagTypes: [
                 {
@@ -13744,8 +13773,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             .css('text-align', 'left')
             .css('padding', '5px');
         await SetupDefaults();
-        const configurationLink = $('<a href="javascript:void(0);">AdvancedFlagging configuration</a>');
-        configurationLink.click(() => BuildConfigurationOverlay());
+        await BuildConfigurationOverlay();
+        const configurationLink = $('<a id="af-modal-button">AdvancedFlagging configuration</a>');
+        $(document).on('click', '#af-modal-button', () => Stacks.showModal(document.querySelector('#af-config')));
         configurationDiv.append(configurationLink);
         configurationDiv.insertAfter(bottomBox);
     }
@@ -13770,24 +13800,22 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
     }
     async function BuildConfigurationOverlay() {
-        const overlay = $('<div>')
-            .css('position', 'fixed')
-            .css('padding-top', '100px')
-            .css('left', 0)
-            .css('top', 0)
-            .css('width', '100%')
-            .css('height', '100%')
-            .css('overflow', 'auto')
-            .css('background-color', '#cccccc')
-            .css('background-color', 'rgba(0,0,0,0.4)');
-        const overlayContent = $('<div>')
-            .css('background-color', '#fefefe')
-            .css('margin', 'auto')
-            .css('padding', '20px')
-            .css('border', '1px solid #888')
-            .css('width', '80%');
+        const overlayModal = $('<aside class="s-modal" id="af-config" role="dialog" aria-labelledby="af-modal-title"'
+            + '       aria-describedby="af-modal-description" aria-hidden="true"'
+            + '    data-controller="s-modal" data-target="s-modal.modal">'
+            + '    <div class="s-modal--dialog s-modal__full w60" role="document">'
+            + '        <h1 class="s-modal--header fw-body c-movey" id="af-modal-title">AdvancedFlagging configuration</h1>'
+            + '        <div class="s-modal--body fs-body2" id="af-modal-description"></div>'
+            + '        <div class="grid gs8 gsx s-modal--footer">'
+            + '            <button class="grid--cell s-btn s-btn__primary" type="button">Save changes</button>'
+            + '            <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>'
+            + '        </div>'
+            + '        <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide">'
+            + '            <svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14"><path d="M12 3.41L10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41z"></path></svg>'
+            + '        </button>'
+            + '    </div>'
+            + '</aside>');
         const configElements = [];
-        overlayContent.append('<h1>AdvancedFlagging configuration</h1>');
         const sections = [
             {
                 SectionName: 'General',
@@ -13805,26 +13833,20 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         let firstSection = true;
         sections.forEach(section => {
             if (!firstSection) {
-                overlayContent.append('<hr />');
+                overlayModal.find('#af-modal-description').append('<hr>');
             }
-            overlayContent.append(`<h2>${section.SectionName}</h2>`);
             firstSection = false;
-            const sectionWrapper = $('<ul>').css('list-style', 'none');
-            overlayContent.append(sectionWrapper);
+            const sectionWrapper = $('<fieldset>').attr('class', 'grid gs8 gsy fd-column af-section-' + section.SectionName.toLowerCase())
+                .html(`<h2 class="grid--cell">${section.SectionName}</h2>`);
+            overlayModal.find('#af-modal-description').append(sectionWrapper);
             section.Items.forEach(item => {
                 configElements.push(item);
                 if (item.element) {
-                    const listItem = $('<li>').css('line-height', '18px');
-                    listItem.append(item.element);
-                    sectionWrapper.append(listItem);
+                    sectionWrapper.append(item.element);
                 }
             });
         });
-        const submitButtons = $('<div>')
-            .css('text-align', 'right');
-        const okayButton = $('<input type="button" value="Save changes">');
-        const cancelButton = $('<a href="#">Cancel</a>')
-            .css('margin-right', '15px');
+        const okayButton = overlayModal.find('.s-btn__primary');
         okayButton.click((event) => {
             event.preventDefault();
             let requiresReload = false;
@@ -13834,7 +13856,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 }
                 requiresReload = !!configElement.requiresReload;
             });
-            overlay.remove();
             AdvancedFlagging_1.displaySuccess('Configuration saved');
             if (requiresReload) {
                 setTimeout(() => {
@@ -13842,15 +13863,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 }, 500);
             }
         });
-        cancelButton.click((event) => {
-            event.preventDefault();
-            overlay.remove();
-        });
-        submitButtons.append(cancelButton);
-        submitButtons.append(okayButton);
-        overlayContent.append(submitButtons);
-        overlay.append(overlayContent);
-        $(document.body).append(overlay);
+        $('body').append(overlayModal);
+        $('label[for="flag-type-12"]').parent().removeClass('w25').css('width', '18.3%'); // because without it, the CSS breaks
+        const flagOptions = $('.af-section-flags').children('div');
+        for (let i = 0; i < flagOptions.length; i += 5) {
+            flagOptions.slice(i, i + 5).wrapAll('<div class="grid--cell"><div class="grid gs16"></div></div>');
+        }
     }
     async function GetGeneralConfigItems() {
         return Promise.all([
@@ -13865,22 +13883,24 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     async function GetFlagSettings() {
         const checkBoxes = [];
         const flagTypeIds = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(AdvancedFlagging_1.ConfigurationEnabledFlags) || [];
+        const flagHTML = (id, name) => $('<div class="grid gs8 gsx w25">'
+            + '  <div class="grid--cell"><input class="s-checkbox" type="checkbox" id="' + id + '"></div>'
+            + '  <label class="grid--cell s-label fw-normal" for="' + id + '">' + name + '</label>'
+            + '</div>');
         getFlagTypes().forEach(f => {
-            const checkBox = $('<input type="checkbox">');
-            const label = $('<label />')
-                .append(checkBox)
-                .append(f.DisplayName);
+            const configHTML = flagHTML('flag-type-' + f.Id, f.DisplayName);
             const storedValue = flagTypeIds.indexOf(f.Id) > -1;
+            const checkBox = configHTML.find('input');
             if (storedValue) {
                 checkBox.prop('checked', true);
             }
             checkBoxes.push({
-                label,
+                configHTML,
                 checkBox,
                 Id: f.Id
             });
         });
-        const returnArr = checkBoxes.map(f => ({ element: f.label }));
+        const returnArr = checkBoxes.map(f => ({ element: f.configHTML }));
         returnArr.push({
             onSave: async () => {
                 // Something here
@@ -13894,58 +13914,61 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     async function GetAdminConfigItems() {
         return [
             {
-                element: $('<a />').text('Clear expired items from cache')
-                    .click(() => {
-                    GreaseMonkeyCache_1.GreaseMonkeyCache.ClearExpiredKeys();
-                }),
+                element: $('<a>').text('Clear expired items from cache').click(() => GreaseMonkeyCache_1.GreaseMonkeyCache.ClearExpiredKeys())
+                    .wrap('<div class="grid--cell">').parent(),
                 requiresReload: true
             },
             {
-                element: $('<a />').text('Clear Metasmoke Configuration')
-                    .click(async () => {
-                    await MetaSmokeAPI_1.MetaSmokeAPI.Reset();
-                }),
+                element: $('<a>').text('Clear Metasmoke Configuration').click(async () => { await MetaSmokeAPI_1.MetaSmokeAPI.Reset(); })
+                    .wrap('<div class="grid--cell">').parent(),
                 requiresReload: true
             },
             {
-                element: $('<a />').text('Get MetaSmoke key')
+                element: $('<a>').text('Get MetaSmoke key')
                     .attr('href', `https://metasmoke.erwaysoftware.com/oauth/request?key=${AdvancedFlagging_1.metaSmokeKey}`)
+                    .wrap('<div class="grid--cell">').parent()
             },
             {
-                element: $('<a />').text('Manually register MetaSmoke key')
+                element: $('<a>').text('Manually register MetaSmoke key')
                     .click(async () => {
                     const prompt = window.prompt('Enter metasmoke key');
                     if (prompt) {
                         GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(MetaSmokeAPI_1.MetaSmokeDisabledConfig, false);
                         localStorage.setItem('MetaSmoke.ManualKey', prompt);
                     }
-                }),
+                })
+                    .wrap('<div class="grid--cell">').parent(),
                 requiresReload: true
             }, {
-                element: $('<a />').text('Clear chat FKey')
+                element: $('<a>').text('Clear chat FKey')
                     .click(async () => {
                     // Hard-code SOBotics for now
                     const roomId = 111347;
                     const fkeyCacheKey = `StackExchange.ChatApi.FKey_${roomId}`;
                     GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(fkeyCacheKey);
-                }),
+                })
+                    .wrap('<div class="grid--cell">').parent(),
                 requiresReload: true
             }
         ];
     }
     async function createConfigCheckbox(text, configValue) {
-        const checkBox = $('<input type="checkbox">');
-        const label = $('<label />')
-            .append(checkBox)
-            .append(text);
+        const optionId = text.toLowerCase().replace(/\s/g, '_');
+        const configHTML = $('<div>'
+            + '  <div class="grid gs8 gsx">'
+            + '    <div class="grid--cell"><input class="s-checkbox" type="checkbox" id="' + optionId + '"/></div>'
+            + '    <label class="grid--cell s-label fw-normal" for="' + optionId + '">' + text + '</label>'
+            + '  </div>'
+            + '</div>');
+        const input = configHTML.find('input');
         const storedValue = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(configValue);
         if (storedValue) {
-            checkBox.prop('checked', true);
+            input.prop('checked', true);
         }
         return {
-            element: label,
+            element: configHTML,
             onSave: async () => {
-                const isChecked = !!checkBox.prop('checked');
+                const isChecked = !!input.prop('checked');
                 GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(configValue, isChecked);
             }
         };

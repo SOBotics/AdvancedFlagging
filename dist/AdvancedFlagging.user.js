@@ -198,7 +198,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     background-image: url("https://i.stack.imgur.com/aMUMt.jpg?s=128&g=1");
 }
 
-.advanced-flaggin-gut-icon {
+.advanced-flagging-gut-icon {
     background-image: url("https://i.stack.imgur.com/A0JRA.png?s=128&g=1");
 }
 

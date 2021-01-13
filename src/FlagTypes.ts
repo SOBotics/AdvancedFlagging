@@ -15,7 +15,7 @@ export interface FlagType {
 }
 
 export interface FlagCategory {
-    BoxStyle?: any;
+    IsDangerous: boolean; // whether the category should have a red-ish background
     LinkStyle?: any;
 
     AppliesTo: ('Answer' | 'Question')[];
@@ -26,7 +26,7 @@ export interface FlagCategory {
 
 export const flagCategories: FlagCategory[] = [
     {
-        BoxStyle: { 'padding-left': '5px', 'padding-right': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
+        IsDangerous: true,
         AppliesTo: ['Answer', 'Question'],
         FlagTypes: [
             {
@@ -42,7 +42,7 @@ export const flagCategories: FlagCategory[] = [
         ]
     },
     {
-        BoxStyle: { 'padding-left': '5px', 'padding-right': '5px', 'background-color': 'rgba(241, 148, 148, 0.6)' },
+        IsDangerous: true,
         AppliesTo: ['Answer'],
         FlagTypes: [
             {
@@ -70,7 +70,7 @@ export const flagCategories: FlagCategory[] = [
         ]
     },
     {
-        BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
+        IsDangerous: false,
         AppliesTo: ['Answer'],
         FlagTypes: [
             {
@@ -166,7 +166,7 @@ export const flagCategories: FlagCategory[] = [
         ]
     },
     {
-        BoxStyle: { 'padding-left': '5px', 'padding-right': '5px' },
+        IsDangerous: false,
         AppliesTo: ['Answer', 'Question'],
         FlagTypes: [
             {

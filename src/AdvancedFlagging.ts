@@ -26,6 +26,7 @@ declare const StackExchange: StackExchangeGlobal;
 function SetupStyles() {
     const scriptNode = document.createElement('style');
     scriptNode.type = 'text/css';
+    scriptNode.id = 'advanced-flagging-styles';
     scriptNode.textContent = `
 #snackbar {
     min-width: 250px;
@@ -55,6 +56,78 @@ function SetupStyles() {
     -ms-transition: opacity 1s ease-in;
     -moz-transition: opacity 1s ease-in;
     -webkit-transition: opacity 1s ease-in;
+}
+
+.advanced-flagging-dialog {
+    margin: 0;
+    z-index: 3;
+    position: absolute;
+    white-space: nowrap;
+    background: #FFF;
+    padding: 5px;
+    border: 1px solid #9fa6ad;
+    box-shadow: 0 2px 4px rgba(36,39,41,0.3);
+    cursor: default
+}
+
+.advanced-flagging-hr {
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+.advanced-flagging-label-options {
+    margin-right: 5px;
+    margin-left: 4px;
+}
+
+.advanced-flagging-icon {
+    width: 15px;
+    height: 15px;
+    margin-left: 5px;
+    margin-top: 5px;
+    vertical-align: text-bottom;
+    cursor: pointer;
+    background-size: 100%;
+}
+
+.advanced-flagging-natty-icon {
+    background-image: url("https://i.stack.imgur.com/aMUMt.jpg?s=128&g=1");
+}
+
+.advanced-flaggin-gut-icon {
+    background-image: url("https://i.stack.imgur.com/A0JRA.png?s=128&g=1");
+}
+
+.advanced-flagging-smokey-icon {
+    background-image: url("https://i.stack.imgur.com/7cmCt.png?s=128&g=1");
+}
+
+.advanced-flagging-dropdown-item {
+    padding: 1px 5px;
+}
+
+.advanced-flagging-danger-item {
+    background-color: rgba(241, 148, 148, 0.6);
+}
+
+.advanced-flagging-report-link {
+    display: inline-block;
+    margin-top: 5px;
+    width: auto;
+}
+
+.advanced-flagging-performed-action {
+    margin-left: 5px;
+    background-position: -20px -320px;
+    visibility: visible;
+    width: 15px;
+    height: 15px;
+    cursor: default;
+}
+
+.advanced-flagging-flag-icon {
+    color: #C91D2E;
+    cursor: default;
 }
 `;
 
@@ -192,28 +265,13 @@ async function BuildFlaggingDialog(element: JQuery,
     reporters: Reporter[],
     copyPastorPromise: Promise<CopyPastorFindTargetResponseItem[]>
 ) {
-    const getDivider = () => $('<hr />').css({ 'margin-bottom': '10px', 'margin-top': '10px' });
-    const linkStyle = { 'display': 'inline-block', 'margin-top': '5px', 'width': 'auto' };
-    const dropDown = $('<dl />').css({
-        'margin': '0',
-        'z-index': '3',
-        'position': 'absolute',
-        'white-space': 'nowrap',
-        'background': '#FFF',
-        'padding': '5px',
-        'border': '1px solid #9fa6ad',
-        'box-shadow': '0 2px 4px rgba(36,39,41,0.3)',
-        'cursor': 'default'
-    }).hide();
+    const getDivider = () => $('<hr>').attr('class', 'advanced-flagging-hr');
+    const dropDown = $('<dl>').attr('class', 'advanced-flagging-dialog s-anchors s-anchors__default d-none');
 
     const checkboxName = `comment_checkbox_${postId}`;
-    const leaveCommentBox = $('<input />')
-        .attr('type', 'checkbox')
-        .attr('name', checkboxName);
-    const flagBox = $('<input />')
-        .attr('type', 'checkbox')
-        .attr('name', checkboxName)
-        .prop('checked', true);
+    const leaveCommentBox = $('<input>').attr('type', 'checkbox').attr('name', checkboxName).attr('class', 's-checkbox').wrap('<div class="grid--cell"></div>').parent();
+    const flagBox = leaveCommentBox.clone();
+    flagBox.find('input').prop('checked', true);
 
     const isStackOverflow = IsStackOverflow();
 
@@ -221,7 +279,7 @@ async function BuildFlaggingDialog(element: JQuery,
     const defaultNoComment = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationDefaultNoComment);
 
     if (!defaultNoComment && comments.length === 0 && isStackOverflow) {
-        leaveCommentBox.prop('checked', true);
+        leaveCommentBox.find('input').prop('checked', true);
     }
 
     const enabledFlagIds = GreaseMonkeyCache.GetFromCache<number[]>(ConfigurationEnabledFlags);
@@ -241,25 +299,25 @@ async function BuildFlaggingDialog(element: JQuery,
             if (flagType.GetComment) {
                 hasCommentOptions = true;
             }
-            const dropdownItem = $('<dd />');
-            if (flagCategory.BoxStyle) {
-                dropdownItem.css(flagCategory.BoxStyle);
+            const dropdownItem = $('<dd>').attr('class', 'advanced-flagging-dropdown-item');
+            if (flagCategory.IsDangerous) {
+                dropdownItem.addClass('advanced-flagging-danger-item');
             }
 
-            const reportLink = $('<a />').css(linkStyle);
+            const reportLink = $('<a>').attr('class', 'advanced-flagging-report-link');
 
             const disableLink = () => {
                 activeLinks--;
-                reportLink.hide();
+                reportLink.addClass('d-none').removeClass('d-block');
                 if (divider && activeLinks <= 0) {
-                    divider.hide();
+                    divider.addClass('d-none').removeClass('d-block');
                 }
             };
             const enableLink = () => {
                 activeLinks++;
-                reportLink.show();
+                reportLink.addClass('d-block').removeClass('d-none');
                 if (divider && activeLinks > 0) {
-                    divider.show();
+                    divider.addClass('d-block').removeClass('d-none');
                 }
             };
 
@@ -292,7 +350,7 @@ async function BuildFlaggingDialog(element: JQuery,
             reportLink.click(() => {
                 if (!deleted) {
                     try {
-                        if (!leaveCommentBox.is(':checked')) {
+                        if (!leaveCommentBox.find('input').is(':checked')) {
                             if (commentText) {
                                 // Match [some text](http://somehyperlink.com)
                                 let strippedComment = commentText.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '$1');
@@ -325,7 +383,8 @@ async function BuildFlaggingDialog(element: JQuery,
                             commentText = undefined;
                         }
 
-                        const result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), commentText, copyPastorPromise);
+                        const result = handleFlagAndComment(postId, flagType, flagBox.find('input').is(':checked'),
+                                                            commentText, copyPastorPromise);
                         if (result.CommentPromise) {
                             result.CommentPromise.then((data) => {
                                 const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
@@ -344,7 +403,7 @@ async function BuildFlaggingDialog(element: JQuery,
                                 const expiryDate = new Date();
                                 expiryDate.setDate(expiryDate.getDate() + 30);
                                 reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
-                                reportedIcon.css('display', 'inline-block');
+                                reportedIcon.addClass('d-inline-block').removeClass('d-none');
                                 displaySuccess('Flagged');
                             }).catch(err => {
                                 displayError('Failed to flag post');
@@ -360,12 +419,12 @@ async function BuildFlaggingDialog(element: JQuery,
                     const expiryDate = new Date();
                     expiryDate.setDate(expiryDate.getDate() + 30);
                     performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
-                    performedActionIcon.show();
+                    performedActionIcon.addClass('d-block').removeClass('d-none');
                 }
 
                 handleFlag(flagType, reporters, answerTime, questionTime);
 
-                dropDown.hide();
+                dropDown.removeClass('d-block').addClass('d-none');
             });
 
             reportLink.text(flagType.DisplayName);
@@ -382,44 +441,35 @@ async function BuildFlaggingDialog(element: JQuery,
 
     dropDown.append(getDivider());
     if (hasCommentOptions) {
-        const commentBoxLabel =
-            $('<label />').text('Leave comment')
-                .attr('for', checkboxName)
-                .css({
-                    'margin-right': '5px',
-                    'margin-left': '4px',
-                });
-
-        commentBoxLabel.click(() => leaveCommentBox.click());
+        const commentBoxLabel = $('<label>').text('Leave comment')
+                                            .attr('for', checkboxName)
+                                            .attr('class', 'advanced-flagging-label-options grid--cell s-label fw-normal');
 
         const commentingRow = $('<dd />');
-        commentingRow.append(commentBoxLabel);
         commentingRow.append(leaveCommentBox);
+        commentingRow.append(commentBoxLabel);
 
         dropDown.append(commentingRow);
+        commentingRow.children().wrapAll('<div class="grid gs8"></div>');
     }
 
     const flagBoxLabel =
-        $('<label />').text('Flag')
+        $('<label>').text('Flag')
             .attr('for', checkboxName)
-            .css({
-                'margin-right': '5px',
-                'margin-left': '4px',
-            });
-
-    flagBoxLabel.click(() => flagBox.click());
+            .attr('class', 'advanced-flagging-label-options grid--cell s-label fw-normal');
 
     const flaggingRow = $('<dd />');
 
     const defaultNoFlag = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationDefaultNoFlag);
     if (defaultNoFlag) {
-        flagBox.prop('checked', false);
+        flagBox.find('input').prop('checked', false);
     }
 
-    flaggingRow.append(flagBoxLabel);
     flaggingRow.append(flagBox);
+    flaggingRow.append(flagBoxLabel);
 
     dropDown.append(flaggingRow);
+    flaggingRow.children().wrapAll('<div class="grid gs8"></div>');
 
     return dropDown;
 }
@@ -489,7 +539,7 @@ async function SetupPostPage() {
             window.open(`https://sentinel.erwaysoftware.com/posts/aid/${post.postId}`, '_blank');
         });
 
-        const showFunc = (element: JQuery) => element.css('display', 'inline-block');
+        const showFunc = (element: JQuery) => element.addClass('d-inline-block').removeClass('d-none');
 
         const copyPastorIcon = getGuttenbergIcon();
         const copyPastorApi = new CopyPastorAPI(post.postId, copyPastorKey);
@@ -504,7 +554,7 @@ async function SetupPostPage() {
                     if (reported) {
                         showFunc(nattyIcon);
                     } else {
-                        nattyIcon.hide();
+                        nattyIcon.addClass('d-none');
                     }
                 });
 
@@ -529,7 +579,7 @@ async function SetupPostPage() {
                         })
                     );
                 } else {
-                    copyPastorIcon.hide();
+                    copyPastorIcon.addClass('d-none');
                 }
             });
 
@@ -566,7 +616,7 @@ async function SetupPostPage() {
                     });
                     showFunc(smokeyIcon);
                 } else {
-                    smokeyIcon.hide();
+                    smokeyIcon.addClass('d-none');
                 }
             });
         reporters.push({
@@ -585,8 +635,9 @@ async function SetupPostPage() {
 
         if (post.page === 'Question') {
             // Now we setup the flagging dialog
-            iconLocation = post.element.find('.js-post-menu');
-            advancedFlaggingLink = $('<a />').text('Advanced Flagging');
+            iconLocation = iconLocation = post.element.find('.js-post-menu').children().first();
+            advancedFlaggingLink = $('<button>').attr('type', 'button')
+                                                .attr('class', 's-btn s-btn__link advanced-flagging-link').text('Advanced Flagging');
 
             let questionTime: Date;
             let answerTime: Date;
@@ -633,7 +684,7 @@ async function SetupPostPage() {
                 advancedFlaggingLink.append(dropDown);
 
                 $(window).click(() => {
-                    dropDown.hide();
+                    dropDown.removeClass('d-block').addClass('d-none');
                 });
                 const link = advancedFlaggingLink;
                 const openOnHover = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationOpenOnHover);
@@ -641,12 +692,12 @@ async function SetupPostPage() {
                     link.hover(e => {
                         e.stopPropagation();
                         if (e.target === link.get(0)) {
-                            dropDown.show();
+                            dropDown.removeClass('d-none').addClass('d-block');
                         }
                     });
                     link.mouseleave(e => {
                         e.stopPropagation();
-                        dropDown.hide();
+                        dropDown.removeClass('d-block').addClass('d-none');
                     });
                 } else {
                     link.click(e => {
@@ -656,7 +707,7 @@ async function SetupPostPage() {
                         }
                     });
                 }
-                iconLocation.append(advancedFlaggingLink);
+                iconLocation.append($('<div>').attr('class', 'grid--cell').append(advancedFlaggingLink));
             }
 
             iconLocation.append(performedActionIcon);
@@ -678,48 +729,24 @@ async function SetupPostPage() {
 }
 
 function getPerformedActionIcon() {
-    return $('<div>').addClass('comment-flag')
-        .css({ 'margin-left': '5px', 'background-position': '-61px -320px', 'visibility': 'visible' })
-        .css({ 'width': '15px', 'height': '15px', 'background-position': '-20px -320px' })
-        .css({ cursor: 'default' })
-        .hide();
+    return $('<div>').attr('class', 'comment-flag advanced-flagging-performed-action d-none');
 }
 
 function getReportedIcon() {
     return $('<div>')
-        .addClass('comment-flag')
-        .css({ color: '#C91D2E', cursor: 'default' })
-        .append('<svg aria-hidden="true" class="svg-icon iconFlag" width="18" height="18" viewBox="0 0 18 18"><path d="M3 2v14h2v-6h3.6l.4 1h6V3H9.5L9 2z"></path></svg>')
-        .hide();
+        .attr('class', 'comment-flag advanced-flagging-flag-icon d-none')
+        .append('<svg aria-hidden="true" class="svg-icon iconFlag" width="18" height="18" viewBox="0 0 18 18"><path d="M3 2v14h2v-6h3.6l.4 1h6V3H9.5L9 2z"></path></svg>');
 }
 
 function getNattyIcon() {
-    return $('<div>')
-        .css({
-            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
-            'background': 'url("https://i.stack.imgur.com/aMUMt.jpg?s=128&g=1"', 'background-size': '100%'
-        })
-        .attr('title', 'Reported by Natty')
-        .hide();
+    return $('<div>').attr('title', 'Reported by Natty').attr('class', 'advanced-flagging-icon advanced-flagging-natty-icon d-none');
 }
 function getGuttenbergIcon() {
-    return $('<div>')
-        .css({
-            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
-            'background': 'url("https://i.stack.imgur.com/A0JRA.png?s=128&g=1"', 'background-size': '100%'
-        })
-        .attr('title', 'Reported by Guttenberg')
-        .hide();
+    return $('<div>').attr('title', 'Reported by Guttenberg').attr('class', 'advanced-flagging-icon advanced-flagging-gut-icon d-none');
 }
 
 function getSmokeyIcon() {
-    return $('<div>')
-        .css({
-            'width': '15px', 'height': '16px', 'margin-left': '5px', 'vertical-align': 'text-bottom', 'cursor': 'pointer',
-            'background': 'url("https://i.stack.imgur.com/7cmCt.png?s=128&g=1"', 'background-size': '100%'
-        })
-        .attr('title', 'Reported by Smokey')
-        .hide();
+    return $('<div>').attr('title', 'Reported by Smokey').attr('class', 'advanced-flagging-icon advanced-flagging-smokey-icon d-none');
 }
 
 const metaSmokeManualKey = 'MetaSmoke.ManualKey';

@@ -268,9 +268,11 @@ async function BuildFlaggingDialog(element: JQuery,
     const getDivider = () => $('<hr>').attr('class', 'advanced-flagging-hr');
     const dropDown = $('<dl>').attr('class', 'advanced-flagging-dialog s-anchors s-anchors__default d-none');
 
-    const checkboxName = `comment_checkbox_${postId}`;
-    const leaveCommentBox = $('<input>').attr('type', 'checkbox').attr('name', checkboxName).attr('class', 's-checkbox').wrap('<div class="grid--cell"></div>').parent();
-    const flagBox = leaveCommentBox.clone();
+    const checkboxNameComment = `comment_checkbox_${postId}`;
+    const checkboxNameFlag = `flag_checkbox_${postId}`;
+    const leaveCommentBox = $('<input>').attr('type', 'checkbox').attr('name', checkboxNameComment).attr('id', checkboxNameComment)
+                                        .attr('class', 's-checkbox').wrap('<div class="grid--cell"></div>').parent();
+    const flagBox = leaveCommentBox.clone().find('input').attr('name', checkboxNameFlag).attr('id', checkboxNameFlag).parent();
     flagBox.find('input').prop('checked', true);
 
     const isStackOverflow = IsStackOverflow();
@@ -442,7 +444,7 @@ async function BuildFlaggingDialog(element: JQuery,
     dropDown.append(getDivider());
     if (hasCommentOptions) {
         const commentBoxLabel = $('<label>').text('Leave comment')
-                                            .attr('for', checkboxName)
+                                            .attr('for', checkboxNameComment)
                                             .attr('class', 'advanced-flagging-label-options grid--cell s-label fw-normal');
 
         const commentingRow = $('<dd />');
@@ -455,7 +457,7 @@ async function BuildFlaggingDialog(element: JQuery,
 
     const flagBoxLabel =
         $('<label>').text('Flag')
-            .attr('for', checkboxName)
+            .attr('for', checkboxNameFlag)
             .attr('class', 'advanced-flagging-label-options grid--cell s-label fw-normal');
 
     const flaggingRow = $('<dd />');
@@ -683,9 +685,6 @@ async function SetupPostPage() {
 
                 advancedFlaggingLink.append(dropDown);
 
-                $(window).click(() => {
-                    dropDown.removeClass('d-block').addClass('d-none');
-                });
                 const link = advancedFlaggingLink;
                 const openOnHover = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationOpenOnHover);
                 if (openOnHover) {
@@ -703,8 +702,11 @@ async function SetupPostPage() {
                     link.click(e => {
                         e.stopPropagation();
                         if (e.target === link.get(0)) {
-                            dropDown.toggle();
+                            dropDown.removeClass('d-none').addClass('d-block');
                         }
+                    });
+                    $(window).click(() => {
+                        dropDown.removeClass('d-block').addClass('d-none');
                     });
                 }
                 iconLocation.append($('<div>').attr('class', 'grid--cell').append(advancedFlaggingLink));

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.3.2
+// @version      1.3.3
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -333,9 +333,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     async function BuildFlaggingDialog(element, postId, postType, reputation, authorName, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorPromise) {
         const getDivider = () => $('<hr>').attr('class', 'advanced-flagging-hr');
         const dropDown = $('<dl>').attr('class', 'advanced-flagging-dialog s-anchors s-anchors__default d-none');
-        const checkboxName = `comment_checkbox_${postId}`;
-        const leaveCommentBox = $('<input>').attr('type', 'checkbox').attr('name', checkboxName).attr('class', 's-checkbox').wrap('<div class="grid--cell"></div>').parent();
-        const flagBox = leaveCommentBox.clone();
+        const checkboxNameComment = `comment_checkbox_${postId}`;
+        const checkboxNameFlag = `flag_checkbox_${postId}`;
+        const leaveCommentBox = $('<input>').attr('type', 'checkbox').attr('name', checkboxNameComment).attr('id', checkboxNameComment)
+            .attr('class', 's-checkbox').wrap('<div class="grid--cell"></div>').parent();
+        const flagBox = leaveCommentBox.clone().find('input').attr('name', checkboxNameFlag).attr('id', checkboxNameFlag).parent();
         flagBox.find('input').prop('checked', true);
         const isStackOverflow = sotools_1.IsStackOverflow();
         const comments = element.find('.comment-body');
@@ -486,7 +488,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         dropDown.append(getDivider());
         if (hasCommentOptions) {
             const commentBoxLabel = $('<label>').text('Leave comment')
-                .attr('for', checkboxName)
+                .attr('for', checkboxNameComment)
                 .attr('class', 'advanced-flagging-label-options grid--cell s-label fw-normal');
             const commentingRow = $('<dd />');
             commentingRow.append(leaveCommentBox);
@@ -495,7 +497,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             commentingRow.children().wrapAll('<div class="grid gs8"></div>');
         }
         const flagBoxLabel = $('<label>').text('Flag')
-            .attr('for', checkboxName)
+            .attr('for', checkboxNameFlag)
             .attr('class', 'advanced-flagging-label-options grid--cell s-label fw-normal');
         const flaggingRow = $('<dd />');
         const defaultNoFlag = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationDefaultNoFlag);
@@ -697,9 +699,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 if (!linkDisabled) {
                     const dropDown = await BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, post.authorName, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi.Promise());
                     advancedFlaggingLink.append(dropDown);
-                    $(window).click(() => {
-                        dropDown.removeClass('d-block').addClass('d-none');
-                    });
                     const link = advancedFlaggingLink;
                     const openOnHover = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationOpenOnHover);
                     if (openOnHover) {
@@ -718,8 +717,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         link.click(e => {
                             e.stopPropagation();
                             if (e.target === link.get(0)) {
-                                dropDown.toggle();
+                                dropDown.removeClass('d-none').addClass('d-block');
                             }
+                        });
+                        $(window).click(() => {
+                            dropDown.removeClass('d-block').addClass('d-none');
                         });
                     }
                     iconLocation.append($('<div>').attr('class', 'grid--cell').append(advancedFlaggingLink));

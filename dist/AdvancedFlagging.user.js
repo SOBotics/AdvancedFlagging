@@ -333,9 +333,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     async function BuildFlaggingDialog(element, postId, postType, reputation, authorName, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorPromise) {
         const getDivider = () => $('<hr>').attr('class', 'advanced-flagging-hr');
         const dropDown = $('<dl>').attr('class', 'advanced-flagging-dialog s-anchors s-anchors__default d-none');
-        const checkboxName = `comment_checkbox_${postId}`;
-        const leaveCommentBox = $('<input>').attr('type', 'checkbox').attr('name', checkboxName).attr('class', 's-checkbox').wrap('<div class="grid--cell"></div>').parent();
-        const flagBox = leaveCommentBox.clone();
+        const checkboxNameComment = `comment_checkbox_${postId}`;
+        const checkboxNameFlag = `flag_checkbox_${postId}`;
+        const leaveCommentBox = $('<input>').attr('type', 'checkbox').attr('name', checkboxNameComment).attr('id', checkboxNameComment)
+            .attr('class', 's-checkbox').wrap('<div class="grid--cell"></div>').parent();
+        const flagBox = leaveCommentBox.clone().find('input').attr('name', checkboxNameFlag).attr('id', checkboxNameFlag).parent();
         flagBox.find('input').prop('checked', true);
         const isStackOverflow = sotools_1.IsStackOverflow();
         const comments = element.find('.comment-body');
@@ -486,7 +488,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         dropDown.append(getDivider());
         if (hasCommentOptions) {
             const commentBoxLabel = $('<label>').text('Leave comment')
-                .attr('for', checkboxName)
+                .attr('for', checkboxNameComment)
                 .attr('class', 'advanced-flagging-label-options grid--cell s-label fw-normal');
             const commentingRow = $('<dd />');
             commentingRow.append(leaveCommentBox);
@@ -495,7 +497,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             commentingRow.children().wrapAll('<div class="grid gs8"></div>');
         }
         const flagBoxLabel = $('<label>').text('Flag')
-            .attr('for', checkboxName)
+            .attr('for', checkboxNameFlag)
             .attr('class', 'advanced-flagging-label-options grid--cell s-label fw-normal');
         const flaggingRow = $('<dd />');
         const defaultNoFlag = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationDefaultNoFlag);

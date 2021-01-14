@@ -697,9 +697,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 if (!linkDisabled) {
                     const dropDown = await BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, post.authorName, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi.Promise());
                     advancedFlaggingLink.append(dropDown);
-                    $(window).click(() => {
-                        dropDown.removeClass('d-block').addClass('d-none');
-                    });
                     const link = advancedFlaggingLink;
                     const openOnHover = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationOpenOnHover);
                     if (openOnHover) {
@@ -718,8 +715,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         link.click(e => {
                             e.stopPropagation();
                             if (e.target === link.get(0)) {
-                                dropDown.toggle();
+                                dropDown.removeClass('d-none').addClass('d-block');
                             }
+                        });
+                        $(window).click(() => {
+                            dropDown.removeClass('d-block').addClass('d-none');
                         });
                     }
                     iconLocation.append($('<div>').attr('class', 'grid--cell').append(advancedFlaggingLink));

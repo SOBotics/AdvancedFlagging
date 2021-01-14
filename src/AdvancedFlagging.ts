@@ -683,9 +683,6 @@ async function SetupPostPage() {
 
                 advancedFlaggingLink.append(dropDown);
 
-                $(window).click(() => {
-                    dropDown.removeClass('d-block').addClass('d-none');
-                });
                 const link = advancedFlaggingLink;
                 const openOnHover = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationOpenOnHover);
                 if (openOnHover) {
@@ -703,8 +700,11 @@ async function SetupPostPage() {
                     link.click(e => {
                         e.stopPropagation();
                         if (e.target === link.get(0)) {
-                            dropDown.toggle();
+                            dropDown.removeClass('d-none').addClass('d-block');
                         }
+                    });
+                    $(window).click(() => {
+                        dropDown.removeClass('d-block').addClass('d-none');
                     });
                 }
                 iconLocation.append($('<div>').attr('class', 'grid--cell').append(advancedFlaggingLink));

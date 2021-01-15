@@ -328,15 +328,15 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             if (!leaveCommentBox.find('input').is(':checked')) {
                                 if (commentText) {
                                     // Match [some text](http://somehyperlink.com)
-                                    let strippedComment = commentText.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '$1');
+                                    let strippedComment = commentText.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1');
                                     // Match [edit]
-                                    strippedComment = strippedComment.replace(/\[([^\]]+)\][^\(]*?/g, '$1');
+                                    strippedComment = strippedComment.replace(/\[([^\]]+)\][^(]*?/g, '$1');
                                     // Strip out italics. _thanks_ => thanks
                                     strippedComment = strippedComment.replace(/_([^_]+)_/g, '$1');
                                     // Strip out bolds. **thanks** => thanks
-                                    strippedComment = strippedComment.replace(/\*\*([^\*]+)\*\*/g, '$1');
+                                    strippedComment = strippedComment.replace(/\*\*([^*]+)\*\*/g, '$1');
                                     // Strip out italics. *thanks* => thanks
-                                    strippedComment = strippedComment.replace(/\*([^\*]+)\*/g, '$1');
+                                    strippedComment = strippedComment.replace(/\*([^*]+)\*/g, '$1');
                                     element.find('.comment-body .comment-copy').each((index, ele) => {
                                         const jEle = $(ele);
                                         let text = jEle.text();
@@ -595,7 +595,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 const isEnabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationWatchFlags);
                 RequestWatcher_1.WatchFlags().subscribe(xhr => {
                     if (isEnabled && !autoFlagging) {
-                        const matches = new RegExp(`/flags\/posts\/${post.postId}\/add\/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`).exec(xhr.responseURL);
+                        const matches = new RegExp(`/flags/posts/${post.postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`).exec(xhr.responseURL);
                         if (matches !== null && xhr.status === 200) {
                             const flagType = {
                                 Id: 0,
@@ -694,8 +694,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         if (watchedQueuesEnabled) {
             RequestWatcher_1.WatchRequests().subscribe((xhr) => {
                 const parseReviewDetails = (review) => {
-                    const postId = review.postId;
-                    const content = $(review.content);
+                    const reviewJson = JSON.parse(review);
+                    const postId = reviewJson.postId;
+                    const content = $(reviewJson.content);
                     postDetails[postId] = {
                         questionTime: sotools_1.parseDate($('.post-signature.owner .user-action-time span', content).attr('title')),
                         answerTime: sotools_1.parseDate($('.user-info .user-action-time span', content).attr('title'))
@@ -708,7 +709,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 // task-reviewed is invoked when making a response
                 const isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
                 if (isReviewItem !== null && xhr.status === 200) {
-                    const review = JSON.parse(xhr.responseText);
+                    const review = xhr.responseText;
                     parseReviewDetails(review);
                     return;
                 }
@@ -13733,7 +13734,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         }
                     }
                     for (const url in pendingPostLookup) {
-                        if (pendingPostLookup.hasOwnProperty(url)) {
+                        if (Object.prototype.hasOwnProperty.call(pendingPostLookup, url)) {
                             const pendingPost = pendingPostLookup[url];
                             const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
                             const obs = MetaSmokeAPI.ObservableLookup[key];
@@ -13744,7 +13745,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     }
                 }).fail(error => {
                     for (const url in pendingPostLookup) {
-                        if (pendingPostLookup.hasOwnProperty(url)) {
+                        if (Object.prototype.hasOwnProperty.call(pendingPostLookup, url)) {
                             const pendingPost = pendingPostLookup[url];
                             const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
                             const obs = MetaSmokeAPI.ObservableLookup[key];
@@ -13773,6 +13774,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             return JSON.stringify({ postId, postType });
         }
         static getUserKey() {
+            // eslint-disable-next-line no-async-promise-executor
             return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(exports.MetaSmokeUserKeyConfig, () => new Promise(async (resolve, reject) => {
                 let prom = MetaSmokeAPI.actualPromise;
                 if (prom === undefined) {
@@ -13816,6 +13818,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 const urlStr = postType === 'Answer'
                     ? `//${window.location.hostname}/a/${postId}`
                     : `//${window.location.hostname}/q/${postId}`;
+                // eslint-disable-next-line no-async-promise-executor
                 const promise = new Promise(async (resolve, reject) => {
                     const userKey = await MetaSmokeAPI.getUserKey();
                     if (userKey) {
@@ -13832,7 +13835,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     }
                 });
                 const result = await promise;
-                const queryUrlStr = MetaSmokeAPI.GetQueryUrl(postId, postType);
                 await Delay(1000);
                 MetaSmokeAPI.QueryMetaSmoke(postId, postType);
                 return result;
@@ -13958,7 +13960,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
             const promises = payloads.map(payload => {
                 return new Promise((resolve, reject) => {
-                    const payloadString = JSON.stringify(payload);
                     GM_xmlhttpRequest({
                         method: 'POST',
                         url: `${copyPastorServer}/feedback/create`,

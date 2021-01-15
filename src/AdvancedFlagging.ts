@@ -355,18 +355,18 @@ async function BuildFlaggingDialog(element: JQuery,
                         if (!leaveCommentBox.find('input').is(':checked')) {
                             if (commentText) {
                                 // Match [some text](http://somehyperlink.com)
-                                let strippedComment = commentText.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '$1');
+                                let strippedComment = commentText.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1');
                                 // Match [edit]
-                                strippedComment = strippedComment.replace(/\[([^\]]+)\][^\(]*?/g, '$1');
+                                strippedComment = strippedComment.replace(/\[([^\]]+)\][^(]*?/g, '$1');
 
                                 // Strip out italics. _thanks_ => thanks
                                 strippedComment = strippedComment.replace(/_([^_]+)_/g, '$1');
 
                                 // Strip out bolds. **thanks** => thanks
-                                strippedComment = strippedComment.replace(/\*\*([^\*]+)\*\*/g, '$1');
+                                strippedComment = strippedComment.replace(/\*\*([^*]+)\*\*/g, '$1');
 
                                 // Strip out italics. *thanks* => thanks
-                                strippedComment = strippedComment.replace(/\*([^\*]+)\*/g, '$1');
+                                strippedComment = strippedComment.replace(/\*([^*]+)\*/g, '$1');
 
                                 element.find('.comment-body .comment-copy').each((index, ele) => {
                                     const jEle = $(ele);
@@ -655,7 +655,7 @@ async function SetupPostPage() {
             const isEnabled = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationWatchFlags);
             WatchFlags().subscribe(xhr => {
                 if (isEnabled && !autoFlagging) {
-                    const matches = new RegExp(`/flags\/posts\/${post.postId}\/add\/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`).exec(xhr.responseURL);
+                    const matches = new RegExp(`/flags/posts/${post.postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`).exec(xhr.responseURL);
                     if (matches !== null && xhr.status === 200) {
                         const flagType = {
                             Id: 0,
@@ -772,9 +772,10 @@ async function Setup() {
     const postDetails: { questionTime: Date, answerTime: Date }[] = [];
     if (watchedQueuesEnabled) {
         WatchRequests().subscribe((xhr) => {
-            const parseReviewDetails = (review: any) => {
-                const postId = review.postId;
-                const content = $(review.content);
+            const parseReviewDetails = (review: string) => {
+                const reviewJson = JSON.parse(review);
+                const postId = reviewJson.postId;
+                const content = $(reviewJson.content);
                 postDetails[postId] = {
                     questionTime: parseDate($('.post-signature.owner .user-action-time span', content).attr('title')),
                     answerTime: parseDate($('.user-info .user-action-time span', content).attr('title'))
@@ -789,7 +790,7 @@ async function Setup() {
             // task-reviewed is invoked when making a response
             const isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
             if (isReviewItem !== null && xhr.status === 200) {
-                const review = JSON.parse(xhr.responseText);
+                const review = xhr.responseText;
                 parseReviewDetails(review);
                 return;
             }

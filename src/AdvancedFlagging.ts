@@ -221,7 +221,7 @@ function displayToaster(message: string, colour: string, textColour?: string, du
 
     function hidePopup() {
         popupWrapper.removeClass('show').addClass('hide');
-        toasterFadeTimeout = setTimeout(() => {
+        toasterFadeTimeout = window.setTimeout(() => {
             popupWrapper.empty().hide();
         }, 1000);
     }
@@ -232,7 +232,7 @@ function displayToaster(message: string, colour: string, textColour?: string, du
     if (toasterTimeout) {
         clearTimeout(toasterTimeout);
     }
-    toasterTimeout = setTimeout(hidePopup, duration === undefined ? popupDelay : duration);
+    toasterTimeout = window.setTimeout(hidePopup, duration === undefined ? popupDelay : duration);
 }
 export function displaySuccess(message: string) {
     displayToaster(message, '#00690c');

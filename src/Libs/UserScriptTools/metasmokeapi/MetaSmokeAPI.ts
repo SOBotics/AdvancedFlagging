@@ -57,7 +57,7 @@ export class MetaSmokeAPI {
                         $(window).off('focus', handleFDSCCode);
                         const code = window.prompt('Once you\'ve authenticated Advanced Flagging with metasmoke, you\'ll be given a code; enter it here.');
                         if (!code) {
-                            resolve();
+                            resolve(undefined);
                         } else {
                             return resolve(code);
                         }
@@ -85,7 +85,7 @@ export class MetaSmokeAPI {
             clearTimeout(this.pendingTimeout);
         }
         this.pendingPosts.push({ postId, postType });
-        this.pendingTimeout = setTimeout(MetaSmokeAPI.QueryMetaSmokeInternal, 1000);
+        this.pendingTimeout = window.setTimeout(MetaSmokeAPI.QueryMetaSmokeInternal, 1000);
     }
 
     private static QueryMetaSmokeInternal() {

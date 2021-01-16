@@ -4,7 +4,6 @@ import { Observable, Subject, ReplaySubject } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { IsStackOverflow } from '@userscriptTools/sotools/sotools';
 import { ChatApi } from '@userscriptTools/chatapi/ChatApi';
-import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
 
 const nattyFeedbackUrl = 'http://logs.sobotics.org/napi/api/feedback';
 

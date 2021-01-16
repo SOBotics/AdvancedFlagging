@@ -9,12 +9,13 @@
     "declaration": false,
     "moduleResolution": "node",
     "strict": true,
+    "strictBindCallApply": false, // RequestWatcher.ts L29
     "outDir": "./dist",
     "module": "amd",
     "target": "esnext",
     "lib": [
       "es2015",
-      "dom"
+      "DOM"
     ],
     "baseUrl": "src",
     "paths": {

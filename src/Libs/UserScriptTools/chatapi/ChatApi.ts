@@ -12,7 +12,7 @@ export class ChatApi {
 
     private chatRoomUrl: string;
 
-    public constructor(chatUrl: string = 'https://chat.stackoverflow.com') {
+    public constructor(chatUrl = 'https://chat.stackoverflow.com') {
         this.chatRoomUrl = `${chatUrl}`;
     }
 

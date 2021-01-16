@@ -3,7 +3,6 @@ declare const GM_xmlhttpRequest: any;
 import { ReplaySubject, Observable, Subject } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { ChatApi } from '@userscriptTools/chatapi/ChatApi';
-import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
 
 const copyPastorServer = 'https://copypastor.sobotics.org';
 
@@ -92,7 +91,6 @@ export class CopyPastorAPI {
 
         const promises = payloads.map(payload => {
             return new Promise<boolean>((resolve, reject) => {
-                const payloadString = JSON.stringify(payload);
                 GM_xmlhttpRequest({
                     method: 'POST',
                     url: `${copyPastorServer}/feedback/create`,

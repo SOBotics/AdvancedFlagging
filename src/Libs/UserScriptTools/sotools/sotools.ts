@@ -1,5 +1,5 @@
 export type QuestionPageInfo = QuestionQuestion | QuestionAnswer;
-declare var StackExchange: any;
+declare let StackExchange: any;
 export interface QuestionQuestion {
     type: 'Question';
     element: JQuery;
@@ -93,9 +93,9 @@ function parseNatoPage(callback: (post: NatoAnswer) => void) {
         const { authorName, authorId } = parseAuthorDetails(node.find('.user-details'));
 
         callback({
-            type: 'Answer' as 'Answer',
+            type: 'Answer' as const,
             element: node,
-            page: 'NATO' as 'NATO',
+            page: 'NATO' as const,
             postId,
             answerTime,
             questionTime,
@@ -135,9 +135,9 @@ function parseQuestionPage(callback: (post: QuestionPageInfo) => void) {
         });
 
         question = {
-            type: 'Question' as 'Question',
+            type: 'Question' as const,
             element: qNode,
-            page: 'Question' as 'Question',
+            page: 'Question' as const,
             postId,
             postTime: postDetails.postTime,
 
@@ -167,9 +167,9 @@ function parseQuestionPage(callback: (post: QuestionPageInfo) => void) {
             });
 
             callback({
-                type: 'Answer' as 'Answer',
+                type: 'Answer' as const,
                 element: aNode,
-                page: 'Question' as 'Question',
+                page: 'Question' as const,
                 postId: answerId,
                 question,
 
@@ -218,7 +218,7 @@ function parseFlagsPage(callback: (post: FlagPageInfo) => void) {
         callback({
             type: type as 'Answer' | 'Question',
             element: node,
-            page: 'Flags' as 'Flags',
+            page: 'Flags' as const,
             postId,
             score,
             postTime,
@@ -246,9 +246,9 @@ function parseGenericPage(callback: (post: GenericPageInfo) => void) {
         const postId = parseInt(fragment, 10);
 
         callback({
-            type: 'Question' as 'Question',
+            type: 'Question' as const,
             element: questionNode,
-            page: 'Unknown' as 'Unknown',
+            page: 'Unknown' as const,
             postId
         });
     }
@@ -262,9 +262,9 @@ function parseGenericPage(callback: (post: GenericPageInfo) => void) {
         const postId = parseInt(fragment, 10);
 
         callback({
-            type: 'Answer' as 'Answer',
+            type: 'Answer' as const,
             element: answerNode,
-            page: 'Unknown' as 'Unknown',
+            page: 'Unknown' as const,
             postId
         });
     }

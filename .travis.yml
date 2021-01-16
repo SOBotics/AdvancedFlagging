@@ -1,8 +1,0 @@
-language: node_js
-install:
-  - nvm install stable
-  - npm install -g concat-cli
-  - npm install -g typescript
-  - npm install
-script:
-  - npm run build

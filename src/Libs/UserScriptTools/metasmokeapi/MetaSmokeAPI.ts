@@ -57,7 +57,7 @@ export class MetaSmokeAPI {
                         $(window).off('focus', handleFDSCCode);
                         const code = window.prompt('Once you\'ve authenticated Advanced Flagging with metasmoke, you\'ll be given a code; enter it here.');
                         if (!code) {
-                            resolve();
+                            resolve(undefined);
                         } else {
                             return resolve(code);
                         }
@@ -85,7 +85,7 @@ export class MetaSmokeAPI {
             clearTimeout(this.pendingTimeout);
         }
         this.pendingPosts.push({ postId, postType });
-        this.pendingTimeout = setTimeout(MetaSmokeAPI.QueryMetaSmokeInternal, 1000);
+        this.pendingTimeout = window.setTimeout(MetaSmokeAPI.QueryMetaSmokeInternal, 1000);
     }
 
     private static QueryMetaSmokeInternal() {
@@ -125,7 +125,7 @@ export class MetaSmokeAPI {
                     }
                 }
                 for (const url in pendingPostLookup) {
-                    if (pendingPostLookup.hasOwnProperty(url)) {
+                    if (Object.prototype.hasOwnProperty.call(pendingPostLookup, url)) {
                         const pendingPost = pendingPostLookup[url];
                         const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
                         const obs = MetaSmokeAPI.ObservableLookup[key];
@@ -136,7 +136,7 @@ export class MetaSmokeAPI {
                 }
             }).fail(error => {
                 for (const url in pendingPostLookup) {
-                    if (pendingPostLookup.hasOwnProperty(url)) {
+                    if (Object.prototype.hasOwnProperty.call(pendingPostLookup, url)) {
                         const pendingPost = pendingPostLookup[url];
                         const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
                         const obs = MetaSmokeAPI.ObservableLookup[key];
@@ -169,6 +169,7 @@ export class MetaSmokeAPI {
     }
 
     private static getUserKey() {
+        // eslint-disable-next-line no-async-promise-executor
         return GreaseMonkeyCache.GetAndCache(MetaSmokeUserKeyConfig, () => new Promise<string>(async (resolve, reject) => {
             let prom = MetaSmokeAPI.actualPromise;
             if (prom === undefined) {
@@ -215,6 +216,7 @@ export class MetaSmokeAPI {
                     ? `//${window.location.hostname}/a/${postId}`
                     : `//${window.location.hostname}/q/${postId}`;
 
+            // eslint-disable-next-line no-async-promise-executor
             const promise = new Promise<boolean>(async (resolve, reject) => {
                 const userKey = await MetaSmokeAPI.getUserKey();
                 if (userKey) {
@@ -232,7 +234,6 @@ export class MetaSmokeAPI {
             });
 
             const result = await promise;
-            const queryUrlStr = MetaSmokeAPI.GetQueryUrl(postId, postType);
 
             await Delay(1000);
             MetaSmokeAPI.QueryMetaSmoke(postId, postType);

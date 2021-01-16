@@ -1,6 +1,6 @@
 {
   "name": "advancedflagging",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "scripts": {
     "build": "eslint src/**/*.ts && webpack --mode=none && concat-cli -f src/UserScriptDeclaration.js dist/out.js -o dist/AdvancedFlagging.user.js && webpack --mode=production && concat-cli -f src/UserScriptDeclaration.js dist/out.js -o dist/AdvancedFlagging.min.user.js"
   },

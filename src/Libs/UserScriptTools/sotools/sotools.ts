@@ -231,6 +231,10 @@ function parseFlagsPage(callback: (post: FlagPageInfo) => void) {
     }
 }
 
+export function isUserPage() {
+    return !!window.location.href.match(/\/users\/\d+.*/);
+}
+
 function parseGenericPage(callback: (post: GenericPageInfo) => void) {
     const questionNodes = $('.question-hyperlink');
     for (let i = 0; i < questionNodes.length; i++) {
@@ -276,16 +280,12 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => Promise<v
         return;
     }
 
-    if ((StackExchange as any).options.user.isModerator) {
-        return;
-    }
-
     if (isFlagsPage()) {
         parseFlagsPage(callback);
         return;
     }
 
-    if (isModPage()) {
+    if (isModPage() || isUserPage() || (StackExchange as any).options.user.isModerator) {
         return;
     }
 

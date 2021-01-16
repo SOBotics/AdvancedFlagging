@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.3.3
+// @version      1.3.4
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -13,9 +13,10 @@
 // @exclude      *://chat.stackexchange.com/*
 // @exclude      *://chat.meta.stackexchange.com/*
 // @exclude      *://chat.stackoverflow.com/*
-// @exclude      *://blog.stackoverflow.com/*
 // @exclude      *://*.area51.stackexchange.com/*
 // @exclude      *://data.stackexchange.com/*
+// @exclude      *://stackoverflow.com/c/*
+// @exclude      *://winterbash*.stackexchange.com/*
 // @require      https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js
 // @grant        GM_xmlhttpRequest
 // @grant        GM_listValues
@@ -1169,6 +1170,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
         }
     }
+    function isUserPage() {
+        return !!window.location.href.match(/\/users\/\d+.*/);
+    }
+    exports.isUserPage = isUserPage;
     function parseGenericPage(callback) {
         const questionNodes = $('.question-hyperlink');
         for (let i = 0; i < questionNodes.length; i++) {
@@ -1210,14 +1215,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             parseQuestionPage(callback);
             return;
         }
-        if (StackExchange.options.user.isModerator) {
-            return;
-        }
         if (isFlagsPage()) {
             parseFlagsPage(callback);
             return;
         }
-        if (isModPage()) {
+        if (isModPage() || isUserPage() || StackExchange.options.user.isModerator) {
             return;
         }
         parseGenericPage(callback);

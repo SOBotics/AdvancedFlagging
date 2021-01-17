@@ -169,44 +169,26 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
             });
         }
-        if (flagRequired) {
-            if (flag.ReportType !== 'NoFlag') {
-                if (flag.ReportType === 'PostOther') {
-                    result.FlagPromise = new Promise((resolve, reject) => {
-                        copyPastorPromise.then(copyPastorResults => {
-                            if (flag.GetCustomFlagText && copyPastorResults.length > 0) {
-                                const flagText = flag.GetCustomFlagText(copyPastorResults[0]);
-                                autoFlagging = true;
-                                $.ajax({
-                                    url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
-                                    type: 'POST',
-                                    data: { fkey: StackExchange.options.user.fkey, otherText: flagText }
-                                }).done((data) => {
-                                    setTimeout(() => autoFlagging = false, 500);
-                                    resolve(data);
-                                }).fail((jqXHR, textStatus, errorThrown) => {
-                                    reject({ jqXHR, textStatus, errorThrown });
-                                });
-                            }
-                        });
-                    });
-                }
-                else {
-                    result.FlagPromise = new Promise((resolve, reject) => {
-                        autoFlagging = true;
-                        $.ajax({
-                            url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
-                            type: 'POST',
-                            data: { fkey: StackExchange.options.user.fkey, otherText: '' }
-                        }).done((data) => {
-                            setTimeout(() => autoFlagging = false, 500);
-                            resolve(data);
-                        }).fail((jqXHR, textStatus, errorThrown) => {
-                            reject({ jqXHR, textStatus, errorThrown });
-                        });
-                    });
-                }
-            }
+        if (flagRequired && flag.ReportType !== 'NoFlag') {
+            result.FlagPromise = new Promise((resolve, reject) => {
+                let flagText;
+                copyPastorPromise.then(results => {
+                    if (flag.GetCustomFlagText && results.length > 0) {
+                        flagText = flag.GetCustomFlagText(results[0]);
+                    }
+                });
+                autoFlagging = true;
+                $.ajax({
+                    url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
+                    type: 'POST',
+                    data: { fkey: StackExchange.options.user.fkey, otherText: flag.ReportType === 'PostOther' ? flagText : '' }
+                }).done((data) => {
+                    setTimeout(() => autoFlagging = false, 500);
+                    resolve(data);
+                }).fail((jqXHR, textStatus, errorThrown) => {
+                    reject({ jqXHR, textStatus, errorThrown });
+                });
+            });
         }
         return result;
     }
@@ -246,6 +228,15 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.displaySuccess = displaySuccess;
     function displayError(message) {
         displayToaster(message, '#ba1701');
+    }
+    function displaySuccessFlagged(reportedIcon, reportType) {
+        reportedIcon.attr('title', `Flagged as ${reportType}`);
+        reportedIcon.addClass('d-inline-block').removeClass('d-none');
+        displaySuccess(`Flagged as ${reportType}`);
+    }
+    function displayErrorFlagged(message, error) {
+        displayError(message);
+        console.error(error);
     }
     async function BuildFlaggingDialog(element, postId, postType, reputation, authorName, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorPromise) {
         const getDivider = () => $('<hr>').attr('class', 'advanced-flagging-hr');
@@ -361,21 +352,33 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                     $(document).trigger('comment', postId);
                                 }).catch(err => {
                                     displayError('Failed to comment on post');
-                                    // tslint:disable-next-line:no-console
-                                    console.log(err);
+                                    console.error(err);
                                 });
                             }
                             if (result.FlagPromise) {
-                                result.FlagPromise.then(() => {
+                                result.FlagPromise.then(data => {
                                     const expiryDate = new Date();
                                     expiryDate.setDate(expiryDate.getDate() + 30);
-                                    reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
-                                    reportedIcon.addClass('d-inline-block').removeClass('d-none');
-                                    displaySuccess('Flagged');
+                                    const responseJson = JSON.parse(JSON.stringify(data));
+                                    if (responseJson.Success) {
+                                        displaySuccessFlagged(reportedIcon, flagType.ReportType);
+                                    }
+                                    else { // sometimes, although the status is 200, the post isn't flagged.
+                                        const fullMessage = `Failed to flag the post with outcome ${responseJson.Outcome}: ${responseJson.Message}.`;
+                                        let message = 'Failed to flag: ';
+                                        if (responseJson.Message.match('already flagged')) {
+                                            message += 'post already flagged';
+                                        }
+                                        else if (responseJson.Message.match('limit reached')) {
+                                            message += 'post flag limit reached';
+                                        }
+                                        else {
+                                            message += responseJson.Message;
+                                        }
+                                        displayErrorFlagged(message, fullMessage);
+                                    }
                                 }).catch(err => {
-                                    displayError('Failed to flag post');
-                                    // tslint:disable-next-line:no-console
-                                    console.log(err);
+                                    displayErrorFlagged('Failed to flag post', err);
                                 });
                             }
                         }
@@ -606,9 +609,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             handleFlag(flagType, reporters, answerTime, questionTime);
                             const expiryDate = new Date();
                             expiryDate.setDate(expiryDate.getDate() + 30);
-                            reportedIcon.attr('title', `Flagged as ${flagType.ReportType}`);
-                            showFunc(reportedIcon);
-                            displaySuccess('Flagged');
+                            displaySuccessFlagged(reportedIcon, flagType.ReportType);
                         }
                     }
                 });

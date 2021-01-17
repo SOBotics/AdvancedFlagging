@@ -170,11 +170,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
         }
         if (flagRequired && flag.ReportType !== 'NoFlag') {
-            result.FlagPromise = new Promise((resolve, reject) => {
-                let flagText;
-                copyPastorPromise.then(results => {
+            // eslint-disable-next-line no-async-promise-executor
+            result.FlagPromise = new Promise(async (resolve, reject) => {
+                const flagText = await copyPastorPromise.then(results => {
                     if (flag.GetCustomFlagText && results.length > 0) {
-                        flagText = flag.GetCustomFlagText(results[0]);
+                        return flag.GetCustomFlagText(results[0]);
                     }
                 });
                 autoFlagging = true;

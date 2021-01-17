@@ -1,6 +1,6 @@
 # AdvancedFlagging
 
-[![Build Status](https://travis-ci.org/SOBotics/AdvancedFlagging.svg?branch=master)](https://travis-ci.org/SOBotics/AdvancedFlagging)
+![build](https://github.com/SOBotics/AdvancedFlagging/workflows/Build%20AdvancedFlagging/badge.svg?branch=master)
 
 AdvancedFlagging started as a set of modular typescript tools to aid with StackExchange UserScripts. It has support for:
 

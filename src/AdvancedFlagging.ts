@@ -117,7 +117,6 @@ function SetupStyles() {
 }
 
 .advanced-flagging-performed-action {
-    margin-left: 5px;
     background-position: -20px -320px;
     visibility: visible;
     width: 15px;
@@ -742,7 +741,8 @@ async function SetupPostPage() {
 }
 
 function getPerformedActionIcon() {
-    return $('<div>').attr('class', 'comment-flag advanced-flagging-performed-action d-none');
+    return $('<div>').attr('class', 'comment-flag advanced-flagging-performed-action d-none')
+        .append('<svg aria-hidden="true" class="svg-icon iconCheckmarkSm fc-green-500" width="14" height="14" viewBox="0 0 14 14"><path d="M13 3.41L11.59 2 5 8.59 2.41 6 1 7.41l4 4 8-8z"/></svg>');
 }
 
 function getReportedIcon() {

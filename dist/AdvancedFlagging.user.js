@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.3.4
+// @version      1.3.5
 // @author       Robert Rudman
 // @match        *://*.stackexchange.com/*
 // @match        *://*.stackoverflow.com/*
@@ -138,7 +138,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 }
 
 .advanced-flagging-performed-action {
-    margin-left: 5px;
     background-position: -20px -320px;
     visibility: visible;
     width: 15px;
@@ -661,7 +660,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         });
     }
     function getPerformedActionIcon() {
-        return $('<div>').attr('class', 'comment-flag advanced-flagging-performed-action d-none');
+        return $('<div>').attr('class', 'comment-flag advanced-flagging-performed-action d-none')
+            .append('<svg aria-hidden="true" class="svg-icon iconCheckmarkSm fc-green-500" width="14" height="14" viewBox="0 0 14 14"><path d="M13 3.41L11.59 2 5 8.59 2.41 6 1 7.41l4 4 8-8z"/></svg>');
     }
     function getReportedIcon() {
         return $('<div>')

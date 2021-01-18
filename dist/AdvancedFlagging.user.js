@@ -13403,9 +13403,17 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             const expiryDate = ChatApi.GetExpiryDate();
             return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(cachingKey, () => getterPromise, expiryDate);
         }
-        async GetChatUserId(roomId) {
+        GetChatUserId(roomId) {
             const cachingKey = `StackExchange.ChatApi.UserId_${roomId}`;
-            const getterPromise = new Promise((resolve, reject) => {
+            const userId = StackExchange.options.user.userId;
+            const expiryDate = ChatApi.GetExpiryDate();
+            GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(cachingKey, userId, expiryDate);
+            return userId;
+        }
+        // The chat user id of a SO user is the same as their main-site one. There are no plans for moving to chat.SE currently
+        /*public async GetChatUserId(roomId: number): Promise<number> {
+            const cachingKey = `StackExchange.ChatApi.UserId_${roomId}`;
+            const getterPromise = new Promise<number>((resolve, reject) => {
                 this.GetChannelPage(roomId).then(channelPage => {
                     const activeUserDiv = $('#active-user', $(channelPage));
                     const classAtr = activeUserDiv.attr('class');
@@ -13416,33 +13424,31 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     reject('Could not find user id');
                 });
             });
+    
             const expiryDate = ChatApi.GetExpiryDate();
-            return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(cachingKey, () => getterPromise, expiryDate);
-        }
-        SendMessage(roomId, message, providedFkey) {
+            return GreaseMonkeyCache.GetAndCache(cachingKey, () => getterPromise, expiryDate);
+        }*/
+        SendMessage(roomId, message) {
             return new Promise((resolve, reject) => {
-                const requestFunc = () => {
-                    const fkeyPromise = providedFkey
-                        ? Promise.resolve(providedFkey)
-                        : this.GetChannelFKey(roomId);
-                    return fkeyPromise.then((fKey) => {
-                        GM_xmlhttpRequest({
-                            method: 'POST',
-                            url: `${this.chatRoomUrl}/chats/${roomId}/messages/new`,
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                            data: 'text=' + encodeURIComponent(message) + '&fkey=' + fKey,
-                            onload: (response) => {
-                                if (response.status !== 200) {
-                                    onFailure(response.statusText);
-                                }
-                                else {
-                                    resolve();
-                                }
-                            },
-                            onerror: (response) => {
-                                onFailure(response);
-                            },
-                        });
+                const requestFunc = async () => {
+                    const fkeyPromise = this.GetChannelFKey(roomId);
+                    const fKey = await fkeyPromise;
+                    GM_xmlhttpRequest({
+                        method: 'POST',
+                        url: `${this.chatRoomUrl}/chats/${roomId}/messages/new`,
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        data: 'text=' + encodeURIComponent(message) + '&fkey=' + fKey,
+                        onload: (response_1) => {
+                            if (response_1.status !== 200) {
+                                onFailure(response_1.statusText);
+                            }
+                            else {
+                                resolve();
+                            }
+                        },
+                        onerror: (response_3) => {
+                            onFailure(response_3);
+                        },
                     });
                 };
                 let numTries = 0;
@@ -13466,12 +13472,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     method: 'GET',
                     url: `${this.chatRoomUrl}/rooms/${roomId}`,
                     onload: (response) => {
-                        if (response.status !== 200) {
-                            reject(response.statusText);
-                        }
-                        else {
-                            resolve(response.responseText);
-                        }
+                        response.status === 200 ? resolve(response.responseText) : reject(response.statusText);
                     },
                     onerror: (data) => reject(data)
                 });
@@ -14118,8 +14119,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 SectionName: 'Flags',
                 Items: GetFlagSettings(),
                 onSave: () => {
-                    const flagOptions = $('.af-section-flags').find('input').get().filter(el => $(el).prop('checked'))
-                        .map(el => Number($(el).attr('id').match(/\d+/)));
+                    const flagOptions = $('.af-section-flags').find('input').get().filter(el => $(el).prop('checked')).map(el => Number($(el).attr('id').match(/\d+/)));
                     GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(AdvancedFlagging_1.ConfigurationEnabledFlags, flagOptions);
                 }
             },

@@ -149,6 +149,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     color: #C91D2E;
     cursor: default;
 }
+
+#advanced-flagging-configuration-div {
+    line-height: 18px;
+    text-align: left;
+    padding: 5px';
+}
 `;
         const target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
         target.appendChild(scriptNode);
@@ -14054,12 +14060,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.SetupConfiguration = void 0;
     async function SetupConfiguration() {
         const bottomBox = $('.site-footer--copyright').children('.-list');
-        const configurationDiv = $('<div>')
-            .css('line-height', '18px')
-            .css('text-align', 'left')
-            .css('padding', '5px');
-        await SetupDefaults();
-        await BuildConfigurationOverlay();
+        const configurationDiv = $('<div>').attr('id', 'advanced-flagging-configuration-div');
+        SetupDefaults();
+        BuildConfigurationOverlay();
         const configurationLink = $('<a id="af-modal-button">AdvancedFlagging configuration</a>');
         $(document).on('click', '#af-modal-button', () => Stacks.showModal(document.querySelector('#af-config')));
         configurationDiv.append(configurationLink);
@@ -14078,14 +14081,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         });
         return flagTypes;
     }
-    async function SetupDefaults() {
+    function SetupDefaults() {
         const configurationEnabledFlags = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(AdvancedFlagging_1.ConfigurationEnabledFlags);
         if (!configurationEnabledFlags) {
             const flagTypeIds = getFlagTypes().map(f => f.Id);
             GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(AdvancedFlagging_1.ConfigurationEnabledFlags, flagTypeIds);
         }
     }
-    async function BuildConfigurationOverlay() {
+    function BuildConfigurationOverlay() {
         const overlayModal = $('<aside class="s-modal" id="af-config" role="dialog" aria-labelledby="af-modal-title"'
             + '       aria-describedby="af-modal-description" aria-hidden="true"'
             + '    data-controller="s-modal" data-target="s-modal.modal">'
@@ -14101,19 +14104,28 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             + '        </button>'
             + '    </div>'
             + '</aside>');
-        const configElements = [];
         const sections = [
             {
                 SectionName: 'General',
-                Items: await GetGeneralConfigItems()
+                Items: GetGeneralConfigItems(),
+                onSave: () => {
+                    $('.af-section-general').find('input').each((_index, el) => {
+                        GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache($(el).parents().eq(2).data('option-id'), $(el).prop('checked'));
+                    });
+                }
             },
             {
                 SectionName: 'Flags',
-                Items: await GetFlagSettings()
+                Items: GetFlagSettings(),
+                onSave: () => {
+                    const flagOptions = $('.af-section-flags').find('input').get().filter(el => $(el).prop('checked'))
+                        .map(el => Number($(el).attr('id').match(/\d+/)));
+                    GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(AdvancedFlagging_1.ConfigurationEnabledFlags, flagOptions);
+                }
             },
             {
                 SectionName: 'Admin',
-                Items: await GetAdminConfigItems()
+                Items: GetAdminConfigItems()
             }
         ];
         let firstSection = true;
@@ -14125,29 +14137,17 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             const sectionWrapper = $('<fieldset>').attr('class', 'grid gs8 gsy fd-column af-section-' + section.SectionName.toLowerCase())
                 .html(`<h2 class="grid--cell">${section.SectionName}</h2>`);
             overlayModal.find('#af-modal-description').append(sectionWrapper);
-            section.Items.forEach(item => {
-                configElements.push(item);
-                if (item.element) {
-                    sectionWrapper.append(item.element);
-                }
-            });
+            section.Items.forEach((element) => sectionWrapper.append(element));
         });
         const okayButton = overlayModal.find('.s-btn__primary');
         okayButton.click((event) => {
             event.preventDefault();
-            let requiresReload = false;
-            configElements.forEach(configElement => {
-                if (configElement.onSave) {
-                    configElement.onSave();
-                }
-                requiresReload = !!configElement.requiresReload;
+            sections.forEach(section => {
+                if (section.onSave)
+                    section.onSave();
             });
             AdvancedFlagging_1.displaySuccess('Configuration saved');
-            if (requiresReload) {
-                setTimeout(() => {
-                    window.location.reload();
-                }, 500);
-            }
+            setTimeout(window.location.reload.bind(window.location), 500);
         });
         $('body').append(overlayModal);
         $('label[for="flag-type-12"]').parent().removeClass('w25').css('width', '18.3%'); // because without it, the CSS breaks
@@ -14156,90 +14156,72 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             flagOptions.slice(i, i + 5).wrapAll('<div class="grid--cell"><div class="grid gs16"></div></div>');
         }
     }
-    async function GetGeneralConfigItems() {
-        return Promise.all([
-            createConfigCheckbox('Open dropdown on hover', AdvancedFlagging_1.ConfigurationOpenOnHover),
-            createConfigCheckbox('Watch for manual flags', AdvancedFlagging_1.ConfigurationWatchFlags),
-            createConfigCheckbox('Watch for queue responses', AdvancedFlagging_1.ConfigurationWatchQueues),
-            createConfigCheckbox('Disable AdvancedFlagging link', AdvancedFlagging_1.ConfigurationLinkDisabled),
-            createConfigCheckbox('Uncheck \'Comment\' by default', AdvancedFlagging_1.ConfigurationDefaultNoComment),
-            createConfigCheckbox('Uncheck \'flag\' by default', AdvancedFlagging_1.ConfigurationDefaultNoFlag)
-        ]);
-    }
-    async function GetFlagSettings() {
-        const checkBoxes = [];
-        const flagTypeIds = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(AdvancedFlagging_1.ConfigurationEnabledFlags) || [];
-        const flagHTML = (id, name) => $('<div class="grid gs8 gsx w25">'
-            + '  <div class="grid--cell"><input class="s-checkbox" type="checkbox" id="' + id + '"></div>'
-            + '  <label class="grid--cell s-label fw-normal" for="' + id + '">' + name + '</label>'
-            + '</div>');
-        getFlagTypes().forEach(f => {
-            const configHTML = flagHTML('flag-type-' + f.Id, f.DisplayName);
-            const storedValue = flagTypeIds.indexOf(f.Id) > -1;
-            const checkBox = configHTML.find('input');
-            if (storedValue) {
-                checkBox.prop('checked', true);
-            }
-            checkBoxes.push({
-                configHTML,
-                checkBox,
-                Id: f.Id
-            });
-        });
-        const returnArr = checkBoxes.map(f => ({ element: f.configHTML }));
-        returnArr.push({
-            onSave: async () => {
-                // Something here
-                const updatedFlagTypes = checkBoxes.filter(cb => !!cb.checkBox.prop('checked')).map(cb => cb.Id);
-                GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(AdvancedFlagging_1.ConfigurationEnabledFlags, updatedFlagTypes);
-            },
-            requiresReload: true
-        });
-        return returnArr;
-    }
-    async function GetAdminConfigItems() {
-        return [
+    function GetGeneralConfigItems() {
+        const checkboxArray = [];
+        const options = [
             {
-                element: $('<a>').text('Clear expired items from cache').click(() => GreaseMonkeyCache_1.GreaseMonkeyCache.ClearExpiredKeys())
-                    .wrap('<div class="grid--cell">').parent(),
-                requiresReload: true
+                text: 'Open dropdown on hover',
+                configValue: AdvancedFlagging_1.ConfigurationOpenOnHover
             },
             {
-                element: $('<a>').text('Clear Metasmoke Configuration').click(async () => { await MetaSmokeAPI_1.MetaSmokeAPI.Reset(); })
-                    .wrap('<div class="grid--cell">').parent(),
-                requiresReload: true
+                text: 'Watch for manual flags',
+                configValue: AdvancedFlagging_1.ConfigurationWatchFlags
             },
             {
-                element: $('<a>').text('Get MetaSmoke key')
-                    .attr('href', `https://metasmoke.erwaysoftware.com/oauth/request?key=${AdvancedFlagging_1.metaSmokeKey}`)
-                    .wrap('<div class="grid--cell">').parent()
+                text: 'Watch for queue responses',
+                configValue: AdvancedFlagging_1.ConfigurationWatchQueues
             },
             {
-                element: $('<a>').text('Manually register MetaSmoke key')
-                    .click(async () => {
-                    const prompt = window.prompt('Enter metasmoke key');
-                    if (prompt) {
-                        GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(MetaSmokeAPI_1.MetaSmokeDisabledConfig, false);
-                        localStorage.setItem('MetaSmoke.ManualKey', prompt);
-                    }
-                })
-                    .wrap('<div class="grid--cell">').parent(),
-                requiresReload: true
-            }, {
-                element: $('<a>').text('Clear chat FKey')
-                    .click(async () => {
-                    // Hard-code SOBotics for now
-                    const roomId = 111347;
-                    const fkeyCacheKey = `StackExchange.ChatApi.FKey_${roomId}`;
-                    GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(fkeyCacheKey);
-                })
-                    .wrap('<div class="grid--cell">').parent(),
-                requiresReload: true
-            }
+                text: 'Disable AdvancedFlagging link',
+                configValue: AdvancedFlagging_1.ConfigurationLinkDisabled
+            },
+            {
+                text: 'Uncheck \'Comment\' by default',
+                configValue: AdvancedFlagging_1.ConfigurationDefaultNoComment
+            },
+            {
+                text: 'Uncheck \'flag\' by default',
+                configValue: AdvancedFlagging_1.ConfigurationDefaultNoFlag
+            },
         ];
+        options.forEach(el => {
+            const storedValue = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(el.configValue);
+            checkboxArray.push(createCheckbox(el.text, storedValue).attr('data-option-id', el.configValue));
+        });
+        return checkboxArray;
     }
-    async function createConfigCheckbox(text, configValue) {
-        const optionId = text.toLowerCase().replace(/\s/g, '_');
+    function GetFlagSettings() {
+        const checkboxes = [];
+        const flagTypeIds = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(AdvancedFlagging_1.ConfigurationEnabledFlags) || [];
+        getFlagTypes().forEach(f => {
+            const storedValue = flagTypeIds.indexOf(f.Id) > -1;
+            checkboxes.push(createCheckbox(f.DisplayName, storedValue, 'flag-type-' + f.Id).children().eq(0).addClass('w25'));
+        });
+        return checkboxes;
+    }
+    function GetAdminConfigItems() {
+        return [
+            $('<a>').text('Clear expired items from cache').click(() => GreaseMonkeyCache_1.GreaseMonkeyCache.ClearExpiredKeys()),
+            $('<a>').text('Clear Metasmoke Configuration').click(async () => { await MetaSmokeAPI_1.MetaSmokeAPI.Reset(); }),
+            $('<a>').text('Get MetaSmoke key').attr('href', `https://metasmoke.erwaysoftware.com/oauth/request?key=${AdvancedFlagging_1.metaSmokeKey}`),
+            $('<a>').text('Manually register MetaSmoke key')
+                .click(() => {
+                const prompt = window.prompt('Enter metasmoke key');
+                if (prompt) {
+                    GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(MetaSmokeAPI_1.MetaSmokeDisabledConfig, false);
+                    localStorage.setItem('MetaSmoke.ManualKey', prompt);
+                }
+            }),
+            $('<a>').text('Clear chat FKey')
+                .click(() => {
+                // Hard-code SOBotics for now
+                const roomId = 111347;
+                const fkeyCacheKey = `StackExchange.ChatApi.FKey_${roomId}`;
+                GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(fkeyCacheKey);
+            })
+        ].map(item => item.wrap('<div class="grid--cell">').parent());
+    }
+    function createCheckbox(text, storedValue, optionId = text.toLowerCase().replace(/\s/g, '_')) {
         const configHTML = $('<div>'
             + '  <div class="grid gs8 gsx">'
             + '    <div class="grid--cell"><input class="s-checkbox" type="checkbox" id="' + optionId + '"/></div>'
@@ -14247,17 +14229,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             + '  </div>'
             + '</div>');
         const input = configHTML.find('input');
-        const storedValue = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(configValue);
         if (storedValue) {
             input.prop('checked', true);
         }
-        return {
-            element: configHTML,
-            onSave: async () => {
-                const isChecked = !!input.prop('checked');
-                GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(configValue, isChecked);
-            }
-        };
+        return configHTML;
     }
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));

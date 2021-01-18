@@ -128,6 +128,12 @@ function SetupStyles() {
     color: #C91D2E;
     cursor: default;
 }
+
+#advanced-flagging-configuration-div {
+    line-height: 18px;
+    text-align: left;
+    padding: 5px';
+}
 `;
 
     const target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;

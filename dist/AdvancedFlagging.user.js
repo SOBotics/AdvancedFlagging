@@ -1215,12 +1215,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     let numTries = 0;
                     const onError = (response) => {
                         numTries++;
-                        if (numTries < 3) {
-                            makeRequest();
-                        }
-                        else {
-                            reject('Failed to retrieve natty report: ' + response);
-                        }
+                        numTries < 3 ? makeRequest() : reject('Failed to retrieve natty report: ' + response);
                     };
                     const makeRequest = () => {
                         GM_xmlhttpRequest({
@@ -1229,12 +1224,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             onload: (response) => {
                                 if (response.status === 200) {
                                     const nattyResult = JSON.parse(response.responseText);
-                                    if (nattyResult.items && nattyResult.items[0]) {
-                                        resolve(true);
-                                    }
-                                    else {
-                                        resolve(false);
-                                    }
+                                    resolve(nattyResult.items && nattyResult.items[0]);
                                 }
                                 else {
                                     onError(response.responseText);

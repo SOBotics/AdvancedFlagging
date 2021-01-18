@@ -44,11 +44,7 @@ export class NattyAPI {
                 let numTries = 0;
                 const onError = (response: any) => {
                     numTries++;
-                    if (numTries < 3) {
-                        makeRequest();
-                    } else {
-                        reject('Failed to retrieve natty report: ' + response);
-                    }
+                    numTries < 3 ? makeRequest() : reject('Failed to retrieve natty report: ' + response);
                 };
 
                 const makeRequest = () => {
@@ -58,11 +54,7 @@ export class NattyAPI {
                         onload: (response: XMLHttpRequest) => {
                             if (response.status === 200) {
                                 const nattyResult = JSON.parse(response.responseText);
-                                if (nattyResult.items && nattyResult.items[0]) {
-                                    resolve(true);
-                                } else {
-                                    resolve(false);
-                                }
+                                resolve(nattyResult.items && nattyResult.items[0]);
                             } else {
                                 onError(response.responseText);
                             }

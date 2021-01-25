@@ -23,6 +23,7 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_deleteValue
+// @grant        GM_addStyle
 // ==/UserScript==
 
 /******/ (() => { // webpackBootstrap
@@ -45,10 +46,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.ConfigurationEnabledFlags = 'AdvancedFlagging.Configuration.EnabledFlags';
     exports.ConfigurationLinkDisabled = 'AdvancedFlagging.Configuration.LinkDisabled';
     function SetupStyles() {
-        const scriptNode = document.createElement('style');
-        scriptNode.type = 'text/css';
-        scriptNode.id = 'advanced-flagging-styles';
-        scriptNode.textContent = `
+        GM_addStyle(`
 #snackbar {
     min-width: 250px;
     margin-left: -125px;
@@ -92,8 +90,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 }
 
 .advanced-flagging-hr {
-    margin-bottom: 10px;
-    margin-top: 10px;
+    margin: 10px 0px;
 }
 
 .advanced-flagging-label-options {
@@ -102,13 +99,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 }
 
 .advanced-flagging-icon {
-    width: 15px;
-    height: 15px;
-    margin-left: 5px;
-    margin-top: 5px;
-    vertical-align: text-bottom;
-    cursor: pointer;
-    background-size: 100%;
+    margin: 5px 0px 0px 5px;
 }
 
 .advanced-flagging-natty-icon {
@@ -127,37 +118,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     padding: 1px 5px;
 }
 
-.advanced-flagging-danger-item {
-    background-color: rgba(241, 148, 148, 0.6);
-}
-
-.advanced-flagging-report-link {
-    display: inline-block;
-    margin-top: 5px;
-    width: auto;
-}
-
 .advanced-flagging-performed-action {
     background-position: -20px -320px;
-    visibility: visible;
-    width: 15px;
-    height: 15px;
-    cursor: default;
-}
-
-.advanced-flagging-flag-icon {
-    color: #C91D2E;
-    cursor: default;
-}
-
-#advanced-flagging-configuration-div {
-    line-height: 18px;
-    text-align: left;
-    padding: 5px';
-}
-`;
-        const target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
-        target.appendChild(scriptNode);
+}`);
     }
     function handleFlagAndComment(postId, flag, flagRequired, commentText, copyPastorPromise) {
         const result = {};
@@ -276,9 +239,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 }
                 const dropdownItem = $('<dd>').attr('class', 'advanced-flagging-dropdown-item');
                 if (flagCategory.IsDangerous) {
-                    dropdownItem.addClass('advanced-flagging-danger-item');
+                    dropdownItem.addClass('bg-red-200');
                 }
-                const reportLink = $('<a>').attr('class', 'advanced-flagging-report-link');
+                const reportLink = $('<a>').attr('class', 'advanced-flagging-report-link d-inline-block w-auto mt6');
                 const disableLink = () => {
                     activeLinks--;
                     reportLink.addClass('d-none').removeClass('d-block');
@@ -666,22 +629,23 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         });
     }
     function getPerformedActionIcon() {
-        return $('<div>').attr('class', 'comment-flag advanced-flagging-performed-action d-none')
+        return $('<div>').attr('class', 'comment-flag advanced-flagging-performed-action v-visible c-default d-none w16 h16')
             .append('<svg aria-hidden="true" class="svg-icon iconCheckmarkSm fc-green-500" width="14" height="14" viewBox="0 0 14 14"><path d="M13 3.41L11.59 2 5 8.59 2.41 6 1 7.41l4 4 8-8z"/></svg>');
     }
     function getReportedIcon() {
         return $('<div>')
-            .attr('class', 'comment-flag advanced-flagging-flag-icon d-none')
+            .attr('class', 'comment-flag advanced-flagging-flag-icon c-default d-none fc-red-500')
             .append('<svg aria-hidden="true" class="svg-icon iconFlag" width="18" height="18" viewBox="0 0 18 18"><path d="M3 2v14h2v-6h3.6l.4 1h6V3H9.5L9 2z"></path></svg>');
     }
+    const sampleIconClass = $('<div>').attr('class', 'advanced-flagging-icon bg-cover va-text-bottom c-pointer w16 h16 d-none');
     function getNattyIcon() {
-        return $('<div>').attr('title', 'Reported by Natty').attr('class', 'advanced-flagging-icon advanced-flagging-natty-icon d-none');
+        return sampleIconClass.clone().attr('title', 'Reported by Natty').addClass('advanced-flagging-natty-icon');
     }
     function getGuttenbergIcon() {
-        return $('<div>').attr('title', 'Reported by Guttenberg').attr('class', 'advanced-flagging-icon advanced-flagging-gut-icon d-none');
+        return sampleIconClass.clone().attr('title', 'Reported by Guttenberg').addClass('advanced-flagging-gut-icon');
     }
     function getSmokeyIcon() {
-        return $('<div>').attr('title', 'Reported by Smokey').attr('class', 'advanced-flagging-icon advanced-flagging-smokey-icon d-none');
+        return sampleIconClass.clone().attr('title', 'Reported by Smokey').addClass('advanced-flagging-smokey-icon');
     }
     const metaSmokeManualKey = 'MetaSmoke.ManualKey';
     async function Setup() {
@@ -14051,7 +14015,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.SetupConfiguration = void 0;
     async function SetupConfiguration() {
         const bottomBox = $('.site-footer--copyright').children('.-list');
-        const configurationDiv = $('<div>').attr('id', 'advanced-flagging-configuration-div');
+        const configurationDiv = $('<div>').attr('class', 'advanced-flagging-configuration-div ta-left pt6');
         SetupDefaults();
         BuildConfigurationOverlay();
         const configurationLink = $('<a id="af-modal-button">AdvancedFlagging configuration</a>');

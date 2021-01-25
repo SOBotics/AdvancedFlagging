@@ -7,7 +7,7 @@ declare const Stacks: any;
 
 export async function SetupConfiguration() {
     const bottomBox = $('.site-footer--copyright').children('.-list');
-    const configurationDiv = $('<div>').attr('id', 'advanced-flagging-configuration-div');
+    const configurationDiv = $('<div>').attr('class', 'advanced-flagging-configuration-div ta-left pt6');
 
     SetupDefaults();
     BuildConfigurationOverlay();

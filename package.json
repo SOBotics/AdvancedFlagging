@@ -7,15 +7,15 @@
   "author": "Robert Rudman <rjrudman@gmail.com> (https://github.com/rjrudman)",
   "license": "ISC",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^4.14.0",
-    "@typescript-eslint/parser": "^4.14.0",
+    "@typescript-eslint/eslint-plugin": "^4.14.1",
+    "@typescript-eslint/parser": "^4.14.1",
     "concat-cli": "4.0.0",
     "eslint": "^7.18.0",
     "rxjs": "6.6.3",
     "ts-loader": "8.0.14",
     "tsconfig-paths-webpack-plugin": "^3.3.0",
     "typescript": "4.1.3",
-    "webpack": "5.17.0",
+    "webpack": "5.18.0",
     "webpack-cli": "^4.4.0"
   },
   "repository": {

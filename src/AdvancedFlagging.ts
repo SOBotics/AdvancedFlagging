@@ -184,8 +184,12 @@ function displayToaster(message: string, colour: string, textColour?: string, du
     }
     toasterTimeout = window.setTimeout(hidePopup, duration === undefined ? popupDelay : duration);
 }
-export function displaySuccess(message: string) {
+function displaySuccess(message: string) {
     displayToaster(message, '#00690c');
+}
+
+export function displayStacksToast(message: string, type: string) {
+    StackExchange.helpers.showToast(message, { type: type });
 }
 
 function displayError(message: string) {

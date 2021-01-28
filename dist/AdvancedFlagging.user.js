@@ -34,7 +34,7 @@
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1), __webpack_require__(2), __webpack_require__(3), __webpack_require__(207), __webpack_require__(208), __webpack_require__(209), __webpack_require__(210), __webpack_require__(211), __webpack_require__(206)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, FlagTypes_1, sotools_1, NattyApi_1, GenericBotAPI_1, MetaSmokeAPI_1, CopyPastorAPI_1, RequestWatcher_1, Configuration_1, GreaseMonkeyCache_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
-    exports.displaySuccess = exports.ConfigurationLinkDisabled = exports.ConfigurationEnabledFlags = exports.ConfigurationDetectAudits = exports.ConfigurationWatchQueues = exports.ConfigurationWatchFlags = exports.ConfigurationDefaultNoComment = exports.ConfigurationDefaultNoFlag = exports.ConfigurationOpenOnHover = exports.metaSmokeKey = void 0;
+    exports.displayStacksToast = exports.ConfigurationLinkDisabled = exports.ConfigurationEnabledFlags = exports.ConfigurationDetectAudits = exports.ConfigurationWatchQueues = exports.ConfigurationWatchFlags = exports.ConfigurationDefaultNoComment = exports.ConfigurationDefaultNoFlag = exports.ConfigurationOpenOnHover = exports.metaSmokeKey = void 0;
     exports.metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
     const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
     exports.ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
@@ -193,7 +193,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     function displaySuccess(message) {
         displayToaster(message, '#00690c');
     }
-    exports.displaySuccess = displaySuccess;
+    function displayStacksToast(message, type) {
+        StackExchange.helpers.showToast(message, { type: type });
+    }
+    exports.displayStacksToast = displayStacksToast;
     function displayError(message) {
         displayToaster(message, '#ba1701');
     }
@@ -14100,7 +14103,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 if (section.onSave)
                     section.onSave();
             });
-            AdvancedFlagging_1.displaySuccess('Configuration saved');
+            AdvancedFlagging_1.displayStacksToast('Configuration saved', 'success');
             setTimeout(window.location.reload.bind(window.location), 500);
         });
         $('body').append(overlayModal);

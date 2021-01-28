@@ -1,4 +1,4 @@
-import { ConfigurationWatchFlags, ConfigurationWatchQueues, displaySuccess, metaSmokeKey, ConfigurationEnabledFlags, ConfigurationOpenOnHover, ConfigurationLinkDisabled, ConfigurationDefaultNoFlag, ConfigurationDefaultNoComment } from 'AdvancedFlagging';
+import { ConfigurationWatchFlags, ConfigurationWatchQueues, displayStacksToast, metaSmokeKey, ConfigurationEnabledFlags, ConfigurationOpenOnHover, ConfigurationLinkDisabled, ConfigurationDefaultNoFlag, ConfigurationDefaultNoComment } from 'AdvancedFlagging';
 import { MetaSmokeAPI, MetaSmokeDisabledConfig } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
 import { flagCategories } from 'FlagTypes';
 import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
@@ -100,7 +100,7 @@ function BuildConfigurationOverlay() {
         sections.forEach(section => {
             if (section.onSave) section.onSave();
         });
-        displaySuccess('Configuration saved');
+        displayStacksToast('Configuration saved', 'success');
         setTimeout(window.location.reload.bind(window.location), 500)
     });
 

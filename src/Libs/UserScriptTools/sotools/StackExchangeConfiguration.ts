@@ -1,6 +1,7 @@
 export interface StackExchangeGlobal {
     options: StackExchangeOptions;
     comments: StackExchangeComments;
+    helpers: any;
 }
 
 export interface StackExchangeComments {

@@ -5,7 +5,7 @@ import { take } from 'rxjs/operators';
 import { IsStackOverflow } from '@userscriptTools/sotools/sotools';
 import { ChatApi } from '@userscriptTools/chatapi/ChatApi';
 
-const nattyFeedbackUrl = 'http://logs.sobotics.org/napi/api/feedback';
+const nattyFeedbackUrl = 'https://logs.sobotics.org/napi/api/feedback';
 
 export interface NattyFeedbackItemInfo {
     timestamp: number;

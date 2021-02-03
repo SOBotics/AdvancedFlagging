@@ -18,9 +18,7 @@ let initialized = false;
 const callbacks: ((request: XMLHttpRequest) => void)[] = [];
 function addXHRListener(callback: (request: XMLHttpRequest) => void) {
     callbacks.push(callback);
-    if (initialized) {
-        return;
-    }
+    if (initialized) return;
     const open = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function () {
         this.addEventListener('load', () => {

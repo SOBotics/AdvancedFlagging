@@ -16,9 +16,7 @@ interface MetaSmokeApiWrapper {
 
 function Delay(milliseconds: number) {
     return new Promise<void>(resolve => {
-        setTimeout(() => {
-            resolve();
-        }, milliseconds);
+        setTimeout(() => resolve(), milliseconds);
     });
 }
 
@@ -30,9 +28,7 @@ export class MetaSmokeAPI {
 
     public static async IsDisabled() {
         const cachedDisabled = GreaseMonkeyCache.GetFromCache<boolean>(MetaSmokeDisabledConfig);
-        if (cachedDisabled === undefined) {
-            return false;
-        }
+        if (!cachedDisabled) return false;
 
         return cachedDisabled;
     }
@@ -41,9 +37,7 @@ export class MetaSmokeAPI {
         if (!codeGetter) {
             codeGetter = async (metaSmokeOAuthUrl: string | undefined) => {
                 const isDisabled = await MetaSmokeAPI.IsDisabled();
-                if (isDisabled) {
-                    return;
-                }
+                if (isDisabled) return;
 
                 if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, see footer of Stack Overflow.')) {
                     GreaseMonkeyCache.StoreInCache(MetaSmokeDisabledConfig, true);
@@ -56,11 +50,8 @@ export class MetaSmokeAPI {
                     const handleFDSCCode = () => {
                         $(window).off('focus', handleFDSCCode);
                         const code = window.prompt('Once you\'ve authenticated Advanced Flagging with metasmoke, you\'ll be given a code; enter it here.');
-                        if (!code) {
-                            resolve(undefined);
-                        } else {
-                            return resolve(code);
-                        }
+
+                        resolve(code || undefined);
                     };
                     $(window).focus(handleFDSCCode);
                 });
@@ -81,9 +72,7 @@ export class MetaSmokeAPI {
     private static pendingPosts: { postId: number, postType: 'Answer' | 'Question' }[] = [];
     private static pendingTimeout: number | null = null;
     private static QueryMetaSmoke(postId: number, postType: 'Answer' | 'Question') {
-        if (this.pendingTimeout) {
-            clearTimeout(this.pendingTimeout);
-        }
+        if (this.pendingTimeout) clearTimeout(this.pendingTimeout);
         this.pendingPosts.push({ postId, postType });
         this.pendingTimeout = window.setTimeout(MetaSmokeAPI.QueryMetaSmokeInternal, 1000);
     }
@@ -102,9 +91,7 @@ export class MetaSmokeAPI {
         expiryDate.setDate(expiryDate.getDate() + 30);
 
         MetaSmokeAPI.IsDisabled().then(isDisabled => {
-            if (isDisabled) {
-                return;
-            }
+            if (isDisabled) return;
             $.ajax({
                 type: 'GET',
                 url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
@@ -115,44 +102,35 @@ export class MetaSmokeAPI {
             }).done((metaSmokeResult: MetaSmokeApiWrapper) => {
                 for (const item of metaSmokeResult.items) {
                     const pendingPost = pendingPostLookup[item.link];
-                    if (pendingPost) {
-                        const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
-                        const obs = MetaSmokeAPI.ObservableLookup[key];
-                        if (obs) {
-                            obs.next(item.id);
-                        }
-                        delete pendingPostLookup[item.link];
-                    }
+                    if (!pendingPost) continue;
+
+                    const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
+                    const obs = MetaSmokeAPI.ObservableLookup[key];
+                    if (obs) obs.next(item.id);
+                    delete pendingPostLookup[item.link];
                 }
                 for (const url in pendingPostLookup) {
-                    if (Object.prototype.hasOwnProperty.call(pendingPostLookup, url)) {
-                        const pendingPost = pendingPostLookup[url];
-                        const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
-                        const obs = MetaSmokeAPI.ObservableLookup[key];
-                        if (obs) {
-                            obs.next(null);
-                        }
-                    }
+                    if (!Object.prototype.hasOwnProperty.call(pendingPostLookup, url)) return;
+
+                    const pendingPost = pendingPostLookup[url];
+                    const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
+                    const obs = MetaSmokeAPI.ObservableLookup[key];
+                    if (obs) obs.next(null);
                 }
             }).fail(error => {
                 for (const url in pendingPostLookup) {
-                    if (Object.prototype.hasOwnProperty.call(pendingPostLookup, url)) {
-                        const pendingPost = pendingPostLookup[url];
-                        const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
-                        const obs = MetaSmokeAPI.ObservableLookup[key];
-                        if (obs) {
-                            obs.error(error);
-                        }
-                    }
+                    if (!Object.prototype.hasOwnProperty.call(pendingPostLookup, url)) return;
+                    const pendingPost = pendingPostLookup[url];
+                    const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
+                    const obs = MetaSmokeAPI.ObservableLookup[key];
+                    if (obs) obs.error(error);
                 }
             });
         });
     }
 
     private static GetQueryUrl(postId: number, postType: 'Answer' | 'Question') {
-        return postType === 'Answer'
-            ? `//${window.location.hostname}/a/${postId}`
-            : `//${window.location.hostname}/questions/${postId}`;
+        return `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'questions'}/${postId}`;
     }
 
     private static async GetSmokeyId(postId: number, postType: 'Answer' | 'Question') {
@@ -172,7 +150,7 @@ export class MetaSmokeAPI {
         // eslint-disable-next-line no-async-promise-executor
         return GreaseMonkeyCache.GetAndCache(MetaSmokeUserKeyConfig, () => new Promise<string>(async (resolve, reject) => {
             let prom = MetaSmokeAPI.actualPromise;
-            if (prom === undefined) {
+            if (!prom) {
                 prom = MetaSmokeAPI.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeAPI.appKey}`);
                 MetaSmokeAPI.actualPromise = prom;
             }
@@ -211,26 +189,23 @@ export class MetaSmokeAPI {
             await this.SendFeedback(smokeyid, 'tpu-');
             return true;
         } else {
-            const urlStr =
-                postType === 'Answer'
-                    ? `//${window.location.hostname}/a/${postId}`
-                    : `//${window.location.hostname}/q/${postId}`;
+            const urlStr = `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'q'}/${postId}`;
 
             // eslint-disable-next-line no-async-promise-executor
             const promise = new Promise<boolean>(async (resolve, reject) => {
                 const userKey = await MetaSmokeAPI.getUserKey();
-                if (userKey) {
-                    $.ajax({
-                        type: 'POST',
-                        url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
-                        data: {
-                            post_link: urlStr,
-                            key: MetaSmokeAPI.appKey,
-                            token: userKey
-                        }
-                    }).done(() => resolve(true))
-                        .fail(() => reject());
-                }
+                if (!userKey) return;
+
+                $.ajax({
+                    type: 'POST',
+                    url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
+                    data: {
+                        post_link: urlStr,
+                        key: MetaSmokeAPI.appKey,
+                        token: userKey
+                    }
+                }).done(() => resolve(true))
+                    .fail(() => reject());
             });
 
             const result = await promise;

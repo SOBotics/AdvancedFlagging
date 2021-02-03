@@ -22,12 +22,9 @@ export class ChatApi {
         const getterPromise = new Promise<string>((resolve, reject) => {
             this.GetChannelPage(roomId).then(channelPage => {
                 const fkeyElement = $(channelPage).filter('#fkey');
-                if (fkeyElement.length > 0) {
-                    const fkey = fkeyElement.val();
-                    resolve(fkey);
-                    return;
-                }
-                reject('Could not find fkey');
+                if (!fkeyElement.length) reject('Could not find fkey');
+                const fkey = fkeyElement.val();
+                resolve(fkey);
             });
         });
 
@@ -74,12 +71,7 @@ export class ChatApi {
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     data: 'text=' + encodeURIComponent(message) + '&fkey=' + fKey,
                     onload: (response_1: any) => {
-                        if (response_1.status !== 200) {
-                            onFailure(response_1.statusText);
-                        }
-                        else {
-                            resolve();
-                        }
+                        response_1.status === 200 ? resolve() : onFailure(response_1.statusText);
                     },
                     onerror: (response_3: any) => {
                         onFailure(response_3);

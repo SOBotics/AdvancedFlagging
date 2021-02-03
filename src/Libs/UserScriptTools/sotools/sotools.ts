@@ -80,10 +80,8 @@ export function isModPage() {
 }
 
 function parseNatoPage(callback: (post: NatoAnswer) => void) {
-    const nodes = $('.answer-hyperlink').parent().parent();
-    for (let i = 0; i < nodes.length; i++) {
-        const node = $(nodes[i]);
-
+    $('.answer-hyperlink').parent().parent().each((_index, element) => {
+        const node = $(element);
         const postId = parseInt(node.find('.answer-hyperlink').attr('href').split('#')[1], 10);
 
         const answerTime = parseActionDate(node.find('.user-action-time'));
@@ -103,23 +101,50 @@ function parseNatoPage(callback: (post: NatoAnswer) => void) {
             authorName,
             authorId,
         });
-    }
+    });
 }
 
 export function isQuestionPage() {
     return !!window.location.href.match(/\/questions\/\d+.*/);
 }
+
+function getPostDetails(node: JQuery) {
+    const score = parseInt(node.find('.vote-count-post').text(), 10);
+
+    const authorReputation = parseReputation(node.find('.user-info .reputation-score').last());
+    const { authorName, authorId } = parseAuthorDetails(node.find('.user-info .user-details').last());
+
+    const postTime = parseActionDate(node.find('.user-info .relativetime').last());
+    return { score, authorReputation, authorName, authorId, postTime };
+}
+
+function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) => void, question: QuestionQuestion) {
+    const answerId = parseInt(aNode.attr('data-answerid'), 10);
+
+    const postDetails = getPostDetails(aNode);
+
+    aNode.find('.answercell').bind('destroyed', () => {
+        setTimeout(() => {
+            const updatedAnswerNode = $(`#answer-${answerId}`);
+            parseAnswerDetails(updatedAnswerNode, callback, question);
+        });
+    });
+
+    callback({
+        type: 'Answer' as const,
+        element: aNode,
+        page: 'Question' as const,
+        postId: answerId,
+        question,
+        postTime: postDetails.postTime,
+        score: postDetails.score,
+        authorReputation: postDetails.authorReputation,
+        authorName: postDetails.authorName,
+        authorId: postDetails.authorId
+    });
+}
+
 function parseQuestionPage(callback: (post: QuestionPageInfo) => void) {
-
-    function getPostDetails(node: JQuery) {
-        const score = parseInt(node.find('.vote-count-post').text(), 10);
-
-        const authorReputation = parseReputation(node.find('.user-info .reputation-score').last());
-        const { authorName, authorId } = parseAuthorDetails(node.find('.user-info .user-details').last());
-
-        const postTime = parseActionDate(node.find('.user-info .relativetime').last());
-        return { score, authorReputation, authorName, authorId, postTime };
-    }
 
     let question: QuestionQuestion;
     const parseQuestionDetails = (qNode: JQuery) => {
@@ -152,52 +177,19 @@ function parseQuestionPage(callback: (post: QuestionPageInfo) => void) {
     const questionNode = $('.question');
     parseQuestionDetails(questionNode);
 
-    const answerNodes = $('.answer');
-    for (let i = 0; i < answerNodes.length; i++) {
-        const parseAnswerDetails = (aNode: JQuery) => {
-            const answerId = parseInt(aNode.attr('data-answerid'), 10);
-
-            const postDetails = getPostDetails(aNode);
-
-            aNode.find('.answercell').bind('destroyed', () => {
-                setTimeout(() => {
-                    const updatedAnswerNode = $(`#answer-${answerId}`);
-                    parseAnswerDetails(updatedAnswerNode);
-                });
-            });
-
-            callback({
-                type: 'Answer' as const,
-                element: aNode,
-                page: 'Question' as const,
-                postId: answerId,
-                question,
-
-                postTime: postDetails.postTime,
-
-                score: postDetails.score,
-
-                authorReputation: postDetails.authorReputation,
-                authorName: postDetails.authorName,
-                authorId: postDetails.authorId
-            });
-        };
-        const answerNode = $(answerNodes[i]);
-        parseAnswerDetails(answerNode);
-    }
+    $('.answer').each((_index, element) => parseAnswerDetails($(element), callback, question));
 }
 
 export function isFlagsPage() {
     return !!window.location.href.match(/\/users\/flag-summary\//);
 }
+
 function parseFlagsPage(callback: (post: FlagPageInfo) => void) {
     const nodes = $('.flagged-post');
     for (let i = 0; i < nodes.length; i++) {
         const node = $(nodes[i]);
 
-        const type = node.find('.answer-hyperlink').length
-            ? 'Answer'
-            : 'Question';
+        const type = node.find('.answer-hyperlink').length ? 'Answer' : 'Question';
 
         const postId =
             parseInt(
@@ -252,9 +244,8 @@ function parseGenericPage(callback: (post: GenericPageInfo) => void) {
             postId
         });
     }
-    const answerNodes = $('.answer-hyperlink');
-    for (let i = 0; i < answerNodes.length; i++) {
-        const answerNode = $(answerNodes[i]);
+    $('.answer-hyperlink').each((_index, element) => {
+        const answerNode = $(element);
         let fragment = answerNode.attr('href').split('#')[1];
         if (fragment.indexOf('_') >= 0) {
             fragment = fragment.split('_')[1];
@@ -267,29 +258,21 @@ function parseGenericPage(callback: (post: GenericPageInfo) => void) {
             page: 'Unknown' as const,
             postId
         });
-    }
+    });
 }
 
 export function parseQuestionsAndAnswers(callback: (post: PostInfo) => Promise<void>) {
     if (isNatoPage()) {
         parseNatoPage(callback);
-        return;
-    }
-    if (isQuestionPage()) {
+    } else if (isQuestionPage()) {
         parseQuestionPage(callback);
-        return;
-    }
-
-    if (isFlagsPage()) {
+    } else if (isFlagsPage()) {
         parseFlagsPage(callback);
+    } else if (isModPage() || isUserPage() || (StackExchange as any).options.user.isModerator) {
         return;
+    } else {
+        parseGenericPage(callback);
     }
-
-    if (isModPage() || isUserPage() || (StackExchange as any).options.user.isModerator) {
-        return;
-    }
-
-    parseGenericPage(callback);
 }
 
 function parseReputation(reputationDiv: JQuery) {

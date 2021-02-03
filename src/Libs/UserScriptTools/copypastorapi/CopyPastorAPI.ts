@@ -42,11 +42,7 @@ export class CopyPastorAPI {
                 url,
                 onload: (response: any) => {
                     const responseObject = JSON.parse(response.responseText) as CopyPastorFindTargetResponse;
-                    if (responseObject.status === 'success') {
-                        resolve(responseObject.posts);
-                    } else {
-                        reject(responseObject.message);
-                    }
+                    responseObject.status === 'success' ? resolve(responseObject.posts) : reject(responseObject.message);
                 },
                 onerror: (response: any) => {
                     reject(response);
@@ -102,11 +98,7 @@ export class CopyPastorAPI {
                         + '&link=' + payload.link
                         + '&key=' + payload.key,
                     onload: (response: any) => {
-                        if (response.status !== 200) {
-                            reject(JSON.parse(response.responseText));
-                        } else {
-                            resolve(true);
-                        }
+                        response.status === 200 ? resolve(true) : reject(JSON.parse(response.responseText));
                     },
                     onerror: (response: any) => {
                         reject(response);
@@ -115,14 +107,7 @@ export class CopyPastorAPI {
             });
         });
         const allResults = await Promise.all(promises);
-        if (allResults.length <= 0) {
-            return false;
-        }
-        for (let i = 0; i < allResults.length; i++) {
-            if (!allResults[i]) {
-                return false;
-            }
-        }
-        return true;
+        if (!allResults.length) return false;
+        return allResults.every(result => result);
     }
 }

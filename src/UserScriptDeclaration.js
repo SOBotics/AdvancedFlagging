@@ -17,6 +17,7 @@
 // @exclude      *://data.stackexchange.com/*
 // @exclude      *://stackoverflow.com/c/*
 // @exclude      *://winterbash*.stackexchange.com/*
+// @exclude      *://api.stackexchange.com/*
 // @require      https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js
 // @grant        GM_xmlhttpRequest
 // @grant        GM_listValues

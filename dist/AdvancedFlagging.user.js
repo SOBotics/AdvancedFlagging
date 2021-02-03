@@ -17,6 +17,7 @@
 // @exclude      *://data.stackexchange.com/*
 // @exclude      *://stackoverflow.com/c/*
 // @exclude      *://winterbash*.stackexchange.com/*
+// @exclude      *://api.stackexchange.com/*
 // @require      https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js
 // @grant        GM_xmlhttpRequest
 // @grant        GM_listValues
@@ -171,9 +172,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             'padding': '10px'
         })
             .text(message);
-        if (textColour) {
+        if (textColour)
             div.css('color', textColour);
-        }
         popupWrapper.append(div);
         popupWrapper.removeClass('hide').addClass('show').show();
         function hidePopup() {
@@ -182,13 +182,20 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 popupWrapper.empty().hide();
             }, 1000);
         }
-        if (toasterFadeTimeout) {
+        if (toasterFadeTimeout)
             clearTimeout(toasterFadeTimeout);
-        }
-        if (toasterTimeout) {
+        if (toasterTimeout)
             clearTimeout(toasterTimeout);
-        }
         toasterTimeout = window.setTimeout(hidePopup, duration === undefined ? popupDelay : duration);
+    }
+    function showElement(element) {
+        element.addClass('d-block').removeClass('d-none');
+    }
+    function hideElement(element) {
+        element.addClass('d-none').removeClass('d-block');
+    }
+    function showInlineElement(element) {
+        element.addClass('d-inline-block').removeClass('d-none');
     }
     function displaySuccess(message) {
         displayToaster(message, '#00690c');
@@ -202,7 +209,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     function displaySuccessFlagged(reportedIcon, reportType) {
         reportedIcon.attr('title', `Flagged as ${reportType}`);
-        reportedIcon.addClass('d-inline-block').removeClass('d-none');
+        showInlineElement(reportedIcon);
         displaySuccess(`Flagged as ${reportType}`);
     }
     function displayErrorFlagged(message, error) {
@@ -221,43 +228,37 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         const isStackOverflow = sotools_1.IsStackOverflow();
         const comments = element.find('.comment-body');
         const defaultNoComment = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationDefaultNoComment);
-        if (!defaultNoComment && comments.length === 0 && isStackOverflow) {
+        if (!defaultNoComment && comments.length === 0 && isStackOverflow)
             leaveCommentBox.find('input').prop('checked', true);
-        }
         const enabledFlagIds = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationEnabledFlags);
         let hasCommentOptions = false;
         let firstCategory = true;
         FlagTypes_1.flagCategories.forEach(flagCategory => {
-            if (flagCategory.AppliesTo.indexOf(postType) === -1) {
+            if (flagCategory.AppliesTo.indexOf(postType) === -1)
                 return;
-            }
             const divider = getDivider();
-            if (!firstCategory) {
+            if (!firstCategory)
                 dropDown.append(divider);
-            }
             let activeLinks = flagCategory.FlagTypes.length;
             flagCategory.FlagTypes.forEach(flagType => {
-                if (flagType.GetComment) {
-                    hasCommentOptions = true;
-                }
-                const dropdownItem = $('<dd>').attr('class', 'advanced-flagging-dropdown-item');
-                if (flagCategory.IsDangerous) {
-                    dropdownItem.addClass('bg-red-200');
-                }
                 const reportLink = $('<a>').attr('class', 'advanced-flagging-report-link d-inline-block w-auto mt6');
+                hasCommentOptions = !!flagType.GetComment;
+                const dropdownItem = $('<dd>').attr('class', 'advanced-flagging-dropdown-item');
+                if (flagCategory.IsDangerous)
+                    dropdownItem.addClass('bg-red-200');
                 const disableLink = () => {
                     activeLinks--;
-                    reportLink.addClass('d-none').removeClass('d-block');
-                    if (divider && activeLinks <= 0) {
-                        divider.addClass('d-none').removeClass('d-block');
-                    }
+                    hideElement(reportLink);
+                    if (!divider || activeLinks > 0)
+                        return;
+                    hideElement(divider);
                 };
                 const enableLink = () => {
                     activeLinks++;
-                    reportLink.addClass('d-block').removeClass('d-none');
-                    if (divider && activeLinks > 0) {
-                        divider.addClass('d-block').removeClass('d-none');
-                    }
+                    showElement(reportLink);
+                    if (!divider || activeLinks <= 0)
+                        return;
+                    showElement(divider);
                 };
                 disableLink();
                 if (!enabledFlagIds || enabledFlagIds.indexOf(flagType.Id) > -1) {
@@ -267,9 +268,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             if (flagType.Enabled) {
                                 const hasItems = items.length > 0;
                                 const isEnabled = flagType.Enabled(hasItems);
-                                if (isEnabled) {
+                                if (isEnabled)
                                     enableLink();
-                                }
                             }
                             else {
                                 enableLink();
@@ -288,30 +288,21 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 reportLink.click(() => {
                     if (!deleted) {
                         try {
-                            if (!leaveCommentBox.find('input').is(':checked')) {
-                                if (commentText) {
-                                    // Match [some text](http://somehyperlink.com)
-                                    let strippedComment = commentText.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1');
-                                    // Match [edit]
-                                    strippedComment = strippedComment.replace(/\[([^\]]+)\][^(]*?/g, '$1');
-                                    // Strip out italics. _thanks_ => thanks
-                                    strippedComment = strippedComment.replace(/_([^_]+)_/g, '$1');
-                                    // Strip out bolds. **thanks** => thanks
-                                    strippedComment = strippedComment.replace(/\*\*([^*]+)\*\*/g, '$1');
-                                    // Strip out italics. *thanks* => thanks
-                                    strippedComment = strippedComment.replace(/\*([^*]+)\*/g, '$1');
-                                    element.find('.comment-body .comment-copy').each((index, ele) => {
-                                        const jEle = $(ele);
-                                        let text = jEle.text();
-                                        const fromReviewText = ' - From Review';
-                                        if (text.endsWith(fromReviewText)) {
-                                            text = text.substring(0, text.length - fromReviewText.length);
-                                        }
-                                        if (text === strippedComment) {
-                                            jEle.closest('li').find('a.comment-up.comment-up-off').trigger('click');
-                                        }
-                                    });
-                                }
+                            if (!leaveCommentBox.find('input').is(':checked') && commentText) {
+                                // Strip comment to find if one already exists
+                                const strippedComment = commentText.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1') // Match [links](...)
+                                    .replace(/\[([^\]]+)\][^(]*?/g, '$1') // Match [edit]
+                                    .replace(/_([^_]+)_/g, '$1') //  _thanks_ => thanks
+                                    .replace(/\*\*([^*]+)\*\*/g, '$1') // **thanks** => thanks
+                                    .replace(/\*([^*]+)\*/g, '$1') // *thanks* => thanks
+                                    .replace(' - From Review', '');
+                                element.find('.comment-body .comment-copy').each((_index, el) => {
+                                    const element = $(el);
+                                    const text = element.text();
+                                    if (text !== strippedComment)
+                                        return;
+                                    element.closest('li').find('a.comment-up.comment-up-off').trigger('click');
+                                });
                                 commentText = undefined;
                             }
                             const result = handleFlagAndComment(postId, flagType, flagBox.find('input').is(':checked'), commentText, copyPastorPromise);
@@ -362,10 +353,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         const expiryDate = new Date();
                         expiryDate.setDate(expiryDate.getDate() + 30);
                         performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
-                        performedActionIcon.addClass('d-block').removeClass('d-none');
+                        showElement(performedActionIcon);
                     }
                     handleFlag(flagType, reporters, answerTime, questionTime);
-                    dropDown.removeClass('d-block').addClass('d-none');
+                    hideElement(dropDown);
                 });
                 reportLink.text(flagType.DisplayName);
                 dropdownItem.append(reportLink);
@@ -373,9 +364,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
             firstCategory = false;
         });
-        if (!isStackOverflow) {
-            hasCommentOptions = false;
-        }
+        hasCommentOptions = isStackOverflow;
         dropDown.append(getDivider());
         if (hasCommentOptions) {
             const commentBoxLabel = $('<label>').text('Leave comment')
@@ -392,9 +381,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             .attr('class', 'advanced-flagging-label-options grid--cell s-label fw-normal');
         const flaggingRow = $('<dd />');
         const defaultNoFlag = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationDefaultNoFlag);
-        if (defaultNoFlag) {
+        if (defaultNoFlag)
             flagBox.find('input').prop('checked', false);
-        }
         flaggingRow.append(flagBox);
         flaggingRow.append(flagBoxLabel);
         dropDown.append(flaggingRow);
@@ -406,8 +394,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
         const customFlag = flagType.ReportType === 'PostOther';
         const noFlag = flagType.ReportType === 'NoFlag';
-        for (let i = 0; i < reporters.length; i++) {
-            const reporter = reporters[i];
+        reporters.forEach(reporter => {
             let promise = null;
             if (rudeFlag) {
                 promise = reporter.ReportRedFlag();
@@ -443,29 +430,27 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         throw new Error('Could not find custom flag type: ' + flagType.DisplayName);
                 }
             }
-            if (promise) {
-                promise.then((didReport) => {
-                    if (didReport) {
-                        displaySuccess(`Feedback sent to ${reporter.name}`);
-                    }
-                }).catch(() => {
-                    displayError(`Failed to send feedback to ${reporter.name}.`);
-                });
-            }
-        }
+            if (!promise)
+                return;
+            promise.then((didReport) => {
+                if (!didReport)
+                    return;
+                displaySuccess(`Feedback sent to ${reporter.name}`);
+            }).catch(() => {
+                displayError(`Failed to send feedback to ${reporter.name}.`);
+            });
+        });
     }
     let autoFlagging = false;
     async function SetupPostPage() {
         sotools_1.parseQuestionsAndAnswers(async (post) => {
-            if (!post.element.length) {
+            if (!post.element.length)
                 return;
-            }
             let iconLocation;
             let advancedFlaggingLink = null;
             const nattyIcon = getNattyIcon().click(() => {
                 window.open(`https://sentinel.erwaysoftware.com/posts/aid/${post.postId}`, '_blank');
             });
-            const showFunc = (element) => element.addClass('d-inline-block').removeClass('d-none');
             const copyPastorIcon = getGuttenbergIcon();
             const copyPastorApi = new CopyPastorAPI_1.CopyPastorAPI(post.postId, copyPastorKey);
             const copyPastorObservable = copyPastorApi.Watch();
@@ -473,15 +458,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             const reporters = [];
             if (post.type === 'Answer') {
                 const nattyApi = new NattyApi_1.NattyAPI(post.postId);
-                nattyApi.Watch()
-                    .subscribe(reported => {
-                    if (reported) {
-                        showFunc(nattyIcon);
-                    }
-                    else {
-                        nattyIcon.addClass('d-none');
-                    }
-                });
+                nattyApi.Watch().subscribe(reported => reported ? showInlineElement(nattyIcon) : nattyIcon.addClass('d-none'));
                 reporters.push({
                     name: 'Natty',
                     ReportNaa: (answerDate, questionDate) => nattyApi.ReportNaa(answerDate, questionDate),
@@ -493,16 +470,15 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     ReportPlagiarism: () => Promise.resolve(false)
                 });
                 copyPastorObservable.subscribe(items => {
-                    if (items.length) {
-                        copyPastorIcon.attr('Title', `Reported by CopyPastor - ${items.length}`);
-                        showFunc(copyPastorIcon);
-                        copyPastorIcon.click(() => items.forEach(item => {
-                            window.open('https://copypastor.sobotics.org/posts/' + item.post_id);
-                        }));
-                    }
-                    else {
+                    if (!items.length) {
                         copyPastorIcon.addClass('d-none');
+                        return;
                     }
+                    copyPastorIcon.attr('Title', `Reported by CopyPastor - ${items.length}`);
+                    showInlineElement(copyPastorIcon);
+                    copyPastorIcon.click(() => items.forEach(item => {
+                        window.open('https://copypastor.sobotics.org/posts/' + item.post_id);
+                    }));
                 });
                 reporters.push({
                     name: 'Guttenberg',
@@ -529,15 +505,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             const metaSmoke = new MetaSmokeAPI_1.MetaSmokeAPI();
             metaSmoke.Watch(post.postId, post.type)
                 .subscribe(id => {
-                if (id !== null) {
-                    smokeyIcon.click(() => {
-                        window.open(`https://metasmoke.erwaysoftware.com/post/${id}`, '_blank');
-                    });
-                    showFunc(smokeyIcon);
-                }
-                else {
+                if (!id) {
                     smokeyIcon.addClass('d-none');
+                    return;
                 }
+                smokeyIcon.click(() => {
+                    window.open(`https://metasmoke.erwaysoftware.com/post/${id}`, '_blank');
+                });
+                showInlineElement(smokeyIcon);
             });
             reporters.push({
                 name: 'Smokey',
@@ -556,33 +531,25 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 iconLocation = iconLocation = post.element.find('.js-post-menu').children().first();
                 advancedFlaggingLink = $('<button>').attr('type', 'button')
                     .attr('class', 's-btn s-btn__link advanced-flagging-link').text('Advanced Flagging');
-                let questionTime;
-                let answerTime;
-                if (post.type === 'Answer') {
-                    questionTime = post.question.postTime;
-                    answerTime = post.postTime;
-                }
-                else {
-                    questionTime = post.postTime;
-                    answerTime = post.postTime;
-                }
+                const questionTime = post.type === 'Answer' ? post.question.postTime : post.postTime;
+                const answerTime = post.postTime;
                 const deleted = post.element.hasClass('deleted-answer');
                 const isEnabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationWatchFlags);
                 RequestWatcher_1.WatchFlags().subscribe(xhr => {
-                    if (isEnabled && !autoFlagging) {
-                        const matches = new RegExp(`/flags/posts/${post.postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`).exec(xhr.responseURL);
-                        if (matches !== null && xhr.status === 200) {
-                            const flagType = {
-                                Id: 0,
-                                ReportType: matches[1],
-                                DisplayName: matches[1]
-                            };
-                            handleFlag(flagType, reporters, answerTime, questionTime);
-                            const expiryDate = new Date();
-                            expiryDate.setDate(expiryDate.getDate() + 30);
-                            displaySuccessFlagged(reportedIcon, flagType.ReportType);
-                        }
-                    }
+                    if (!isEnabled || autoFlagging)
+                        return;
+                    const matches = new RegExp(`/flags/posts/${post.postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`).exec(xhr.responseURL);
+                    if (!matches || xhr.status !== 200)
+                        return;
+                    const flagType = {
+                        Id: 0,
+                        ReportType: matches[1],
+                        DisplayName: matches[1]
+                    };
+                    handleFlag(flagType, reporters, answerTime, questionTime);
+                    const expiryDate = new Date();
+                    expiryDate.setDate(expiryDate.getDate() + 30);
+                    displaySuccessFlagged(reportedIcon, flagType.ReportType);
                 });
                 const linkDisabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationLinkDisabled);
                 if (!linkDisabled) {
@@ -590,28 +557,20 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     advancedFlaggingLink.append(dropDown);
                     const link = advancedFlaggingLink;
                     const openOnHover = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationOpenOnHover);
+                    link[openOnHover ? 'hover' : 'click'](e => {
+                        e.stopPropagation();
+                        if (e.target !== link.get(0))
+                            return;
+                        showElement(dropDown);
+                    });
                     if (openOnHover) {
-                        link.hover(e => {
-                            e.stopPropagation();
-                            if (e.target === link.get(0)) {
-                                dropDown.removeClass('d-none').addClass('d-block');
-                            }
-                        });
                         link.mouseleave(e => {
                             e.stopPropagation();
-                            dropDown.removeClass('d-block').addClass('d-none');
+                            hideElement(dropDown);
                         });
                     }
                     else {
-                        link.click(e => {
-                            e.stopPropagation();
-                            if (e.target === link.get(0)) {
-                                dropDown.removeClass('d-none').addClass('d-block');
-                            }
-                        });
-                        $(window).click(() => {
-                            dropDown.removeClass('d-block').addClass('d-none');
-                        });
+                        $(window).click(() => hideElement(dropDown));
                     }
                     iconLocation.append($('<div>').attr('class', 'grid--cell').append(advancedFlaggingLink));
                 }
@@ -683,33 +642,33 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 // next-task is invoked when visiting the review queue
                 // task-reviewed is invoked when making a response
                 const isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
-                if (isReviewItem !== null && xhr.status === 200) {
+                if (isReviewItem && xhr.status === 200) {
                     const review = xhr.responseText;
                     parseReviewDetails(review);
                     return;
                 }
                 const matches = /(\d+)\/vote\/10|(\d+)\/recommend-delete/.exec(xhr.responseURL);
-                if (matches !== null && xhr.status === 200) {
-                    const postIdStr = matches[1] || matches[2];
-                    const postId = parseInt(postIdStr, 10);
-                    const currentPostDetails = postDetails[postId];
-                    if (currentPostDetails && $('.answers-subheader').length > 0) {
-                        const nattyApi = new NattyApi_1.NattyAPI(postId);
-                        nattyApi.Watch();
-                        handleFlag({ Id: 0, ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
-                            {
-                                name: 'Natty',
-                                ReportNaa: (answerDate, questionDate) => nattyApi.ReportNaa(answerDate, questionDate),
-                                ReportRedFlag: () => nattyApi.ReportRedFlag(),
-                                ReportLooksFine: () => nattyApi.ReportLooksFine(),
-                                ReportNeedsEditing: () => nattyApi.ReportNeedsEditing(),
-                                ReportVandalism: () => Promise.resolve(false),
-                                ReportDuplicateAnswer: () => Promise.resolve(false),
-                                ReportPlagiarism: () => Promise.resolve(false)
-                            }
-                        ], currentPostDetails.answerTime, currentPostDetails.questionTime);
+                if (!matches || xhr.status !== 200)
+                    return;
+                const postIdStr = matches[1] || matches[2];
+                const postId = parseInt(postIdStr, 10);
+                const currentPostDetails = postDetails[postId];
+                if (!currentPostDetails || !$('.answers-subheader').length)
+                    return;
+                const nattyApi = new NattyApi_1.NattyAPI(postId);
+                nattyApi.Watch();
+                handleFlag({ Id: 0, ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
+                    {
+                        name: 'Natty',
+                        ReportNaa: (answerDate, questionDate) => nattyApi.ReportNaa(answerDate, questionDate),
+                        ReportRedFlag: () => nattyApi.ReportRedFlag(),
+                        ReportLooksFine: () => nattyApi.ReportLooksFine(),
+                        ReportNeedsEditing: () => nattyApi.ReportNeedsEditing(),
+                        ReportVandalism: () => Promise.resolve(false),
+                        ReportDuplicateAnswer: () => Promise.resolve(false),
+                        ReportPlagiarism: () => Promise.resolve(false)
                     }
-                }
+                ], currentPostDetails.answerTime, currentPostDetails.questionTime);
             });
         }
     }
@@ -730,9 +689,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         // Or the document is already focused,
         // Then we execute the script.
         // This is done to prevent DOSing dashboard apis, if a bunch of links are opened at once.
-        if (document.hasFocus && document.hasFocus()) {
+        if (document.hasFocus && document.hasFocus())
             actionWatcher();
-        }
     });
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
@@ -941,9 +899,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     exports.isModPage = isModPage;
     function parseNatoPage(callback) {
-        const nodes = $('.answer-hyperlink').parent().parent();
-        for (let i = 0; i < nodes.length; i++) {
-            const node = $(nodes[i]);
+        $('.answer-hyperlink').parent().parent().each((_index, element) => {
+            const node = $(element);
             const postId = parseInt(node.find('.answer-hyperlink').attr('href').split('#')[1], 10);
             const answerTime = parseActionDate(node.find('.user-action-time'));
             const questionTime = parseActionDate(node.find('td .relativetime'));
@@ -960,20 +917,42 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 authorName,
                 authorId,
             });
-        }
+        });
     }
     function isQuestionPage() {
         return !!window.location.href.match(/\/questions\/\d+.*/);
     }
     exports.isQuestionPage = isQuestionPage;
+    function getPostDetails(node) {
+        const score = parseInt(node.find('.vote-count-post').text(), 10);
+        const authorReputation = parseReputation(node.find('.user-info .reputation-score').last());
+        const { authorName, authorId } = parseAuthorDetails(node.find('.user-info .user-details').last());
+        const postTime = parseActionDate(node.find('.user-info .relativetime').last());
+        return { score, authorReputation, authorName, authorId, postTime };
+    }
+    function parseAnswerDetails(aNode, callback, question) {
+        const answerId = parseInt(aNode.attr('data-answerid'), 10);
+        const postDetails = getPostDetails(aNode);
+        aNode.find('.answercell').bind('destroyed', () => {
+            setTimeout(() => {
+                const updatedAnswerNode = $(`#answer-${answerId}`);
+                parseAnswerDetails(updatedAnswerNode, callback, question);
+            });
+        });
+        callback({
+            type: 'Answer',
+            element: aNode,
+            page: 'Question',
+            postId: answerId,
+            question,
+            postTime: postDetails.postTime,
+            score: postDetails.score,
+            authorReputation: postDetails.authorReputation,
+            authorName: postDetails.authorName,
+            authorId: postDetails.authorId
+        });
+    }
     function parseQuestionPage(callback) {
-        function getPostDetails(node) {
-            const score = parseInt(node.find('.vote-count-post').text(), 10);
-            const authorReputation = parseReputation(node.find('.user-info .reputation-score').last());
-            const { authorName, authorId } = parseAuthorDetails(node.find('.user-info .user-details').last());
-            const postTime = parseActionDate(node.find('.user-info .relativetime').last());
-            return { score, authorReputation, authorName, authorId, postTime };
-        }
         let question;
         const parseQuestionDetails = (qNode) => {
             const postId = parseInt(qNode.attr('data-questionid'), 10);
@@ -999,33 +978,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         };
         const questionNode = $('.question');
         parseQuestionDetails(questionNode);
-        const answerNodes = $('.answer');
-        for (let i = 0; i < answerNodes.length; i++) {
-            const parseAnswerDetails = (aNode) => {
-                const answerId = parseInt(aNode.attr('data-answerid'), 10);
-                const postDetails = getPostDetails(aNode);
-                aNode.find('.answercell').bind('destroyed', () => {
-                    setTimeout(() => {
-                        const updatedAnswerNode = $(`#answer-${answerId}`);
-                        parseAnswerDetails(updatedAnswerNode);
-                    });
-                });
-                callback({
-                    type: 'Answer',
-                    element: aNode,
-                    page: 'Question',
-                    postId: answerId,
-                    question,
-                    postTime: postDetails.postTime,
-                    score: postDetails.score,
-                    authorReputation: postDetails.authorReputation,
-                    authorName: postDetails.authorName,
-                    authorId: postDetails.authorId
-                });
-            };
-            const answerNode = $(answerNodes[i]);
-            parseAnswerDetails(answerNode);
-        }
+        $('.answer').each((_index, element) => parseAnswerDetails($(element), callback, question));
     }
     function isFlagsPage() {
         return !!window.location.href.match(/\/users\/flag-summary\//);
@@ -1035,9 +988,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         const nodes = $('.flagged-post');
         for (let i = 0; i < nodes.length; i++) {
             const node = $(nodes[i]);
-            const type = node.find('.answer-hyperlink').length
-                ? 'Answer'
-                : 'Question';
+            const type = node.find('.answer-hyperlink').length ? 'Answer' : 'Question';
             const postId = parseInt(type === 'Answer'
                 ? node.find('.answer-hyperlink').attr('href').split('#')[1]
                 : node.find('.question-hyperlink').attr('href').split('/')[2], 10);
@@ -1083,9 +1034,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 postId
             });
         }
-        const answerNodes = $('.answer-hyperlink');
-        for (let i = 0; i < answerNodes.length; i++) {
-            const answerNode = $(answerNodes[i]);
+        $('.answer-hyperlink').each((_index, element) => {
+            const answerNode = $(element);
             let fragment = answerNode.attr('href').split('#')[1];
             if (fragment.indexOf('_') >= 0) {
                 fragment = fragment.split('_')[1];
@@ -1097,25 +1047,24 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 page: 'Unknown',
                 postId
             });
-        }
+        });
     }
     function parseQuestionsAndAnswers(callback) {
         if (isNatoPage()) {
             parseNatoPage(callback);
-            return;
         }
-        if (isQuestionPage()) {
+        else if (isQuestionPage()) {
             parseQuestionPage(callback);
-            return;
         }
-        if (isFlagsPage()) {
+        else if (isFlagsPage()) {
             parseFlagsPage(callback);
+        }
+        else if (isModPage() || isUserPage() || StackExchange.options.user.isModerator) {
             return;
         }
-        if (isModPage() || isUserPage() || StackExchange.options.user.isModerator) {
-            return;
+        else {
+            parseGenericPage(callback);
         }
-        parseGenericPage(callback);
     }
     exports.parseQuestionsAndAnswers = parseQuestionsAndAnswers;
     function parseReputation(reputationDiv) {
@@ -1164,7 +1113,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.NattyAPI = void 0;
-    const nattyFeedbackUrl = 'http://logs.sobotics.org/napi/api/feedback';
+    const nattyFeedbackUrl = 'https://logs.sobotics.org/napi/api/feedback';
     const soboticsRoomId = 111347;
     class NattyAPI {
         constructor(answerId) {
@@ -13349,12 +13298,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             const getterPromise = new Promise((resolve, reject) => {
                 this.GetChannelPage(roomId).then(channelPage => {
                     const fkeyElement = $(channelPage).filter('#fkey');
-                    if (fkeyElement.length > 0) {
-                        const fkey = fkeyElement.val();
-                        resolve(fkey);
-                        return;
-                    }
-                    reject('Could not find fkey');
+                    if (!fkeyElement.length)
+                        reject('Could not find fkey');
+                    const fkey = fkeyElement.val();
+                    resolve(fkey);
                 });
             });
             const expiryDate = ChatApi.GetExpiryDate();
@@ -13396,12 +13343,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         data: 'text=' + encodeURIComponent(message) + '&fkey=' + fKey,
                         onload: (response_1) => {
-                            if (response_1.status !== 200) {
-                                onFailure(response_1.statusText);
-                            }
-                            else {
-                                resolve();
-                            }
+                            response_1.status === 200 ? resolve() : onFailure(response_1.statusText);
                         },
                         onerror: (response_3) => {
                             onFailure(response_3);
@@ -13545,9 +13487,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             return false;
         }
         computeContentHash(postContent) {
-            if (!postContent) {
+            if (!postContent)
                 return 0;
-            }
             let hash = 0;
             for (let i = 0; i < postContent.length; ++i) {
                 hash = ((hash << 5) - hash) + postContent.charCodeAt(i);
@@ -13557,13 +13498,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         makeTrackRequest() {
             const promise = new Promise((resolve, reject) => {
-                if (!sotools_1.IsStackOverflow()) {
+                if (!sotools_1.IsStackOverflow() || !$('#answer-' + this.answerId + ' .js-post-body').length) {
                     resolve(false);
                 }
-                if ($('#answer-' + this.answerId + ' .js-post-body').length === 0) {
-                    resolve(false);
-                }
-                if ($('.top-bar .my-profile .gravatar-wrapper-24').length === 0) {
+                if (!$('.top-bar .my-profile .gravatar-wrapper-24').length) {
                     reject('Flag Tracker: Could not find username.');
                 }
                 const flaggerName = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
@@ -13577,9 +13515,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         + '&contentHash=' + contentHash
                         + '&flagger=' + encodeURIComponent(flaggerName),
                     onload: (response) => {
-                        if (response.status !== 200) {
+                        if (response.status !== 200)
                             reject('Flag Tracker Error: Status ' + response.status);
-                        }
                         resolve(true);
                     },
                     onerror: (response) => {
@@ -13608,9 +13545,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.MetaSmokeWasReportedConfig = 'MetaSmoke.WasReported';
     function Delay(milliseconds) {
         return new Promise(resolve => {
-            setTimeout(() => {
-                resolve();
-            }, milliseconds);
+            setTimeout(() => resolve(), milliseconds);
         });
     }
     class MetaSmokeAPI {
@@ -13620,18 +13555,16 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         static async IsDisabled() {
             const cachedDisabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.MetaSmokeDisabledConfig);
-            if (cachedDisabled === undefined) {
+            if (!cachedDisabled)
                 return false;
-            }
             return cachedDisabled;
         }
         static async Setup(appKey, codeGetter) {
             if (!codeGetter) {
                 codeGetter = async (metaSmokeOAuthUrl) => {
                     const isDisabled = await MetaSmokeAPI.IsDisabled();
-                    if (isDisabled) {
+                    if (isDisabled)
                         return;
-                    }
                     if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, see footer of Stack Overflow.')) {
                         GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(exports.MetaSmokeDisabledConfig, true);
                         return;
@@ -13642,12 +13575,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         const handleFDSCCode = () => {
                             $(window).off('focus', handleFDSCCode);
                             const code = window.prompt('Once you\'ve authenticated Advanced Flagging with metasmoke, you\'ll be given a code; enter it here.');
-                            if (!code) {
-                                resolve(undefined);
-                            }
-                            else {
-                                return resolve(code);
-                            }
+                            resolve(code || undefined);
                         };
                         $(window).focus(handleFDSCCode);
                     });
@@ -13659,9 +13587,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
         }
         static QueryMetaSmoke(postId, postType) {
-            if (this.pendingTimeout) {
+            if (this.pendingTimeout)
                 clearTimeout(this.pendingTimeout);
-            }
             this.pendingPosts.push({ postId, postType });
             this.pendingTimeout = window.setTimeout(MetaSmokeAPI.QueryMetaSmokeInternal, 1000);
         }
@@ -13678,9 +13605,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             const expiryDate = new Date();
             expiryDate.setDate(expiryDate.getDate() + 30);
             MetaSmokeAPI.IsDisabled().then(isDisabled => {
-                if (isDisabled) {
+                if (isDisabled)
                     return;
-                }
                 $.ajax({
                     type: 'GET',
                     url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
@@ -13691,43 +13617,38 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 }).done((metaSmokeResult) => {
                     for (const item of metaSmokeResult.items) {
                         const pendingPost = pendingPostLookup[item.link];
-                        if (pendingPost) {
-                            const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
-                            const obs = MetaSmokeAPI.ObservableLookup[key];
-                            if (obs) {
-                                obs.next(item.id);
-                            }
-                            delete pendingPostLookup[item.link];
-                        }
+                        if (!pendingPost)
+                            continue;
+                        const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
+                        const obs = MetaSmokeAPI.ObservableLookup[key];
+                        if (obs)
+                            obs.next(item.id);
+                        delete pendingPostLookup[item.link];
                     }
                     for (const url in pendingPostLookup) {
-                        if (Object.prototype.hasOwnProperty.call(pendingPostLookup, url)) {
-                            const pendingPost = pendingPostLookup[url];
-                            const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
-                            const obs = MetaSmokeAPI.ObservableLookup[key];
-                            if (obs) {
-                                obs.next(null);
-                            }
-                        }
+                        if (!Object.prototype.hasOwnProperty.call(pendingPostLookup, url))
+                            return;
+                        const pendingPost = pendingPostLookup[url];
+                        const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
+                        const obs = MetaSmokeAPI.ObservableLookup[key];
+                        if (obs)
+                            obs.next(null);
                     }
                 }).fail(error => {
                     for (const url in pendingPostLookup) {
-                        if (Object.prototype.hasOwnProperty.call(pendingPostLookup, url)) {
-                            const pendingPost = pendingPostLookup[url];
-                            const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
-                            const obs = MetaSmokeAPI.ObservableLookup[key];
-                            if (obs) {
-                                obs.error(error);
-                            }
-                        }
+                        if (!Object.prototype.hasOwnProperty.call(pendingPostLookup, url))
+                            return;
+                        const pendingPost = pendingPostLookup[url];
+                        const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
+                        const obs = MetaSmokeAPI.ObservableLookup[key];
+                        if (obs)
+                            obs.error(error);
                     }
                 });
             });
         }
         static GetQueryUrl(postId, postType) {
-            return postType === 'Answer'
-                ? `//${window.location.hostname}/a/${postId}`
-                : `//${window.location.hostname}/questions/${postId}`;
+            return `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'questions'}/${postId}`;
         }
         static async GetSmokeyId(postId, postType) {
             const observableKey = this.GetObservableKey(postId, postType);
@@ -13744,7 +13665,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             // eslint-disable-next-line no-async-promise-executor
             return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(exports.MetaSmokeUserKeyConfig, () => new Promise(async (resolve, reject) => {
                 let prom = MetaSmokeAPI.actualPromise;
-                if (prom === undefined) {
+                if (!prom) {
                     prom = MetaSmokeAPI.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeAPI.appKey}`);
                     MetaSmokeAPI.actualPromise = prom;
                 }
@@ -13782,24 +13703,22 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return true;
             }
             else {
-                const urlStr = postType === 'Answer'
-                    ? `//${window.location.hostname}/a/${postId}`
-                    : `//${window.location.hostname}/q/${postId}`;
+                const urlStr = `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'q'}/${postId}`;
                 // eslint-disable-next-line no-async-promise-executor
                 const promise = new Promise(async (resolve, reject) => {
                     const userKey = await MetaSmokeAPI.getUserKey();
-                    if (userKey) {
-                        $.ajax({
-                            type: 'POST',
-                            url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
-                            data: {
-                                post_link: urlStr,
-                                key: MetaSmokeAPI.appKey,
-                                token: userKey
-                            }
-                        }).done(() => resolve(true))
-                            .fail(() => reject());
-                    }
+                    if (!userKey)
+                        return;
+                    $.ajax({
+                        type: 'POST',
+                        url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
+                        data: {
+                            post_link: urlStr,
+                            key: MetaSmokeAPI.appKey,
+                            token: userKey
+                        }
+                    }).done(() => resolve(true))
+                        .fail(() => reject());
                 });
                 const result = await promise;
                 await Delay(1000);
@@ -13884,12 +13803,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     url,
                     onload: (response) => {
                         const responseObject = JSON.parse(response.responseText);
-                        if (responseObject.status === 'success') {
-                            resolve(responseObject.posts);
-                        }
-                        else {
-                            reject(responseObject.message);
-                        }
+                        responseObject.status === 'success' ? resolve(responseObject.posts) : reject(responseObject.message);
                     },
                     onerror: (response) => {
                         reject(response);
@@ -13937,12 +13851,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             + '&link=' + payload.link
                             + '&key=' + payload.key,
                         onload: (response) => {
-                            if (response.status !== 200) {
-                                reject(JSON.parse(response.responseText));
-                            }
-                            else {
-                                resolve(true);
-                            }
+                            response.status === 200 ? resolve(true) : reject(JSON.parse(response.responseText));
                         },
                         onerror: (response) => {
                             reject(response);
@@ -13951,15 +13860,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
             });
             const allResults = await Promise.all(promises);
-            if (allResults.length <= 0) {
+            if (!allResults.length)
                 return false;
-            }
-            for (let i = 0; i < allResults.length; i++) {
-                if (!allResults[i]) {
-                    return false;
-                }
-            }
-            return true;
+            return allResults.every(result => result);
         }
     }
     exports.CopyPastorAPI = CopyPastorAPI;
@@ -13992,9 +13895,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     const callbacks = [];
     function addXHRListener(callback) {
         callbacks.push(callback);
-        if (initialized) {
+        if (initialized)
             return;
-        }
         const open = XMLHttpRequest.prototype.open;
         XMLHttpRequest.prototype.open = function () {
             this.addEventListener('load', () => {

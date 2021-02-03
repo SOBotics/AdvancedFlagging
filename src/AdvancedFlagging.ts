@@ -162,9 +162,7 @@ function displayToaster(message: string, colour: string, textColour?: string, du
             'padding': '10px'
         })
         .text(message);
-    if (textColour) {
-        div.css('color', textColour);
-    }
+    if (textColour) div.css('color', textColour);
 
     popupWrapper.append(div);
     popupWrapper.removeClass('hide').addClass('show').show();
@@ -176,14 +174,23 @@ function displayToaster(message: string, colour: string, textColour?: string, du
         }, 1000);
     }
 
-    if (toasterFadeTimeout) {
-        clearTimeout(toasterFadeTimeout);
-    }
-    if (toasterTimeout) {
-        clearTimeout(toasterTimeout);
-    }
+    if (toasterFadeTimeout) clearTimeout(toasterFadeTimeout);
+    if (toasterTimeout) clearTimeout(toasterTimeout);
     toasterTimeout = window.setTimeout(hidePopup, duration === undefined ? popupDelay : duration);
 }
+
+function showElement(element: JQuery) {
+    element.addClass('d-block').removeClass('d-none');
+}
+
+function hideElement(element: JQuery) {
+    element.addClass('d-none').removeClass('d-block');
+}
+
+function showInlineElement(element: JQuery) {
+    element.addClass('d-inline-block').removeClass('d-none');
+}
+
 function displaySuccess(message: string) {
     displayToaster(message, '#00690c');
 }
@@ -198,7 +205,7 @@ function displayError(message: string) {
 
 function displaySuccessFlagged(reportedIcon: JQuery, reportType: string) {
     reportedIcon.attr('title', `Flagged as ${reportType}`);
-    reportedIcon.addClass('d-inline-block').removeClass('d-none');
+    showInlineElement(reportedIcon);
     displaySuccess(`Flagged as ${reportType}`);
 }
 
@@ -254,47 +261,39 @@ async function BuildFlaggingDialog(element: JQuery,
     const comments = element.find('.comment-body');
     const defaultNoComment = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationDefaultNoComment);
 
-    if (!defaultNoComment && comments.length === 0 && isStackOverflow) {
-        leaveCommentBox.find('input').prop('checked', true);
-    }
+    if (!defaultNoComment && comments.length === 0 && isStackOverflow) leaveCommentBox.find('input').prop('checked', true);
 
     const enabledFlagIds = GreaseMonkeyCache.GetFromCache<number[]>(ConfigurationEnabledFlags);
 
     let hasCommentOptions = false;
     let firstCategory = true;
     flagCategories.forEach(flagCategory => {
-        if (flagCategory.AppliesTo.indexOf(postType) === -1) {
-            return;
-        }
+        if (flagCategory.AppliesTo.indexOf(postType) === -1) return;
+
         const divider = getDivider();
-        if (!firstCategory) {
-            dropDown.append(divider);
-        }
+        if (!firstCategory) dropDown.append(divider);
+
         let activeLinks = flagCategory.FlagTypes.length;
         flagCategory.FlagTypes.forEach(flagType => {
-            if (flagType.GetComment) {
-                hasCommentOptions = true;
-            }
-            const dropdownItem = $('<dd>').attr('class', 'advanced-flagging-dropdown-item');
-            if (flagCategory.IsDangerous) {
-                dropdownItem.addClass('bg-red-200');
-            }
-
             const reportLink = $('<a>').attr('class', 'advanced-flagging-report-link d-inline-block w-auto mt6');
+            hasCommentOptions = !!flagType.GetComment;
+
+            const dropdownItem = $('<dd>').attr('class', 'advanced-flagging-dropdown-item');
+            if (flagCategory.IsDangerous) dropdownItem.addClass('bg-red-200');
 
             const disableLink = () => {
                 activeLinks--;
-                reportLink.addClass('d-none').removeClass('d-block');
-                if (divider && activeLinks <= 0) {
-                    divider.addClass('d-none').removeClass('d-block');
-                }
+                hideElement(reportLink);
+                if (!divider || activeLinks > 0) return;
+
+                hideElement(divider);
             };
             const enableLink = () => {
                 activeLinks++;
-                reportLink.addClass('d-block').removeClass('d-none');
-                if (divider && activeLinks > 0) {
-                    divider.addClass('d-block').removeClass('d-none');
-                }
+                showElement(reportLink);
+                if (!divider || activeLinks <= 0) return;
+
+                showElement(divider);
             };
 
             disableLink();
@@ -305,9 +304,7 @@ async function BuildFlaggingDialog(element: JQuery,
                         if (flagType.Enabled) {
                             const hasItems = items.length > 0;
                             const isEnabled = flagType.Enabled(hasItems);
-                            if (isEnabled) {
-                                enableLink();
-                            }
+                            if (isEnabled) enableLink();
                         } else {
                             enableLink();
                         }
@@ -326,36 +323,22 @@ async function BuildFlaggingDialog(element: JQuery,
             reportLink.click(() => {
                 if (!deleted) {
                     try {
-                        if (!leaveCommentBox.find('input').is(':checked')) {
-                            if (commentText) {
-                                // Match [some text](http://somehyperlink.com)
-                                let strippedComment = commentText.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1');
-                                // Match [edit]
-                                strippedComment = strippedComment.replace(/\[([^\]]+)\][^(]*?/g, '$1');
+                        if (!leaveCommentBox.find('input').is(':checked') && commentText) {
+                            // Strip comment to find if one already exists
+                            const strippedComment = commentText.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1') // Match [links](...)
+                                                               .replace(/\[([^\]]+)\][^(]*?/g, '$1') // Match [edit]
+                                                               .replace(/_([^_]+)_/g, '$1') //  _thanks_ => thanks
+                                                               .replace(/\*\*([^*]+)\*\*/g, '$1') // **thanks** => thanks
+                                                               .replace(/\*([^*]+)\*/g, '$1') // *thanks* => thanks
+                                                               .replace(' - From Review', '');
 
-                                // Strip out italics. _thanks_ => thanks
-                                strippedComment = strippedComment.replace(/_([^_]+)_/g, '$1');
+                            element.find('.comment-body .comment-copy').each((_index, el) => {
+                                const element = $(el);
+                                const text = element.text();
+                                if (text !== strippedComment) return;
 
-                                // Strip out bolds. **thanks** => thanks
-                                strippedComment = strippedComment.replace(/\*\*([^*]+)\*\*/g, '$1');
-
-                                // Strip out italics. *thanks* => thanks
-                                strippedComment = strippedComment.replace(/\*([^*]+)\*/g, '$1');
-
-                                element.find('.comment-body .comment-copy').each((index, ele) => {
-                                    const jEle = $(ele);
-                                    let text = jEle.text();
-                                    const fromReviewText = ' - From Review';
-                                    if (text.endsWith(fromReviewText)) {
-                                        text = text.substring(0, text.length - fromReviewText.length);
-                                    }
-
-                                    if (text === strippedComment) {
-                                        jEle.closest('li').find('a.comment-up.comment-up-off').trigger('click');
-                                    }
-                                });
-                            }
-
+                                element.closest('li').find('a.comment-up.comment-up-off').trigger('click');
+                            });
                             commentText = undefined;
                         }
 
@@ -405,12 +388,12 @@ async function BuildFlaggingDialog(element: JQuery,
                     const expiryDate = new Date();
                     expiryDate.setDate(expiryDate.getDate() + 30);
                     performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
-                    performedActionIcon.addClass('d-block').removeClass('d-none');
+                    showElement(performedActionIcon);
                 }
 
                 handleFlag(flagType, reporters, answerTime, questionTime);
 
-                dropDown.removeClass('d-block').addClass('d-none');
+                hideElement(dropDown);
             });
 
             reportLink.text(flagType.DisplayName);
@@ -421,9 +404,7 @@ async function BuildFlaggingDialog(element: JQuery,
         firstCategory = false;
     });
 
-    if (!isStackOverflow) {
-        hasCommentOptions = false;
-    }
+    hasCommentOptions = isStackOverflow;
 
     dropDown.append(getDivider());
     if (hasCommentOptions) {
@@ -447,9 +428,7 @@ async function BuildFlaggingDialog(element: JQuery,
     const flaggingRow = $('<dd />');
 
     const defaultNoFlag = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationDefaultNoFlag);
-    if (defaultNoFlag) {
-        flagBox.find('input').prop('checked', false);
-    }
+    if (defaultNoFlag) flagBox.find('input').prop('checked', false);
 
     flaggingRow.append(flagBox);
     flaggingRow.append(flagBoxLabel);
@@ -465,8 +444,7 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
     const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
     const customFlag = flagType.ReportType === 'PostOther';
     const noFlag = flagType.ReportType === 'NoFlag';
-    for (let i = 0; i < reporters.length; i++) {
-        const reporter = reporters[i];
+    reporters.forEach(reporter => {
         let promise: Promise<boolean> | null = null;
         if (rudeFlag) {
             promise = reporter.ReportRedFlag();
@@ -499,24 +477,21 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
                     throw new Error('Could not find custom flag type: ' + flagType.DisplayName);
             }
         }
-        if (promise) {
-            promise.then((didReport) => {
-                if (didReport) {
-                    displaySuccess(`Feedback sent to ${reporter.name}`);
-                }
-            }).catch(() => {
-                displayError(`Failed to send feedback to ${reporter.name}.`);
-            });
-        }
-    }
+        if (!promise) return;
+
+        promise.then((didReport) => {
+            if (!didReport) return;
+            displaySuccess(`Feedback sent to ${reporter.name}`);
+        }).catch(() => {
+            displayError(`Failed to send feedback to ${reporter.name}.`);
+        });
+    });
 }
 
 let autoFlagging = false;
 async function SetupPostPage() {
     parseQuestionsAndAnswers(async post => {
-        if (!post.element.length) {
-            return;
-        }
+        if (!post.element.length) return;
 
         let iconLocation: JQuery;
         let advancedFlaggingLink: JQuery | null = null;
@@ -524,8 +499,6 @@ async function SetupPostPage() {
         const nattyIcon = getNattyIcon().click(() => {
             window.open(`https://sentinel.erwaysoftware.com/posts/aid/${post.postId}`, '_blank');
         });
-
-        const showFunc = (element: JQuery) => element.addClass('d-inline-block').removeClass('d-none');
 
         const copyPastorIcon = getGuttenbergIcon();
         const copyPastorApi = new CopyPastorAPI(post.postId, copyPastorKey);
@@ -535,14 +508,7 @@ async function SetupPostPage() {
         const reporters: Reporter[] = [];
         if (post.type === 'Answer') {
             const nattyApi = new NattyAPI(post.postId);
-            nattyApi.Watch()
-                .subscribe(reported => {
-                    if (reported) {
-                        showFunc(nattyIcon);
-                    } else {
-                        nattyIcon.addClass('d-none');
-                    }
-                });
+            nattyApi.Watch().subscribe(reported => reported ? showInlineElement(nattyIcon) : nattyIcon.addClass('d-none'));
 
             reporters.push({
                 name: 'Natty',
@@ -556,17 +522,17 @@ async function SetupPostPage() {
             });
 
             copyPastorObservable.subscribe(items => {
-                if (items.length) {
-                    copyPastorIcon.attr('Title', `Reported by CopyPastor - ${items.length}`);
-                    showFunc(copyPastorIcon);
-                    copyPastorIcon.click(() =>
-                        items.forEach(item => {
-                            window.open('https://copypastor.sobotics.org/posts/' + item.post_id);
-                        })
-                    );
-                } else {
+                if (!items.length) {
                     copyPastorIcon.addClass('d-none');
+                    return;
                 }
+                copyPastorIcon.attr('Title', `Reported by CopyPastor - ${items.length}`);
+                showInlineElement(copyPastorIcon);
+                copyPastorIcon.click(() =>
+                    items.forEach(item => {
+                        window.open('https://copypastor.sobotics.org/posts/' + item.post_id);
+                    })
+                );
             });
 
             reporters.push({
@@ -596,14 +562,15 @@ async function SetupPostPage() {
         const metaSmoke = new MetaSmokeAPI();
         metaSmoke.Watch(post.postId, post.type)
             .subscribe(id => {
-                if (id !== null) {
-                    smokeyIcon.click(() => {
-                        window.open(`https://metasmoke.erwaysoftware.com/post/${id}`, '_blank');
-                    });
-                    showFunc(smokeyIcon);
-                } else {
+                if (!id) {
                     smokeyIcon.addClass('d-none');
+                    return;
                 }
+
+                smokeyIcon.click(() => {
+                    window.open(`https://metasmoke.erwaysoftware.com/post/${id}`, '_blank');
+                });
+                showInlineElement(smokeyIcon);
             });
         reporters.push({
             name: 'Smokey',
@@ -625,34 +592,27 @@ async function SetupPostPage() {
             advancedFlaggingLink = $('<button>').attr('type', 'button')
                                                 .attr('class', 's-btn s-btn__link advanced-flagging-link').text('Advanced Flagging');
 
-            let questionTime: Date;
-            let answerTime: Date;
-            if (post.type === 'Answer') {
-                questionTime = post.question.postTime;
-                answerTime = post.postTime;
-            } else {
-                questionTime = post.postTime;
-                answerTime = post.postTime;
-            }
+            const questionTime: Date = post.type === 'Answer' ? post.question.postTime : post.postTime;
+            const answerTime: Date = post.postTime;
             const deleted = post.element.hasClass('deleted-answer');
 
             const isEnabled = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationWatchFlags);
             WatchFlags().subscribe(xhr => {
-                if (isEnabled && !autoFlagging) {
-                    const matches = new RegExp(`/flags/posts/${post.postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`).exec(xhr.responseURL);
-                    if (matches !== null && xhr.status === 200) {
-                        const flagType = {
-                            Id: 0,
-                            ReportType: matches[1] as 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther',
-                            DisplayName: matches[1]
-                        };
-                        handleFlag(flagType, reporters, answerTime, questionTime);
+                if (!isEnabled || autoFlagging) return;
 
-                        const expiryDate = new Date();
-                        expiryDate.setDate(expiryDate.getDate() + 30);
-                        displaySuccessFlagged(reportedIcon, flagType.ReportType);
-                    }
-                }
+                const matches = new RegExp(`/flags/posts/${post.postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`).exec(xhr.responseURL);
+                if (!matches || xhr.status !== 200) return;
+
+                const flagType = {
+                    Id: 0,
+                    ReportType: matches[1] as 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther',
+                    DisplayName: matches[1]
+                };
+                handleFlag(flagType, reporters, answerTime, questionTime);
+
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + 30);
+                displaySuccessFlagged(reportedIcon, flagType.ReportType);
             });
 
             const linkDisabled = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationLinkDisabled);
@@ -669,27 +629,20 @@ async function SetupPostPage() {
 
                 const link = advancedFlaggingLink;
                 const openOnHover = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationOpenOnHover);
+                link[openOnHover ? 'hover' : 'click'](e => {
+                    e.stopPropagation();
+                    if (e.target !== link.get(0)) return;
+
+                    showElement(dropDown);
+                });
+
                 if (openOnHover) {
-                    link.hover(e => {
-                        e.stopPropagation();
-                        if (e.target === link.get(0)) {
-                            dropDown.removeClass('d-none').addClass('d-block');
-                        }
-                    });
                     link.mouseleave(e => {
                         e.stopPropagation();
-                        dropDown.removeClass('d-block').addClass('d-none');
+                        hideElement(dropDown);
                     });
                 } else {
-                    link.click(e => {
-                        e.stopPropagation();
-                        if (e.target === link.get(0)) {
-                            dropDown.removeClass('d-none').addClass('d-block');
-                        }
-                    });
-                    $(window).click(() => {
-                        dropDown.removeClass('d-block').addClass('d-none');
-                    });
+                    $(window).click(() => hideElement(dropDown));
                 }
                 iconLocation.append($('<div>').attr('class', 'grid--cell').append(advancedFlaggingLink));
             }
@@ -775,34 +728,35 @@ async function Setup() {
             // next-task is invoked when visiting the review queue
             // task-reviewed is invoked when making a response
             const isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
-            if (isReviewItem !== null && xhr.status === 200) {
+            if (isReviewItem && xhr.status === 200) {
                 const review = xhr.responseText;
                 parseReviewDetails(review);
                 return;
             }
-            const matches = /(\d+)\/vote\/10|(\d+)\/recommend-delete/.exec(xhr.responseURL);
-            if (matches !== null && xhr.status === 200) {
-                const postIdStr = matches[1] || matches[2];
-                const postId = parseInt(postIdStr, 10);
-                const currentPostDetails = postDetails[postId];
-                if (currentPostDetails && $('.answers-subheader').length > 0) {
-                    const nattyApi = new NattyAPI(postId);
-                    nattyApi.Watch();
 
-                    handleFlag({ Id: 0, ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
-                        {
-                            name: 'Natty',
-                            ReportNaa: (answerDate: Date, questionDate: Date) => nattyApi.ReportNaa(answerDate, questionDate),
-                            ReportRedFlag: () => nattyApi.ReportRedFlag(),
-                            ReportLooksFine: () => nattyApi.ReportLooksFine(),
-                            ReportNeedsEditing: () => nattyApi.ReportNeedsEditing(),
-                            ReportVandalism: () => Promise.resolve(false),
-                            ReportDuplicateAnswer: () => Promise.resolve(false),
-                            ReportPlagiarism: () => Promise.resolve(false)
-                        }
-                    ], currentPostDetails.answerTime, currentPostDetails.questionTime);
+            const matches = /(\d+)\/vote\/10|(\d+)\/recommend-delete/.exec(xhr.responseURL);
+            if (!matches || xhr.status !== 200) return;
+
+            const postIdStr = matches[1] || matches[2];
+            const postId = parseInt(postIdStr, 10);
+            const currentPostDetails = postDetails[postId];
+            if (!currentPostDetails || !$('.answers-subheader').length) return;
+
+            const nattyApi = new NattyAPI(postId);
+            nattyApi.Watch();
+
+            handleFlag({ Id: 0, ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
+                {
+                    name: 'Natty',
+                    ReportNaa: (answerDate: Date, questionDate: Date) => nattyApi.ReportNaa(answerDate, questionDate),
+                    ReportRedFlag: () => nattyApi.ReportRedFlag(),
+                    ReportLooksFine: () => nattyApi.ReportLooksFine(),
+                    ReportNeedsEditing: () => nattyApi.ReportNeedsEditing(),
+                    ReportVandalism: () => Promise.resolve(false),
+                    ReportDuplicateAnswer: () => Promise.resolve(false),
+                    ReportPlagiarism: () => Promise.resolve(false)
                 }
-            }
+            ], currentPostDetails.answerTime, currentPostDetails.questionTime);
         });
     }
 }
@@ -826,7 +780,5 @@ $(() => {
     // Or the document is already focused,
     // Then we execute the script.
     // This is done to prevent DOSing dashboard apis, if a bunch of links are opened at once.
-    if (document.hasFocus && document.hasFocus()) {
-        actionWatcher();
-    }
+    if (document.hasFocus && document.hasFocus()) actionWatcher();
 });

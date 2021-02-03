@@ -16,38 +16,39 @@ export class GenericBotAPI {
         const response = await this.makeTrackRequest();
         return response;
     }
+
     public async ReportRedFlag() {
         const response = await this.makeTrackRequest();
         return response;
     }
+
     public async ReportLooksFine() {
         return false;
     }
+
     public async ReportNeedsEditing() {
         return false;
     }
 
     private computeContentHash(postContent: string) {
-        if (!postContent) {
-            return 0;
-        }
+        if (!postContent) return 0;
+
         let hash = 0;
         for (let i = 0; i < postContent.length; ++i) {
             hash = ((hash << 5) - hash) + postContent.charCodeAt(i);
             hash = hash & hash;
         }
+
         return hash;
     }
 
     private makeTrackRequest() {
         const promise = new Promise<boolean>((resolve, reject) => {
-            if (!IsStackOverflow()) {
+            if (!IsStackOverflow() || !$('#answer-' + this.answerId + ' .js-post-body').length) {
                 resolve(false);
             }
-            if ($('#answer-' + this.answerId + ' .js-post-body').length === 0) {
-                resolve(false);
-            }
-            if ($('.top-bar .my-profile .gravatar-wrapper-24').length === 0) {
+
+            if (!$('.top-bar .my-profile .gravatar-wrapper-24').length) {
                 reject('Flag Tracker: Could not find username.');
             }
 
@@ -63,9 +64,7 @@ export class GenericBotAPI {
                     + '&contentHash=' + contentHash
                     + '&flagger=' + encodeURIComponent(flaggerName),
                 onload: (response: any) => {
-                    if (response.status !== 200) {
-                        reject('Flag Tracker Error: Status ' + response.status);
-                    }
+                    if (response.status !== 200) reject('Flag Tracker Error: Status ' + response.status);
                     resolve(true);
                 },
                 onerror: (response: any) => {

@@ -10,7 +10,7 @@
     "@typescript-eslint/eslint-plugin": "^4.14.2",
     "@typescript-eslint/parser": "^4.14.2",
     "concat-cli": "4.0.0",
-    "eslint": "^7.18.0",
+    "eslint": "^7.19.0",
     "rxjs": "6.6.3",
     "ts-loader": "8.0.15",
     "tsconfig-paths-webpack-plugin": "^3.3.0",

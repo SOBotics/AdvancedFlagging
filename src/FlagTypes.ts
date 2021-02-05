@@ -16,11 +16,7 @@ export interface FlagType {
 
 export interface FlagCategory {
     IsDangerous: boolean; // whether the category should have a red-ish background
-    LinkStyle?: any;
-
     AppliesTo: ('Answer' | 'Question')[];
-    RestrictTo?: ('answers' | 'nato')[];
-
     FlagTypes: FlagType[];
 }
 

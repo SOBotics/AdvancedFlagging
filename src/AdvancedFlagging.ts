@@ -23,6 +23,7 @@ export const ConfigurationLinkDisabled = 'AdvancedFlagging.Configuration.LinkDis
 
 declare const GM_addStyle: any;
 declare const StackExchange: StackExchangeGlobal;
+declare const Svg: any;
 
 function SetupStyles() {
     GM_addStyle(`
@@ -57,24 +58,7 @@ function SetupStyles() {
 }
 
 .advanced-flagging-dialog {
-    margin: 0;
-    z-index: 3;
-    position: absolute;
-    white-space: nowrap;
-    background: #FFF;
-    padding: 5px;
-    border: 1px solid #9fa6ad;
-    box-shadow: 0 2px 4px rgba(36,39,41,0.3);
-    cursor: default
-}
-
-.advanced-flagging-hr {
-    margin: 10px 0px;
-}
-
-.advanced-flagging-label-options {
-    margin-right: 5px;
-    margin-left: 4px;
+    min-width: 10rem !important;
 }
 
 .advanced-flagging-icon {
@@ -91,14 +75,6 @@ function SetupStyles() {
 
 .advanced-flagging-smokey-icon {
     background-image: url("https://i.stack.imgur.com/7cmCt.png?s=128&g=1");
-}
-
-.advanced-flagging-dropdown-item {
-    padding: 1px 5px;
-}
-
-.advanced-flagging-performed-action {
-    background-position: -20px -320px;
 }`);
 }
 
@@ -151,56 +127,35 @@ function handleFlagAndComment(postId: number, flag: FlagType,
     return result;
 }
 
-const popupWrapper = $('<div>').addClass('hide').hide().attr('id', 'snackbar');
+const popupWrapper = $('<div>').addClass('hide').attr('id', 'snackbar');
 const popupDelay = 2000;
 let toasterTimeout: number | null = null;
 let toasterFadeTimeout: number | null = null;
-function displayToaster(message: string, colour: string, textColour?: string, duration?: number) {
-    const div = $('<div>')
-        .css({
-            'background-color': colour,
-            'padding': '10px'
-        })
-        .text(message);
-    if (textColour) div.css('color', textColour);
 
-    popupWrapper.append(div);
-    popupWrapper.removeClass('hide').addClass('show').show();
+function hidePopup() {
+    popupWrapper.removeClass('show').addClass('hide');
+    toasterFadeTimeout = window.setTimeout(() => popupWrapper.empty().addClass('hide'), 1000);
+}
 
-    function hidePopup() {
-        popupWrapper.removeClass('show').addClass('hide');
-        toasterFadeTimeout = window.setTimeout(() => {
-            popupWrapper.empty().hide();
-        }, 1000);
-    }
+function displayToaster(message: string, state: string) {
+    const messageDiv = $('<div>').attr('class', 'p12 bg-' + state).text(message);
+
+    popupWrapper.append(messageDiv);
+    popupWrapper.removeClass('hide').addClass('show');
 
     if (toasterFadeTimeout) clearTimeout(toasterFadeTimeout);
     if (toasterTimeout) clearTimeout(toasterTimeout);
-    toasterTimeout = window.setTimeout(hidePopup, duration === undefined ? popupDelay : duration);
+    toasterTimeout = window.setTimeout(hidePopup, popupDelay);
 }
 
-function showElement(element: JQuery) {
-    element.addClass('d-block').removeClass('d-none');
-}
-
-function hideElement(element: JQuery) {
-    element.addClass('d-none').removeClass('d-block');
-}
-
-function showInlineElement(element: JQuery) {
-    element.addClass('d-inline-block').removeClass('d-none');
-}
-
-function displaySuccess(message: string) {
-    displayToaster(message, '#00690c');
-}
+const showElement = (element: JQuery) => element.addClass('d-block').removeClass('d-none');
+const hideElement = (element: JQuery) => element.addClass('d-none').removeClass('d-block');
+const showInlineElement = (element: JQuery) => element.addClass('d-inline-block').removeClass('d-none');
+const displaySuccess = (message: string) => displayToaster(message, 'success');
+const displayError = (message: string) => displayToaster(message, 'danger');
 
 export function displayStacksToast(message: string, type: string) {
     StackExchange.helpers.showToast(message, { type: type });
-}
-
-function displayError(message: string) {
-    displayToaster(message, '#ba1701');
 }
 
 function displaySuccessFlagged(reportedIcon: JQuery, reportType: string) {
@@ -246,22 +201,22 @@ async function BuildFlaggingDialog(element: JQuery,
     reporters: Reporter[],
     copyPastorPromise: Promise<CopyPastorFindTargetResponseItem[]>
 ) {
-    const getDivider = () => $('<hr>').attr('class', 'advanced-flagging-hr');
-    const dropDown = $('<dl>').attr('class', 'advanced-flagging-dialog s-anchors s-anchors__default d-none');
+    const getDivider = () => $('<hr>').attr('class', 'my8');
+    const dropDown = $('<div>').attr('class', 'advanced-flagging-dialog s-popover s-anchors s-anchors__default p6 c-default d-none');
 
     const checkboxNameComment = `comment_checkbox_${postId}`;
     const checkboxNameFlag = `flag_checkbox_${postId}`;
     const leaveCommentBox = $('<input>').attr('type', 'checkbox').attr('name', checkboxNameComment).attr('id', checkboxNameComment)
-                                        .attr('class', 's-checkbox').wrap('<div class="grid--cell"></div>').parent();
-    const flagBox = leaveCommentBox.clone().find('input').attr('name', checkboxNameFlag).attr('id', checkboxNameFlag).parent();
-    flagBox.find('input').prop('checked', true);
+                                        .attr('class', 's-checkbox');
+    const flagBox = leaveCommentBox.clone().attr('name', checkboxNameFlag).attr('id', checkboxNameFlag);
+    flagBox.prop('checked', true);
 
     const isStackOverflow = IsStackOverflow();
 
     const comments = element.find('.comment-body');
     const defaultNoComment = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationDefaultNoComment);
 
-    if (!defaultNoComment && comments.length === 0 && isStackOverflow) leaveCommentBox.find('input').prop('checked', true);
+    if (!defaultNoComment && !comments.length && isStackOverflow) leaveCommentBox.prop('checked', true);
 
     const enabledFlagIds = GreaseMonkeyCache.GetFromCache<number[]>(ConfigurationEnabledFlags);
 
@@ -273,13 +228,12 @@ async function BuildFlaggingDialog(element: JQuery,
         const divider = getDivider();
         if (!firstCategory) dropDown.append(divider);
 
+        const categoryDiv = $('<div>').attr('class', `advanced-flagging-category bar-md${flagCategory.IsDangerous ? ' bg-red-200' : ''}`);
         let activeLinks = flagCategory.FlagTypes.length;
         flagCategory.FlagTypes.forEach(flagType => {
-            const reportLink = $('<a>').attr('class', 'advanced-flagging-report-link d-inline-block w-auto mt6');
+            const reportLink = $('<a>').attr('class', 'd-inline-block w-auto my4');
             hasCommentOptions = !!flagType.GetComment;
-
-            const dropdownItem = $('<dd>').attr('class', 'advanced-flagging-dropdown-item');
-            if (flagCategory.IsDangerous) dropdownItem.addClass('bg-red-200');
+            const dropdownItem = $('<div>').attr('class', 'advanced-flagging-dropdown-item px4');
 
             const disableLink = () => {
                 activeLinks--;
@@ -323,7 +277,7 @@ async function BuildFlaggingDialog(element: JQuery,
             reportLink.click(() => {
                 if (!deleted) {
                     try {
-                        if (!leaveCommentBox.find('input').is(':checked') && commentText) {
+                        if (!leaveCommentBox.is(':checked') && commentText) {
                             // Strip comment to find if one already exists
                             const strippedComment = commentText.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1') // Match [links](...)
                                                                .replace(/\[([^\]]+)\][^(]*?/g, '$1') // Match [edit]
@@ -342,7 +296,7 @@ async function BuildFlaggingDialog(element: JQuery,
                             commentText = undefined;
                         }
 
-                        const result = handleFlagAndComment(postId, flagType, flagBox.find('input').is(':checked'),
+                        const result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'),
                                                             commentText, copyPastorPromise);
                         if (result.CommentPromise) {
                             result.CommentPromise.then((data) => {
@@ -398,8 +352,9 @@ async function BuildFlaggingDialog(element: JQuery,
 
             reportLink.text(flagType.DisplayName);
             dropdownItem.append(reportLink);
+            categoryDiv.append(dropdownItem)
 
-            dropDown.append(dropdownItem);
+            dropDown.append(categoryDiv);
         });
         firstCategory = false;
     });
@@ -410,31 +365,31 @@ async function BuildFlaggingDialog(element: JQuery,
     if (hasCommentOptions) {
         const commentBoxLabel = $('<label>').text('Leave comment')
                                             .attr('for', checkboxNameComment)
-                                            .attr('class', 'advanced-flagging-label-options grid--cell s-label fw-normal');
+                                            .attr('class', 's-label ml4 va-middle fs-body1 fw-normal');
 
-        const commentingRow = $('<dd />');
+        const commentingRow = $('<div>');
         commentingRow.append(leaveCommentBox);
         commentingRow.append(commentBoxLabel);
 
         dropDown.append(commentingRow);
-        commentingRow.children().wrapAll('<div class="grid gs8"></div>');
+        commentingRow.children().wrapAll('<div class="grid--cell"></div>');
     }
 
     const flagBoxLabel =
         $('<label>').text('Flag')
             .attr('for', checkboxNameFlag)
-            .attr('class', 'advanced-flagging-label-options grid--cell s-label fw-normal');
+            .attr('class', 's-label ml4 va-middle fs-body1 fw-normal');
 
-    const flaggingRow = $('<dd />');
+    const flaggingRow = $('<div>');
 
     const defaultNoFlag = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationDefaultNoFlag);
-    if (defaultNoFlag) flagBox.find('input').prop('checked', false);
+    if (defaultNoFlag) flagBox.prop('checked', false);
 
     flaggingRow.append(flagBox);
     flaggingRow.append(flagBoxLabel);
 
     dropDown.append(flaggingRow);
-    flaggingRow.children().wrapAll('<div class="grid gs8"></div>');
+    flaggingRow.children().wrapAll('<div class="grid--cell"></div>');
 
     return dropDown;
 }
@@ -490,6 +445,10 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
 
 let autoFlagging = false;
 async function SetupPostPage() {
+    // The Svg object is initialised after the body has loaded :(
+    while (typeof Svg === "undefined") {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    }
     parseQuestionsAndAnswers(async post => {
         if (!post.element.length) return;
 
@@ -590,7 +549,7 @@ async function SetupPostPage() {
             // Now we setup the flagging dialog
             iconLocation = iconLocation = post.element.find('.js-post-menu').children().first();
             advancedFlaggingLink = $('<button>').attr('type', 'button')
-                                                .attr('class', 's-btn s-btn__link advanced-flagging-link').text('Advanced Flagging');
+                                                .attr('class', 's-btn s-btn__link').text('Advanced Flagging');
 
             const questionTime: Date = post.type === 'Answer' ? post.question.postTime : post.postTime;
             const answerTime: Date = post.postTime;
@@ -666,17 +625,17 @@ async function SetupPostPage() {
 }
 
 function getPerformedActionIcon() {
-    return $('<div>').attr('class', 'comment-flag advanced-flagging-performed-action v-visible c-default d-none w16 h16')
-        .append('<svg aria-hidden="true" class="svg-icon iconCheckmarkSm fc-green-500" width="14" height="14" viewBox="0 0 14 14"><path d="M13 3.41L11.59 2 5 8.59 2.41 6 1 7.41l4 4 8-8z"/></svg>');
+    return $('<div>').attr('class', 'c-default d-none')
+        .append(Svg.CheckmarkSm().addClass('fc-green-500'));
 }
 
 function getReportedIcon() {
     return $('<div>')
-        .attr('class', 'comment-flag advanced-flagging-flag-icon c-default d-none fc-red-500')
-        .append('<svg aria-hidden="true" class="svg-icon iconFlag" width="18" height="18" viewBox="0 0 18 18"><path d="M3 2v14h2v-6h3.6l.4 1h6V3H9.5L9 2z"></path></svg>');
+        .attr('class', 'advanced-flagging-flag-icon c-default d-none')
+        .append(Svg.Flag().addClass('fc-red-500'));
 }
 
-const sampleIconClass = $('<div>').attr('class', 'advanced-flagging-icon bg-cover va-text-bottom c-pointer w16 h16 d-none');
+const sampleIconClass = $('<div>').attr('class', 'advanced-flagging-icon bg-cover c-pointer w16 h16 d-none');
 
 function getNattyIcon() {
     return sampleIconClass.clone().attr('title', 'Reported by Natty').addClass('advanced-flagging-natty-icon');

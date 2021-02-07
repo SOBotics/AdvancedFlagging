@@ -9,6 +9,7 @@ export interface FlagType {
     Id: number;
     DisplayName: string;
     ReportType: 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther';
+    Human?: string;
     GetComment?(userDetails: UserDetails): string;
     Enabled?(hasDuplicatePostLinks: boolean): boolean;
     GetCustomFlagText?(copyPastorItem: CopyPastorFindTargetResponseItem): string;
@@ -28,12 +29,14 @@ export const flagCategories: FlagCategory[] = [
             {
                 Id: 1,
                 DisplayName: 'Spam',
-                ReportType: 'PostSpam'
+                ReportType: 'PostSpam',
+                Human: 'as spam'
             },
             {
                 Id: 2,
                 DisplayName: 'Rude or Abusive',
-                ReportType: 'PostOffensive'
+                ReportType: 'PostOffensive',
+                Human: 'as R/A'
             }
         ]
     },
@@ -45,6 +48,7 @@ export const flagCategories: FlagCategory[] = [
                 Id: 3,
                 DisplayName: 'Plagiarism',
                 ReportType: 'PostOther',
+                Human: 'for moderator attention',
                 Enabled: (hasDuplicatePostLinks) => hasDuplicatePostLinks,
                 GetCustomFlagText: (copyPastorItem) => `Possible plagiarism of another answer https:${copyPastorItem.target_url}, as can be seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}`
             },
@@ -52,6 +56,7 @@ export const flagCategories: FlagCategory[] = [
                 Id: 4,
                 DisplayName: 'Duplicate answer',
                 ReportType: 'PostOther',
+                Human: 'for moderator attention',
                 Enabled: (hasDuplicatePostLinks) => hasDuplicatePostLinks,
                 GetComment: () => 'Please don\'t add the [same answer to multiple questions](https://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.',
                 GetCustomFlagText: (copyPastorItem) => `The answer is a repost of their other answer https:${copyPastorItem.target_url}, but as there are slight differences as seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}, an auto flag wouldn't be raised.`
@@ -60,6 +65,7 @@ export const flagCategories: FlagCategory[] = [
                 Id: 18,
                 DisplayName: 'Bad attribution',
                 ReportType: 'PostOther',
+                Human: 'for moderator attention',
                 Enabled: (hasDuplicatePostLinks) => hasDuplicatePostLinks,
                 GetCustomFlagText: (copyPastorItem) => `This post is copied from [another answer](https:${copyPastorItem.target_url}), as can be seen [here](https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}). The author only added a link to the other answer, which is [not the proper way of attribution](https://stackoverflow.blog/2009/06/25/attribution-required/).`
             }
@@ -73,6 +79,7 @@ export const flagCategories: FlagCategory[] = [
                 Id: 5,
                 DisplayName: 'Link Only',
                 ReportType: 'AnswerNotAnAnswer',
+                Human: 'as NAA',
                 GetComment: () => 'A link to a solution is welcome, but please ensure your answer is useful without it: ' +
                     '[add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will ' +
                     'have some idea what it is and why it’s there, then quote the most relevant part of the ' +
@@ -83,6 +90,7 @@ export const flagCategories: FlagCategory[] = [
                 Id: 6,
                 DisplayName: 'Not an answer',
                 ReportType: 'AnswerNotAnAnswer',
+                Human: 'as NAA',
                 GetComment: (userDetails) => userDetails.Reputation < 50
                     ? 'This does not provide an answer to the question. You can [search for similar questions](/search), ' +
                     'or refer to the related and linked questions on the right-hand side of the page to find an answer. ' +
@@ -99,6 +107,7 @@ export const flagCategories: FlagCategory[] = [
                 Id: 7,
                 DisplayName: 'Thanks',
                 ReportType: 'AnswerNotAnAnswer',
+                Human: 'as NAA',
                 GetComment: (userDetails) => userDetails.Reputation < 15
                     ? 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
                     'and can be perceived as noise by its future visitors. Once you [earn](https://meta.stackoverflow.com/q/146472) ' +
@@ -117,6 +126,7 @@ export const flagCategories: FlagCategory[] = [
                 Id: 8,
                 DisplayName: 'Me too',
                 ReportType: 'AnswerNotAnAnswer',
+                Human: 'as NAA',
                 GetComment: () => 'Please don\'t add *"Me too"* as answers. It doesn\'t actually provide an answer to the question. ' +
                     'If you have a different but related question, then [ask](/questions/ask) it ' +
                     '(reference this one if it will help provide context). If you\'re interested in this specific question, ' +
@@ -128,12 +138,14 @@ export const flagCategories: FlagCategory[] = [
                 Id: 9,
                 DisplayName: 'Library',
                 ReportType: 'AnswerNotAnAnswer',
+                Human: 'as NAA',
                 GetComment: () => 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](https://meta.stackoverflow.com/a/251605) in the answer itself.'
             },
             {
                 Id: 10,
                 DisplayName: 'Comment',
                 ReportType: 'AnswerNotAnAnswer',
+                Human: 'as NAA',
                 GetComment: (userDetails) => userDetails.Reputation < 50
                     ? 'This does not provide an answer to the question. Once you have sufficient [reputation](/help/whats-reputation) ' +
                     'you will be able to [comment on any post](/help/privileges/comment); instead, ' +
@@ -145,18 +157,21 @@ export const flagCategories: FlagCategory[] = [
                 Id: 14,
                 DisplayName: 'Duplicate',
                 ReportType: 'AnswerNotAnAnswer',
+                Human: 'as NAA',
                 GetComment: () => 'Instead of posting an answer which merely links to another answer, please instead [flag the question](/help/privileges/flag-posts) as a duplicate.'
             },
             {
                 Id: 17,
                 DisplayName: 'Non English',
                 ReportType: 'AnswerNotAnAnswer',
+                Human: 'as NAA',
                 GetComment: () => 'Welcome to Stack Overflow. Please write your answer in English, as Stack Overflow is an [English only site](https://meta.stackoverflow.com/a/297680).'
             },
             {
                 Id: 18,
                 DisplayName: 'Should be an edit',
                 ReportType: 'AnswerNotAnAnswer',
+                Human: 'as NAA',
                 GetComment: () => 'Please use the edit link on your question to add additional information. The Post Answer button should be used only for complete answers to the question.'
             }
         ]

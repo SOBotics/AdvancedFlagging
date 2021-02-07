@@ -122,8 +122,8 @@ export function displayToaster(message: string, state: string) {
     toasterTimeout = window.setTimeout(hidePopup, globals.popupDelay);
 }
 
-function displaySuccessFlagged(reportedIcon: JQuery, reportType: string) {
-    const flaggedMessage = `Flagged ${reportType}`;
+function displaySuccessFlagged(reportedIcon: JQuery, reportTypeHuman?: string) {
+    const flaggedMessage = `Flagged ${reportTypeHuman}`;
     reportedIcon.attr('title', flaggedMessage);
     globals.showInlineElement(reportedIcon);
     globals.displaySuccess(flaggedMessage);
@@ -263,12 +263,12 @@ async function waitForCommentPromise(commentPromise: Promise<string>, postId: nu
     }
 }
 
-async function waitForFlagPromise(flagPromise: Promise<string>, reportedIcon: JQuery, reportType: string) {
+async function waitForFlagPromise(flagPromise: Promise<string>, reportedIcon: JQuery, reportTypeHuman?: string) {
     try {
         const flagPromiseValue = await flagPromise;
         const responseJson = JSON.parse(JSON.stringify(flagPromiseValue)) as StackExchangeFlagResponse;
         if (responseJson.Success) {
-            displaySuccessFlagged(reportedIcon, reportType);
+            displaySuccessFlagged(reportedIcon, reportTypeHuman);
         } else { // sometimes, although the status is 200, the post isn't flagged.
             const fullMessage = `Failed to flag the post with outcome ${responseJson.Outcome}: ${responseJson.Message}.`;
             const message = getErrorMessage(responseJson);
@@ -392,7 +392,7 @@ async function BuildFlaggingDialog(element: JQuery,
 
                         const result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), commentText, copyPastorPromise);
                         if (result.CommentPromise) await waitForCommentPromise(result.CommentPromise, postId);
-                        if (result.FlagPromise) await waitForFlagPromise(result.FlagPromise, reportedIcon, flagType.ReportType);
+                        if (result.FlagPromise) await waitForFlagPromise(result.FlagPromise, reportedIcon, flagType.Human);
                     } catch (err) { globals.displayError(err); }
                 }
 

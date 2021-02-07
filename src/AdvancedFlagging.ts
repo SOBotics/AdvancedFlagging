@@ -8,18 +8,7 @@ import { CopyPastorAPI, CopyPastorFindTargetResponseItem } from '@userscriptTool
 import { WatchFlags, WatchRequests } from '@userscriptTools/sotools/RequestWatcher';
 import { SetupConfiguration } from 'Configuration';
 import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
-
-export const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
-const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
-
-export const ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
-export const ConfigurationDefaultNoFlag = 'AdvancedFlagging.Configuration.DefaultNoFlag';
-export const ConfigurationDefaultNoComment = 'AdvancedFlagging.Configuration.DefaultNoComment';
-export const ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlags';
-export const ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
-export const ConfigurationDetectAudits = 'AdvancedFlagging.Configuration.DetectAudits';
-export const ConfigurationEnabledFlags = 'AdvancedFlagging.Configuration.EnabledFlags';
-export const ConfigurationLinkDisabled = 'AdvancedFlagging.Configuration.LinkDisabled';
+import * as globals from './GlobalVars';
 
 declare const GM_addStyle: any;
 declare const StackExchange: StackExchangeGlobal;
@@ -28,17 +17,7 @@ declare const Svg: any;
 function SetupStyles() {
     GM_addStyle(`
 #snackbar {
-    min-width: 250px;
     margin-left: -125px;
-    color: #fff;
-    text-align: center;
-    border-radius: 2px;
-    padding: 16px;
-    position: fixed;
-    z-index: 2000;
-    left: 50%;
-    top: 30px;
-    font-size: 17px;
 }
 
 #snackbar.show {
@@ -59,10 +38,6 @@ function SetupStyles() {
 
 .advanced-flagging-dialog {
     min-width: 10rem !important;
-}
-
-.advanced-flagging-icon {
-    margin: 5px 0px 0px 5px;
 }
 
 .advanced-flagging-natty-icon {
@@ -109,7 +84,7 @@ function handleFlagAndComment(postId: number, flag: FlagType,
                 if (flag.GetCustomFlagText && results.length > 0) {
                     return flag.GetCustomFlagText(results[0]);
                 }
-            })
+            });
 
             autoFlagging = true;
             $.ajax({
@@ -127,8 +102,7 @@ function handleFlagAndComment(postId: number, flag: FlagType,
     return result;
 }
 
-const popupWrapper = $('<div>').addClass('hide').attr('id', 'snackbar');
-const popupDelay = 2000;
+const popupWrapper = globals.popupWrapper;
 let toasterTimeout: number | null = null;
 let toasterFadeTimeout: number | null = null;
 
@@ -137,36 +111,172 @@ function hidePopup() {
     toasterFadeTimeout = window.setTimeout(() => popupWrapper.empty().addClass('hide'), 1000);
 }
 
-function displayToaster(message: string, state: string) {
-    const messageDiv = $('<div>').attr('class', 'p12 bg-' + state).text(message);
+export function displayToaster(message: string, state: string) {
+    const messageDiv = globals.getMessageDiv(message, state);
 
     popupWrapper.append(messageDiv);
     popupWrapper.removeClass('hide').addClass('show');
 
     if (toasterFadeTimeout) clearTimeout(toasterFadeTimeout);
     if (toasterTimeout) clearTimeout(toasterTimeout);
-    toasterTimeout = window.setTimeout(hidePopup, popupDelay);
-}
-
-const showElement = (element: JQuery) => element.addClass('d-block').removeClass('d-none');
-const hideElement = (element: JQuery) => element.addClass('d-none').removeClass('d-block');
-const showInlineElement = (element: JQuery) => element.addClass('d-inline-block').removeClass('d-none');
-const displaySuccess = (message: string) => displayToaster(message, 'success');
-const displayError = (message: string) => displayToaster(message, 'danger');
-
-export function displayStacksToast(message: string, type: string) {
-    StackExchange.helpers.showToast(message, { type: type });
+    toasterTimeout = window.setTimeout(hidePopup, globals.popupDelay);
 }
 
 function displaySuccessFlagged(reportedIcon: JQuery, reportType: string) {
-    reportedIcon.attr('title', `Flagged as ${reportType}`);
-    showInlineElement(reportedIcon);
-    displaySuccess(`Flagged as ${reportType}`);
+    const flaggedMessage = `Flagged ${reportType}`;
+    reportedIcon.attr('title', flaggedMessage);
+    globals.showInlineElement(reportedIcon);
+    globals.displaySuccess(flaggedMessage);
 }
 
 function displayErrorFlagged(message: string, error: any) {
-    displayError(message);
+    globals.displayError(message);
     console.error(error);
+}
+
+function getStrippedComment(commentText: string) {
+    return commentText.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1') // Match [links](...)
+                      .replace(/\[([^\]]+)\][^(]*?/g, '$1') // Match [edit]
+                      .replace(/_([^_]+)_/g, '$1') //  _thanks_ => thanks
+                      .replace(/\*\*([^*]+)\*\*/g, '$1') // **thanks** => thanks
+                      .replace(/\*([^*]+)\*/g, '$1') // *thanks* => thanks
+                      .replace(' - From Review', '');
+}
+
+function upvoteSameComments(element: JQuery, strippedCommentText: string) {
+    element.find('.comment-body .comment-copy').each((_index, el) => {
+        const element = $(el), text = element.text();
+        if (text !== strippedCommentText) return;
+
+        element.closest('li').find('a.comment-up.comment-up-off').trigger('click');
+    });
+}
+
+function getErrorMessage(responseJson: any) {
+    let message = 'Failed to flag: ';
+    if (responseJson.Message.match('already flagged')) {
+        message += 'post already flagged';
+    } else if (responseJson.Message.match('limit reached')) {
+        message += 'post flag limit reached';
+    } else {
+        message += responseJson.Message;
+    }
+    return message;
+}
+
+function getPromiseFromFlagName(flagName: string, reporter: Reporter) {
+    switch (flagName) {
+        case 'Needs Editing': return reporter.ReportNeedsEditing();
+        case 'Vandalism': return reporter.ReportVandalism();
+        case 'Looks Fine': return reporter.ReportLooksFine();
+        case 'Duplicate answer': return reporter.ReportDuplicateAnswer();
+        case 'Plagiarism': return reporter.ReportPlagiarism();
+        case 'Bad attribution': return reporter.ReportPlagiarism();
+        default:
+            throw new Error('Could not find custom flag type: ' + flagName);
+    }
+}
+
+function showComments(postId: number, data: any) {
+    const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
+    commentUI.addShow(true, false);
+    commentUI.showComments(data, null, false, true);
+    $(document).trigger('comment', postId);
+}
+
+function setupNattyApi(postId: number, nattyIcon: JQuery) {
+    const nattyApi = new NattyAPI(postId);
+    nattyApi.Watch().subscribe(reported => reported ? globals.showInlineElement(nattyIcon) : nattyIcon.addClass('d-none'));
+
+    return {
+        name: 'Natty',
+        ReportNaa: (answerDate: Date, questionDate: Date) => nattyApi.ReportNaa(answerDate, questionDate),
+        ReportRedFlag: () => nattyApi.ReportRedFlag(),
+        ReportLooksFine: () => nattyApi.ReportLooksFine(),
+        ReportNeedsEditing: () => nattyApi.ReportNeedsEditing(),
+        ReportVandalism: () => Promise.resolve(false),
+        ReportDuplicateAnswer: () => Promise.resolve(false),
+        ReportPlagiarism: () => Promise.resolve(false)
+    };
+}
+
+function setupGenericBotApi(postId: number) {
+    const genericBotAPI = new GenericBotAPI(postId);
+    return {
+        name: 'Generic Bot',
+        ReportNaa: () => genericBotAPI.ReportNaa(),
+        ReportRedFlag: () => Promise.resolve(false),
+        ReportLooksFine: () => genericBotAPI.ReportLooksFine(),
+        ReportNeedsEditing: () => genericBotAPI.ReportNeedsEditing(),
+        ReportVandalism: () => Promise.resolve(true),
+        ReportDuplicateAnswer: () => Promise.resolve(false),
+        ReportPlagiarism: () => Promise.resolve(false)
+    };
+}
+
+function setupMetasmokeApi(postId: number, postType: 'Answer' | 'Question', smokeyIcon: JQuery) {
+    const metaSmoke = new MetaSmokeAPI();
+    metaSmoke.Watch(postId, postType).subscribe(id => {
+        if (!id) {
+            smokeyIcon.addClass('d-none');
+            return;
+        }
+
+        smokeyIcon.click(() => {
+            window.open(`https://metasmoke.erwaysoftware.com/post/${id}`, '_blank');
+        });
+        globals.showInlineElement(smokeyIcon);
+    });
+
+    return {
+        name: 'Smokey',
+        ReportNaa: () => metaSmoke.ReportNaa(postId, postType),
+        ReportRedFlag: () => metaSmoke.ReportRedFlag(postId, postType),
+        ReportLooksFine: () => metaSmoke.ReportLooksFine(postId, postType),
+        ReportNeedsEditing: () => metaSmoke.ReportNeedsEditing(postId, postType),
+        ReportVandalism: () => metaSmoke.ReportVandalism(postId, postType),
+        ReportDuplicateAnswer: () => Promise.resolve(false),
+        ReportPlagiarism: () => Promise.resolve(false)
+    };
+}
+
+function setupGuttenbergApi(copyPastorApi: CopyPastorAPI) {
+    return {
+        name: 'Guttenberg',
+        ReportNaa: () => copyPastorApi.ReportFalsePositive(),
+        ReportRedFlag: () => Promise.resolve(false),
+        ReportLooksFine: () => copyPastorApi.ReportFalsePositive(),
+        ReportNeedsEditing: () => copyPastorApi.ReportFalsePositive(),
+        ReportVandalism: () => copyPastorApi.ReportFalsePositive(),
+        ReportDuplicateAnswer: () => copyPastorApi.ReportTruePositive(),
+        ReportPlagiarism: () => copyPastorApi.ReportTruePositive()
+    };
+}
+
+async function waitForCommentPromise(commentPromise: Promise<string>, postId: number) {
+    try {
+        const commentPromiseValue = await commentPromise;
+        showComments(postId, commentPromiseValue);
+    } catch (error) {
+        globals.displayError('Failed to comment on post');
+        console.error(error);
+    }
+}
+
+async function waitForFlagPromise(flagPromise: Promise<string>, reportedIcon: JQuery, reportType: string) {
+    try {
+        const flagPromiseValue = await flagPromise;
+        const responseJson = JSON.parse(JSON.stringify(flagPromiseValue)) as StackExchangeFlagResponse;
+        if (responseJson.Success) {
+            displaySuccessFlagged(reportedIcon, reportType);
+        } else { // sometimes, although the status is 200, the post isn't flagged.
+            const fullMessage = `Failed to flag the post with outcome ${responseJson.Outcome}: ${responseJson.Message}.`;
+            const message = getErrorMessage(responseJson);
+            displayErrorFlagged(message, fullMessage);
+        }
+    } catch(error) {
+        displayErrorFlagged('Failed to flag post', error);
+    }
 }
 
 interface Reporter {
@@ -201,53 +311,50 @@ async function BuildFlaggingDialog(element: JQuery,
     reporters: Reporter[],
     copyPastorPromise: Promise<CopyPastorFindTargetResponseItem[]>
 ) {
-    const getDivider = () => $('<hr>').attr('class', 'my8');
-    const dropDown = $('<div>').attr('class', 'advanced-flagging-dialog s-popover s-anchors s-anchors__default p6 c-default d-none');
-
+    const dropDown = globals.dropDown.clone();
     const checkboxNameComment = `comment_checkbox_${postId}`;
     const checkboxNameFlag = `flag_checkbox_${postId}`;
-    const leaveCommentBox = $('<input>').attr('type', 'checkbox').attr('name', checkboxNameComment).attr('id', checkboxNameComment)
-                                        .attr('class', 's-checkbox');
-    const flagBox = leaveCommentBox.clone().attr('name', checkboxNameFlag).attr('id', checkboxNameFlag);
+    const leaveCommentBox = globals.getOptionBox(checkboxNameComment);
+    const flagBox = globals.getOptionBox(checkboxNameFlag);
     flagBox.prop('checked', true);
 
     const isStackOverflow = IsStackOverflow();
 
     const comments = element.find('.comment-body');
-    const defaultNoComment = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationDefaultNoComment);
+    const defaultNoComment = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoComment);
 
     if (!defaultNoComment && !comments.length && isStackOverflow) leaveCommentBox.prop('checked', true);
 
-    const enabledFlagIds = GreaseMonkeyCache.GetFromCache<number[]>(ConfigurationEnabledFlags);
+    const enabledFlagIds = GreaseMonkeyCache.GetFromCache<number[]>(globals.ConfigurationEnabledFlags);
 
     let hasCommentOptions = false;
     let firstCategory = true;
     flagCategories.forEach(flagCategory => {
         if (flagCategory.AppliesTo.indexOf(postType) === -1) return;
 
-        const divider = getDivider();
+        const divider = globals.getDivider();
         if (!firstCategory) dropDown.append(divider);
 
-        const categoryDiv = $('<div>').attr('class', `advanced-flagging-category bar-md${flagCategory.IsDangerous ? ' bg-red-200' : ''}`);
+        const categoryDiv = globals.getCategoryDiv(flagCategory.IsDangerous);
         let activeLinks = flagCategory.FlagTypes.length;
         flagCategory.FlagTypes.forEach(flagType => {
-            const reportLink = $('<a>').attr('class', 'd-inline-block w-auto my4');
+            const reportLink = globals.reportLink.clone();
             hasCommentOptions = !!flagType.GetComment;
-            const dropdownItem = $('<div>').attr('class', 'advanced-flagging-dropdown-item px4');
+            const dropdownItem = globals.dropdownItem.clone();
 
             const disableLink = () => {
                 activeLinks--;
-                hideElement(reportLink);
+                globals.hideElement(reportLink);
                 if (!divider || activeLinks > 0) return;
 
-                hideElement(divider);
+                globals.hideElement(divider);
             };
             const enableLink = () => {
                 activeLinks++;
-                showElement(reportLink);
+                globals.showElement(reportLink);
                 if (!divider || activeLinks <= 0) return;
 
-                showElement(divider);
+                globals.showElement(divider);
             };
 
             disableLink();
@@ -274,85 +381,35 @@ async function BuildFlaggingDialog(element: JQuery,
                 reportLink.attr('title', commentText);
             }
 
-            reportLink.click(() => {
+            reportLink.click(async () => {
                 if (!deleted) {
                     try {
                         if (!leaveCommentBox.is(':checked') && commentText) {
-                            // Strip comment to find if one already exists
-                            const strippedComment = commentText.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1') // Match [links](...)
-                                                               .replace(/\[([^\]]+)\][^(]*?/g, '$1') // Match [edit]
-                                                               .replace(/_([^_]+)_/g, '$1') //  _thanks_ => thanks
-                                                               .replace(/\*\*([^*]+)\*\*/g, '$1') // **thanks** => thanks
-                                                               .replace(/\*([^*]+)\*/g, '$1') // *thanks* => thanks
-                                                               .replace(' - From Review', '');
-
-                            element.find('.comment-body .comment-copy').each((_index, el) => {
-                                const element = $(el);
-                                const text = element.text();
-                                if (text !== strippedComment) return;
-
-                                element.closest('li').find('a.comment-up.comment-up-off').trigger('click');
-                            });
+                            const strippedComment = getStrippedComment(commentText);
+                            upvoteSameComments(element, strippedComment);
                             commentText = undefined;
                         }
 
-                        const result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'),
-                                                            commentText, copyPastorPromise);
-                        if (result.CommentPromise) {
-                            result.CommentPromise.then((data) => {
-                                const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
-                                commentUI.addShow(true, false);
-                                commentUI.showComments(data, null, false, true);
-                                $(document).trigger('comment', postId);
-                            }).catch(err => {
-                                displayError('Failed to comment on post');
-                                console.error(err);
-                            });
-                        }
-
-                        if (result.FlagPromise) {
-                            result.FlagPromise.then(data => {
-                                const expiryDate = new Date();
-                                expiryDate.setDate(expiryDate.getDate() + 30);
-                                const responseJson = JSON.parse(JSON.stringify(data)) as StackExchangeFlagResponse;
-                                if (responseJson.Success) {
-                                    displaySuccessFlagged(reportedIcon, flagType.ReportType);
-                                } else { // sometimes, although the status is 200, the post isn't flagged.
-                                    const fullMessage = `Failed to flag the post with outcome ${responseJson.Outcome}: ${responseJson.Message}.`;
-                                    let message = 'Failed to flag: ';
-                                    if (responseJson.Message.match('already flagged')) {
-                                        message += 'post already flagged';
-                                    } else if (responseJson.Message.match('limit reached')) {
-                                        message += 'post flag limit reached';
-                                    } else {
-                                        message += responseJson.Message;
-                                    }
-
-                                    displayErrorFlagged(message, fullMessage);
-                                }
-                            }).catch(err => {
-                                displayErrorFlagged('Failed to flag post', err);
-                            });
-                        }
-                    } catch (err) { displayError(err); }
+                        const result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), commentText, copyPastorPromise);
+                        if (result.CommentPromise) await waitForCommentPromise(result.CommentPromise, postId);
+                        if (result.FlagPromise) await waitForFlagPromise(result.FlagPromise, reportedIcon, flagType.ReportType);
+                    } catch (err) { globals.displayError(err); }
                 }
 
                 const noFlag = flagType.ReportType === 'NoFlag';
                 if (noFlag) {
-                    const expiryDate = new Date();
-                    expiryDate.setDate(expiryDate.getDate() + 30);
                     performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
-                    showElement(performedActionIcon);
+                    globals.showElement(performedActionIcon);
                 }
 
                 handleFlag(flagType, reporters, answerTime, questionTime);
 
-                hideElement(dropDown);
+                globals.hideElement(dropDown);
             });
 
             reportLink.text(flagType.DisplayName);
             dropdownItem.append(reportLink);
-            categoryDiv.append(dropdownItem)
+            categoryDiv.append(dropdownItem);
 
             dropDown.append(categoryDiv);
         });
@@ -361,35 +418,29 @@ async function BuildFlaggingDialog(element: JQuery,
 
     hasCommentOptions = isStackOverflow;
 
-    dropDown.append(getDivider());
+    dropDown.append(globals.getDivider());
     if (hasCommentOptions) {
-        const commentBoxLabel = $('<label>').text('Leave comment')
-                                            .attr('for', checkboxNameComment)
-                                            .attr('class', 's-label ml4 va-middle fs-body1 fw-normal');
+        const commentBoxLabel = globals.getOptionLabel('Leave comment', checkboxNameComment);
 
-        const commentingRow = $('<div>');
+        const commentingRow = globals.plainDiv.clone();
         commentingRow.append(leaveCommentBox);
         commentingRow.append(commentBoxLabel);
 
         dropDown.append(commentingRow);
-        commentingRow.children().wrapAll('<div class="grid--cell"></div>');
+        commentingRow.children();
     }
 
-    const flagBoxLabel =
-        $('<label>').text('Flag')
-            .attr('for', checkboxNameFlag)
-            .attr('class', 's-label ml4 va-middle fs-body1 fw-normal');
+    const flagBoxLabel = globals.getOptionLabel('Flag', checkboxNameComment);
+    const flaggingRow = globals.plainDiv.clone();
 
-    const flaggingRow = $('<div>');
-
-    const defaultNoFlag = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationDefaultNoFlag);
+    const defaultNoFlag = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoFlag);
     if (defaultNoFlag) flagBox.prop('checked', false);
 
     flaggingRow.append(flagBox);
     flaggingRow.append(flagBoxLabel);
 
     dropDown.append(flaggingRow);
-    flaggingRow.children().wrapAll('<div class="grid--cell"></div>');
+    dropDown.append(globals.popoverArrow.clone());
 
     return dropDown;
 }
@@ -405,40 +456,16 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
             promise = reporter.ReportRedFlag();
         } else if (naaFlag) {
             promise = reporter.ReportNaa(answerTime, questionTime);
-        } else if (noFlag) {
-            switch (flagType.DisplayName) {
-                case 'Needs Editing':
-                    promise = reporter.ReportNeedsEditing();
-                    break;
-                case 'Vandalism':
-                    promise = reporter.ReportVandalism();
-                    break;
-                default:
-                    promise = reporter.ReportLooksFine();
-                    break;
-            }
-        } else if (customFlag) {
-            switch (flagType.DisplayName) {
-                case 'Duplicate answer':
-                    promise = reporter.ReportDuplicateAnswer();
-                    break;
-                case 'Plagiarism':
-                    promise = reporter.ReportPlagiarism();
-                    break;
-                case 'Bad attribution':
-                    promise = reporter.ReportPlagiarism();
-                    break;
-                default:
-                    throw new Error('Could not find custom flag type: ' + flagType.DisplayName);
-            }
+        } else if (noFlag || customFlag) {
+            promise = getPromiseFromFlagName(flagType.DisplayName, reporter);
         }
         if (!promise) return;
 
         promise.then((didReport) => {
             if (!didReport) return;
-            displaySuccess(`Feedback sent to ${reporter.name}`);
+            globals.displaySuccess(`Feedback sent to ${reporter.name}`);
         }).catch(() => {
-            displayError(`Failed to send feedback to ${reporter.name}.`);
+            globals.displayError(`Failed to send feedback to ${reporter.name}.`);
         });
     });
 }
@@ -446,7 +473,7 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
 let autoFlagging = false;
 async function SetupPostPage() {
     // The Svg object is initialised after the body has loaded :(
-    while (typeof Svg === "undefined") {
+    while (typeof Svg === 'undefined') {
         await new Promise(resolve => setTimeout(resolve, 1000));
     }
     parseQuestionsAndAnswers(async post => {
@@ -455,30 +482,20 @@ async function SetupPostPage() {
         let iconLocation: JQuery;
         let advancedFlaggingLink: JQuery | null = null;
 
-        const nattyIcon = getNattyIcon().click(() => {
+        const nattyIcon = globals.getNattyIcon().click(() => {
             window.open(`https://sentinel.erwaysoftware.com/posts/aid/${post.postId}`, '_blank');
         });
 
-        const copyPastorIcon = getGuttenbergIcon();
-        const copyPastorApi = new CopyPastorAPI(post.postId, copyPastorKey);
+        const copyPastorIcon = globals.getGuttenbergIcon();
+        const copyPastorApi = new CopyPastorAPI(post.postId, globals.copyPastorKey);
         const copyPastorObservable = copyPastorApi.Watch();
 
-        const smokeyIcon = getSmokeyIcon();
+        const smokeyIcon = globals.getSmokeyIcon();
         const reporters: Reporter[] = [];
         if (post.type === 'Answer') {
-            const nattyApi = new NattyAPI(post.postId);
-            nattyApi.Watch().subscribe(reported => reported ? showInlineElement(nattyIcon) : nattyIcon.addClass('d-none'));
-
-            reporters.push({
-                name: 'Natty',
-                ReportNaa: (answerDate: Date, questionDate: Date) => nattyApi.ReportNaa(answerDate, questionDate),
-                ReportRedFlag: () => nattyApi.ReportRedFlag(),
-                ReportLooksFine: () => nattyApi.ReportLooksFine(),
-                ReportNeedsEditing: () => nattyApi.ReportNeedsEditing(),
-                ReportVandalism: () => Promise.resolve(false),
-                ReportDuplicateAnswer: () => Promise.resolve(false),
-                ReportPlagiarism: () => Promise.resolve(false)
-            });
+            reporters.push(setupNattyApi(post.postId, nattyIcon));
+            reporters.push(setupGenericBotApi(post.postId));
+            reporters.push(setupGuttenbergApi(copyPastorApi));
 
             copyPastorObservable.subscribe(items => {
                 if (!items.length) {
@@ -486,80 +503,34 @@ async function SetupPostPage() {
                     return;
                 }
                 copyPastorIcon.attr('Title', `Reported by CopyPastor - ${items.length}`);
-                showInlineElement(copyPastorIcon);
+                globals.showInlineElement(copyPastorIcon);
                 copyPastorIcon.click(() =>
                     items.forEach(item => {
                         window.open('https://copypastor.sobotics.org/posts/' + item.post_id);
                     })
                 );
             });
-
-            reporters.push({
-                name: 'Guttenberg',
-                ReportNaa: () => copyPastorApi.ReportFalsePositive(),
-                ReportRedFlag: () => Promise.resolve(false),
-                ReportLooksFine: () => copyPastorApi.ReportFalsePositive(),
-                ReportNeedsEditing: () => copyPastorApi.ReportFalsePositive(),
-                ReportVandalism: () => copyPastorApi.ReportFalsePositive(),
-                ReportDuplicateAnswer: () => copyPastorApi.ReportTruePositive(),
-                ReportPlagiarism: () => copyPastorApi.ReportTruePositive()
-            });
-
-            const genericBotAPI = new GenericBotAPI(post.postId);
-            reporters.push({
-                name: 'Generic Bot',
-                ReportNaa: () => genericBotAPI.ReportNaa(),
-                ReportRedFlag: () => Promise.resolve(false),
-                ReportLooksFine: () => genericBotAPI.ReportLooksFine(),
-                ReportNeedsEditing: () => genericBotAPI.ReportNeedsEditing(),
-                ReportVandalism: () => Promise.resolve(true),
-                ReportDuplicateAnswer: () => Promise.resolve(false),
-                ReportPlagiarism: () => Promise.resolve(false)
-            });
-
         }
-        const metaSmoke = new MetaSmokeAPI();
-        metaSmoke.Watch(post.postId, post.type)
-            .subscribe(id => {
-                if (!id) {
-                    smokeyIcon.addClass('d-none');
-                    return;
-                }
 
-                smokeyIcon.click(() => {
-                    window.open(`https://metasmoke.erwaysoftware.com/post/${id}`, '_blank');
-                });
-                showInlineElement(smokeyIcon);
-            });
-        reporters.push({
-            name: 'Smokey',
-            ReportNaa: () => metaSmoke.ReportNaa(post.postId, post.type),
-            ReportRedFlag: () => metaSmoke.ReportRedFlag(post.postId, post.type),
-            ReportLooksFine: () => metaSmoke.ReportLooksFine(post.postId, post.type),
-            ReportNeedsEditing: () => metaSmoke.ReportNeedsEditing(post.postId, post.type),
-            ReportVandalism: () => metaSmoke.ReportVandalism(post.postId, post.type),
-            ReportDuplicateAnswer: () => Promise.resolve(false),
-            ReportPlagiarism: () => Promise.resolve(false)
-        });
+        reporters.push(setupMetasmokeApi(post.postId, post.type, smokeyIcon));
 
-        const performedActionIcon = getPerformedActionIcon();
-        const reportedIcon = getReportedIcon();
+        const performedActionIcon = globals.getPerformedActionIcon();
+        const reportedIcon = globals.getReportedIcon();
 
         if (post.page === 'Question') {
             // Now we setup the flagging dialog
             iconLocation = iconLocation = post.element.find('.js-post-menu').children().first();
-            advancedFlaggingLink = $('<button>').attr('type', 'button')
-                                                .attr('class', 's-btn s-btn__link').text('Advanced Flagging');
+            advancedFlaggingLink = globals.advancedFlaggingLink.clone();
 
             const questionTime: Date = post.type === 'Answer' ? post.question.postTime : post.postTime;
             const answerTime: Date = post.postTime;
             const deleted = post.element.hasClass('deleted-answer');
 
-            const isEnabled = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationWatchFlags);
+            const isEnabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationWatchFlags);
             WatchFlags().subscribe(xhr => {
                 if (!isEnabled || autoFlagging) return;
 
-                const matches = new RegExp(`/flags/posts/${post.postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`).exec(xhr.responseURL);
+                const matches = globals.getFlagsUrlRegex(post.postId).exec(xhr.responseURL);
                 if (!matches || xhr.status !== 200) return;
 
                 const flagType = {
@@ -567,14 +538,12 @@ async function SetupPostPage() {
                     ReportType: matches[1] as 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther',
                     DisplayName: matches[1]
                 };
-                handleFlag(flagType, reporters, answerTime, questionTime);
 
-                const expiryDate = new Date();
-                expiryDate.setDate(expiryDate.getDate() + 30);
+                handleFlag(flagType, reporters, answerTime, questionTime);
                 displaySuccessFlagged(reportedIcon, flagType.ReportType);
             });
 
-            const linkDisabled = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationLinkDisabled);
+            const linkDisabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationLinkDisabled);
             if (!linkDisabled) {
                 const dropDown = await BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation as number, post.authorName, answerTime, questionTime,
                     deleted,
@@ -587,23 +556,23 @@ async function SetupPostPage() {
                 advancedFlaggingLink.append(dropDown);
 
                 const link = advancedFlaggingLink;
-                const openOnHover = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationOpenOnHover);
+                const openOnHover = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationOpenOnHover);
                 link[openOnHover ? 'hover' : 'click'](e => {
                     e.stopPropagation();
                     if (e.target !== link.get(0)) return;
 
-                    showElement(dropDown);
+                    globals.showElement(dropDown);
                 });
 
                 if (openOnHover) {
                     link.mouseleave(e => {
                         e.stopPropagation();
-                        hideElement(dropDown);
+                        globals.hideElement(dropDown);
                     });
                 } else {
-                    $(window).click(() => hideElement(dropDown));
+                    $(window).click(() => globals.hideElement(dropDown));
                 }
-                iconLocation.append($('<div>').attr('class', 'grid--cell').append(advancedFlaggingLink));
+                iconLocation.append(globals.gridCellDiv.clone().append(advancedFlaggingLink));
             }
 
             iconLocation.append(performedActionIcon);
@@ -624,40 +593,15 @@ async function SetupPostPage() {
     });
 }
 
-function getPerformedActionIcon() {
-    return $('<div>').attr('class', 'c-default d-none')
-        .append(Svg.CheckmarkSm().addClass('fc-green-500'));
-}
-
-function getReportedIcon() {
-    return $('<div>')
-        .attr('class', 'advanced-flagging-flag-icon c-default d-none')
-        .append(Svg.Flag().addClass('fc-red-500'));
-}
-
-const sampleIconClass = $('<div>').attr('class', 'advanced-flagging-icon bg-cover c-pointer w16 h16 d-none');
-
-function getNattyIcon() {
-    return sampleIconClass.clone().attr('title', 'Reported by Natty').addClass('advanced-flagging-natty-icon');
-}
-
-function getGuttenbergIcon() {
-    return sampleIconClass.clone().attr('title', 'Reported by Guttenberg').addClass('advanced-flagging-gut-icon');
-}
-
-function getSmokeyIcon() {
-    return sampleIconClass.clone().attr('title', 'Reported by Smokey').addClass('advanced-flagging-smokey-icon');
-}
-
 const metaSmokeManualKey = 'MetaSmoke.ManualKey';
 
 async function Setup() {
     const manualKey = localStorage.getItem(metaSmokeManualKey);
     if (manualKey) {
         localStorage.removeItem(metaSmokeManualKey);
-        MetaSmokeAPI.Setup(metaSmokeKey, async () => manualKey);
+        MetaSmokeAPI.Setup(globals.metaSmokeKey, async () => manualKey);
     } else {
-        MetaSmokeAPI.Setup(metaSmokeKey);
+        MetaSmokeAPI.Setup(globals.metaSmokeKey);
     }
 
     SetupPostPage();
@@ -666,7 +610,7 @@ async function Setup() {
 
     document.body.appendChild(popupWrapper.get(0));
 
-    const watchedQueuesEnabled = GreaseMonkeyCache.GetFromCache<boolean>(ConfigurationWatchQueues);
+    const watchedQueuesEnabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationWatchQueues);
     const postDetails: { questionTime: Date, answerTime: Date }[] = [];
     if (watchedQueuesEnabled) {
         WatchRequests().subscribe((xhr) => {
@@ -686,14 +630,14 @@ async function Setup() {
             // So, we watch the next-task requests and remember which post we were looking at for when a delete/recommend-delete vote comes through.
             // next-task is invoked when visiting the review queue
             // task-reviewed is invoked when making a response
-            const isReviewItem = /(\/review\/next-task)|(\/review\/task-reviewed\/)/.exec(xhr.responseURL);
+            const isReviewItem = globals.isReviewItemRegex.exec(xhr.responseURL);
             if (isReviewItem && xhr.status === 200) {
                 const review = xhr.responseText;
                 parseReviewDetails(review);
                 return;
             }
 
-            const matches = /(\d+)\/vote\/10|(\d+)\/recommend-delete/.exec(xhr.responseURL);
+            const matches = globals.isDeleteVoteRegex.exec(xhr.responseURL);
             if (!matches || xhr.status !== 200) return;
 
             const postIdStr = matches[1] || matches[2];

@@ -18,7 +18,7 @@ export class ChatApi {
     }
 
     public async GetChannelFKey(roomId: number): Promise<string> {
-        const cachingKey = `StackExchange.ChatApi.FKey_${roomId}`;
+        const cachingKey = 'StackExchange.ChatApi.FKey';
         const getterPromise = new Promise<string>((resolve, reject) => {
             this.GetChannelPage(roomId).then(channelPage => {
                 const fkeyElement = $(channelPage).filter('#fkey');
@@ -32,32 +32,12 @@ export class ChatApi {
         return GreaseMonkeyCache.GetAndCache(cachingKey, () => getterPromise, expiryDate);
     }
 
-    public GetChatUserId(roomId: number): number {
-        const cachingKey = `StackExchange.ChatApi.UserId_${roomId}`;
+    public GetChatUserId(): number {
+        const cachingKey = 'StackExchange.ChatApi.UserId';
         const userId = StackExchange.options.user.userId;
-        const expiryDate = ChatApi.GetExpiryDate();
-        GreaseMonkeyCache.StoreInCache(cachingKey, userId, expiryDate);
+        GreaseMonkeyCache.StoreInCache(cachingKey, userId);
         return userId;
     }
-
-    // The chat user id of a SO user is the same as their main-site one. There are no plans for moving to chat.SE currently
-    /*public async GetChatUserId(roomId: number): Promise<number> {
-        const cachingKey = `StackExchange.ChatApi.UserId_${roomId}`;
-        const getterPromise = new Promise<number>((resolve, reject) => {
-            this.GetChannelPage(roomId).then(channelPage => {
-                const activeUserDiv = $('#active-user', $(channelPage));
-                const classAtr = activeUserDiv.attr('class');
-                const match = classAtr.match(/user-(\d+)/);
-                if (match && match.length) {
-                    resolve(parseInt(match[1], 10));
-                }
-                reject('Could not find user id');
-            });
-        });
-
-        const expiryDate = ChatApi.GetExpiryDate();
-        return GreaseMonkeyCache.GetAndCache(cachingKey, () => getterPromise, expiryDate);
-    }*/
 
     public SendMessage(roomId: number, message: string): Promise<void> {
         return new Promise<void>((resolve, reject) => {
@@ -83,7 +63,7 @@ export class ChatApi {
             const onFailure = (errorMessage?: string) => {
                 numTries++;
                 if (numTries < 3) {
-                    const fkeyCacheKey = `StackExchange.ChatApi.FKey_${roomId}`;
+                    const fkeyCacheKey = 'StackExchange.ChatApi.FKey';
                     GreaseMonkeyCache.Unset(fkeyCacheKey);
                     requestFunc();
                 } else {

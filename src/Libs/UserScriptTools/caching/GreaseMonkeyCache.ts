@@ -19,46 +19,40 @@ export class GreaseMonkeyCache {
 
     public static ClearExpiredKeys(regexes?: RegExp[]) {
         GM_listValues().forEach(key => {
-            if (!regexes || regexes.filter(r => key.match(r)).length > 0) {
-                const jsonItem = GM_getValue(key, undefined);
-                if (jsonItem) {
-                    try {
-                        const dataItem = JSON.parse(jsonItem) as ExpiryingCacheItem<any>;
-                        if ((dataItem.Expires && new Date(dataItem.Expires) < new Date())) {
-                            GreaseMonkeyCache.Unset(key);
-                        }
-                    } catch {
-                        // Don't care
-                    }
-                }
+            if (regexes && !regexes.filter(r => key.match(r)).length) return;
+            const jsonItem = GM_getValue(key, undefined);
+            if (!jsonItem) return;
+
+            try {
+                const dataItem = JSON.parse(jsonItem) as ExpiryingCacheItem<any>;
+                if (!dataItem.Expires || new Date(dataItem.Expires) > new Date()) return;
+                GreaseMonkeyCache.Unset(key);
+            } catch {
+                // Don't care
             }
         });
     }
 
     public static ClearAll(regexes: RegExp[], condition?: (item: string | null) => boolean) {
         GM_listValues().forEach(key => {
-            if (regexes.filter(r => key.match(r)).length > 0) {
-                if (condition) {
-                    const val = GM_getValue(key, undefined);
-                    if (condition(val)) {
-                        GreaseMonkeyCache.Unset(key);
-                    }
-                } else {
-                    GreaseMonkeyCache.Unset(key);
-                }
+            if (!regexes.filter(r => key.match(r)).length) return;
+
+            if (condition) {
+                const val = GM_getValue(key, undefined);
+                if (condition(val)) GreaseMonkeyCache.Unset(key);
+            } else {
+                GreaseMonkeyCache.Unset(key);
             }
         });
     }
 
     public static GetFromCache<T>(cacheKey: string): T | undefined {
         const jsonItem = GM_getValue(cacheKey, undefined);
-        if (!jsonItem) {
-            return undefined;
-        }
+        if (!jsonItem) return undefined;
+
         const dataItem = JSON.parse(jsonItem) as ExpiryingCacheItem<T>;
-        if ((dataItem.Expires && new Date(dataItem.Expires) < new Date())) {
-            return undefined;
-        }
+        if (dataItem.Expires && new Date(dataItem.Expires) < new Date()) return undefined;
+
         return dataItem.Data;
     }
 

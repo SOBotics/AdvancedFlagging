@@ -3,10 +3,7 @@ declare const GM_xmlhttpRequest: any;
 import { ReplaySubject, Observable, Subject } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { ChatApi } from '@userscriptTools/chatapi/ChatApi';
-
-const copyPastorServer = 'https://copypastor.sobotics.org';
-
-const soboticsRoomId = 111347;
+import * as globals from '../../../GlobalVars';
 
 export interface CopyPastorFindTargetResponseItem {
     post_id: string;
@@ -32,11 +29,8 @@ export class CopyPastorAPI {
     }
 
     public Watch(): Observable<CopyPastorFindTargetResponseItem[]> {
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 30);
-
         new Promise<CopyPastorFindTargetResponseItem[]>((resolve, reject) => {
-            const url = `${copyPastorServer}/posts/findTarget?url=//${window.location.hostname}/a/${this.answerId}`;
+            const url = `${globals.copyPastorServer}/posts/findTarget?url=//${window.location.hostname}/a/${this.answerId}`;
             GM_xmlhttpRequest({
                 method: 'GET',
                 url,
@@ -70,7 +64,7 @@ export class CopyPastorAPI {
     private async SendFeedback(type: 'tp' | 'fp') {
         const username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
         const chatApi = new ChatApi();
-        const chatId = await chatApi.GetChatUserId(soboticsRoomId);
+        const chatId = chatApi.GetChatUserId();
         const results = await this.Promise();
 
         const payloads = results.map(result => {
@@ -89,7 +83,7 @@ export class CopyPastorAPI {
             return new Promise<boolean>((resolve, reject) => {
                 GM_xmlhttpRequest({
                     method: 'POST',
-                    url: `${copyPastorServer}/feedback/create`,
+                    url: `${globals.copyPastorServer}/feedback/create`,
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     data:
                         'post_id=' + payload.post_id

@@ -1,10 +1,7 @@
 import { Observable, ReplaySubject } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
-
-export const MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
-export const MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
-export const MetaSmokeWasReportedConfig = 'MetaSmoke.WasReported';
+import * as globals from '../../../GlobalVars';
 
 interface MetaSmokeApiItem {
     id: number;
@@ -14,20 +11,14 @@ interface MetaSmokeApiWrapper {
     items: MetaSmokeApiItem[];
 }
 
-function Delay(milliseconds: number) {
-    return new Promise<void>(resolve => {
-        setTimeout(() => resolve(), milliseconds);
-    });
-}
-
 export class MetaSmokeAPI {
     public static async Reset() {
-        GreaseMonkeyCache.Unset(MetaSmokeDisabledConfig);
-        GreaseMonkeyCache.Unset(MetaSmokeUserKeyConfig);
+        GreaseMonkeyCache.Unset(globals.MetaSmokeDisabledConfig);
+        GreaseMonkeyCache.Unset(globals.MetaSmokeUserKeyConfig);
     }
 
     public static async IsDisabled() {
-        const cachedDisabled = GreaseMonkeyCache.GetFromCache<boolean>(MetaSmokeDisabledConfig);
+        const cachedDisabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.MetaSmokeDisabledConfig);
         if (!cachedDisabled) return false;
 
         return cachedDisabled;
@@ -40,12 +31,12 @@ export class MetaSmokeAPI {
                 if (isDisabled) return;
 
                 if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, see footer of Stack Overflow.')) {
-                    GreaseMonkeyCache.StoreInCache(MetaSmokeDisabledConfig, true);
+                    GreaseMonkeyCache.StoreInCache(globals.MetaSmokeDisabledConfig, true);
                     return;
                 }
 
                 window.open(metaSmokeOAuthUrl, '_blank');
-                await Delay(100);
+                await globals.Delay(100);
                 const returnCode = await new Promise<string | undefined>((resolve) => {
                     const handleFDSCCode = () => {
                         $(window).off('focus', handleFDSCCode);
@@ -87,8 +78,6 @@ export class MetaSmokeAPI {
         }
         MetaSmokeAPI.pendingPosts = [];
         const urlStr = urls.join();
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 30);
 
         MetaSmokeAPI.IsDisabled().then(isDisabled => {
             if (isDisabled) return;
@@ -148,7 +137,7 @@ export class MetaSmokeAPI {
 
     private static getUserKey() {
         // eslint-disable-next-line no-async-promise-executor
-        return GreaseMonkeyCache.GetAndCache(MetaSmokeUserKeyConfig, () => new Promise<string>(async (resolve, reject) => {
+        return GreaseMonkeyCache.GetAndCache(globals.MetaSmokeUserKeyConfig, () => new Promise<string>(async (resolve, reject) => {
             let prom = MetaSmokeAPI.actualPromise;
             if (!prom) {
                 prom = MetaSmokeAPI.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeAPI.appKey}`);
@@ -210,7 +199,7 @@ export class MetaSmokeAPI {
 
             const result = await promise;
 
-            await Delay(1000);
+            await globals.Delay(1000);
             MetaSmokeAPI.QueryMetaSmoke(postId, postType);
             return result;
         }

@@ -4,8 +4,7 @@ import { Observable, Subject, ReplaySubject } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { IsStackOverflow } from '@userscriptTools/sotools/sotools';
 import { ChatApi } from '@userscriptTools/chatapi/ChatApi';
-
-const nattyFeedbackUrl = 'https://logs.sobotics.org/napi/api/feedback';
+import * as globals from '../../../GlobalVars';
 
 export interface NattyFeedbackItemInfo {
     timestamp: number;
@@ -38,8 +37,6 @@ export class NattyAPI {
         this.subject.subscribe(this.replaySubject);
 
         if (IsStackOverflow()) {
-            const expiryDate = new Date();
-            expiryDate.setDate(expiryDate.getDate() + 1);
             new Promise<boolean>((resolve, reject) => {
                 let numTries = 0;
                 const onError = (response: any) => {
@@ -50,7 +47,7 @@ export class NattyAPI {
                 const makeRequest = () => {
                     GM_xmlhttpRequest({
                         method: 'GET',
-                        url: `${nattyFeedbackUrl}/${this.answerId}`,
+                        url: `${globals.nattyFeedbackUrl}/${this.answerId}`,
                         onload: (response: XMLHttpRequest) => {
                             if (response.status === 200) {
                                 const nattyResult = JSON.parse(response.responseText);
@@ -98,11 +95,7 @@ export class NattyAPI {
             }
 
             const promise = this.chat.SendMessage(soboticsRoomId, `@Natty report https://stackoverflow.com/a/${this.answerId}`);
-            await promise.then(() => {
-                const expiryDate = new Date();
-                expiryDate.setDate(expiryDate.getDate() + 30);
-                this.subject.next(true);
-            });
+            await promise.then(() => this.subject.next(true));
             return true;
         }
     }

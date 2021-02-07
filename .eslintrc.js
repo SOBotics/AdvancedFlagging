@@ -11,6 +11,8 @@ module.exports = {
   "rules": {
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
-    'prefer-rest-params': 'off'
+    'prefer-rest-params': 'off',
+    'semi': [ 1, 'always' ],
+    'quotes': [ 2, 'single', { 'avoidEscape': true } ]
   },
 };

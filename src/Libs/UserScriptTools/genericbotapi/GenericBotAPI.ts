@@ -1,9 +1,8 @@
 import { IsStackOverflow } from '@userscriptTools/sotools/sotools';
+import * as globals from '../../../GlobalVars';
 
 declare const $: JQueryStatic;
 declare const GM_xmlhttpRequest: any;
-
-const genericBotKey = 'Cm45BSrt51FR3ju';
 
 export class GenericBotAPI {
     private answerId: number;
@@ -59,7 +58,7 @@ export class GenericBotAPI {
                 method: 'POST',
                 url: 'https://so.floern.com/api/trackpost.php',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                data: `key=${genericBotKey}`
+                data: `key=${globals.genericBotKey}`
                     + '&postId=' + this.answerId
                     + '&contentHash=' + contentHash
                     + '&flagger=' + encodeURIComponent(flaggerName),

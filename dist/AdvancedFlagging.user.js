@@ -25,6 +25,7 @@
 // @grant        GM_setValue
 // @grant        GM_deleteValue
 // @grant        GM_addStyle
+// @run-at       document-body
 // ==/UserScript==
 
 /******/ (() => { // webpackBootstrap
@@ -74,6 +75,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     background-image: url("https://i.stack.imgur.com/7cmCt.png?s=128&g=1");
 }`);
     }
+    const userFkey = StackExchange.options.user.fkey;
     function handleFlagAndComment(postId, flag, flagRequired, commentText, copyPastorPromise) {
         const result = {};
         if (commentText) {
@@ -81,7 +83,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 $.ajax({
                     url: `/posts/${postId}/comments`,
                     type: 'POST',
-                    data: { fkey: StackExchange.options.user.fkey, comment: commentText }
+                    data: { fkey: userFkey, comment: commentText }
                 }).done((data) => {
                     resolve(data);
                 }).fail((jqXHR, textStatus, errorThrown) => {
@@ -101,7 +103,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 $.ajax({
                     url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
                     type: 'POST',
-                    data: { fkey: StackExchange.options.user.fkey, otherText: flag.ReportType === 'PostOther' ? flagText : '' }
+                    data: { fkey: userFkey, otherText: flag.ReportType === 'PostOther' ? flagText : '' }
                 }).done((data) => {
                     setTimeout(() => autoFlagging = false, 500);
                     resolve(data);
@@ -535,16 +537,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             }
         });
     }
-    const metaSmokeManualKey = 'MetaSmoke.ManualKey';
     function Setup() {
-        const manualKey = localStorage.getItem(metaSmokeManualKey);
-        if (manualKey) {
-            localStorage.removeItem(metaSmokeManualKey);
-            MetaSmokeAPI_1.MetaSmokeAPI.Setup(globals.metaSmokeKey, async () => manualKey);
-        }
-        else {
-            MetaSmokeAPI_1.MetaSmokeAPI.Setup(globals.metaSmokeKey);
-        }
+        MetaSmokeAPI_1.MetaSmokeAPI.Setup(globals.metaSmokeKey);
         SetupPostPage();
         SetupStyles();
         Configuration_1.SetupConfiguration();
@@ -13202,7 +13196,7 @@ function zipAll(project) {
 /* 205 */
 /***/ ((module, exports, __webpack_require__) => {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(206)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, GreaseMonkeyCache_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(206), __webpack_require__(207)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, GreaseMonkeyCache_1, globals) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.ChatApi = void 0;
@@ -13216,7 +13210,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             return expiryDate;
         }
         async GetChannelFKey(roomId) {
-            const cachingKey = 'StackExchange.ChatApi.FKey';
             const getterPromise = new Promise((resolve, reject) => {
                 this.GetChannelPage(roomId).then(channelPage => {
                     const fkeyElement = $(channelPage).filter('#fkey');
@@ -13227,13 +13220,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
             });
             const expiryDate = ChatApi.GetExpiryDate();
-            return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(cachingKey, () => getterPromise, expiryDate);
+            return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(globals.CacheChatApiFkey, () => getterPromise, expiryDate);
         }
         GetChatUserId() {
-            const cachingKey = 'StackExchange.ChatApi.UserId';
-            const userId = StackExchange.options.user.userId;
-            GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(cachingKey, userId);
-            return userId;
+            return StackExchange.options.user.userId;
         }
         SendMessage(roomId, message) {
             return new Promise((resolve, reject) => {
@@ -13298,30 +13288,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     class GreaseMonkeyCache {
         static async GetAndCache(cacheKey, getterPromise, expiresAt) {
             const cachedItem = GreaseMonkeyCache.GetFromCache(cacheKey);
-            if (cachedItem !== undefined) {
+            if (cachedItem)
                 return cachedItem;
-            }
             const result = await getterPromise();
             GreaseMonkeyCache.StoreInCache(cacheKey, result, expiresAt);
             return result;
-        }
-        static ClearExpiredKeys(regexes) {
-            GM_listValues().forEach(key => {
-                if (regexes && !regexes.filter(r => key.match(r)).length)
-                    return;
-                const jsonItem = GM_getValue(key, undefined);
-                if (!jsonItem)
-                    return;
-                try {
-                    const dataItem = JSON.parse(jsonItem);
-                    if (!dataItem.Expires || new Date(dataItem.Expires) > new Date())
-                        return;
-                    GreaseMonkeyCache.Unset(key);
-                }
-                catch {
-                    // Don't care
-                }
-            });
         }
         static ClearAll(regexes, condition) {
             GM_listValues().forEach(key => {
@@ -13366,7 +13337,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, AdvancedFlagging_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
-    exports.Delay = exports.getConfigHtml = exports.inlineCheckboxesWrapper = exports.overlayModal = exports.configurationLink = exports.configurationDiv = exports.advancedFlaggingLink = exports.gridCellDiv = exports.plainDiv = exports.dropdownItem = exports.reportLink = exports.popoverArrow = exports.dropDown = exports.popupWrapper = exports.getOptionLabel = exports.getCategoryDiv = exports.getOptionBox = exports.getDivider = exports.getSectionWrapper = exports.getMessageDiv = exports.getSmokeyIcon = exports.getGuttenbergIcon = exports.getNattyIcon = exports.getReportedIcon = exports.getPerformedActionIcon = exports.displayError = exports.displaySuccess = exports.showInlineElement = exports.hideElement = exports.showElement = exports.getFlagsUrlRegex = exports.isDeleteVoteRegex = exports.isReviewItemRegex = exports.popupDelay = exports.displayStacksToast = exports.MetaSmokeDisabledConfig = exports.MetaSmokeUserKeyConfig = exports.ConfigurationLinkDisabled = exports.ConfigurationEnabledFlags = exports.ConfigurationWatchQueues = exports.ConfigurationWatchFlags = exports.ConfigurationDefaultNoComment = exports.ConfigurationDefaultNoFlag = exports.ConfigurationOpenOnHover = exports.nattyFeedbackUrl = exports.genericBotKey = exports.copyPastorServer = exports.copyPastorKey = exports.metaSmokeKey = exports.soboticsRoomId = void 0;
+    exports.showConfirmModal = exports.Delay = exports.showMSTokenPopupAndGet = exports.inlineCheckboxesWrapper = exports.overlayModal = exports.configurationLink = exports.configurationDiv = exports.advancedFlaggingLink = exports.gridCellDiv = exports.plainDiv = exports.dropdownItem = exports.reportLink = exports.popoverArrow = exports.dropDown = exports.popupWrapper = exports.getConfigHtml = exports.getOptionLabel = exports.getCategoryDiv = exports.getOptionBox = exports.getDivider = exports.getSectionWrapper = exports.getMessageDiv = exports.getSmokeyIcon = exports.getGuttenbergIcon = exports.getNattyIcon = exports.getReportedIcon = exports.getPerformedActionIcon = exports.displayError = exports.displaySuccess = exports.showInlineElement = exports.hideElement = exports.showElement = exports.getFlagsUrlRegex = exports.isDeleteVoteRegex = exports.isReviewItemRegex = exports.popupDelay = exports.displayStacksToast = exports.settingUpBody = exports.settingUpTitle = exports.MetaSmokeDisabledConfig = exports.MetaSmokeUserKeyConfig = exports.CacheChatApiFkey = exports.ConfigurationLinkDisabled = exports.ConfigurationEnabledFlags = exports.ConfigurationWatchQueues = exports.ConfigurationWatchFlags = exports.ConfigurationDefaultNoComment = exports.ConfigurationDefaultNoFlag = exports.ConfigurationOpenOnHover = exports.nattyFeedbackUrl = exports.genericBotKey = exports.copyPastorServer = exports.copyPastorKey = exports.metaSmokeKey = exports.soboticsRoomId = void 0;
     exports.soboticsRoomId = 111347;
     exports.metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
     exports.copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
@@ -13380,10 +13351,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
     exports.ConfigurationEnabledFlags = 'AdvancedFlagging.Configuration.EnabledFlags';
     exports.ConfigurationLinkDisabled = 'AdvancedFlagging.Configuration.LinkDisabled';
+    exports.CacheChatApiFkey = 'StackExchange.ChatApi.FKey';
     exports.MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
     exports.MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
     // export const ConfigurationDetectAudits = 'AdvancedFlagging.Configuration.DetectAudits';
     // export const MetaSmokeWasReportedConfig = 'MetaSmoke.WasReported';
+    exports.settingUpTitle = 'Setting up MetaSmoke';
+    exports.settingUpBody = 'If you do not wish to connect, press cancel and this popup won\'t show up again. '
+        + 'To reset configuration, see the footer of Stack Overflow.';
     const displayStacksToast = (message, type) => StackExchange.helpers.showToast(message, { type: type });
     exports.displayStacksToast = displayStacksToast;
     exports.popupDelay = 4000;
@@ -13425,6 +13400,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.getCategoryDiv = getCategoryDiv;
     const getOptionLabel = (text, name) => $('<label>').text(text).attr('for', name).attr('class', 's-label ml4 va-middle fs-body1 fw-normal');
     exports.getOptionLabel = getOptionLabel;
+    const getConfigHtml = (optionId, text) => $(`
+<div>
+  <div class="grid gs8">
+    <div class="grid--cell"><input class="s-checkbox" type="checkbox" id="${optionId}"/></div>
+    <label class="grid--cell s-label fw-normal" for="${optionId}">${text}</label>
+  </div>
+</div>`);
+    exports.getConfigHtml = getConfigHtml;
     exports.popupWrapper = $('<div>').attr('id', 'snackbar')
         .attr('class', 'hide fc-white p16 fs-body3 ps-fixed ta-center z-popover l50 t32 wmn2');
     exports.dropDown = $('<div>').attr('class', 'advanced-flagging-dialog s-popover s-anchors s-anchors__default p6 mt2 c-default d-none');
@@ -13450,18 +13433,50 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 </aside>`);
     const grid = $('<div>').attr('class', 'grid');
     exports.inlineCheckboxesWrapper = exports.gridCellDiv.clone().append(grid.clone());
-    const getConfigHtml = (optionId, text) => $(`
-<div>
-  <div class="grid gs8">
-    <div class="grid--cell"><input class="s-checkbox" type="checkbox" id="${optionId}"/></div>
-    <label class="grid--cell s-label fw-normal" for="${optionId}">${text}</label>
+    const metasmokeTokenPopup = $(`
+<aside class="s-modal" id="af-ms-token" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
+  <div class="s-modal--dialog" role="document">
+    <h1 class="s-modal--header fw-bold c-movey" id="af-modal-title">Authenticate MS with AF</h1>
+    <div class="s-modal--body fs-body2" id="af-modal-description">
+      <div class="grid gs4 gsy fd-column">
+        <div class="grid--cell">
+          <label class="d-block s-label" for="example-item1">Metasmoke access token
+            <p class="s-description mt2">Once you've authenticated Advanced Flagging with metasmoke, you'll be given a code; enter it below:</p>
+          </label>
+        </div>
+      <div class="grid ps-relative"><input class="s-input" type="text" id="advanced-flagging-ms-token" placeholder="Enter the code here"></div>
+      </div>
+    </div>
+    <div class="grid gs8 gsx s-modal--footer">
+      <button class="grid--cell s-btn s-btn__primary" id="advanced-flagging-save-ms-token" type="button">Submit</button>
+      <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
+    </div>
+    <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
   </div>
-</div>`);
-    exports.getConfigHtml = getConfigHtml;
+</aside>`);
+    function showMSTokenPopupAndGet() {
+        return new Promise(resolve => {
+            StackExchange.helpers.showModal(metasmokeTokenPopup);
+            $('#advanced-flagging-save-ms-token').on('click', () => {
+                const token = $('#advanced-flagging-ms-token').val();
+                $('#af-ms-token').remove(); // dismiss modal
+                resolve(token);
+            });
+        });
+    }
+    exports.showMSTokenPopupAndGet = showMSTokenPopupAndGet;
     async function Delay(milliseconds) {
         return await new Promise(resolve => setTimeout(resolve, milliseconds));
     }
     exports.Delay = Delay;
+    async function showConfirmModal(title, bodyHtml) {
+        return await StackExchange.helpers.showConfirmModal({
+            title: title,
+            bodyHtml: bodyHtml,
+            buttonLabel: 'Authenticate!'
+        });
+    }
+    exports.showConfirmModal = showConfirmModal;
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
@@ -13547,40 +13562,17 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.MetaSmokeAPI = void 0;
     class MetaSmokeAPI {
-        static async Reset() {
+        static Reset() {
             GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(globals.MetaSmokeDisabledConfig);
             GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(globals.MetaSmokeUserKeyConfig);
         }
-        static async IsDisabled() {
+        static IsDisabled() {
             const cachedDisabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.MetaSmokeDisabledConfig);
             if (!cachedDisabled)
                 return false;
             return cachedDisabled;
         }
-        static async Setup(appKey, codeGetter) {
-            if (!codeGetter) {
-                codeGetter = async (metaSmokeOAuthUrl) => {
-                    const isDisabled = await MetaSmokeAPI.IsDisabled();
-                    if (isDisabled)
-                        return;
-                    if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, see footer of Stack Overflow.')) {
-                        GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(globals.MetaSmokeDisabledConfig, true);
-                        return;
-                    }
-                    window.open(metaSmokeOAuthUrl, '_blank');
-                    await globals.Delay(100);
-                    const returnCode = await new Promise((resolve) => {
-                        const handleFDSCCode = () => {
-                            $(window).off('focus', handleFDSCCode);
-                            const code = window.prompt('Once you\'ve authenticated Advanced Flagging with metasmoke, you\'ll be given a code; enter it here.');
-                            resolve(code || undefined);
-                        };
-                        $(window).focus(handleFDSCCode);
-                    });
-                    return returnCode;
-                };
-            }
-            MetaSmokeAPI.codeGetter = codeGetter;
+        static async Setup(appKey) {
             MetaSmokeAPI.appKey = appKey;
             MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
         }
@@ -13600,47 +13592,46 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             }
             MetaSmokeAPI.pendingPosts = [];
             const urlStr = urls.join();
-            MetaSmokeAPI.IsDisabled().then(isDisabled => {
-                if (isDisabled)
-                    return;
-                $.ajax({
-                    type: 'GET',
-                    url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
-                    data: {
-                        urls: urlStr,
-                        key: `${MetaSmokeAPI.appKey}`
-                    }
-                }).done((metaSmokeResult) => {
-                    for (const item of metaSmokeResult.items) {
-                        const pendingPost = pendingPostLookup[item.link];
-                        if (!pendingPost)
-                            continue;
-                        const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
-                        const obs = MetaSmokeAPI.ObservableLookup[key];
-                        if (obs)
-                            obs.next(item.id);
-                        delete pendingPostLookup[item.link];
-                    }
-                    for (const url in pendingPostLookup) {
-                        if (!Object.prototype.hasOwnProperty.call(pendingPostLookup, url))
-                            return;
-                        const pendingPost = pendingPostLookup[url];
-                        const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
-                        const obs = MetaSmokeAPI.ObservableLookup[key];
-                        if (obs)
-                            obs.next(null);
-                    }
-                }).fail(error => {
-                    for (const url in pendingPostLookup) {
-                        if (!Object.prototype.hasOwnProperty.call(pendingPostLookup, url))
-                            return;
-                        const pendingPost = pendingPostLookup[url];
-                        const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
-                        const obs = MetaSmokeAPI.ObservableLookup[key];
-                        if (obs)
-                            obs.error(error);
-                    }
-                });
+            const isDisabled = MetaSmokeAPI.IsDisabled();
+            if (isDisabled)
+                return;
+            $.ajax({
+                type: 'GET',
+                url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
+                data: {
+                    urls: urlStr,
+                    key: `${MetaSmokeAPI.appKey}`
+                }
+            }).done((metaSmokeResult) => {
+                for (const item of metaSmokeResult.items) {
+                    const pendingPost = pendingPostLookup[item.link];
+                    if (!pendingPost)
+                        continue;
+                    const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
+                    const obs = MetaSmokeAPI.ObservableLookup[key];
+                    if (obs)
+                        obs.next(item.id);
+                    delete pendingPostLookup[item.link];
+                }
+                for (const url in pendingPostLookup) {
+                    if (!Object.prototype.hasOwnProperty.call(pendingPostLookup, url))
+                        return;
+                    const pendingPost = pendingPostLookup[url];
+                    const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
+                    const obs = MetaSmokeAPI.ObservableLookup[key];
+                    if (obs)
+                        obs.next(null);
+                }
+            }).fail(error => {
+                for (const url in pendingPostLookup) {
+                    if (!Object.prototype.hasOwnProperty.call(pendingPostLookup, url))
+                        return;
+                    const pendingPost = pendingPostLookup[url];
+                    const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
+                    const obs = MetaSmokeAPI.ObservableLookup[key];
+                    if (obs)
+                        obs.error(error);
+                }
             });
         }
         static GetQueryUrl(postId, postType) {
@@ -13767,6 +13758,26 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     MetaSmokeAPI.ObservableLookup = {};
     MetaSmokeAPI.pendingPosts = [];
     MetaSmokeAPI.pendingTimeout = null;
+    MetaSmokeAPI.codeGetter = async (metaSmokeOAuthUrl) => {
+        if (MetaSmokeAPI.IsDisabled())
+            return;
+        const userDisableMetasmoke = await globals.showConfirmModal(globals.settingUpTitle, globals.settingUpBody);
+        if (!userDisableMetasmoke) {
+            GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(globals.MetaSmokeDisabledConfig, true);
+            return;
+        }
+        window.open(metaSmokeOAuthUrl, '_blank');
+        await globals.Delay(100);
+        const returnCode = await new Promise((resolve) => {
+            const getMSToken = async () => {
+                $(window).off('focus', getMSToken);
+                const code = await globals.showMSTokenPopupAndGet();
+                resolve(code || undefined);
+            };
+            $(window).focus(getMSToken);
+        });
+        return returnCode;
+    };
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
@@ -14040,19 +14051,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     function GetAdminConfigItems() {
         return [
-            $('<a>').text('Clear expired items from cache').click(() => GreaseMonkeyCache_1.GreaseMonkeyCache.ClearExpiredKeys()),
-            $('<a>').text('Clear Metasmoke Configuration').click(async () => { await MetaSmokeAPI_1.MetaSmokeAPI.Reset(); }),
-            $('<a>').text('Get MetaSmoke key').attr('href', `https://metasmoke.erwaysoftware.com/oauth/request?key=${globals.metaSmokeKey}`),
-            $('<a>').text('Manually register MetaSmoke key').click(() => {
-                const prompt = window.prompt('Enter metasmoke key');
-                if (prompt) {
-                    GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(globals.MetaSmokeDisabledConfig, false);
-                    localStorage.setItem('MetaSmoke.ManualKey', prompt);
-                }
+            $('<a>').text('Clear Metasmoke Configuration').click(async () => {
+                await MetaSmokeAPI_1.MetaSmokeAPI.Reset();
+                globals.displayStacksToast('Successfully cleared MS configuration.', 'success');
             }),
-            $('<a>').text('Clear chat FKey').click(() => {
-                const fkeyCacheKey = `StackExchange.ChatApi.FKey_${globals.soboticsRoomId}`;
+            $('<a>').text('Clear chat fkey').click(() => {
+                const fkeyCacheKey = 'StackExchange.ChatApi.FKey';
                 GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(fkeyCacheKey);
+                globals.displayStacksToast('Successfully cleared chat fkey.', 'success');
             })
         ].map(item => item.wrap(globals.gridCellDiv.clone()).parent());
     }

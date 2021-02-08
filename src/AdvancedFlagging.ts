@@ -53,6 +53,7 @@ function SetupStyles() {
 }`);
 }
 
+const userFkey = StackExchange.options.user.fkey;
 function handleFlagAndComment(postId: number, flag: FlagType,
     flagRequired: boolean,
     commentText: string | undefined,
@@ -68,7 +69,7 @@ function handleFlagAndComment(postId: number, flag: FlagType,
             $.ajax({
                 url: `/posts/${postId}/comments`,
                 type: 'POST',
-                data: { fkey: StackExchange.options.user.fkey, comment: commentText }
+                data: { fkey: userFkey, comment: commentText }
             }).done((data) => {
                 resolve(data);
             }).fail((jqXHR, textStatus, errorThrown) => {
@@ -90,7 +91,7 @@ function handleFlagAndComment(postId: number, flag: FlagType,
             $.ajax({
                 url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
                 type: 'POST',
-                data: { fkey: StackExchange.options.user.fkey, otherText: flag.ReportType === 'PostOther' ? flagText : '' }
+                data: { fkey: userFkey, otherText: flag.ReportType === 'PostOther' ? flagText : '' }
             }).done((data) => {
                 setTimeout(() => autoFlagging = false, 500);
                 resolve(data);
@@ -607,16 +608,8 @@ async function SetupPostPage() {
     });
 }
 
-const metaSmokeManualKey = 'MetaSmoke.ManualKey';
-
 function Setup() {
-    const manualKey = localStorage.getItem(metaSmokeManualKey);
-    if (manualKey) {
-        localStorage.removeItem(metaSmokeManualKey);
-        MetaSmokeAPI.Setup(globals.metaSmokeKey, async () => manualKey);
-    } else {
-        MetaSmokeAPI.Setup(globals.metaSmokeKey);
-    }
+    MetaSmokeAPI.Setup(globals.metaSmokeKey);
 
     SetupPostPage();
     SetupStyles();

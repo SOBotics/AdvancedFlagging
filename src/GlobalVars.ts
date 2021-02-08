@@ -18,10 +18,15 @@ export const ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlag
 export const ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
 export const ConfigurationEnabledFlags = 'AdvancedFlagging.Configuration.EnabledFlags';
 export const ConfigurationLinkDisabled = 'AdvancedFlagging.Configuration.LinkDisabled';
+export const CacheChatApiFkey = 'StackExchange.ChatApi.FKey';
 export const MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
 export const MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
 // export const ConfigurationDetectAudits = 'AdvancedFlagging.Configuration.DetectAudits';
 // export const MetaSmokeWasReportedConfig = 'MetaSmoke.WasReported';
+
+export const settingUpTitle = 'Setting up MetaSmoke';
+export const settingUpBody = 'If you do not wish to connect, press cancel and this popup won\'t show up again. '
+                           + 'To reset configuration, see the footer of Stack Overflow.';
 
 export const displayStacksToast = (message: string, type: string) => StackExchange.helpers.showToast(message, { type: type });
 
@@ -52,6 +57,13 @@ export const getOptionBox = (name: string) => $('<input>').attr('type', 'checkbo
 export const getCategoryDiv = (red: boolean) => $('<div>').attr('class', `advanced-flagging-category bar-md${red ? ' bg-red-200' : ''}`);
 export const getOptionLabel = (text: string, name: string) =>
     $('<label>').text(text).attr('for', name).attr('class', 's-label ml4 va-middle fs-body1 fw-normal');
+export const getConfigHtml = (optionId: string, text: string) => $(`
+<div>
+  <div class="grid gs8">
+    <div class="grid--cell"><input class="s-checkbox" type="checkbox" id="${optionId}"/></div>
+    <label class="grid--cell s-label fw-normal" for="${optionId}">${text}</label>
+  </div>
+</div>`);
 
 export const popupWrapper = $('<div>').attr('id', 'snackbar')
                                       .attr('class', 'hide fc-white p16 fs-body3 ps-fixed ta-center z-popover l50 t32 wmn2');
@@ -78,14 +90,47 @@ export const overlayModal = $(`
 </aside>`);
 const grid = $('<div>').attr('class', 'grid');
 export const inlineCheckboxesWrapper = gridCellDiv.clone().append(grid.clone());
-export const getConfigHtml = (optionId: string, text: string) => $(`
-<div>
-  <div class="grid gs8">
-    <div class="grid--cell"><input class="s-checkbox" type="checkbox" id="${optionId}"/></div>
-    <label class="grid--cell s-label fw-normal" for="${optionId}">${text}</label>
+const metasmokeTokenPopup = $(`
+<aside class="s-modal" id="af-ms-token" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
+  <div class="s-modal--dialog" role="document">
+    <h1 class="s-modal--header fw-bold c-movey" id="af-modal-title">Authenticate MS with AF</h1>
+    <div class="s-modal--body fs-body2" id="af-modal-description">
+      <div class="grid gs4 gsy fd-column">
+        <div class="grid--cell">
+          <label class="d-block s-label" for="example-item1">Metasmoke access token
+            <p class="s-description mt2">Once you've authenticated Advanced Flagging with metasmoke, you'll be given a code; enter it below:</p>
+          </label>
+        </div>
+      <div class="grid ps-relative"><input class="s-input" type="text" id="advanced-flagging-ms-token" placeholder="Enter the code here"></div>
+      </div>
+    </div>
+    <div class="grid gs8 gsx s-modal--footer">
+      <button class="grid--cell s-btn s-btn__primary" id="advanced-flagging-save-ms-token" type="button">Submit</button>
+      <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
+    </div>
+    <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
   </div>
-</div>`);
+</aside>`);
+
+export function showMSTokenPopupAndGet() {
+    return new Promise<string | undefined>(resolve => {
+        StackExchange.helpers.showModal(metasmokeTokenPopup);
+        $('#advanced-flagging-save-ms-token').on('click', () => {
+            const token = $('#advanced-flagging-ms-token').val();
+            $('#af-ms-token').remove(); // dismiss modal
+            resolve(token);
+        });
+    });
+}
 
 export async function Delay(milliseconds: number) {
     return await new Promise<void>(resolve => setTimeout(resolve, milliseconds));
+}
+
+export async function showConfirmModal(title: string, bodyHtml: string) {
+    return await StackExchange.helpers.showConfirmModal({
+        title: title,
+        bodyHtml: bodyHtml,
+        buttonLabel: 'Authenticate!'
+    });
 }

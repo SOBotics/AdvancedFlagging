@@ -147,24 +147,19 @@ function GetFlagSettings() {
 
 function GetAdminConfigItems() {
     return [
-        $('<a>').text('Clear expired items from cache').click(() => GreaseMonkeyCache.ClearExpiredKeys()),
-        $('<a>').text('Clear Metasmoke Configuration').click(async () => { await MetaSmokeAPI.Reset(); }),
-        $('<a>').text('Get MetaSmoke key').attr('href', `https://metasmoke.erwaysoftware.com/oauth/request?key=${globals.metaSmokeKey}`),
-        $('<a>').text('Manually register MetaSmoke key').click(() => {
-            const prompt = window.prompt('Enter metasmoke key');
-            if (prompt) {
-                GreaseMonkeyCache.StoreInCache(globals.MetaSmokeDisabledConfig, false);
-                localStorage.setItem('MetaSmoke.ManualKey', prompt);
-            }
+        $('<a>').text('Clear Metasmoke Configuration').click(async () => {
+            await MetaSmokeAPI.Reset();
+            globals.displayStacksToast('Successfully cleared MS configuration.', 'success');
         }),
-        $('<a>').text('Clear chat FKey').click(() => {
-            const fkeyCacheKey = `StackExchange.ChatApi.FKey_${globals.soboticsRoomId}`;
+        $('<a>').text('Clear chat fkey').click(() => {
+            const fkeyCacheKey = 'StackExchange.ChatApi.FKey';
             GreaseMonkeyCache.Unset(fkeyCacheKey);
+            globals.displayStacksToast('Successfully cleared chat fkey.', 'success');
         })
     ].map(item => item.wrap(globals.gridCellDiv.clone()).parent());
 }
 
-function createCheckbox(text: string, storedValue: boolean | undefined, optionId: string = text.toLowerCase().replace(/\s/g, '_')): JQuery {
+function createCheckbox(text: string, storedValue?: boolean, optionId: string = text.toLowerCase().replace(/\s/g, '_')): JQuery {
     const configHTML = globals.getConfigHtml(optionId, text);
     const input = configHTML.find('input');
     if (storedValue) input.prop('checked', true);

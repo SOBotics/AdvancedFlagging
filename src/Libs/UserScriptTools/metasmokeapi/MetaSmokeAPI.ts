@@ -12,56 +12,53 @@ interface MetaSmokeApiWrapper {
 }
 
 export class MetaSmokeAPI {
-    public static async Reset() {
+    public static Reset() {
         GreaseMonkeyCache.Unset(globals.MetaSmokeDisabledConfig);
         GreaseMonkeyCache.Unset(globals.MetaSmokeUserKeyConfig);
     }
 
-    public static async IsDisabled() {
+    public static IsDisabled() {
         const cachedDisabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.MetaSmokeDisabledConfig);
         if (!cachedDisabled) return false;
 
         return cachedDisabled;
     }
 
-    public static async Setup(appKey: string, codeGetter?: (metaSmokeOAuthUrl: string) => Promise<string | undefined>) {
-        if (!codeGetter) {
-            codeGetter = async (metaSmokeOAuthUrl: string | undefined) => {
-                const isDisabled = await MetaSmokeAPI.IsDisabled();
-                if (isDisabled) return;
-
-                if (!confirm('Setting up MetaSmoke... If you do not wish to connect, press cancel. This will not show again if you press cancel. To reset configuration, see footer of Stack Overflow.')) {
-                    GreaseMonkeyCache.StoreInCache(globals.MetaSmokeDisabledConfig, true);
-                    return;
-                }
-
-                window.open(metaSmokeOAuthUrl, '_blank');
-                await globals.Delay(100);
-                const returnCode = await new Promise<string | undefined>((resolve) => {
-                    const handleFDSCCode = () => {
-                        $(window).off('focus', handleFDSCCode);
-                        const code = window.prompt('Once you\'ve authenticated Advanced Flagging with metasmoke, you\'ll be given a code; enter it here.');
-
-                        resolve(code || undefined);
-                    };
-                    $(window).focus(handleFDSCCode);
-                });
-                return returnCode;
-            };
-        }
-        MetaSmokeAPI.codeGetter = codeGetter;
+    public static async Setup(appKey: string) {
         MetaSmokeAPI.appKey = appKey;
-
         MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
     }
 
     private static actualPromise: Promise<string | undefined>;
-    private static codeGetter: (metaSmokeOAuthUrl: string) => Promise<string | undefined>;
     private static appKey: string;
     private static ObservableLookup: any = {};
 
     private static pendingPosts: { postId: number, postType: 'Answer' | 'Question' }[] = [];
     private static pendingTimeout: number | null = null;
+
+    private static codeGetter: (metaSmokeOAuthUrl: string) => Promise<string | undefined> = async (metaSmokeOAuthUrl: string | undefined) => {
+        if (MetaSmokeAPI.IsDisabled()) return;
+
+        const userDisableMetasmoke = await globals.showConfirmModal(globals.settingUpTitle, globals.settingUpBody);
+        if (!userDisableMetasmoke) {
+            GreaseMonkeyCache.StoreInCache(globals.MetaSmokeDisabledConfig, true);
+            return;
+        }
+
+        window.open(metaSmokeOAuthUrl, '_blank');
+        await globals.Delay(100);
+        const returnCode = await new Promise<string | undefined>((resolve) => {
+            const getMSToken = async () => {
+                $(window).off('focus', getMSToken);
+                const code = await globals.showMSTokenPopupAndGet();
+
+                resolve(code || undefined);
+            };
+            $(window).focus(getMSToken);
+        });
+        return returnCode;
+    };
+
     private static QueryMetaSmoke(postId: number, postType: 'Answer' | 'Question') {
         if (this.pendingTimeout) clearTimeout(this.pendingTimeout);
         this.pendingPosts.push({ postId, postType });
@@ -79,42 +76,41 @@ export class MetaSmokeAPI {
         MetaSmokeAPI.pendingPosts = [];
         const urlStr = urls.join();
 
-        MetaSmokeAPI.IsDisabled().then(isDisabled => {
-            if (isDisabled) return;
-            $.ajax({
-                type: 'GET',
-                url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
-                data: {
-                    urls: urlStr,
-                    key: `${MetaSmokeAPI.appKey}`
-                }
-            }).done((metaSmokeResult: MetaSmokeApiWrapper) => {
-                for (const item of metaSmokeResult.items) {
-                    const pendingPost = pendingPostLookup[item.link];
-                    if (!pendingPost) continue;
+        const isDisabled = MetaSmokeAPI.IsDisabled();
+        if (isDisabled) return;
+        $.ajax({
+            type: 'GET',
+            url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
+            data: {
+                urls: urlStr,
+                key: `${MetaSmokeAPI.appKey}`
+            }
+        }).done((metaSmokeResult: MetaSmokeApiWrapper) => {
+            for (const item of metaSmokeResult.items) {
+                const pendingPost = pendingPostLookup[item.link];
+                if (!pendingPost) continue;
 
-                    const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
-                    const obs = MetaSmokeAPI.ObservableLookup[key];
-                    if (obs) obs.next(item.id);
-                    delete pendingPostLookup[item.link];
-                }
-                for (const url in pendingPostLookup) {
-                    if (!Object.prototype.hasOwnProperty.call(pendingPostLookup, url)) return;
+                const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
+                const obs = MetaSmokeAPI.ObservableLookup[key];
+                if (obs) obs.next(item.id);
+                delete pendingPostLookup[item.link];
+            }
+            for (const url in pendingPostLookup) {
+                if (!Object.prototype.hasOwnProperty.call(pendingPostLookup, url)) return;
 
-                    const pendingPost = pendingPostLookup[url];
-                    const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
-                    const obs = MetaSmokeAPI.ObservableLookup[key];
-                    if (obs) obs.next(null);
-                }
-            }).fail(error => {
-                for (const url in pendingPostLookup) {
-                    if (!Object.prototype.hasOwnProperty.call(pendingPostLookup, url)) return;
-                    const pendingPost = pendingPostLookup[url];
-                    const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
-                    const obs = MetaSmokeAPI.ObservableLookup[key];
-                    if (obs) obs.error(error);
-                }
-            });
+                const pendingPost = pendingPostLookup[url];
+                const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
+                const obs = MetaSmokeAPI.ObservableLookup[key];
+                if (obs) obs.next(null);
+            }
+        }).fail(error => {
+            for (const url in pendingPostLookup) {
+                if (!Object.prototype.hasOwnProperty.call(pendingPostLookup, url)) return;
+                const pendingPost = pendingPostLookup[url];
+                const key = MetaSmokeAPI.GetObservableKey(pendingPost.postId, pendingPost.postType);
+                const obs = MetaSmokeAPI.ObservableLookup[key];
+                if (obs) obs.error(error);
+            }
         });
     }
 

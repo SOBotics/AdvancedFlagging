@@ -8,29 +8,11 @@ declare const GM_deleteValue: (key: string) => void;
 export class GreaseMonkeyCache {
     public static async GetAndCache<T>(cacheKey: string, getterPromise: () => Promise<T>, expiresAt?: Date): Promise<T> {
         const cachedItem = GreaseMonkeyCache.GetFromCache<T>(cacheKey);
-        if (cachedItem !== undefined) {
-            return cachedItem;
-        }
+        if (cachedItem) return cachedItem;
 
         const result = await getterPromise();
         GreaseMonkeyCache.StoreInCache(cacheKey, result, expiresAt);
         return result;
-    }
-
-    public static ClearExpiredKeys(regexes?: RegExp[]) {
-        GM_listValues().forEach(key => {
-            if (regexes && !regexes.filter(r => key.match(r)).length) return;
-            const jsonItem = GM_getValue(key, undefined);
-            if (!jsonItem) return;
-
-            try {
-                const dataItem = JSON.parse(jsonItem) as ExpiryingCacheItem<any>;
-                if (!dataItem.Expires || new Date(dataItem.Expires) > new Date()) return;
-                GreaseMonkeyCache.Unset(key);
-            } catch {
-                // Don't care
-            }
-        });
     }
 
     public static ClearAll(regexes: RegExp[], condition?: (item: string | null) => boolean) {

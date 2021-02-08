@@ -1,4 +1,5 @@
 import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
+import * as globals from '../../../GlobalVars';
 
 declare const $: JQueryStatic;
 declare const GM_xmlhttpRequest: any;
@@ -18,7 +19,6 @@ export class ChatApi {
     }
 
     public async GetChannelFKey(roomId: number): Promise<string> {
-        const cachingKey = 'StackExchange.ChatApi.FKey';
         const getterPromise = new Promise<string>((resolve, reject) => {
             this.GetChannelPage(roomId).then(channelPage => {
                 const fkeyElement = $(channelPage).filter('#fkey');
@@ -29,14 +29,11 @@ export class ChatApi {
         });
 
         const expiryDate = ChatApi.GetExpiryDate();
-        return GreaseMonkeyCache.GetAndCache(cachingKey, () => getterPromise, expiryDate);
+        return GreaseMonkeyCache.GetAndCache(globals.CacheChatApiFkey, () => getterPromise, expiryDate);
     }
 
     public GetChatUserId(): number {
-        const cachingKey = 'StackExchange.ChatApi.UserId';
-        const userId = StackExchange.options.user.userId;
-        GreaseMonkeyCache.StoreInCache(cachingKey, userId);
-        return userId;
+        return StackExchange.options.user.userId;
     }
 
     public SendMessage(roomId: number, message: string): Promise<void> {

@@ -184,9 +184,11 @@ function showComments(postId: number, data: any) {
     $(document).trigger('comment', postId);
 }
 
-function setupNattyApi(postId: number, nattyIcon: JQuery) {
+function setupNattyApi(postId: number, nattyIcon?: JQuery) {
     const nattyApi = new NattyAPI(postId);
-    nattyApi.Watch().subscribe(reported => reported ? globals.showInlineElement(nattyIcon) : nattyIcon.addClass('d-none'));
+    nattyIcon
+        ? nattyApi.Watch().subscribe(reported => reported ? globals.showInlineElement(nattyIcon) : nattyIcon.addClass('d-none'))
+        : nattyApi.Watch();
 
     return {
         name: 'Natty',
@@ -276,6 +278,17 @@ async function waitForFlagPromise(flagPromise: Promise<string>, reportedIcon: JQ
         }
     } catch(error) {
         displayErrorFlagged('Failed to flag post', error);
+    }
+}
+
+function getHumanFromDisplayName(displayName: string) {
+    switch (displayName) {
+        case 'AnswerNotAnAnswer': return 'as NAA';
+        case 'PostOffensive': return 'as R/A';
+        case 'PostSpam': return 'as spam';
+        case 'NoFlag': return '';
+        case 'PostOther': return 'for moderator attention';
+        default: return '';
     }
 }
 
@@ -528,19 +541,20 @@ async function SetupPostPage() {
 
             const isEnabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationWatchFlags);
             WatchFlags().subscribe(xhr => {
-                if (!isEnabled || autoFlagging) return;
+                if (!isEnabled || autoFlagging || xhr.status !== 200) return;
 
                 const matches = globals.getFlagsUrlRegex(post.postId).exec(xhr.responseURL);
-                if (!matches || xhr.status !== 200) return;
+                if (!matches) return;
 
                 const flagType = {
                     Id: 0,
                     ReportType: matches[1] as 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther',
-                    DisplayName: matches[1]
+                    DisplayName: matches[1],
+                    Human: getHumanFromDisplayName(matches[1]) as any
                 };
 
                 handleFlag(flagType, reporters, answerTime, questionTime);
-                displaySuccessFlagged(reportedIcon, flagType.ReportType);
+                displaySuccessFlagged(reportedIcon, flagType.Human);
             });
 
             const linkDisabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationLinkDisabled);
@@ -595,7 +609,7 @@ async function SetupPostPage() {
 
 const metaSmokeManualKey = 'MetaSmoke.ManualKey';
 
-async function Setup() {
+function Setup() {
     const manualKey = localStorage.getItem(metaSmokeManualKey);
     if (manualKey) {
         localStorage.removeItem(metaSmokeManualKey);
@@ -612,56 +626,48 @@ async function Setup() {
 
     const watchedQueuesEnabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationWatchQueues);
     const postDetails: { questionTime: Date, answerTime: Date }[] = [];
-    if (watchedQueuesEnabled) {
-        WatchRequests().subscribe((xhr) => {
-            const parseReviewDetails = (review: string) => {
-                const reviewJson = JSON.parse(review);
-                const postId = reviewJson.postId;
-                const content = $(reviewJson.content);
-                postDetails[postId] = {
-                    questionTime: parseDate($('.post-signature.owner .user-action-time span', content).attr('title')),
-                    answerTime: parseDate($('.user-info .user-action-time span', content).attr('title'))
-                };
+    if (!watchedQueuesEnabled) return;
+
+    WatchRequests().subscribe((xhr) => {
+        if (xhr.status !== 200) return;
+
+        const parseReviewDetails = (review: string) => {
+            const reviewJson = JSON.parse(review);
+            const postId = reviewJson.postId;
+            const content = $(reviewJson.content);
+            postDetails[postId] = {
+                questionTime: parseDate($('.post-signature.owner .user-action-time span', content).attr('title')),
+                answerTime: parseDate($('.user-info .user-action-time span', content).attr('title'))
             };
+        };
 
-            // We can't just parse the page after a recommend/delete request, as the page will have sometimes already updated
-            // This means we're actually grabbing the information for the following review
+        // We can't just parse the page after a recommend/delete request, as the page will have sometimes already updated
+        // This means we're actually grabbing the information for the following review
 
-            // So, we watch the next-task requests and remember which post we were looking at for when a delete/recommend-delete vote comes through.
-            // next-task is invoked when visiting the review queue
-            // task-reviewed is invoked when making a response
-            const isReviewItem = globals.isReviewItemRegex.exec(xhr.responseURL);
-            if (isReviewItem && xhr.status === 200) {
-                const review = xhr.responseText;
-                parseReviewDetails(review);
-                return;
-            }
+        // So, we watch the next-task requests and remember which post we were looking at for when a delete/recommend-delete vote comes through.
+        // next-task is invoked when visiting the review queue
+        // task-reviewed is invoked when making a response
+        const isReviewItem = globals.isReviewItemRegex.exec(xhr.responseURL);
+        if (isReviewItem) {
+            const review = xhr.responseText;
+            parseReviewDetails(review);
+            return;
+        }
 
-            const matches = globals.isDeleteVoteRegex.exec(xhr.responseURL);
-            if (!matches || xhr.status !== 200) return;
+        const matches = globals.isDeleteVoteRegex.exec(xhr.responseURL);
+        if (!matches) return;
 
-            const postIdStr = matches[1] || matches[2];
-            const postId = parseInt(postIdStr, 10);
-            const currentPostDetails = postDetails[postId];
-            if (!currentPostDetails || !$('.answers-subheader').length) return;
+        const postIdStr = matches[1] || matches[2];
+        const postId = parseInt(postIdStr, 10);
+        const currentPostDetails = postDetails[postId];
+        if (!currentPostDetails || !$('.answers-subheader').length) return;
 
-            const nattyApi = new NattyAPI(postId);
-            nattyApi.Watch();
-
-            handleFlag({ Id: 0, ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' }, [
-                {
-                    name: 'Natty',
-                    ReportNaa: (answerDate: Date, questionDate: Date) => nattyApi.ReportNaa(answerDate, questionDate),
-                    ReportRedFlag: () => nattyApi.ReportRedFlag(),
-                    ReportLooksFine: () => nattyApi.ReportLooksFine(),
-                    ReportNeedsEditing: () => nattyApi.ReportNeedsEditing(),
-                    ReportVandalism: () => Promise.resolve(false),
-                    ReportDuplicateAnswer: () => Promise.resolve(false),
-                    ReportPlagiarism: () => Promise.resolve(false)
-                }
-            ], currentPostDetails.answerTime, currentPostDetails.questionTime);
-        });
-    }
+        handleFlag(
+            { Id: 0, ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' },
+            [ setupNattyApi(postId) ],
+            currentPostDetails.answerTime, currentPostDetails.questionTime
+        );
+    });
 }
 
 $(() => {
@@ -669,7 +675,7 @@ $(() => {
     async function actionWatcher() {
         if (!started) {
             started = true;
-            await Setup();
+            Setup();
         }
         $(window).off('focus', actionWatcher);
         $(window).off('mousemove', actionWatcher);

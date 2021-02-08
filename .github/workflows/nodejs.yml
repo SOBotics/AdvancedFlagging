@@ -1,4 +1,4 @@
-name: Build AdvancedFlagging
+name: build
 
 on: [push, pull_request]
 
@@ -7,15 +7,11 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [12.x, 14.x, 15.x]
-
     steps:
     - uses: actions/checkout@v2
-    - name: Using Node ${{ matrix.node-version }}
+    - name: Using Node 14 
       uses: actions/setup-node@v1
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 14
     - run: npm install 
     - run: npm run build

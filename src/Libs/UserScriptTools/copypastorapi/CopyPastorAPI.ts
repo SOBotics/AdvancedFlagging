@@ -1,6 +1,6 @@
 declare const GM_xmlhttpRequest: any;
 
-import { ReplaySubject, Observable, Subject } from 'rxjs';
+import { ReplaySubject, Observable, Subject, firstValueFrom } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { ChatApi } from '@userscriptTools/chatapi/ChatApi';
 import * as globals from '../../../GlobalVars';
@@ -49,8 +49,8 @@ export class CopyPastorAPI {
         return this.subject;
     }
 
-    public Promise(): Promise<CopyPastorFindTargetResponseItem[]> {
-        return this.replaySubject.pipe(take(1)).toPromise();
+    public async Promise(): Promise<CopyPastorFindTargetResponseItem[]> {
+        return await firstValueFrom(this.replaySubject.pipe(take(1)));
     }
 
     public async ReportTruePositive() {

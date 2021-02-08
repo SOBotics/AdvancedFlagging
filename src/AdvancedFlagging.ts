@@ -394,7 +394,8 @@ async function BuildFlaggingDialog(element: JQuery,
                     copyPastorPromise.then(async items => {
                         // If it somehow changed within the promise, check again
                         if (flagType.Enabled) {
-                            const hasItems = items.length > 0;
+                            const hasItems = !!items.length;
+                            if (!hasItems) return;
                             // https://github.com/SOBotics/AdvancedFlagging/issues/16
                             const isRepost = await getIsReportOrPlagiarism(items[0].post_id);
                             const isEnabled = flagType.Enabled(hasItems, isRepost);

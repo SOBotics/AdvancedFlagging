@@ -1,4 +1,4 @@
-import { Observable, ReplaySubject } from 'rxjs';
+import { Observable, ReplaySubject, firstValueFrom } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
 import * as globals from '../../../GlobalVars';
@@ -118,13 +118,13 @@ export class MetaSmokeAPI {
         return `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'questions'}/${postId}`;
     }
 
-    private static async GetSmokeyId(postId: number, postType: 'Answer' | 'Question') {
+    private static async GetSmokeyId(postId: number, postType: 'Answer' | 'Question'): Promise<number> {
         const observableKey = this.GetObservableKey(postId, postType);
         const observable = MetaSmokeAPI.ObservableLookup[observableKey];
         if (observable) {
-            return observable.pipe(take(1)).toPromise();
+            return await firstValueFrom(observable.pipe(take(1)));
         }
-        return null;
+        return 0;
     }
 
     private static GetObservableKey(postId: number, postType: 'Answer' | 'Question') {
@@ -162,7 +162,7 @@ export class MetaSmokeAPI {
 
     public async ReportNaa(postId: number, postType: 'Answer' | 'Question') {
         const smokeyid = await MetaSmokeAPI.GetSmokeyId(postId, postType);
-        if (smokeyid != null) {
+        if (smokeyid) {
             await this.SendFeedback(smokeyid, 'naa-');
             return true;
         }
@@ -170,7 +170,7 @@ export class MetaSmokeAPI {
     }
     public async ReportRedFlag(postId: number, postType: 'Answer' | 'Question') {
         const smokeyid = await MetaSmokeAPI.GetSmokeyId(postId, postType);
-        if (smokeyid != null) {
+        if (smokeyid) {
             await this.SendFeedback(smokeyid, 'tpu-');
             return true;
         } else {
@@ -202,7 +202,7 @@ export class MetaSmokeAPI {
     }
     public async ReportLooksFine(postId: number, postType: 'Answer' | 'Question') {
         const smokeyid = await MetaSmokeAPI.GetSmokeyId(postId, postType);
-        if (smokeyid != null) {
+        if (smokeyid) {
             await this.SendFeedback(smokeyid, 'fp-');
             return true;
         }
@@ -210,7 +210,7 @@ export class MetaSmokeAPI {
     }
     public async ReportNeedsEditing(postId: number, postType: 'Answer' | 'Question') {
         const smokeyid = await MetaSmokeAPI.GetSmokeyId(postId, postType);
-        if (smokeyid != null) {
+        if (smokeyid) {
             await this.SendFeedback(smokeyid, 'fp-');
             return true;
         }
@@ -219,7 +219,7 @@ export class MetaSmokeAPI {
 
     public async ReportVandalism(postId: number, postType: 'Answer' | 'Question') {
         const smokeyid = await MetaSmokeAPI.GetSmokeyId(postId, postType);
-        if (smokeyid != null) {
+        if (smokeyid) {
             await this.SendFeedback(smokeyid, 'tp-');
             return true;
         }

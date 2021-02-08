@@ -1,6 +1,6 @@
 declare const GM_xmlhttpRequest: any;
 
-import { Observable, Subject, ReplaySubject } from 'rxjs';
+import { Observable, Subject, ReplaySubject,firstValueFrom } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { IsStackOverflow } from '@userscriptTools/sotools/sotools';
 import { ChatApi } from '@userscriptTools/chatapi/ChatApi';
@@ -131,7 +131,7 @@ export class NattyAPI {
     }
 
     private async WasReported() {
-        return this.replaySubject.pipe(take(1)).toPromise();
+        return await firstValueFrom(this.replaySubject.pipe(take(1)));
     }
 
     private DaysBetween(first: Date, second: Date) {

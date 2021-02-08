@@ -11,6 +11,7 @@ import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
 import * as globals from './GlobalVars';
 
 declare const GM_addStyle: any;
+declare const GM_xmlhttpRequest: any;
 declare const StackExchange: StackExchangeGlobal;
 declare const Svg: any;
 
@@ -82,7 +83,7 @@ function handleFlagAndComment(postId: number, flag: FlagType,
         // eslint-disable-next-line no-async-promise-executor
         result.FlagPromise = new Promise(async (resolve, reject) => {
             const flagText = await copyPastorPromise.then(results => {
-                if (flag.GetCustomFlagText && results.length > 0) {
+                if (flag.GetCustomFlagText && results.length) {
                     return flag.GetCustomFlagText(results[0]);
                 }
             });
@@ -293,6 +294,22 @@ function getHumanFromDisplayName(displayName: string) {
     }
 }
 
+function getIsReportOrPlagiarism(copypastorPostId: string) {
+    return new Promise<boolean>((resolve, reject) => {
+        GM_xmlhttpRequest({
+            method: 'GET',
+            url: `${globals.copyPastorServer}/posts/${copypastorPostId}`,
+            onload: (response: any) => {
+                const responseParsed = $(response.responseText);
+                resolve(!!responseParsed.text().match('Reposted'));
+            },
+            onerror: (response: any) => {
+                reject(response);
+            },
+        });
+    });
+}
+
 interface Reporter {
     name: string;
     ReportNaa(answerDate: Date, questionDate: Date): Promise<boolean>;
@@ -374,11 +391,13 @@ async function BuildFlaggingDialog(element: JQuery,
             disableLink();
             if (!enabledFlagIds || enabledFlagIds.indexOf(flagType.Id) > -1) {
                 if (flagType.Enabled) {
-                    copyPastorPromise.then(items => {
+                    copyPastorPromise.then(async items => {
                         // If it somehow changed within the promise, check again
                         if (flagType.Enabled) {
                             const hasItems = items.length > 0;
-                            const isEnabled = flagType.Enabled(hasItems);
+                            // https://github.com/SOBotics/AdvancedFlagging/issues/16
+                            const isRepost = await getIsReportOrPlagiarism(items[0].post_id);
+                            const isEnabled = flagType.Enabled(hasItems, isRepost);
                             if (isEnabled) enableLink();
                         } else {
                             enableLink();

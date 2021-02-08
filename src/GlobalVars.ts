@@ -1,8 +1,7 @@
-import { StackExchangeGlobal } from '@userscriptTools/sotools/StackExchangeConfiguration';
 import { displayToaster } from './AdvancedFlagging';
 
 declare const Svg: any;
-declare const StackExchange: StackExchangeGlobal;
+declare const StackExchange: any;
 
 export const soboticsRoomId = 111347;
 export const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';

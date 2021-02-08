@@ -673,7 +673,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     GetCustomFlagText: (copyPastorItem) => `The answer is a repost of their other answer https:${copyPastorItem.target_url}, but as there are slight differences as seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}, an auto flag wouldn't be raised.`
                 },
                 {
-                    Id: 18,
+                    Id: 5,
                     DisplayName: 'Bad attribution',
                     ReportType: 'PostOther',
                     Human: 'for moderator attention',
@@ -687,7 +687,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             AppliesTo: ['Answer'],
             FlagTypes: [
                 {
-                    Id: 5,
+                    Id: 6,
                     DisplayName: 'Link Only',
                     ReportType: 'AnswerNotAnAnswer',
                     Human: 'as NAA',
@@ -698,7 +698,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         '[Answers that are little more than a link may be deleted.](/help/deleted-answers)'
                 },
                 {
-                    Id: 6,
+                    Id: 7,
                     DisplayName: 'Not an answer',
                     ReportType: 'AnswerNotAnAnswer',
                     Human: 'as NAA',
@@ -715,7 +715,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             'See: [Ask questions, get answers, no distractions](/tour)'
                 },
                 {
-                    Id: 7,
+                    Id: 8,
                     DisplayName: 'Thanks',
                     ReportType: 'AnswerNotAnAnswer',
                     Human: 'as NAA',
@@ -734,7 +734,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                 'See [Why is voting important](/help/why-vote).'
                 },
                 {
-                    Id: 8,
+                    Id: 9,
                     DisplayName: 'Me too',
                     ReportType: 'AnswerNotAnAnswer',
                     Human: 'as NAA',
@@ -746,14 +746,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         'once you have enough [reputation](/help/whats-reputation).',
                 },
                 {
-                    Id: 9,
+                    Id: 10,
                     DisplayName: 'Library',
                     ReportType: 'AnswerNotAnAnswer',
                     Human: 'as NAA',
                     GetComment: () => 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](https://meta.stackoverflow.com/a/251605) in the answer itself.'
                 },
                 {
-                    Id: 10,
+                    Id: 11,
                     DisplayName: 'Comment',
                     ReportType: 'AnswerNotAnAnswer',
                     Human: 'as NAA',
@@ -765,21 +765,21 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             'This does not provide an answer to the question. Please write a comment instead.'
                 },
                 {
-                    Id: 14,
+                    Id: 12,
                     DisplayName: 'Duplicate',
                     ReportType: 'AnswerNotAnAnswer',
                     Human: 'as NAA',
                     GetComment: () => 'Instead of posting an answer which merely links to another answer, please instead [flag the question](/help/privileges/flag-posts) as a duplicate.'
                 },
                 {
-                    Id: 17,
+                    Id: 13,
                     DisplayName: 'Non English',
                     ReportType: 'AnswerNotAnAnswer',
                     Human: 'as NAA',
                     GetComment: () => 'Welcome to Stack Overflow. Please write your answer in English, as Stack Overflow is an [English only site](https://meta.stackoverflow.com/a/297680).'
                 },
                 {
-                    Id: 18,
+                    Id: 14,
                     DisplayName: 'Should be an edit',
                     ReportType: 'AnswerNotAnAnswer',
                     Human: 'as NAA',
@@ -792,17 +792,17 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             AppliesTo: ['Answer', 'Question'],
             FlagTypes: [
                 {
-                    Id: 11,
+                    Id: 15,
                     DisplayName: 'Looks Fine',
                     ReportType: 'NoFlag'
                 },
                 {
-                    Id: 12,
+                    Id: 16,
                     DisplayName: 'Needs Editing',
                     ReportType: 'NoFlag'
                 },
                 {
-                    Id: 13,
+                    Id: 17,
                     DisplayName: 'Vandalism',
                     ReportType: 'NoFlag'
                 }
@@ -1055,7 +1055,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.NattyAPI = void 0;
-    const soboticsRoomId = 111347;
     class NattyAPI {
         constructor(answerId) {
             this.chat = new ChatApi_1.ChatApi();
@@ -1105,7 +1104,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return false;
             }
             if (await this.WasReported()) {
-                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} tp`);
+                await this.chat.SendMessage(globals.soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} tp`);
                 return true;
             }
             else {
@@ -1120,7 +1119,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 if (answerAge > 30 || daysPostedAfterQuestion < 30) {
                     return false;
                 }
-                const promise = this.chat.SendMessage(soboticsRoomId, `@Natty report https://stackoverflow.com/a/${this.answerId}`);
+                const promise = this.chat.SendMessage(globals.soboticsRoomId, `@Natty report https://stackoverflow.com/a/${this.answerId}`);
                 await promise.then(() => this.subject.next(true));
                 return true;
             }
@@ -1130,7 +1129,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return false;
             }
             if (await this.WasReported()) {
-                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} tp`);
+                await this.chat.SendMessage(globals.soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} tp`);
                 return true;
             }
             return false;
@@ -1140,7 +1139,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return false;
             }
             if (await this.WasReported()) {
-                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} fp`);
+                await this.chat.SendMessage(globals.soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} fp`);
                 return true;
             }
             return false;
@@ -1150,7 +1149,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return false;
             }
             if (await this.WasReported()) {
-                await this.chat.SendMessage(soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} ne`);
+                await this.chat.SendMessage(globals.soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} ne`);
                 return true;
             }
             return false;
@@ -9691,7 +9690,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.ChatApi = void 0;
     class ChatApi {
         constructor(chatUrl = 'https://chat.stackoverflow.com') {
-            this.chatRoomUrl = `${chatUrl}`;
+            this.chatRoomUrl = chatUrl;
         }
         static GetExpiryDate() {
             const expiryDate = new Date();
@@ -9782,20 +9781,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             const result = await getterPromise();
             GreaseMonkeyCache.StoreInCache(cacheKey, result, expiresAt);
             return result;
-        }
-        static ClearAll(regexes, condition) {
-            GM_listValues().forEach(key => {
-                if (!regexes.filter(r => key.match(r)).length)
-                    return;
-                if (condition) {
-                    const val = GM_getValue(key, undefined);
-                    if (condition(val))
-                        GreaseMonkeyCache.Unset(key);
-                }
-                else {
-                    GreaseMonkeyCache.Unset(key);
-                }
-            });
         }
         static GetFromCache(cacheKey) {
             const jsonItem = GM_getValue(cacheKey, undefined);
@@ -10460,7 +10445,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 SectionName: 'Flags',
                 Items: GetFlagSettings(),
                 onSave: () => {
-                    const flagOptions = $('.af-section-flags').find('input').get().filter(el => $(el).prop('checked')).map(el => Number($(el).attr('id').match(/\d+/)));
+                    const flagOptions = $('.af-section-flags').find('input').get()
+                        .filter(el => $(el).prop('checked'))
+                        .map(el => Number($(el).attr('id').match(/\d+/))).sort()
+                        .sort((a, b) => a - b);
                     GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagOptions);
                 }
             },
@@ -10489,7 +10477,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             setTimeout(window.location.reload.bind(window.location), 500);
         });
         $('body').append(overlayModal);
-        $('label[for="flag-type-12"]').parent().removeClass('w25').css('width', '20.8%'); // because without it, the CSS breaks
+        $('label[for="flag-type-16"]').parent().removeClass('w25').css('width', '20.8%'); // because without it, the CSS breaks
         const flagOptions = $('.af-section-flags').children('div');
         for (let i = 0; i < flagOptions.length; i += 5) {
             flagOptions.slice(i, i + 5).wrapAll(globals.inlineCheckboxesWrapper.clone());

@@ -60,7 +60,10 @@ function BuildConfigurationOverlay() {
             SectionName: 'Flags',
             Items: GetFlagSettings(),
             onSave: () => {
-                const flagOptions = $('.af-section-flags').find('input').get().filter(el => $(el).prop('checked')).map(el => Number($(el).attr('id').match(/\d+/)));
+                const flagOptions = $('.af-section-flags').find('input').get()
+                                                          .filter(el => $(el).prop('checked'))
+                                                          .map(el => Number($(el).attr('id').match(/\d+/))).sort()
+                                                          .sort((a, b) => a - b);
                 GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagOptions);
             }
         },
@@ -92,7 +95,7 @@ function BuildConfigurationOverlay() {
     });
 
     $('body').append(overlayModal);
-    $('label[for="flag-type-12"]').parent().removeClass('w25').css('width', '20.8%'); // because without it, the CSS breaks
+    $('label[for="flag-type-16"]').parent().removeClass('w25').css('width', '20.8%'); // because without it, the CSS breaks
     const flagOptions = $('.af-section-flags').children('div');
     for (let i = 0; i < flagOptions.length; i += 5) {
         flagOptions.slice(i, i + 5).wrapAll(globals.inlineCheckboxesWrapper.clone());

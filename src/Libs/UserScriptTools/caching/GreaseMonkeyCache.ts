@@ -1,6 +1,5 @@
 import { ExpiryingCacheItem } from '@userscriptTools/caching/ExpiringCacheItem';
 
-declare const GM_listValues: () => string[];
 declare const GM_getValue: (key: string, defaultValue: any) => any;
 declare const GM_setValue: (key: string, value: any) => void;
 declare const GM_deleteValue: (key: string) => void;
@@ -13,19 +12,6 @@ export class GreaseMonkeyCache {
         const result = await getterPromise();
         GreaseMonkeyCache.StoreInCache(cacheKey, result, expiresAt);
         return result;
-    }
-
-    public static ClearAll(regexes: RegExp[], condition?: (item: string | null) => boolean) {
-        GM_listValues().forEach(key => {
-            if (!regexes.filter(r => key.match(r)).length) return;
-
-            if (condition) {
-                const val = GM_getValue(key, undefined);
-                if (condition(val)) GreaseMonkeyCache.Unset(key);
-            } else {
-                GreaseMonkeyCache.Unset(key);
-            }
-        });
     }
 
     public static GetFromCache<T>(cacheKey: string): T | undefined {

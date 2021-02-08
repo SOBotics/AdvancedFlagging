@@ -62,7 +62,7 @@ export const flagCategories: FlagCategory[] = [
                 GetCustomFlagText: (copyPastorItem) => `The answer is a repost of their other answer https:${copyPastorItem.target_url}, but as there are slight differences as seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}, an auto flag wouldn't be raised.`
             },
             {
-                Id: 18,
+                Id: 5,
                 DisplayName: 'Bad attribution',
                 ReportType: 'PostOther',
                 Human: 'for moderator attention',
@@ -76,7 +76,7 @@ export const flagCategories: FlagCategory[] = [
         AppliesTo: ['Answer'],
         FlagTypes: [
             {
-                Id: 5,
+                Id: 6,
                 DisplayName: 'Link Only',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
@@ -87,7 +87,7 @@ export const flagCategories: FlagCategory[] = [
                     '[Answers that are little more than a link may be deleted.](/help/deleted-answers)'
             },
             {
-                Id: 6,
+                Id: 7,
                 DisplayName: 'Not an answer',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
@@ -104,7 +104,7 @@ export const flagCategories: FlagCategory[] = [
                     'See: [Ask questions, get answers, no distractions](/tour)'
             },
             {
-                Id: 7,
+                Id: 8,
                 DisplayName: 'Thanks',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
@@ -123,7 +123,7 @@ export const flagCategories: FlagCategory[] = [
                     'See [Why is voting important](/help/why-vote).'
             },
             {
-                Id: 8,
+                Id: 9,
                 DisplayName: 'Me too',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
@@ -135,14 +135,14 @@ export const flagCategories: FlagCategory[] = [
                     'once you have enough [reputation](/help/whats-reputation).',
             },
             {
-                Id: 9,
+                Id: 10,
                 DisplayName: 'Library',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
                 GetComment: () => 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](https://meta.stackoverflow.com/a/251605) in the answer itself.'
             },
             {
-                Id: 10,
+                Id: 11,
                 DisplayName: 'Comment',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
@@ -154,21 +154,21 @@ export const flagCategories: FlagCategory[] = [
                     'This does not provide an answer to the question. Please write a comment instead.'
             },
             {
-                Id: 14,
+                Id: 12,
                 DisplayName: 'Duplicate',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
                 GetComment: () => 'Instead of posting an answer which merely links to another answer, please instead [flag the question](/help/privileges/flag-posts) as a duplicate.'
             },
             {
-                Id: 17,
+                Id: 13,
                 DisplayName: 'Non English',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
                 GetComment: () => 'Welcome to Stack Overflow. Please write your answer in English, as Stack Overflow is an [English only site](https://meta.stackoverflow.com/a/297680).'
             },
             {
-                Id: 18,
+                Id: 14,
                 DisplayName: 'Should be an edit',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
@@ -181,17 +181,17 @@ export const flagCategories: FlagCategory[] = [
         AppliesTo: ['Answer', 'Question'],
         FlagTypes: [
             {
-                Id: 11,
+                Id: 15,
                 DisplayName: 'Looks Fine',
                 ReportType: 'NoFlag'
             },
             {
-                Id: 12,
+                Id: 16,
                 DisplayName: 'Needs Editing',
                 ReportType: 'NoFlag'
             },
             {
-                Id: 13,
+                Id: 17,
                 DisplayName: 'Vandalism',
                 ReportType: 'NoFlag'
             }

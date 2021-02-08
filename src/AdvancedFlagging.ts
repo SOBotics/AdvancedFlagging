@@ -1,5 +1,4 @@
 import { FlagType, flagCategories } from './FlagTypes';
-import { StackExchangeGlobal } from '@userscriptTools/sotools/StackExchangeConfiguration';
 import { IsStackOverflow, parseQuestionsAndAnswers, parseDate } from '@userscriptTools/sotools/sotools';
 import { NattyAPI } from '@userscriptTools/nattyapi/NattyApi';
 import { GenericBotAPI } from '@userscriptTools/genericbotapi/GenericBotAPI';
@@ -12,7 +11,7 @@ import * as globals from './GlobalVars';
 
 declare const GM_addStyle: any;
 declare const GM_xmlhttpRequest: any;
-declare const StackExchange: StackExchangeGlobal;
+declare const StackExchange: any;
 declare const Svg: any;
 
 function SetupStyles() {

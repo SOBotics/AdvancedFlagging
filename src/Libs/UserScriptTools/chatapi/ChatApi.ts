@@ -15,7 +15,7 @@ export class ChatApi {
     private chatRoomUrl: string;
 
     public constructor(chatUrl = 'https://chat.stackoverflow.com') {
-        this.chatRoomUrl = `${chatUrl}`;
+        this.chatRoomUrl = chatUrl;
     }
 
     public async GetChannelFKey(roomId: number): Promise<string> {

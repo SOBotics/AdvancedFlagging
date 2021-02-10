@@ -4,7 +4,6 @@ import { NattyAPI } from '@userscriptTools/nattyapi/NattyApi';
 import { GenericBotAPI } from '@userscriptTools/genericbotapi/GenericBotAPI';
 import { MetaSmokeAPI } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
 import { CopyPastorAPI, CopyPastorFindTargetResponseItem } from '@userscriptTools/copypastorapi/CopyPastorAPI';
-import { WatchFlags, WatchRequests } from '@userscriptTools/sotools/RequestWatcher';
 import { SetupConfiguration } from 'Configuration';
 import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
 import * as globals from './GlobalVars';
@@ -187,9 +186,9 @@ function showComments(postId: number, data: any) {
 
 function setupNattyApi(postId: number, nattyIcon?: JQuery) {
     const nattyApi = new NattyAPI(postId);
-    nattyIcon
-        ? nattyApi.Watch().subscribe(reported => reported ? globals.showInlineElement(nattyIcon) : nattyIcon.addClass('d-none'))
-        : nattyApi.Watch();
+    if (nattyIcon) {
+        nattyApi.WasReported().then(reported => reported ? globals.showInlineElement(nattyIcon) : nattyIcon.addClass('d-none'));
+    }
 
     return {
         name: 'Natty',
@@ -219,25 +218,21 @@ function setupGenericBotApi(postId: number) {
 
 function setupMetasmokeApi(postId: number, postType: 'Answer' | 'Question', smokeyIcon: JQuery) {
     const metaSmoke = new MetaSmokeAPI();
-    metaSmoke.Watch(postId, postType).subscribe(id => {
-        if (!id) {
-            smokeyIcon.addClass('d-none');
-            return;
-        }
-
-        smokeyIcon.click(() => {
-            window.open(`https://metasmoke.erwaysoftware.com/post/${id}`, '_blank');
-        });
+    const isReported = MetaSmokeAPI.getSmokeyId(postId);
+    if (!isReported) {
+        smokeyIcon.addClass('d-none');
+    } else {
+        smokeyIcon.click(() => window.open(`https://metasmoke.erwaysoftware.com/post/${postId}`, '_blank'));
         globals.showInlineElement(smokeyIcon);
-    });
+    }
 
     return {
         name: 'Smokey',
-        ReportNaa: () => metaSmoke.ReportNaa(postId, postType),
+        ReportNaa: () => metaSmoke.ReportNaa(postId),
         ReportRedFlag: () => metaSmoke.ReportRedFlag(postId, postType),
-        ReportLooksFine: () => metaSmoke.ReportLooksFine(postId, postType),
-        ReportNeedsEditing: () => metaSmoke.ReportNeedsEditing(postId, postType),
-        ReportVandalism: () => metaSmoke.ReportVandalism(postId, postType),
+        ReportLooksFine: () => metaSmoke.ReportLooksFine(postId),
+        ReportNeedsEditing: () => metaSmoke.ReportNeedsEditing(postId),
+        ReportVandalism: () => metaSmoke.ReportVandalism(postId),
         ReportDuplicateAnswer: () => Promise.resolve(false),
         ReportPlagiarism: () => Promise.resolve(false)
     };
@@ -521,7 +516,6 @@ async function SetupPostPage() {
 
         const copyPastorIcon = globals.getGuttenbergIcon();
         const copyPastorApi = new CopyPastorAPI(post.postId, globals.copyPastorKey);
-        const copyPastorObservable = copyPastorApi.Watch();
 
         const smokeyIcon = globals.getSmokeyIcon();
         const reporters: Reporter[] = [];
@@ -530,7 +524,7 @@ async function SetupPostPage() {
             reporters.push(setupGenericBotApi(post.postId));
             reporters.push(setupGuttenbergApi(copyPastorApi));
 
-            copyPastorObservable.subscribe(items => {
+            copyPastorApi.postReportedPromise().then(items => {
                 if (!items.length) {
                     copyPastorIcon.addClass('d-none');
                     return;
@@ -542,7 +536,7 @@ async function SetupPostPage() {
                         window.open('https://copypastor.sobotics.org/posts/' + item.post_id);
                     })
                 );
-            });
+            }).catch(error => globals.displayError(`${error} received from CopyPastor.`));
         }
 
         reporters.push(setupMetasmokeApi(post.postId, post.type, smokeyIcon));
@@ -560,8 +554,8 @@ async function SetupPostPage() {
             const deleted = post.element.hasClass('deleted-answer');
 
             const isEnabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationWatchFlags);
-            WatchFlags().subscribe(xhr => {
-                if (!isEnabled || autoFlagging || xhr.status !== 200) return;
+            globals.addXHRListener(xhr => {
+                if (!isEnabled || autoFlagging || xhr.status !== 200 || !globals.flagsUrlRegex.exec(xhr.responseURL)) return;
 
                 const matches = globals.getFlagsUrlRegex(post.postId).exec(xhr.responseURL);
                 if (!matches) return;
@@ -584,7 +578,7 @@ async function SetupPostPage() {
                     reportedIcon,
                     performedActionIcon,
                     reporters,
-                    copyPastorApi.Promise()
+                    copyPastorApi.postReportedPromise()
                 );
 
                 advancedFlaggingLink.append(dropDown);
@@ -627,8 +621,8 @@ async function SetupPostPage() {
     });
 }
 
-function Setup() {
-    MetaSmokeAPI.Setup(globals.metaSmokeKey);
+async function Setup() {
+    await MetaSmokeAPI.Setup(globals.metaSmokeKey);
 
     SetupPostPage();
     SetupStyles();
@@ -640,7 +634,7 @@ function Setup() {
     const postDetails: { questionTime: Date, answerTime: Date }[] = [];
     if (!watchedQueuesEnabled) return;
 
-    WatchRequests().subscribe((xhr) => {
+    globals.addXHRListener((xhr) => {
         if (xhr.status !== 200) return;
 
         const parseReviewDetails = (review: string) => {
@@ -687,7 +681,7 @@ $(() => {
     async function actionWatcher() {
         if (!started) {
             started = true;
-            Setup();
+            await Setup();
         }
         $(window).off('focus', actionWatcher);
         $(window).off('mousemove', actionWatcher);

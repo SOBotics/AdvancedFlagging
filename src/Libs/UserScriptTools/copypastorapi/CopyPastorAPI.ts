@@ -1,9 +1,7 @@
-declare const GM_xmlhttpRequest: any;
-
-import { ReplaySubject, Observable, Subject, firstValueFrom } from 'rxjs';
-import { take } from 'rxjs/operators';
 import { ChatApi } from '@userscriptTools/chatapi/ChatApi';
 import * as globals from '../../../GlobalVars';
+
+declare const GM_xmlhttpRequest: any;
 
 export interface CopyPastorFindTargetResponseItem {
     post_id: string;
@@ -19,17 +17,16 @@ export type CopyPastorFindTargetResponse = {
 };
 
 export class CopyPastorAPI {
-    private subject: Subject<CopyPastorFindTargetResponseItem[]>;
-    private replaySubject: ReplaySubject<CopyPastorFindTargetResponseItem[]>;
+    private answerId: number;
+    private key: string;
 
-    constructor(private answerId: number, private key: string) {
-        this.subject = new Subject<CopyPastorFindTargetResponseItem[]>();
-        this.replaySubject = new ReplaySubject<CopyPastorFindTargetResponseItem[]>(1);
-        this.subject.subscribe(this.replaySubject);
+    constructor(id: number, serverKey: string) {
+        this.answerId = id;
+        this.key = serverKey;
     }
 
-    public Watch(): Observable<CopyPastorFindTargetResponseItem[]> {
-        new Promise<CopyPastorFindTargetResponseItem[]>((resolve, reject) => {
+    public postReportedPromise(): Promise<CopyPastorFindTargetResponseItem[]> {
+        return new Promise<CopyPastorFindTargetResponseItem[]>((resolve, reject) => {
             const url = `${globals.copyPastorServer}/posts/findTarget?url=//${window.location.hostname}/a/${this.answerId}`;
             GM_xmlhttpRequest({
                 method: 'GET',
@@ -42,30 +39,22 @@ export class CopyPastorAPI {
                     reject(response);
                 },
             });
-        })
-        .then(r => this.subject.next(r))
-        .catch(err => this.subject.error(err));
-
-        return this.subject;
-    }
-
-    public async Promise(): Promise<CopyPastorFindTargetResponseItem[]> {
-        return await firstValueFrom(this.replaySubject.pipe(take(1)));
+        });
     }
 
     public async ReportTruePositive() {
-        return this.SendFeedback('tp');
+        return await this.SendFeedback('tp');
     }
 
     public async ReportFalsePositive() {
-        return this.SendFeedback('fp');
+        return await this.SendFeedback('fp');
     }
 
     private async SendFeedback(type: 'tp' | 'fp') {
-        const username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
+        const username = globals.username;
         const chatApi = new ChatApi();
         const chatId = chatApi.GetChatUserId();
-        const results = await this.Promise();
+        const results = await this.postReportedPromise();
 
         const payloads = results.map(result => {
             const postId = result.post_id;
@@ -100,6 +89,7 @@ export class CopyPastorAPI {
                 });
             });
         });
+
         const allResults = await Promise.all(promises);
         if (!allResults.length) return false;
         return allResults.every(result => result);

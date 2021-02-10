@@ -47,11 +47,7 @@ export class GenericBotAPI {
                 resolve(false);
             }
 
-            if (!$('.top-bar .my-profile .gravatar-wrapper-24').length) {
-                reject('Flag Tracker: Could not find username.');
-            }
-
-            const flaggerName = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
+            const flaggerName = globals.username;
             const contentHash = this.computeContentHash($('#answer-' + this.answerId + ' .js-post-body').html().trim());
 
             GM_xmlhttpRequest({

@@ -9,6 +9,7 @@ export const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
 export const copyPastorServer = 'https://copypastor.sobotics.org';
 export const genericBotKey = 'Cm45BSrt51FR3ju';
 export const nattyFeedbackUrl = 'https://logs.sobotics.org/napi/api/feedback';
+export const username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
 
 export const ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
 export const ConfigurationDefaultNoFlag = 'AdvancedFlagging.Configuration.DefaultNoFlag';
@@ -32,6 +33,7 @@ export const displayStacksToast = (message: string, type: string) => StackExchan
 export const popupDelay = 4000;
 export const isReviewItemRegex = /(\/review\/next-task)|(\/review\/task-reviewed\/)/;
 export const isDeleteVoteRegex = /(\d+)\/vote\/10|(\d+)\/recommend-delete/;
+export const flagsUrlRegex = /flags\/posts\/\d+\/add\/[a-zA-Z]+/;
 export const getFlagsUrlRegex = (postId: number) => new RegExp(`/flags/posts/${postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`);
 
 export const showElement = (element: JQuery) => element.addClass('d-block').removeClass('d-none');
@@ -43,7 +45,7 @@ export const displayError = (message: string) => displayToaster(message, 'danger
 export const getPerformedActionIcon = () => $('<div>').attr('class', 'p2 d-none').append(Svg.CheckmarkSm().addClass('fc-green-500'));
 export const getReportedIcon = () => $('<div>').attr('class', 'p2 d-none').append(Svg.Flag().addClass('fc-red-500'));
 
-const sampleIconClass = $('<div>').attr('class', 'advanced-flagging-icon bg-cover c-pointer w16 h16 d-none m4');
+const sampleIconClass = $('<div>').attr('class', 'advanced-flagging-icon bg-cover c-pointer w16 h16 d-none mx4 va-middle');
 export const getNattyIcon = () => sampleIconClass.clone().attr('title', 'Reported by Natty').addClass('advanced-flagging-natty-icon');
 export const getGuttenbergIcon = () => sampleIconClass.clone().attr('title', 'Reported by Guttenberg').addClass('advanced-flagging-gut-icon');
 export const getSmokeyIcon = () => sampleIconClass.clone().attr('title', 'Reported by Smokey').addClass('advanced-flagging-smokey-icon');
@@ -132,4 +134,20 @@ export async function showConfirmModal(title: string, bodyHtml: string) {
         bodyHtml: bodyHtml,
         buttonLabel: 'Authenticate!'
     });
+}
+
+// Credits: https://github.com/SOBotics/Userscripts/blob/master/Natty/NattyReporter.user.js#L101
+let initialized = false;
+const callbacks: ((request: XMLHttpRequest) => void)[] = [];
+export function addXHRListener(callback: (request: XMLHttpRequest) => void) {
+    callbacks.push(callback);
+    if (initialized) return;
+    const open = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function () {
+        this.addEventListener('load', () => {
+            callbacks.forEach(cb => cb(this));
+        }, false);
+        open.apply(this, arguments);
+    };
+    initialized = true;
 }

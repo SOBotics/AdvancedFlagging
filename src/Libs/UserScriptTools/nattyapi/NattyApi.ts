@@ -1,10 +1,8 @@
-declare const GM_xmlhttpRequest: any;
-
-import { Observable, Subject, ReplaySubject,firstValueFrom } from 'rxjs';
-import { take } from 'rxjs/operators';
 import { IsStackOverflow } from '@userscriptTools/sotools/sotools';
 import { ChatApi } from '@userscriptTools/chatapi/ChatApi';
 import * as globals from '../../../GlobalVars';
+
+declare const GM_xmlhttpRequest: any;
 
 export interface NattyFeedbackItemInfo {
     timestamp: number;
@@ -24,112 +22,82 @@ export interface NattyFeedbackInfo {
 export class NattyAPI {
     private chat: ChatApi = new ChatApi();
     private answerId: number;
-    private subject: Subject<boolean> = new Subject<boolean>();
-    private replaySubject: ReplaySubject<boolean> = new ReplaySubject<boolean>();
+    private feedbackMessage: string;
+    private reportMessage: string;
 
     constructor(answerId: number) {
         this.answerId = answerId;
+        this.feedbackMessage = `@Natty feedback https://stackoverflow.com/a/${this.answerId}`;
+        this.reportMessage = `@Natty report https://stackoverflow.com/a/${this.answerId}`;
     }
 
-    public Watch(): Observable<boolean> {
-        this.subject.subscribe(this.replaySubject);
+    public WasReported(): Promise<boolean> {
+        return new Promise<boolean>((resolve, reject) => {
+            if (!IsStackOverflow()) resolve(false);
 
-        if (IsStackOverflow()) {
-            new Promise<boolean>((resolve, reject) => {
-                let numTries = 0;
-                const onError = (response: any) => {
-                    numTries++;
-                    numTries < 3 ? makeRequest() : reject('Failed to retrieve natty report: ' + response);
-                };
+            let numTries = 0;
+            const onError = (response: any) => {
+                numTries++;
+                numTries < 3 ? makeRequest() : reject('Failed to retrieve Natty report: ' + response);
+            };
 
-                const makeRequest = () => {
-                    GM_xmlhttpRequest({
-                        method: 'GET',
-                        url: `${globals.nattyFeedbackUrl}/${this.answerId}`,
-                        onload: (response: XMLHttpRequest) => {
-                            if (response.status === 200) {
-                                const nattyResult = JSON.parse(response.responseText);
-                                resolve(nattyResult.items && nattyResult.items[0]);
-                            } else {
-                                onError(response.responseText);
-                            }
-                        },
-                        onerror: (response: any) => {
-                            onError(response);
-                        },
-                    });
-                };
+            const makeRequest = () => {
+                GM_xmlhttpRequest({
+                    method: 'GET',
+                    url: `${globals.nattyFeedbackUrl}/${this.answerId}`,
+                    onload: (response: XMLHttpRequest) => {
+                        if (response.status === 200) {
+                            const nattyResult = JSON.parse(response.responseText);
+                            resolve(nattyResult.items && nattyResult.items[0]);
+                        } else {
+                            onError(response.responseText);
+                        }
+                    },
+                    onerror: (response: any) => {
+                        onError(response);
+                    },
+                });
+            };
 
-                makeRequest();
-            })
-                .then(r => this.subject.next(r))
-                .catch(err => this.subject.error(err));
-        }
-
-        return this.subject;
+            makeRequest();
+        });
     }
 
-    public async ReportNaa(answerDate: Date, questionDate: Date) {
-        if (answerDate < questionDate) {
-            throw new Error('Answer must be posted after the question');
-        }
-        if (!IsStackOverflow()) {
-            return false;
-        }
-        if (await this.WasReported()) {
-            await this.chat.SendMessage(globals.soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} tp`);
-            return true;
-        } else {
-            const answerAge = this.DaysBetween(answerDate, new Date());
-            const daysPostedAfterQuestion = this.DaysBetween(questionDate, answerDate);
-            if (isNaN(answerAge)) {
-                throw new Error('Invalid answerDate provided');
-            }
-            if (isNaN(daysPostedAfterQuestion)) {
-                throw new Error('Invalid questionDate provided');
-            }
-            if (answerAge > 30 || daysPostedAfterQuestion < 30) {
-                return false;
-            }
+    public ReportNaa(answerDate: Date, questionDate: Date) {
+        // eslint-disable-next-line no-async-promise-executor
+        return new Promise<any>(async (resolve, reject) => {
+            if (answerDate < questionDate || !IsStackOverflow()) reject('Answer must be posted after the question');
 
-            const promise = this.chat.SendMessage(globals.soboticsRoomId, `@Natty report https://stackoverflow.com/a/${this.answerId}`);
-            await promise.then(() => this.subject.next(true));
-            return true;
-        }
+            if (await this.WasReported()) {
+                await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
+                resolve(true);
+            } else {
+                const answerAge = this.DaysBetween(answerDate, new Date());
+                const daysPostedAfterQuestion = this.DaysBetween(questionDate, answerDate);
+                if (isNaN(answerAge) || isNaN(daysPostedAfterQuestion) || answerAge > 30 || daysPostedAfterQuestion < 30) resolve(false);
+
+                await this.chat.SendMessage(globals.soboticsRoomId, this.reportMessage);
+                resolve(true);
+            }
+        });
     }
+
     public async ReportRedFlag() {
-        if (!IsStackOverflow()) {
-            return false;
-        }
-        if (await this.WasReported()) {
-            await this.chat.SendMessage(globals.soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} tp`);
-            return true;
-        }
-        return false;
-    }
-    public async ReportLooksFine() {
-        if (!IsStackOverflow()) {
-            return false;
-        }
-        if (await this.WasReported()) {
-            await this.chat.SendMessage(globals.soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} fp`);
-            return true;
-        }
-        return false;
-    }
-    public async ReportNeedsEditing() {
-        if (!IsStackOverflow()) {
-            return false;
-        }
-        if (await this.WasReported()) {
-            await this.chat.SendMessage(globals.soboticsRoomId, `@Natty feedback https://stackoverflow.com/a/${this.answerId} ne`);
-            return true;
-        }
-        return false;
+        if (!IsStackOverflow() || await this.WasReported()) return false;
+        await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
+        return true;
     }
 
-    private async WasReported() {
-        return await firstValueFrom(this.replaySubject.pipe(take(1)));
+    public async ReportLooksFine() {
+        if (!IsStackOverflow() || await this.WasReported()) return false;
+        await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} fp`);
+        return true;
+    }
+
+    public async ReportNeedsEditing() {
+        if (!IsStackOverflow() || await this.WasReported()) return false;
+        await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} ne`);
+        return true;
     }
 
     private DaysBetween(first: Date, second: Date) {

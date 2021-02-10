@@ -1979,15 +1979,6 @@
       "integrity": "sha512-zb/1OuZ6flOlH6tQyMPUrE3x3Ulxjlo9WIVXR4yVYi4H9UXQaeIsPbLn2R3O3vQCnDKkAl2qHiuocKKX4Tz/Sw==",
       "dev": true
     },
-    "rxjs": {
-      "version": "7.0.0-beta.10",
-      "resolved": "https://registry.npmjs.org/rxjs/-/rxjs-7.0.0-beta.10.tgz",
-      "integrity": "sha512-iK8B6ACjMn00gObHQYoIyXouyD0cPmzuXFxfYi/i9jBVFQHsjjPt5T51sRDsXJ9Utg4Q7R1m7QiLtuQEQ3r73g==",
-      "dev": true,
-      "requires": {
-        "tslib": "^1.9.0"
-      }
-    },
     "safe-buffer": {
       "version": "5.1.2",
       "resolved": "https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.1.2.tgz",

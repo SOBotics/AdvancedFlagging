@@ -1,4 +1,5 @@
 import { displayToaster } from './AdvancedFlagging';
+import { MetaSmokeAPI } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
 
 declare const Svg: any;
 declare const StackExchange: any;
@@ -41,11 +42,18 @@ export const hideElement = (element: JQuery) => element.addClass('d-none').remov
 export const showInlineElement = (element: JQuery) => element.addClass('d-inline-block').removeClass('d-none');
 export const displaySuccess = (message: string) => displayToaster(message, 'success');
 export const displayError = (message: string) => displayToaster(message, 'danger');
+export const isStackOverflow = () => !!window.location.href.match(/^https:\/\/stackoverflow.com/);
+export const isNatoPage = () => !!window.location.href.match(/\/tools\/new-answers-old-questions/);
+export const isModPage = () => !!window.location.href.match(/\/admin/);
+export const isQuestionPage = () => !!window.location.href.match(/\/questions\/\d+.*/);
+export const isFlagsPage = () => !!window.location.href.match(/\/users\/flag-summary\//);
+export const isUserPage = () => !!window.location.href.match(/\/users\/\d+.*/);
 
 export const getPerformedActionIcon = () => $('<div>').attr('class', 'p2 d-none').append(Svg.CheckmarkSm().addClass('fc-green-500'));
 export const getReportedIcon = () => $('<div>').attr('class', 'p2 d-none').append(Svg.Flag().addClass('fc-red-500'));
 
-const sampleIconClass = $('<div>').attr('class', 'advanced-flagging-icon bg-cover c-pointer w16 h16 d-none mx4 va-middle');
+const sampleIconClass = $('<div>').attr('class', 'advanced-flagging-icon bg-cover c-pointer w16 h16 d-none va-middle');
+sampleIconClass.addClass(window.location.href.match(/\/users\/flag-summary/) ? 'mx4' : 'm4');
 export const getNattyIcon = () => sampleIconClass.clone().attr('title', 'Reported by Natty').addClass('advanced-flagging-natty-icon');
 export const getGuttenbergIcon = () => sampleIconClass.clone().attr('title', 'Reported by Guttenberg').addClass('advanced-flagging-gut-icon');
 export const getSmokeyIcon = () => sampleIconClass.clone().attr('title', 'Reported by Smokey').addClass('advanced-flagging-smokey-icon');
@@ -150,4 +158,24 @@ export function addXHRListener(callback: (request: XMLHttpRequest) => void) {
         open.apply(this, arguments);
     };
     initialized = true;
+}
+
+export function getPostUrlsFromQuestionPage() {
+    return $('.question, .answer').map((_index, el) => {
+        const postType = $(el).attr('data-questionid') ? 'Question' : 'Answer';
+        const urlToReturn = MetaSmokeAPI.GetQueryUrl(Number($(el).attr('data-questionid') || $(el).attr('data-answerid')), postType);
+        return urlToReturn;
+    });
+}
+
+export function getPostUrlsFromFlagsPage() {
+    return $('.flagged-post').map((_index, el) => {
+        const postType = $(el).find('.answer-hyperlink').length ? 'Answer' : 'Question';
+        const urlToReturn = MetaSmokeAPI.GetQueryUrl(Number(
+            postType === 'Answer'
+                ? $(el).find('.answer-hyperlink').attr('href').split('#')[1]
+                : $(el).find('.question-hyperlink').attr('href').split('/')[2]
+        ), postType);
+        return urlToReturn;
+    });
 }

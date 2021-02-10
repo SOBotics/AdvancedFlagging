@@ -1,4 +1,3 @@
-import { IsStackOverflow } from '@userscriptTools/sotools/sotools';
 import * as globals from '../../../GlobalVars';
 
 declare const $: JQueryStatic;
@@ -43,7 +42,7 @@ export class GenericBotAPI {
 
     private makeTrackRequest() {
         const promise = new Promise<boolean>((resolve, reject) => {
-            if (!IsStackOverflow() || !$('#answer-' + this.answerId + ' .js-post-body').length) {
+            if (!globals.isStackOverflow() || !$('#answer-' + this.answerId + ' .js-post-body').length) {
                 resolve(false);
             }
 

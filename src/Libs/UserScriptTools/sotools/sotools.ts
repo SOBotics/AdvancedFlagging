@@ -1,3 +1,5 @@
+import * as globals from '../../../GlobalVars';
+
 export type QuestionPageInfo = QuestionQuestion | QuestionAnswer;
 declare let StackExchange: any;
 export interface QuestionQuestion {
@@ -68,17 +70,6 @@ export type PostInfo = NatoAnswer | QuestionPageInfo | FlagPageInfo | GenericPag
     }
 };
 
-export function IsStackOverflow() {
-    return !!window.location.href.match(/^https:\/\/stackoverflow.com/);
-}
-
-export function isNatoPage() {
-    return !!window.location.href.match(/\/tools\/new-answers-old-questions/);
-}
-export function isModPage() {
-    return !!window.location.href.match(/\/admin/);
-}
-
 function parseNatoPage(callback: (post: NatoAnswer) => void) {
     $('.answer-hyperlink').parent().parent().each((_index, element) => {
         const node = $(element);
@@ -102,10 +93,6 @@ function parseNatoPage(callback: (post: NatoAnswer) => void) {
             authorId,
         });
     });
-}
-
-export function isQuestionPage() {
-    return !!window.location.href.match(/\/questions\/\d+.*/);
 }
 
 function getPostDetails(node: JQuery) {
@@ -145,7 +132,6 @@ function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) =>
 }
 
 function parseQuestionPage(callback: (post: QuestionPageInfo) => void) {
-
     let question: QuestionQuestion;
     const parseQuestionDetails = (qNode: JQuery) => {
         const postId = parseInt(qNode.attr('data-questionid'), 10);
@@ -180,15 +166,9 @@ function parseQuestionPage(callback: (post: QuestionPageInfo) => void) {
     $('.answer').each((_index, element) => parseAnswerDetails($(element), callback, question));
 }
 
-export function isFlagsPage() {
-    return !!window.location.href.match(/\/users\/flag-summary\//);
-}
-
 function parseFlagsPage(callback: (post: FlagPageInfo) => void) {
-    const nodes = $('.flagged-post');
-    for (let i = 0; i < nodes.length; i++) {
-        const node = $(nodes[i]);
-
+    $('.flagged-post').each((_index, nodeEl) => {
+        const node = $(nodeEl);
         const type = node.find('.answer-hyperlink').length ? 'Answer' : 'Question';
 
         const postId =
@@ -220,11 +200,7 @@ function parseFlagsPage(callback: (post: FlagPageInfo) => void) {
             authorName,
             authorId
         });
-    }
-}
-
-export function isUserPage() {
-    return !!window.location.href.match(/\/users\/\d+.*/);
+    });
 }
 
 function parseGenericPage(callback: (post: GenericPageInfo) => void) {
@@ -262,13 +238,13 @@ function parseGenericPage(callback: (post: GenericPageInfo) => void) {
 }
 
 export function parseQuestionsAndAnswers(callback: (post: PostInfo) => Promise<void>) {
-    if (isNatoPage()) {
+    if (globals.isNatoPage()) {
         parseNatoPage(callback);
-    } else if (isQuestionPage()) {
+    } else if (globals.isQuestionPage()) {
         parseQuestionPage(callback);
-    } else if (isFlagsPage()) {
+    } else if (globals.isFlagsPage()) {
         parseFlagsPage(callback);
-    } else if (isModPage() || isUserPage() || (StackExchange as any).options.user.isModerator) {
+    } else if (globals.isModPage() || globals.isUserPage() || (StackExchange as any).options.user.isModerator) {
         return;
     } else {
         parseGenericPage(callback);

@@ -33,7 +33,7 @@
 /* 0 */
 /***/ ((module, exports, __webpack_require__) => {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1), __webpack_require__(2), __webpack_require__(3), __webpack_require__(7), __webpack_require__(8), __webpack_require__(9), __webpack_require__(10), __webpack_require__(5), __webpack_require__(6)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, FlagTypes_1, sotools_1, NattyApi_1, GenericBotAPI_1, MetaSmokeAPI_1, CopyPastorAPI_1, Configuration_1, GreaseMonkeyCache_1, globals) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1), __webpack_require__(2), __webpack_require__(6), __webpack_require__(8), __webpack_require__(4), __webpack_require__(9), __webpack_require__(10), __webpack_require__(5), __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, FlagTypes_1, sotools_1, NattyApi_1, GenericBotAPI_1, MetaSmokeAPI_1, CopyPastorAPI_1, Configuration_1, GreaseMonkeyCache_1, globals) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.displayToaster = void 0;
@@ -114,6 +114,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         return result;
     }
+    const isStackOverflow = globals.isStackOverflow();
     const popupWrapper = globals.popupWrapper;
     let toasterTimeout = null;
     let toasterFadeTimeout = null;
@@ -225,7 +226,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             smokeyIcon.addClass('d-none');
         }
         else {
-            smokeyIcon.click(() => window.open(`https://metasmoke.erwaysoftware.com/post/${postId}`, '_blank'));
+            smokeyIcon.click(() => window.open(`https://metasmoke.erwaysoftware.com/post/${isReported}`, '_blank'));
             globals.showInlineElement(smokeyIcon);
         }
         return {
@@ -310,7 +311,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         const leaveCommentBox = globals.getOptionBox(checkboxNameComment);
         const flagBox = globals.getOptionBox(checkboxNameFlag);
         flagBox.prop('checked', true);
-        const isStackOverflow = sotools_1.IsStackOverflow();
         const comments = element.find('.comment-body');
         const defaultNoComment = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationDefaultNoComment);
         if (!defaultNoComment && !comments.length && isStackOverflow)
@@ -416,7 +416,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             dropDown.append(commentingRow);
             commentingRow.children();
         }
-        const flagBoxLabel = globals.getOptionLabel('Flag', checkboxNameComment);
+        const flagBoxLabel = globals.getOptionLabel('Flag', checkboxNameFlag);
         const flaggingRow = globals.plainDiv.clone();
         const defaultNoFlag = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationDefaultNoFlag);
         if (defaultNoFlag)
@@ -465,12 +465,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return;
             let iconLocation;
             let advancedFlaggingLink = null;
-            const nattyIcon = globals.getNattyIcon().click(() => {
-                window.open(`https://sentinel.erwaysoftware.com/posts/aid/${post.postId}`, '_blank');
-            });
+            const nattyIcon = globals.getNattyIcon().click(() => window.open(`//sentinel.erwaysoftware.com/posts/aid/${post.postId}`, '_blank'));
             const copyPastorIcon = globals.getGuttenbergIcon();
-            const copyPastorApi = new CopyPastorAPI_1.CopyPastorAPI(post.postId, globals.copyPastorKey);
             const smokeyIcon = globals.getSmokeyIcon();
+            const copyPastorApi = new CopyPastorAPI_1.CopyPastorAPI(post.postId, globals.copyPastorKey);
             const reporters = [];
             if (post.type === 'Answer') {
                 reporters.push(setupNattyApi(post.postId, nattyIcon));
@@ -483,9 +481,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     }
                     copyPastorIcon.attr('Title', `Reported by CopyPastor - ${items.length}`);
                     globals.showInlineElement(copyPastorIcon);
-                    copyPastorIcon.click(() => items.forEach(item => {
-                        window.open('https://copypastor.sobotics.org/posts/' + item.post_id);
-                    }));
+                    copyPastorIcon.click(() => items.forEach(item => window.open('https://copypastor.sobotics.org/posts/' + item.post_id)));
                 }).catch(error => globals.displayError(`${error} received from CopyPastor.`));
             }
             reporters.push(setupMetasmokeApi(post.postId, post.type, smokeyIcon));
@@ -529,7 +525,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     if (openOnHover) {
                         link.mouseleave(e => {
                             e.stopPropagation();
-                            globals.hideElement(dropDown);
+                            setTimeout(() => globals.hideElement(dropDown), 100); // avoid immediate closing of popover
                         });
                     }
                     else {
@@ -553,9 +549,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             }
         });
     }
-    async function Setup() {
-        await MetaSmokeAPI_1.MetaSmokeAPI.Setup(globals.metaSmokeKey);
-        SetupPostPage();
+    function Setup() {
+        MetaSmokeAPI_1.MetaSmokeAPI.Setup(globals.metaSmokeKey).then(() => SetupPostPage());
         SetupStyles();
         Configuration_1.SetupConfiguration();
         document.body.appendChild(popupWrapper.get(0));
@@ -599,10 +594,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     $(() => {
         let started = false;
-        async function actionWatcher() {
+        function actionWatcher() {
             if (!started) {
                 started = true;
-                await Setup();
+                Setup();
             }
             $(window).off('focus', actionWatcher);
             $(window).off('mousemove', actionWatcher);
@@ -814,10 +809,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 2 */
 /***/ ((module, exports, __webpack_require__) => {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, globals) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
-    exports.parseDate = exports.parseQuestionsAndAnswers = exports.isUserPage = exports.isFlagsPage = exports.isQuestionPage = exports.isModPage = exports.isNatoPage = exports.IsStackOverflow = void 0;
+    exports.parseDate = exports.parseQuestionsAndAnswers = void 0;
     $.event.special.destroyed = {
         remove: (o) => {
             if (o.handler) {
@@ -825,18 +820,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             }
         }
     };
-    function IsStackOverflow() {
-        return !!window.location.href.match(/^https:\/\/stackoverflow.com/);
-    }
-    exports.IsStackOverflow = IsStackOverflow;
-    function isNatoPage() {
-        return !!window.location.href.match(/\/tools\/new-answers-old-questions/);
-    }
-    exports.isNatoPage = isNatoPage;
-    function isModPage() {
-        return !!window.location.href.match(/\/admin/);
-    }
-    exports.isModPage = isModPage;
     function parseNatoPage(callback) {
         $('.answer-hyperlink').parent().parent().each((_index, element) => {
             const node = $(element);
@@ -858,10 +841,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
         });
     }
-    function isQuestionPage() {
-        return !!window.location.href.match(/\/questions\/\d+.*/);
-    }
-    exports.isQuestionPage = isQuestionPage;
     function getPostDetails(node) {
         const score = parseInt(node.find('.vote-count-post').text(), 10);
         const authorReputation = parseReputation(node.find('.user-info .reputation-score').last());
@@ -919,14 +898,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         parseQuestionDetails(questionNode);
         $('.answer').each((_index, element) => parseAnswerDetails($(element), callback, question));
     }
-    function isFlagsPage() {
-        return !!window.location.href.match(/\/users\/flag-summary\//);
-    }
-    exports.isFlagsPage = isFlagsPage;
     function parseFlagsPage(callback) {
-        const nodes = $('.flagged-post');
-        for (let i = 0; i < nodes.length; i++) {
-            const node = $(nodes[i]);
+        $('.flagged-post').each((_index, nodeEl) => {
+            const node = $(nodeEl);
             const type = node.find('.answer-hyperlink').length ? 'Answer' : 'Question';
             const postId = parseInt(type === 'Answer'
                 ? node.find('.answer-hyperlink').attr('href').split('#')[1]
@@ -951,12 +925,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 authorName,
                 authorId
             });
-        }
+        });
     }
-    function isUserPage() {
-        return !!window.location.href.match(/\/users\/\d+.*/);
-    }
-    exports.isUserPage = isUserPage;
     function parseGenericPage(callback) {
         const questionNodes = $('.question-hyperlink');
         for (let i = 0; i < questionNodes.length; i++) {
@@ -989,16 +959,16 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         });
     }
     function parseQuestionsAndAnswers(callback) {
-        if (isNatoPage()) {
+        if (globals.isNatoPage()) {
             parseNatoPage(callback);
         }
-        else if (isQuestionPage()) {
+        else if (globals.isQuestionPage()) {
             parseQuestionPage(callback);
         }
-        else if (isFlagsPage()) {
+        else if (globals.isFlagsPage()) {
             parseFlagsPage(callback);
         }
-        else if (isModPage() || isUserPage() || StackExchange.options.user.isModerator) {
+        else if (globals.isModPage() || globals.isUserPage() || StackExchange.options.user.isModerator) {
             return;
         }
         else {
@@ -1048,225 +1018,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 3 */
 /***/ ((module, exports, __webpack_require__) => {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(2), __webpack_require__(4), __webpack_require__(6)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, sotools_1, ChatApi_1, globals) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(4)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, AdvancedFlagging_1, MetaSmokeAPI_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
-    exports.NattyAPI = void 0;
-    class NattyAPI {
-        constructor(answerId) {
-            this.chat = new ChatApi_1.ChatApi();
-            this.answerId = answerId;
-            this.feedbackMessage = `@Natty feedback https://stackoverflow.com/a/${this.answerId}`;
-            this.reportMessage = `@Natty report https://stackoverflow.com/a/${this.answerId}`;
-        }
-        WasReported() {
-            return new Promise((resolve, reject) => {
-                if (!sotools_1.IsStackOverflow())
-                    resolve(false);
-                let numTries = 0;
-                const onError = (response) => {
-                    numTries++;
-                    numTries < 3 ? makeRequest() : reject('Failed to retrieve Natty report: ' + response);
-                };
-                const makeRequest = () => {
-                    GM_xmlhttpRequest({
-                        method: 'GET',
-                        url: `${globals.nattyFeedbackUrl}/${this.answerId}`,
-                        onload: (response) => {
-                            if (response.status === 200) {
-                                const nattyResult = JSON.parse(response.responseText);
-                                resolve(nattyResult.items && nattyResult.items[0]);
-                            }
-                            else {
-                                onError(response.responseText);
-                            }
-                        },
-                        onerror: (response) => {
-                            onError(response);
-                        },
-                    });
-                };
-                makeRequest();
-            });
-        }
-        ReportNaa(answerDate, questionDate) {
-            // eslint-disable-next-line no-async-promise-executor
-            return new Promise(async (resolve, reject) => {
-                if (answerDate < questionDate || !sotools_1.IsStackOverflow())
-                    reject('Answer must be posted after the question');
-                if (await this.WasReported()) {
-                    await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
-                    resolve(true);
-                }
-                else {
-                    const answerAge = this.DaysBetween(answerDate, new Date());
-                    const daysPostedAfterQuestion = this.DaysBetween(questionDate, answerDate);
-                    if (isNaN(answerAge) || isNaN(daysPostedAfterQuestion) || answerAge > 30 || daysPostedAfterQuestion < 30)
-                        resolve(false);
-                    await this.chat.SendMessage(globals.soboticsRoomId, this.reportMessage);
-                    resolve(true);
-                }
-            });
-        }
-        async ReportRedFlag() {
-            if (!sotools_1.IsStackOverflow() || await this.WasReported())
-                return false;
-            await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
-            return true;
-        }
-        async ReportLooksFine() {
-            if (!sotools_1.IsStackOverflow() || await this.WasReported())
-                return false;
-            await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} fp`);
-            return true;
-        }
-        async ReportNeedsEditing() {
-            if (!sotools_1.IsStackOverflow() || await this.WasReported())
-                return false;
-            await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} ne`);
-            return true;
-        }
-        DaysBetween(first, second) {
-            return (second - first) / (1000 * 60 * 60 * 24);
-        }
-    }
-    exports.NattyAPI = NattyAPI;
-}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
-		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ }),
-/* 4 */
-/***/ ((module, exports, __webpack_require__) => {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(5), __webpack_require__(6)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, GreaseMonkeyCache_1, globals) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", ({ value: true }));
-    exports.ChatApi = void 0;
-    class ChatApi {
-        constructor(chatUrl = 'https://chat.stackoverflow.com') {
-            this.chatRoomUrl = chatUrl;
-        }
-        static GetExpiryDate() {
-            const expiryDate = new Date();
-            expiryDate.setDate(expiryDate.getDate() + 1);
-            return expiryDate;
-        }
-        async GetChannelFKey(roomId) {
-            const getterPromise = new Promise((resolve, reject) => {
-                this.GetChannelPage(roomId).then(channelPage => {
-                    const fkeyElement = $(channelPage).filter('#fkey');
-                    if (!fkeyElement.length)
-                        reject('Could not find fkey');
-                    const fkey = fkeyElement.val();
-                    resolve(fkey);
-                });
-            });
-            const expiryDate = ChatApi.GetExpiryDate();
-            return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(globals.CacheChatApiFkey, () => getterPromise, expiryDate);
-        }
-        GetChatUserId() {
-            return StackExchange.options.user.userId;
-        }
-        SendMessage(roomId, message) {
-            return new Promise((resolve, reject) => {
-                const requestFunc = async () => {
-                    const fkeyPromise = this.GetChannelFKey(roomId);
-                    const fKey = await fkeyPromise;
-                    GM_xmlhttpRequest({
-                        method: 'POST',
-                        url: `${this.chatRoomUrl}/chats/${roomId}/messages/new`,
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        data: 'text=' + encodeURIComponent(message) + '&fkey=' + fKey,
-                        onload: (response_1) => {
-                            response_1.status === 200 ? resolve() : onFailure(response_1.statusText);
-                        },
-                        onerror: (response_3) => {
-                            onFailure(response_3);
-                        },
-                    });
-                };
-                let numTries = 0;
-                const onFailure = (errorMessage) => {
-                    numTries++;
-                    if (numTries < 3) {
-                        const fkeyCacheKey = 'StackExchange.ChatApi.FKey';
-                        GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(fkeyCacheKey);
-                        requestFunc();
-                    }
-                    else {
-                        reject(errorMessage);
-                    }
-                };
-                requestFunc();
-            });
-        }
-        GetChannelPage(roomId) {
-            const getterPromise = new Promise((resolve, reject) => {
-                GM_xmlhttpRequest({
-                    method: 'GET',
-                    url: `${this.chatRoomUrl}/rooms/${roomId}`,
-                    onload: (response) => {
-                        response.status === 200 ? resolve(response.responseText) : reject(response.statusText);
-                    },
-                    onerror: (data) => reject(data)
-                });
-            });
-            return getterPromise;
-        }
-    }
-    exports.ChatApi = ChatApi;
-}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
-		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ }),
-/* 5 */
-/***/ ((module, exports, __webpack_require__) => {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", ({ value: true }));
-    exports.GreaseMonkeyCache = void 0;
-    class GreaseMonkeyCache {
-        static async GetAndCache(cacheKey, getterPromise, expiresAt) {
-            const cachedItem = GreaseMonkeyCache.GetFromCache(cacheKey);
-            if (cachedItem)
-                return cachedItem;
-            const result = await getterPromise();
-            GreaseMonkeyCache.StoreInCache(cacheKey, result, expiresAt);
-            return result;
-        }
-        static GetFromCache(cacheKey) {
-            const jsonItem = GM_getValue(cacheKey, undefined);
-            if (!jsonItem)
-                return undefined;
-            const dataItem = JSON.parse(jsonItem);
-            if (dataItem.Expires && new Date(dataItem.Expires) < new Date())
-                return undefined;
-            return dataItem.Data;
-        }
-        static StoreInCache(cacheKey, item, expiresAt) {
-            const jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
-            GM_setValue(cacheKey, jsonStr);
-        }
-        static Unset(cacheKey) {
-            GM_deleteValue(cacheKey);
-        }
-    }
-    exports.GreaseMonkeyCache = GreaseMonkeyCache;
-}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
-		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ }),
-/* 6 */
-/***/ ((module, exports, __webpack_require__) => {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, AdvancedFlagging_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", ({ value: true }));
-    exports.addXHRListener = exports.showConfirmModal = exports.Delay = exports.showMSTokenPopupAndGet = exports.inlineCheckboxesWrapper = exports.overlayModal = exports.configurationLink = exports.configurationDiv = exports.advancedFlaggingLink = exports.gridCellDiv = exports.plainDiv = exports.dropdownItem = exports.reportLink = exports.popoverArrow = exports.dropDown = exports.popupWrapper = exports.getConfigHtml = exports.getOptionLabel = exports.getCategoryDiv = exports.getOptionBox = exports.getDivider = exports.getSectionWrapper = exports.getMessageDiv = exports.getSmokeyIcon = exports.getGuttenbergIcon = exports.getNattyIcon = exports.getReportedIcon = exports.getPerformedActionIcon = exports.displayError = exports.displaySuccess = exports.showInlineElement = exports.hideElement = exports.showElement = exports.getFlagsUrlRegex = exports.flagsUrlRegex = exports.isDeleteVoteRegex = exports.isReviewItemRegex = exports.popupDelay = exports.displayStacksToast = exports.settingUpBody = exports.settingUpTitle = exports.MetaSmokeDisabledConfig = exports.MetaSmokeUserKeyConfig = exports.CacheChatApiFkey = exports.ConfigurationLinkDisabled = exports.ConfigurationEnabledFlags = exports.ConfigurationWatchQueues = exports.ConfigurationWatchFlags = exports.ConfigurationDefaultNoComment = exports.ConfigurationDefaultNoFlag = exports.ConfigurationOpenOnHover = exports.username = exports.nattyFeedbackUrl = exports.genericBotKey = exports.copyPastorServer = exports.copyPastorKey = exports.metaSmokeKey = exports.soboticsRoomId = void 0;
+    exports.getPostUrlsFromFlagsPage = exports.getPostUrlsFromQuestionPage = exports.addXHRListener = exports.showConfirmModal = exports.Delay = exports.showMSTokenPopupAndGet = exports.inlineCheckboxesWrapper = exports.overlayModal = exports.configurationLink = exports.configurationDiv = exports.advancedFlaggingLink = exports.gridCellDiv = exports.plainDiv = exports.dropdownItem = exports.reportLink = exports.popoverArrow = exports.dropDown = exports.popupWrapper = exports.getConfigHtml = exports.getOptionLabel = exports.getCategoryDiv = exports.getOptionBox = exports.getDivider = exports.getSectionWrapper = exports.getMessageDiv = exports.getSmokeyIcon = exports.getGuttenbergIcon = exports.getNattyIcon = exports.getReportedIcon = exports.getPerformedActionIcon = exports.isUserPage = exports.isFlagsPage = exports.isQuestionPage = exports.isModPage = exports.isNatoPage = exports.isStackOverflow = exports.displayError = exports.displaySuccess = exports.showInlineElement = exports.hideElement = exports.showElement = exports.getFlagsUrlRegex = exports.flagsUrlRegex = exports.isDeleteVoteRegex = exports.isReviewItemRegex = exports.popupDelay = exports.displayStacksToast = exports.settingUpBody = exports.settingUpTitle = exports.MetaSmokeDisabledConfig = exports.MetaSmokeUserKeyConfig = exports.CacheChatApiFkey = exports.ConfigurationLinkDisabled = exports.ConfigurationEnabledFlags = exports.ConfigurationWatchQueues = exports.ConfigurationWatchFlags = exports.ConfigurationDefaultNoComment = exports.ConfigurationDefaultNoFlag = exports.ConfigurationOpenOnHover = exports.username = exports.nattyFeedbackUrl = exports.genericBotKey = exports.copyPastorServer = exports.copyPastorKey = exports.metaSmokeKey = exports.soboticsRoomId = void 0;
     exports.soboticsRoomId = 111347;
     exports.metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
     exports.copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
@@ -1307,11 +1062,24 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.displaySuccess = displaySuccess;
     const displayError = (message) => AdvancedFlagging_1.displayToaster(message, 'danger');
     exports.displayError = displayError;
+    const isStackOverflow = () => !!window.location.href.match(/^https:\/\/stackoverflow.com/);
+    exports.isStackOverflow = isStackOverflow;
+    const isNatoPage = () => !!window.location.href.match(/\/tools\/new-answers-old-questions/);
+    exports.isNatoPage = isNatoPage;
+    const isModPage = () => !!window.location.href.match(/\/admin/);
+    exports.isModPage = isModPage;
+    const isQuestionPage = () => !!window.location.href.match(/\/questions\/\d+.*/);
+    exports.isQuestionPage = isQuestionPage;
+    const isFlagsPage = () => !!window.location.href.match(/\/users\/flag-summary\//);
+    exports.isFlagsPage = isFlagsPage;
+    const isUserPage = () => !!window.location.href.match(/\/users\/\d+.*/);
+    exports.isUserPage = isUserPage;
     const getPerformedActionIcon = () => $('<div>').attr('class', 'p2 d-none').append(Svg.CheckmarkSm().addClass('fc-green-500'));
     exports.getPerformedActionIcon = getPerformedActionIcon;
     const getReportedIcon = () => $('<div>').attr('class', 'p2 d-none').append(Svg.Flag().addClass('fc-red-500'));
     exports.getReportedIcon = getReportedIcon;
-    const sampleIconClass = $('<div>').attr('class', 'advanced-flagging-icon bg-cover c-pointer w16 h16 d-none mx4 va-middle');
+    const sampleIconClass = $('<div>').attr('class', 'advanced-flagging-icon bg-cover c-pointer w16 h16 d-none va-middle');
+    sampleIconClass.addClass(window.location.href.match(/\/users\/flag-summary/) ? 'mx4' : 'm4');
     const getNattyIcon = () => sampleIconClass.clone().attr('title', 'Reported by Natty').addClass('advanced-flagging-natty-icon');
     exports.getNattyIcon = getNattyIcon;
     const getGuttenbergIcon = () => sampleIconClass.clone().attr('title', 'Reported by Guttenberg').addClass('advanced-flagging-gut-icon');
@@ -1425,84 +1193,33 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         initialized = true;
     }
     exports.addXHRListener = addXHRListener;
-}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
-		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ }),
-/* 7 */
-/***/ ((module, exports, __webpack_require__) => {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(2), __webpack_require__(6)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, sotools_1, globals) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", ({ value: true }));
-    exports.GenericBotAPI = void 0;
-    class GenericBotAPI {
-        constructor(answerId) {
-            this.answerId = answerId;
-        }
-        async ReportNaa() {
-            const response = await this.makeTrackRequest();
-            return response;
-        }
-        async ReportRedFlag() {
-            const response = await this.makeTrackRequest();
-            return response;
-        }
-        async ReportLooksFine() {
-            return false;
-        }
-        async ReportNeedsEditing() {
-            return false;
-        }
-        computeContentHash(postContent) {
-            if (!postContent)
-                return 0;
-            let hash = 0;
-            for (let i = 0; i < postContent.length; ++i) {
-                hash = ((hash << 5) - hash) + postContent.charCodeAt(i);
-                hash = hash & hash;
-            }
-            return hash;
-        }
-        makeTrackRequest() {
-            const promise = new Promise((resolve, reject) => {
-                if (!sotools_1.IsStackOverflow() || !$('#answer-' + this.answerId + ' .js-post-body').length) {
-                    resolve(false);
-                }
-                const flaggerName = globals.username;
-                const contentHash = this.computeContentHash($('#answer-' + this.answerId + ' .js-post-body').html().trim());
-                GM_xmlhttpRequest({
-                    method: 'POST',
-                    url: 'https://so.floern.com/api/trackpost.php',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    data: `key=${globals.genericBotKey}`
-                        + '&postId=' + this.answerId
-                        + '&contentHash=' + contentHash
-                        + '&flagger=' + encodeURIComponent(flaggerName),
-                    onload: (response) => {
-                        if (response.status !== 200)
-                            reject('Flag Tracker Error: Status ' + response.status);
-                        resolve(true);
-                    },
-                    onerror: (response) => {
-                        reject('Flag Tracker Error: ' + response.responseText);
-                    }
-                });
-            });
-            return promise;
-        }
+    function getPostUrlsFromQuestionPage() {
+        return $('.question, .answer').map((_index, el) => {
+            const postType = $(el).attr('data-questionid') ? 'Question' : 'Answer';
+            const urlToReturn = MetaSmokeAPI_1.MetaSmokeAPI.GetQueryUrl(Number($(el).attr('data-questionid') || $(el).attr('data-answerid')), postType);
+            return urlToReturn;
+        });
     }
-    exports.GenericBotAPI = GenericBotAPI;
+    exports.getPostUrlsFromQuestionPage = getPostUrlsFromQuestionPage;
+    function getPostUrlsFromFlagsPage() {
+        return $('.flagged-post').map((_index, el) => {
+            const postType = $(el).find('.answer-hyperlink').length ? 'Answer' : 'Question';
+            const urlToReturn = MetaSmokeAPI_1.MetaSmokeAPI.GetQueryUrl(Number(postType === 'Answer'
+                ? $(el).find('.answer-hyperlink').attr('href').split('#')[1]
+                : $(el).find('.question-hyperlink').attr('href').split('/')[2]), postType);
+            return urlToReturn;
+        });
+    }
+    exports.getPostUrlsFromFlagsPage = getPostUrlsFromFlagsPage;
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
 /***/ }),
-/* 8 */
+/* 4 */
 /***/ ((module, exports, __webpack_require__) => {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(5), __webpack_require__(6)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, GreaseMonkeyCache_1, globals) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(5), __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, GreaseMonkeyCache_1, globals) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.MetaSmokeAPI = void 0;
@@ -1523,18 +1240,15 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             MetaSmokeAPI.QueryMetaSmokeInternal();
         }
         static QueryMetaSmokeInternal() {
-            const urls = [];
-            $('.question, .answer').each((_index, el) => {
-                const postType = $(el).attr('data-questionid') ? 'Question' : 'Answer';
-                urls.push(MetaSmokeAPI.GetQueryUrl(Number($(el).attr('data-questionid') || $(el).attr('data-answerid')), postType));
-            });
-            const urlString = urls.join();
+            const urls = globals.isQuestionPage() ? globals.getPostUrlsFromQuestionPage() : globals.getPostUrlsFromFlagsPage();
+            const urlString = $.map(urls, obj => obj).join(',');
             const isDisabled = MetaSmokeAPI.IsDisabled();
             if (isDisabled)
                 return;
             $.ajax({
                 type: 'GET',
                 url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
+                async: false,
                 data: {
                     urls: urlString,
                     key: `${MetaSmokeAPI.appKey}`
@@ -1551,7 +1265,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
         }
         static GetQueryUrl(postId, postType) {
-            return `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'q'}/${postId}`;
+            return `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'questions'}/${postId}`;
         }
         static getUserKey() {
             // eslint-disable-next-line no-async-promise-executor
@@ -1666,10 +1380,294 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 
 /***/ }),
+/* 5 */
+/***/ ((module, exports, __webpack_require__) => {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", ({ value: true }));
+    exports.GreaseMonkeyCache = void 0;
+    class GreaseMonkeyCache {
+        static async GetAndCache(cacheKey, getterPromise, expiresAt) {
+            const cachedItem = GreaseMonkeyCache.GetFromCache(cacheKey);
+            if (cachedItem)
+                return cachedItem;
+            const result = await getterPromise();
+            GreaseMonkeyCache.StoreInCache(cacheKey, result, expiresAt);
+            return result;
+        }
+        static GetFromCache(cacheKey) {
+            const jsonItem = GM_getValue(cacheKey, undefined);
+            if (!jsonItem)
+                return undefined;
+            const dataItem = JSON.parse(jsonItem);
+            if (dataItem.Expires && new Date(dataItem.Expires) < new Date())
+                return undefined;
+            return dataItem.Data;
+        }
+        static StoreInCache(cacheKey, item, expiresAt) {
+            const jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
+            GM_setValue(cacheKey, jsonStr);
+        }
+        static Unset(cacheKey) {
+            GM_deleteValue(cacheKey);
+        }
+    }
+    exports.GreaseMonkeyCache = GreaseMonkeyCache;
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
+/* 6 */
+/***/ ((module, exports, __webpack_require__) => {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(7), __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, ChatApi_1, globals) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", ({ value: true }));
+    exports.NattyAPI = void 0;
+    class NattyAPI {
+        constructor(answerId) {
+            this.chat = new ChatApi_1.ChatApi();
+            this.answerId = answerId;
+            this.feedbackMessage = `@Natty feedback https://stackoverflow.com/a/${this.answerId}`;
+            this.reportMessage = `@Natty report https://stackoverflow.com/a/${this.answerId}`;
+        }
+        WasReported() {
+            return new Promise((resolve, reject) => {
+                if (!globals.isStackOverflow())
+                    resolve(false);
+                let numTries = 0;
+                const onError = (response) => {
+                    numTries++;
+                    numTries < 3 ? makeRequest() : reject('Failed to retrieve Natty report: ' + response);
+                };
+                const makeRequest = () => {
+                    GM_xmlhttpRequest({
+                        method: 'GET',
+                        url: `${globals.nattyFeedbackUrl}/${this.answerId}`,
+                        onload: (response) => {
+                            if (response.status === 200) {
+                                const nattyResult = JSON.parse(response.responseText);
+                                resolve(nattyResult.items && nattyResult.items[0]);
+                            }
+                            else {
+                                onError(response.responseText);
+                            }
+                        },
+                        onerror: (response) => {
+                            onError(response);
+                        },
+                    });
+                };
+                makeRequest();
+            });
+        }
+        ReportNaa(answerDate, questionDate) {
+            // eslint-disable-next-line no-async-promise-executor
+            return new Promise(async (resolve, reject) => {
+                if (answerDate < questionDate || !globals.isStackOverflow())
+                    reject('Answer must be posted after the question');
+                if (await this.WasReported()) {
+                    await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
+                    resolve(true);
+                }
+                else {
+                    const answerAge = this.DaysBetween(answerDate, new Date());
+                    const daysPostedAfterQuestion = this.DaysBetween(questionDate, answerDate);
+                    if (isNaN(answerAge) || isNaN(daysPostedAfterQuestion) || answerAge > 30 || daysPostedAfterQuestion < 30)
+                        resolve(false);
+                    await this.chat.SendMessage(globals.soboticsRoomId, this.reportMessage);
+                    resolve(true);
+                }
+            });
+        }
+        async ReportRedFlag() {
+            if (!globals.isStackOverflow() || await this.WasReported())
+                return false;
+            await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
+            return true;
+        }
+        async ReportLooksFine() {
+            if (!globals.isStackOverflow() || await this.WasReported())
+                return false;
+            await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} fp`);
+            return true;
+        }
+        async ReportNeedsEditing() {
+            if (!globals.isStackOverflow() || await this.WasReported())
+                return false;
+            await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} ne`);
+            return true;
+        }
+        DaysBetween(first, second) {
+            return (second - first) / (1000 * 60 * 60 * 24);
+        }
+    }
+    exports.NattyAPI = NattyAPI;
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
+/* 7 */
+/***/ ((module, exports, __webpack_require__) => {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(5), __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, GreaseMonkeyCache_1, globals) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", ({ value: true }));
+    exports.ChatApi = void 0;
+    class ChatApi {
+        constructor(chatUrl = 'https://chat.stackoverflow.com') {
+            this.chatRoomUrl = chatUrl;
+        }
+        static GetExpiryDate() {
+            const expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + 1);
+            return expiryDate;
+        }
+        async GetChannelFKey(roomId) {
+            const getterPromise = new Promise((resolve, reject) => {
+                this.GetChannelPage(roomId).then(channelPage => {
+                    const fkeyElement = $(channelPage).filter('#fkey');
+                    if (!fkeyElement.length)
+                        reject('Could not find fkey');
+                    const fkey = fkeyElement.val();
+                    resolve(fkey);
+                });
+            });
+            const expiryDate = ChatApi.GetExpiryDate();
+            return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(globals.CacheChatApiFkey, () => getterPromise, expiryDate);
+        }
+        GetChatUserId() {
+            return StackExchange.options.user.userId;
+        }
+        SendMessage(roomId, message) {
+            return new Promise((resolve, reject) => {
+                const requestFunc = async () => {
+                    const fkeyPromise = this.GetChannelFKey(roomId);
+                    const fKey = await fkeyPromise;
+                    GM_xmlhttpRequest({
+                        method: 'POST',
+                        url: `${this.chatRoomUrl}/chats/${roomId}/messages/new`,
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        data: 'text=' + encodeURIComponent(message) + '&fkey=' + fKey,
+                        onload: (response_1) => {
+                            response_1.status === 200 ? resolve() : onFailure(response_1.statusText);
+                        },
+                        onerror: (response_3) => {
+                            onFailure(response_3);
+                        },
+                    });
+                };
+                let numTries = 0;
+                const onFailure = (errorMessage) => {
+                    numTries++;
+                    if (numTries < 3) {
+                        const fkeyCacheKey = 'StackExchange.ChatApi.FKey';
+                        GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(fkeyCacheKey);
+                        requestFunc();
+                    }
+                    else {
+                        reject(errorMessage);
+                    }
+                };
+                requestFunc();
+            });
+        }
+        GetChannelPage(roomId) {
+            const getterPromise = new Promise((resolve, reject) => {
+                GM_xmlhttpRequest({
+                    method: 'GET',
+                    url: `${this.chatRoomUrl}/rooms/${roomId}`,
+                    onload: (response) => {
+                        response.status === 200 ? resolve(response.responseText) : reject(response.statusText);
+                    },
+                    onerror: (data) => reject(data)
+                });
+            });
+            return getterPromise;
+        }
+    }
+    exports.ChatApi = ChatApi;
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
+/* 8 */
+/***/ ((module, exports, __webpack_require__) => {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, globals) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", ({ value: true }));
+    exports.GenericBotAPI = void 0;
+    class GenericBotAPI {
+        constructor(answerId) {
+            this.answerId = answerId;
+        }
+        async ReportNaa() {
+            const response = await this.makeTrackRequest();
+            return response;
+        }
+        async ReportRedFlag() {
+            const response = await this.makeTrackRequest();
+            return response;
+        }
+        async ReportLooksFine() {
+            return false;
+        }
+        async ReportNeedsEditing() {
+            return false;
+        }
+        computeContentHash(postContent) {
+            if (!postContent)
+                return 0;
+            let hash = 0;
+            for (let i = 0; i < postContent.length; ++i) {
+                hash = ((hash << 5) - hash) + postContent.charCodeAt(i);
+                hash = hash & hash;
+            }
+            return hash;
+        }
+        makeTrackRequest() {
+            const promise = new Promise((resolve, reject) => {
+                if (!globals.isStackOverflow() || !$('#answer-' + this.answerId + ' .js-post-body').length) {
+                    resolve(false);
+                }
+                const flaggerName = globals.username;
+                const contentHash = this.computeContentHash($('#answer-' + this.answerId + ' .js-post-body').html().trim());
+                GM_xmlhttpRequest({
+                    method: 'POST',
+                    url: 'https://so.floern.com/api/trackpost.php',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    data: `key=${globals.genericBotKey}`
+                        + '&postId=' + this.answerId
+                        + '&contentHash=' + contentHash
+                        + '&flagger=' + encodeURIComponent(flaggerName),
+                    onload: (response) => {
+                        if (response.status !== 200)
+                            reject('Flag Tracker Error: Status ' + response.status);
+                        resolve(true);
+                    },
+                    onerror: (response) => {
+                        reject('Flag Tracker Error: ' + response.responseText);
+                    }
+                });
+            });
+            return promise;
+        }
+    }
+    exports.GenericBotAPI = GenericBotAPI;
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
 /* 9 */
 /***/ ((module, exports, __webpack_require__) => {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(4), __webpack_require__(6)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, ChatApi_1, globals) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(7), __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, ChatApi_1, globals) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.CopyPastorAPI = void 0;
@@ -1751,7 +1749,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 10 */
 /***/ ((module, exports, __webpack_require__) => {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(8), __webpack_require__(1), __webpack_require__(5), __webpack_require__(6)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, MetaSmokeAPI_1, FlagTypes_1, GreaseMonkeyCache_1, globals) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(4), __webpack_require__(1), __webpack_require__(5), __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, MetaSmokeAPI_1, FlagTypes_1, GreaseMonkeyCache_1, globals) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.SetupConfiguration = void 0;

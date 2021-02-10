@@ -58,18 +58,15 @@ export class MetaSmokeAPI {
     };
 
     private static QueryMetaSmokeInternal() {
-        const urls: string[] = [];
-        $('.question, .answer').each((_index, el) => {
-            const postType = $(el).attr('data-questionid') ? 'Question' : 'Answer';
-            urls.push(MetaSmokeAPI.GetQueryUrl(Number($(el).attr('data-questionid') || $(el).attr('data-answerid')), postType));
-        });
-        const urlString = urls.join();
+        const urls: JQuery = globals.isQuestionPage() ? globals.getPostUrlsFromQuestionPage() : globals.getPostUrlsFromFlagsPage();
+        const urlString = $.map(urls, obj => obj).join(',');
 
         const isDisabled = MetaSmokeAPI.IsDisabled();
         if (isDisabled) return;
         $.ajax({
             type: 'GET',
             url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
+            async: false,
             data: {
                 urls: urlString,
                 key: `${MetaSmokeAPI.appKey}`
@@ -86,8 +83,8 @@ export class MetaSmokeAPI {
         });
     }
 
-    private static GetQueryUrl(postId: number, postType: 'Answer' | 'Question') {
-        return `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'q'}/${postId}`;
+    public static GetQueryUrl(postId: number, postType: 'Answer' | 'Question') {
+        return `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'questions'}/${postId}`;
     }
 
     private static getUserKey() {

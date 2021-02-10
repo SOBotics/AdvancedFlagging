@@ -1,4 +1,3 @@
-import { IsStackOverflow } from '@userscriptTools/sotools/sotools';
 import { ChatApi } from '@userscriptTools/chatapi/ChatApi';
 import * as globals from '../../../GlobalVars';
 
@@ -33,7 +32,7 @@ export class NattyAPI {
 
     public WasReported(): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
-            if (!IsStackOverflow()) resolve(false);
+            if (!globals.isStackOverflow()) resolve(false);
 
             let numTries = 0;
             const onError = (response: any) => {
@@ -66,7 +65,7 @@ export class NattyAPI {
     public ReportNaa(answerDate: Date, questionDate: Date) {
         // eslint-disable-next-line no-async-promise-executor
         return new Promise<any>(async (resolve, reject) => {
-            if (answerDate < questionDate || !IsStackOverflow()) reject('Answer must be posted after the question');
+            if (answerDate < questionDate || !globals.isStackOverflow()) reject('Answer must be posted after the question');
 
             if (await this.WasReported()) {
                 await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
@@ -83,19 +82,19 @@ export class NattyAPI {
     }
 
     public async ReportRedFlag() {
-        if (!IsStackOverflow() || await this.WasReported()) return false;
+        if (!globals.isStackOverflow() || await this.WasReported()) return false;
         await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
         return true;
     }
 
     public async ReportLooksFine() {
-        if (!IsStackOverflow() || await this.WasReported()) return false;
+        if (!globals.isStackOverflow() || await this.WasReported()) return false;
         await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} fp`);
         return true;
     }
 
     public async ReportNeedsEditing() {
-        if (!IsStackOverflow() || await this.WasReported()) return false;
+        if (!globals.isStackOverflow() || await this.WasReported()) return false;
         await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} ne`);
         return true;
     }

@@ -1,5 +1,5 @@
 import { FlagType, flagCategories } from './FlagTypes';
-import { IsStackOverflow, parseQuestionsAndAnswers, parseDate } from '@userscriptTools/sotools/sotools';
+import { parseQuestionsAndAnswers, parseDate } from '@userscriptTools/sotools/sotools';
 import { NattyAPI } from '@userscriptTools/nattyapi/NattyApi';
 import { GenericBotAPI } from '@userscriptTools/genericbotapi/GenericBotAPI';
 import { MetaSmokeAPI } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
@@ -102,6 +102,7 @@ function handleFlagAndComment(postId: number, flag: FlagType,
     return result;
 }
 
+const isStackOverflow = globals.isStackOverflow();
 const popupWrapper = globals.popupWrapper;
 let toasterTimeout: number | null = null;
 let toasterFadeTimeout: number | null = null;
@@ -222,7 +223,7 @@ function setupMetasmokeApi(postId: number, postType: 'Answer' | 'Question', smok
     if (!isReported) {
         smokeyIcon.addClass('d-none');
     } else {
-        smokeyIcon.click(() => window.open(`https://metasmoke.erwaysoftware.com/post/${postId}`, '_blank'));
+        smokeyIcon.click(() => window.open(`https://metasmoke.erwaysoftware.com/post/${isReported}`, '_blank'));
         globals.showInlineElement(smokeyIcon);
     }
 
@@ -343,8 +344,6 @@ async function BuildFlaggingDialog(element: JQuery,
     const flagBox = globals.getOptionBox(checkboxNameFlag);
     flagBox.prop('checked', true);
 
-    const isStackOverflow = IsStackOverflow();
-
     const comments = element.find('.comment-body');
     const defaultNoComment = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoComment);
 
@@ -458,7 +457,7 @@ async function BuildFlaggingDialog(element: JQuery,
         commentingRow.children();
     }
 
-    const flagBoxLabel = globals.getOptionLabel('Flag', checkboxNameComment);
+    const flagBoxLabel = globals.getOptionLabel('Flag', checkboxNameFlag);
     const flaggingRow = globals.plainDiv.clone();
 
     const defaultNoFlag = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoFlag);
@@ -510,14 +509,12 @@ async function SetupPostPage() {
         let iconLocation: JQuery;
         let advancedFlaggingLink: JQuery | null = null;
 
-        const nattyIcon = globals.getNattyIcon().click(() => {
-            window.open(`https://sentinel.erwaysoftware.com/posts/aid/${post.postId}`, '_blank');
-        });
-
+        const nattyIcon = globals.getNattyIcon().click(() => window.open(`//sentinel.erwaysoftware.com/posts/aid/${post.postId}`, '_blank'));
         const copyPastorIcon = globals.getGuttenbergIcon();
+        const smokeyIcon = globals.getSmokeyIcon();
+
         const copyPastorApi = new CopyPastorAPI(post.postId, globals.copyPastorKey);
 
-        const smokeyIcon = globals.getSmokeyIcon();
         const reporters: Reporter[] = [];
         if (post.type === 'Answer') {
             reporters.push(setupNattyApi(post.postId, nattyIcon));
@@ -532,9 +529,7 @@ async function SetupPostPage() {
                 copyPastorIcon.attr('Title', `Reported by CopyPastor - ${items.length}`);
                 globals.showInlineElement(copyPastorIcon);
                 copyPastorIcon.click(() =>
-                    items.forEach(item => {
-                        window.open('https://copypastor.sobotics.org/posts/' + item.post_id);
-                    })
+                    items.forEach(item => window.open('https://copypastor.sobotics.org/posts/' + item.post_id))
                 );
             }).catch(error => globals.displayError(`${error} received from CopyPastor.`));
         }
@@ -595,7 +590,7 @@ async function SetupPostPage() {
                 if (openOnHover) {
                     link.mouseleave(e => {
                         e.stopPropagation();
-                        globals.hideElement(dropDown);
+                        setTimeout(() => globals.hideElement(dropDown), 100); // avoid immediate closing of popover
                     });
                 } else {
                     $(window).click(() => globals.hideElement(dropDown));
@@ -621,13 +616,10 @@ async function SetupPostPage() {
     });
 }
 
-async function Setup() {
-    await MetaSmokeAPI.Setup(globals.metaSmokeKey);
-
-    SetupPostPage();
+function Setup() {
+    MetaSmokeAPI.Setup(globals.metaSmokeKey).then(() => SetupPostPage());
     SetupStyles();
     SetupConfiguration();
-
     document.body.appendChild(popupWrapper.get(0));
 
     const watchedQueuesEnabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationWatchQueues);
@@ -678,10 +670,10 @@ async function Setup() {
 
 $(() => {
     let started = false;
-    async function actionWatcher() {
+    function actionWatcher() {
         if (!started) {
             started = true;
-            await Setup();
+            Setup();
         }
         $(window).off('focus', actionWatcher);
         $(window).off('mousemove', actionWatcher);

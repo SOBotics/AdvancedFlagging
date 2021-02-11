@@ -31,7 +31,7 @@ export class MetaSmokeAPI {
     public static async Setup(appKey: string) {
         MetaSmokeAPI.appKey = appKey;
         MetaSmokeAPI.accessToken = await MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
-        MetaSmokeAPI.QueryMetaSmokeInternal();
+        await MetaSmokeAPI.QueryMetaSmokeInternal();
     }
 
     private static codeGetter: (metaSmokeOAuthUrl: string) => Promise<string | undefined> = async (metaSmokeOAuthUrl: string | undefined) => {
@@ -58,28 +58,31 @@ export class MetaSmokeAPI {
     };
 
     private static QueryMetaSmokeInternal() {
-        const urls: JQuery = globals.isQuestionPage() ? globals.getPostUrlsFromQuestionPage() : globals.getPostUrlsFromFlagsPage();
+        const urls = globals.isQuestionPage() ? globals.getPostUrlsFromQuestionPage() : globals.getPostUrlsFromFlagsPage();
         const urlString = $.map(urls, obj => obj).join(',');
 
         const isDisabled = MetaSmokeAPI.IsDisabled();
         if (isDisabled) return;
-        $.ajax({
-            type: 'GET',
-            url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
-            async: false,
-            data: {
-                urls: urlString,
-                key: `${MetaSmokeAPI.appKey}`
-            }
-        }).done((metaSmokeResult: MetaSmokeApiWrapper) => {
-            metaSmokeResult.items.forEach(item => {
-                const postId = item.link.match(/\d+$/);
-                if (!postId) return;
+        return new Promise<void>((resolve, reject) => {
+            $.ajax({
+                type: 'GET',
+                url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
+                data: {
+                    urls: urlString,
+                    key: `${MetaSmokeAPI.appKey}`
+                }
+            }).done((metaSmokeResult: MetaSmokeApiWrapper) => {
+                metaSmokeResult.items.forEach(item => {
+                    const postId = item.link.match(/\d+$/);
+                    if (!postId) return;
 
-                MetaSmokeAPI.metasmokeIds.push({ sitePostId: Number(postId[0]), metasmokeId: item.id });
+                    MetaSmokeAPI.metasmokeIds.push({ sitePostId: Number(postId[0]), metasmokeId: item.id });
+                });
+                resolve();
+            }).fail(error => {
+                console.error('Failed to get Metasmoke URLs', error);
+                reject();
             });
-        }).fail(error => {
-            console.error('Failed to get Metasmoke URLs', error);
         });
     }
 

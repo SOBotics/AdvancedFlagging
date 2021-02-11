@@ -562,37 +562,37 @@ async function SetupPostPage() {
                     Human: getHumanFromDisplayName(matches[1]) as any
                 };
 
+                if (!questionTime || !answerTime) return;
                 handleFlag(flagType, reporters, answerTime, questionTime);
                 displaySuccessFlagged(reportedIcon, flagType.Human);
             });
 
             const linkDisabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationLinkDisabled);
-            if (!linkDisabled) {
-                const dropDown = await BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation as number, post.authorName, answerTime, questionTime,
-                    deleted,
-                    reportedIcon,
-                    performedActionIcon,
-                    reporters,
-                    copyPastorApi.postReportedPromise()
+            if (!linkDisabled && questionTime && answerTime) {
+                const dropDown = await BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation as number,
+                    post.authorName, answerTime, questionTime, deleted,
+                    reportedIcon, performedActionIcon, reporters, copyPastorApi.postReportedPromise()
                 );
 
                 advancedFlaggingLink.append(dropDown);
 
                 const link = advancedFlaggingLink;
                 const openOnHover = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationOpenOnHover);
-                link[openOnHover ? 'hover' : 'click'](e => {
-                    e.stopPropagation();
-                    if (e.target !== link.get(0)) return;
+                const showElementOnEvent = (event: any) => {
+                    event.stopPropagation();
+                    if (event.target !== link.get(0)) return;
 
                     globals.showElement(dropDown);
-                });
+                };
 
                 if (openOnHover) {
+                    link.hover(showElementOnEvent);
                     link.mouseleave(e => {
                         e.stopPropagation();
                         setTimeout(() => globals.hideElement(dropDown), 100); // avoid immediate closing of popover
                     });
                 } else {
+                    link.click(showElementOnEvent);
                     $(window).click(() => globals.hideElement(dropDown));
                 }
                 iconLocation.append(globals.gridCellDiv.clone().append(advancedFlaggingLink));
@@ -633,9 +633,13 @@ function Setup() {
             const reviewJson = JSON.parse(review);
             const postId = reviewJson.postId;
             const content = $(reviewJson.content);
+
+            const questionTime = parseDate($('.post-signature.owner .user-action-time span', content).attr('title'));
+            const answerTime = parseDate($('.user-info .user-action-time span', content).attr('title'));
+            if (!questionTime || !answerTime) return;
             postDetails[postId] = {
-                questionTime: parseDate($('.post-signature.owner .user-action-time span', content).attr('title')),
-                answerTime: parseDate($('.user-info .user-action-time span', content).attr('title'))
+                questionTime: questionTime,
+                answerTime: answerTime
             };
         };
 

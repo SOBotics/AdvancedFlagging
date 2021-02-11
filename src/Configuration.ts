@@ -62,8 +62,10 @@ function BuildConfigurationOverlay() {
             onSave: () => {
                 const flagOptions = $('.af-section-flags').find('input').get()
                                                           .filter(el => $(el).prop('checked'))
-                                                          .map(el => Number($(el).attr('id').match(/\d+/))).sort()
-                                                          .sort((a, b) => a - b);
+                                                          .map(el => {
+                                                              const postId = $(el).attr('id');
+                                                              return postId ? Number(postId.match(/\d+/)) : 0;
+                                                          }).sort((a, b) => a - b);
                 GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagOptions);
             }
         },

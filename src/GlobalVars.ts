@@ -127,7 +127,8 @@ export function showMSTokenPopupAndGet() {
         $('#advanced-flagging-save-ms-token').on('click', () => {
             const token = $('#advanced-flagging-ms-token').val();
             $('#af-ms-token').remove(); // dismiss modal
-            resolve(token);
+            if (!token) return;
+            resolve(token.toString());
         });
     });
 }
@@ -171,10 +172,13 @@ export function getPostUrlsFromQuestionPage() {
 export function getPostUrlsFromFlagsPage() {
     return $('.flagged-post').map((_index, el) => {
         const postType = $(el).find('.answer-hyperlink').length ? 'Answer' : 'Question';
+        const elementHref = $(el).find(`.${postType.toLowerCase()}-hyperlink`).attr('href');
+        if (!elementHref) return;
+
         const urlToReturn = MetaSmokeAPI.GetQueryUrl(Number(
             postType === 'Answer'
-                ? $(el).find('.answer-hyperlink').attr('href').split('#')[1]
-                : $(el).find('.question-hyperlink').attr('href').split('/')[2]
+                ? elementHref.split('#')[1]
+                : elementHref.split('/')[2]
         ), postType);
         return urlToReturn;
     });

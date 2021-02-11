@@ -42,11 +42,11 @@ export class GenericBotAPI {
 
     private makeTrackRequest() {
         const promise = new Promise<boolean>((resolve, reject) => {
-            if (!globals.isStackOverflow() || !$('#answer-' + this.answerId + ' .js-post-body').length) {
-                resolve(false);
-            }
+            if (!globals.isStackOverflow() || !$('#answer-' + this.answerId + ' .js-post-body').length) resolve(false);
 
             const flaggerName = globals.username;
+            if (!flaggerName) return false;
+
             const contentHash = this.computeContentHash($('#answer-' + this.answerId + ' .js-post-body').html().trim());
 
             GM_xmlhttpRequest({

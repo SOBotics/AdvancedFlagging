@@ -19,10 +19,8 @@ export interface QuestionAnswer {
     page: 'Question';
     postId: number;
     question: QuestionQuestion;
-
     postTime: Date;
     score: number;
-
     authorReputation?: number;
     authorName: string;
     authorId?: number;
@@ -73,10 +71,14 @@ export type PostInfo = NatoAnswer | QuestionPageInfo | FlagPageInfo | GenericPag
 function parseNatoPage(callback: (post: NatoAnswer) => void) {
     $('.answer-hyperlink').parent().parent().each((_index, element) => {
         const node = $(element);
-        const postId = parseInt(node.find('.answer-hyperlink').attr('href').split('#')[1], 10);
+        const answerHref = node.find('.answer-hyperlink').attr('href');
+        if (!answerHref) return;
+
+        const postId = parseInt(answerHref.split('#')[1], 10);
 
         const answerTime = parseActionDate(node.find('.user-action-time'));
         const questionTime = parseActionDate(node.find('td .relativetime'));
+        if (!answerTime || !questionTime) return;
 
         const authorReputation = parseReputation(node.find('.reputation-score'));
         const { authorName, authorId } = parseAuthorDetails(node.find('.user-details'));
@@ -96,7 +98,7 @@ function parseNatoPage(callback: (post: NatoAnswer) => void) {
 }
 
 function getPostDetails(node: JQuery) {
-    const score = parseInt(node.find('.vote-count-post').text(), 10);
+    const score = parseInt(node.find('.js-vote-count').text(), 10);
 
     const authorReputation = parseReputation(node.find('.user-info .reputation-score').last());
     const { authorName, authorId } = parseAuthorDetails(node.find('.user-info .user-details').last());
@@ -106,9 +108,12 @@ function getPostDetails(node: JQuery) {
 }
 
 function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) => void, question: QuestionQuestion) {
-    const answerId = parseInt(aNode.attr('data-answerid'), 10);
+    const answerIdString = aNode.attr('data-answerid');
+    if (!answerIdString) return;
 
+    const answerId = parseInt(answerIdString, 10);
     const postDetails = getPostDetails(aNode);
+    if (!postDetails.postTime) return;
 
     aNode.find('.answercell').bind('destroyed', () => {
         setTimeout(() => {
@@ -134,9 +139,12 @@ function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) =>
 function parseQuestionPage(callback: (post: QuestionPageInfo) => void) {
     let question: QuestionQuestion;
     const parseQuestionDetails = (qNode: JQuery) => {
-        const postId = parseInt(qNode.attr('data-questionid'), 10);
+        const questionIdString = qNode.attr('data-questionid');
+        if (!questionIdString) return;
 
+        const postId = parseInt(questionIdString, 10);
         const postDetails = getPostDetails(qNode);
+        if (!postDetails.postTime) return;
 
         qNode.find('.postcell').bind('destroyed', () => {
             setTimeout(() => {
@@ -151,9 +159,7 @@ function parseQuestionPage(callback: (post: QuestionPageInfo) => void) {
             page: 'Question' as const,
             postId,
             postTime: postDetails.postTime,
-
             score: postDetails.score,
-
             authorReputation: postDetails.authorReputation,
             authorName: postDetails.authorName,
             authorId: postDetails.authorId
@@ -170,19 +176,22 @@ function parseFlagsPage(callback: (post: FlagPageInfo) => void) {
     $('.flagged-post').each((_index, nodeEl) => {
         const node = $(nodeEl);
         const type = node.find('.answer-hyperlink').length ? 'Answer' : 'Question';
+        const elementHref = node.find(`.${type.toLowerCase()}-hyperlink`).attr('href');
+        if (!elementHref) return;
 
         const postId =
             parseInt(
                 type === 'Answer'
-                    ? node.find('.answer-hyperlink').attr('href').split('#')[1]
-                    : node.find('.question-hyperlink').attr('href').split('/')[2]
+                    ? elementHref.split('#')[1]
+                    : elementHref.split('/')[2]
                 , 10);
         const score = parseInt(node.find('.answer-votes').text(), 10);
 
         const { authorName, authorId } = parseAuthorDetails(node.find('.post-user-info'));
         const postTime = parseActionDate(node.find('.post-user-info .relativetime'));
-
         const handledTime = parseActionDate(node.find('.mod-flag .relativetime'));
+        if (!postTime || !handledTime) return;
+
         const fullHandledResult = node.find('.flag-outcome').text().trim().split(' - ');
         const handledResult = fullHandledResult[0].trim();
         const handledComment = fullHandledResult.slice(1).join(' - ').trim();
@@ -204,10 +213,12 @@ function parseFlagsPage(callback: (post: FlagPageInfo) => void) {
 }
 
 function parseGenericPage(callback: (post: GenericPageInfo) => void) {
-    const questionNodes = $('.question-hyperlink');
-    for (let i = 0; i < questionNodes.length; i++) {
-        const questionNode = $(questionNodes[i]);
-        let fragment = questionNode.attr('href').split('/')[2];
+    $('.question-hyperlink').each((_index, node) => {
+        const questionNode = $(node);
+        const questionHref = questionNode.attr('href');
+        if (!questionHref) return;
+
+        let fragment = questionHref.split('/')[2];
         if (fragment.indexOf('_') >= 0) {
             fragment = fragment.split('_')[1];
         }
@@ -219,10 +230,14 @@ function parseGenericPage(callback: (post: GenericPageInfo) => void) {
             page: 'Unknown' as const,
             postId
         });
-    }
+    });
+
     $('.answer-hyperlink').each((_index, element) => {
         const answerNode = $(element);
-        let fragment = answerNode.attr('href').split('#')[1];
+        const answerNodeHref = answerNode.attr('href');
+        if (!answerNodeHref) return;
+
+        let fragment = answerNodeHref.split('#')[1];
         if (fragment.indexOf('_') >= 0) {
             fragment = fragment.split('_')[1];
         }
@@ -253,35 +268,33 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => Promise<v
 
 function parseReputation(reputationDiv: JQuery) {
     let reputationText = reputationDiv.text();
+    const reputationDivTitle = reputationDiv.attr('title');
+    if (!reputationDivTitle) return;
+
     if (reputationText.indexOf('k') !== -1) {
-        reputationText = reputationDiv.attr('title').substr('reputation score '.length);
+        reputationText = reputationDivTitle.substr('reputation score '.length);
     }
     reputationText = reputationText.replace(',', '');
-    if (reputationText.trim() !== '') {
-        return parseInt(reputationText, 10);
-    }
-    return undefined;
+
+    return parseInt(reputationText, 10) || undefined;
 }
+
 function parseAuthorDetails(authorDiv: JQuery) {
     const userLink = authorDiv.find('a');
     const authorName = userLink.text();
     const userLinkRef = userLink.attr('href');
     let authorId: number | undefined;
     // Users can be deleted, and thus have no link to their profile.
-    if (userLinkRef) {
-        authorId = parseInt(userLinkRef.split('/')[2], 10);
-    }
+    if (userLinkRef) authorId = parseInt(userLinkRef.split('/')[2], 10);
+
     return { authorName, authorId };
 }
+
 function parseActionDate(actionDiv: JQuery) {
-    if (!actionDiv.hasClass('relativetime')) {
-        actionDiv = actionDiv.find('.relativetime');
-    }
-    const answerTime = parseDate(actionDiv.attr('title'));
-    return answerTime;
+    return parseDate((actionDiv.hasClass('relativetime') ? actionDiv : actionDiv.find('.relativeTime')).attr('title'));
 }
 
-export function parseDate(dateStr: string) {
+export function parseDate(dateStr?: string) {
     // Fix for safari
-    return new Date(dateStr.replace(' ', 'T'));
+    return dateStr ? new Date(dateStr.replace(' ', 'T')) : undefined;
 }

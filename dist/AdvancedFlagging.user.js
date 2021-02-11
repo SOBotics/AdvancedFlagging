@@ -507,28 +507,32 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         DisplayName: matches[1],
                         Human: getHumanFromDisplayName(matches[1])
                     };
+                    if (!questionTime || !answerTime)
+                        return;
                     handleFlag(flagType, reporters, answerTime, questionTime);
                     displaySuccessFlagged(reportedIcon, flagType.Human);
                 });
                 const linkDisabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationLinkDisabled);
-                if (!linkDisabled) {
+                if (!linkDisabled && questionTime && answerTime) {
                     const dropDown = await BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, post.authorName, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi.postReportedPromise());
                     advancedFlaggingLink.append(dropDown);
                     const link = advancedFlaggingLink;
                     const openOnHover = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationOpenOnHover);
-                    link[openOnHover ? 'hover' : 'click'](e => {
-                        e.stopPropagation();
-                        if (e.target !== link.get(0))
+                    const showElementOnEvent = (event) => {
+                        event.stopPropagation();
+                        if (event.target !== link.get(0))
                             return;
                         globals.showElement(dropDown);
-                    });
+                    };
                     if (openOnHover) {
+                        link.hover(showElementOnEvent);
                         link.mouseleave(e => {
                             e.stopPropagation();
                             setTimeout(() => globals.hideElement(dropDown), 100); // avoid immediate closing of popover
                         });
                     }
                     else {
+                        link.click(showElementOnEvent);
                         $(window).click(() => globals.hideElement(dropDown));
                     }
                     iconLocation.append(globals.gridCellDiv.clone().append(advancedFlaggingLink));
@@ -565,9 +569,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 const reviewJson = JSON.parse(review);
                 const postId = reviewJson.postId;
                 const content = $(reviewJson.content);
+                const questionTime = sotools_1.parseDate($('.post-signature.owner .user-action-time span', content).attr('title'));
+                const answerTime = sotools_1.parseDate($('.user-info .user-action-time span', content).attr('title'));
+                if (!questionTime || !answerTime)
+                    return;
                 postDetails[postId] = {
-                    questionTime: sotools_1.parseDate($('.post-signature.owner .user-action-time span', content).attr('title')),
-                    answerTime: sotools_1.parseDate($('.user-info .user-action-time span', content).attr('title'))
+                    questionTime: questionTime,
+                    answerTime: answerTime
                 };
             };
             // We can't just parse the page after a recommend/delete request, as the page will have sometimes already updated
@@ -823,9 +831,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     function parseNatoPage(callback) {
         $('.answer-hyperlink').parent().parent().each((_index, element) => {
             const node = $(element);
-            const postId = parseInt(node.find('.answer-hyperlink').attr('href').split('#')[1], 10);
+            const answerHref = node.find('.answer-hyperlink').attr('href');
+            if (!answerHref)
+                return;
+            const postId = parseInt(answerHref.split('#')[1], 10);
             const answerTime = parseActionDate(node.find('.user-action-time'));
             const questionTime = parseActionDate(node.find('td .relativetime'));
+            if (!answerTime || !questionTime)
+                return;
             const authorReputation = parseReputation(node.find('.reputation-score'));
             const { authorName, authorId } = parseAuthorDetails(node.find('.user-details'));
             callback({
@@ -842,15 +855,20 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         });
     }
     function getPostDetails(node) {
-        const score = parseInt(node.find('.vote-count-post').text(), 10);
+        const score = parseInt(node.find('.js-vote-count').text(), 10);
         const authorReputation = parseReputation(node.find('.user-info .reputation-score').last());
         const { authorName, authorId } = parseAuthorDetails(node.find('.user-info .user-details').last());
         const postTime = parseActionDate(node.find('.user-info .relativetime').last());
         return { score, authorReputation, authorName, authorId, postTime };
     }
     function parseAnswerDetails(aNode, callback, question) {
-        const answerId = parseInt(aNode.attr('data-answerid'), 10);
+        const answerIdString = aNode.attr('data-answerid');
+        if (!answerIdString)
+            return;
+        const answerId = parseInt(answerIdString, 10);
         const postDetails = getPostDetails(aNode);
+        if (!postDetails.postTime)
+            return;
         aNode.find('.answercell').bind('destroyed', () => {
             setTimeout(() => {
                 const updatedAnswerNode = $(`#answer-${answerId}`);
@@ -873,8 +891,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     function parseQuestionPage(callback) {
         let question;
         const parseQuestionDetails = (qNode) => {
-            const postId = parseInt(qNode.attr('data-questionid'), 10);
+            const questionIdString = qNode.attr('data-questionid');
+            if (!questionIdString)
+                return;
+            const postId = parseInt(questionIdString, 10);
             const postDetails = getPostDetails(qNode);
+            if (!postDetails.postTime)
+                return;
             qNode.find('.postcell').bind('destroyed', () => {
                 setTimeout(() => {
                     const updatedQuestionNode = $(`[data-questionid="${postId}"]`);
@@ -902,13 +925,18 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         $('.flagged-post').each((_index, nodeEl) => {
             const node = $(nodeEl);
             const type = node.find('.answer-hyperlink').length ? 'Answer' : 'Question';
+            const elementHref = node.find(`.${type.toLowerCase()}-hyperlink`).attr('href');
+            if (!elementHref)
+                return;
             const postId = parseInt(type === 'Answer'
-                ? node.find('.answer-hyperlink').attr('href').split('#')[1]
-                : node.find('.question-hyperlink').attr('href').split('/')[2], 10);
+                ? elementHref.split('#')[1]
+                : elementHref.split('/')[2], 10);
             const score = parseInt(node.find('.answer-votes').text(), 10);
             const { authorName, authorId } = parseAuthorDetails(node.find('.post-user-info'));
             const postTime = parseActionDate(node.find('.post-user-info .relativetime'));
             const handledTime = parseActionDate(node.find('.mod-flag .relativetime'));
+            if (!postTime || !handledTime)
+                return;
             const fullHandledResult = node.find('.flag-outcome').text().trim().split(' - ');
             const handledResult = fullHandledResult[0].trim();
             const handledComment = fullHandledResult.slice(1).join(' - ').trim();
@@ -928,10 +956,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         });
     }
     function parseGenericPage(callback) {
-        const questionNodes = $('.question-hyperlink');
-        for (let i = 0; i < questionNodes.length; i++) {
-            const questionNode = $(questionNodes[i]);
-            let fragment = questionNode.attr('href').split('/')[2];
+        $('.question-hyperlink').each((_index, node) => {
+            const questionNode = $(node);
+            const questionHref = questionNode.attr('href');
+            if (!questionHref)
+                return;
+            let fragment = questionHref.split('/')[2];
             if (fragment.indexOf('_') >= 0) {
                 fragment = fragment.split('_')[1];
             }
@@ -942,10 +972,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 page: 'Unknown',
                 postId
             });
-        }
+        });
         $('.answer-hyperlink').each((_index, element) => {
             const answerNode = $(element);
-            let fragment = answerNode.attr('href').split('#')[1];
+            const answerNodeHref = answerNode.attr('href');
+            if (!answerNodeHref)
+                return;
+            let fragment = answerNodeHref.split('#')[1];
             if (fragment.indexOf('_') >= 0) {
                 fragment = fragment.split('_')[1];
             }
@@ -978,14 +1011,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.parseQuestionsAndAnswers = parseQuestionsAndAnswers;
     function parseReputation(reputationDiv) {
         let reputationText = reputationDiv.text();
+        const reputationDivTitle = reputationDiv.attr('title');
+        if (!reputationDivTitle)
+            return;
         if (reputationText.indexOf('k') !== -1) {
-            reputationText = reputationDiv.attr('title').substr('reputation score '.length);
+            reputationText = reputationDivTitle.substr('reputation score '.length);
         }
         reputationText = reputationText.replace(',', '');
-        if (reputationText.trim() !== '') {
-            return parseInt(reputationText, 10);
-        }
-        return undefined;
+        return parseInt(reputationText, 10) || undefined;
     }
     function parseAuthorDetails(authorDiv) {
         const userLink = authorDiv.find('a');
@@ -993,21 +1026,16 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         const userLinkRef = userLink.attr('href');
         let authorId;
         // Users can be deleted, and thus have no link to their profile.
-        if (userLinkRef) {
+        if (userLinkRef)
             authorId = parseInt(userLinkRef.split('/')[2], 10);
-        }
         return { authorName, authorId };
     }
     function parseActionDate(actionDiv) {
-        if (!actionDiv.hasClass('relativetime')) {
-            actionDiv = actionDiv.find('.relativetime');
-        }
-        const answerTime = parseDate(actionDiv.attr('title'));
-        return answerTime;
+        return parseDate((actionDiv.hasClass('relativetime') ? actionDiv : actionDiv.find('.relativeTime')).attr('title'));
     }
     function parseDate(dateStr) {
         // Fix for safari
-        return new Date(dateStr.replace(' ', 'T'));
+        return dateStr ? new Date(dateStr.replace(' ', 'T')) : undefined;
     }
     exports.parseDate = parseDate;
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
@@ -1159,7 +1187,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             $('#advanced-flagging-save-ms-token').on('click', () => {
                 const token = $('#advanced-flagging-ms-token').val();
                 $('#af-ms-token').remove(); // dismiss modal
-                resolve(token);
+                if (!token)
+                    return;
+                resolve(token.toString());
             });
         });
     }
@@ -1204,9 +1234,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     function getPostUrlsFromFlagsPage() {
         return $('.flagged-post').map((_index, el) => {
             const postType = $(el).find('.answer-hyperlink').length ? 'Answer' : 'Question';
+            const elementHref = $(el).find(`.${postType.toLowerCase()}-hyperlink`).attr('href');
+            if (!elementHref)
+                return;
             const urlToReturn = MetaSmokeAPI_1.MetaSmokeAPI.GetQueryUrl(Number(postType === 'Answer'
-                ? $(el).find('.answer-hyperlink').attr('href').split('#')[1]
-                : $(el).find('.question-hyperlink').attr('href').split('/')[2]), postType);
+                ? elementHref.split('#')[1]
+                : elementHref.split('/')[2]), postType);
             return urlToReturn;
         });
     }
@@ -1237,7 +1270,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         static async Setup(appKey) {
             MetaSmokeAPI.appKey = appKey;
             MetaSmokeAPI.accessToken = await MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
-            MetaSmokeAPI.QueryMetaSmokeInternal();
+            await MetaSmokeAPI.QueryMetaSmokeInternal();
         }
         static QueryMetaSmokeInternal() {
             const urls = globals.isQuestionPage() ? globals.getPostUrlsFromQuestionPage() : globals.getPostUrlsFromFlagsPage();
@@ -1245,23 +1278,26 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             const isDisabled = MetaSmokeAPI.IsDisabled();
             if (isDisabled)
                 return;
-            $.ajax({
-                type: 'GET',
-                url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
-                async: false,
-                data: {
-                    urls: urlString,
-                    key: `${MetaSmokeAPI.appKey}`
-                }
-            }).done((metaSmokeResult) => {
-                metaSmokeResult.items.forEach(item => {
-                    const postId = item.link.match(/\d+$/);
-                    if (!postId)
-                        return;
-                    MetaSmokeAPI.metasmokeIds.push({ sitePostId: Number(postId[0]), metasmokeId: item.id });
+            return new Promise((resolve, reject) => {
+                $.ajax({
+                    type: 'GET',
+                    url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
+                    data: {
+                        urls: urlString,
+                        key: `${MetaSmokeAPI.appKey}`
+                    }
+                }).done((metaSmokeResult) => {
+                    metaSmokeResult.items.forEach(item => {
+                        const postId = item.link.match(/\d+$/);
+                        if (!postId)
+                            return;
+                        MetaSmokeAPI.metasmokeIds.push({ sitePostId: Number(postId[0]), metasmokeId: item.id });
+                    });
+                    resolve();
+                }).fail(error => {
+                    console.error('Failed to get Metasmoke URLs', error);
+                    reject();
                 });
-            }).fail(error => {
-                console.error('Failed to get Metasmoke URLs', error);
             });
         }
         static GetQueryUrl(postId, postType) {
@@ -1527,13 +1563,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             return expiryDate;
         }
         async GetChannelFKey(roomId) {
-            const getterPromise = new Promise((resolve, reject) => {
+            const getterPromise = new Promise((resolve) => {
                 this.GetChannelPage(roomId).then(channelPage => {
-                    const fkeyElement = $(channelPage).filter('#fkey');
-                    if (!fkeyElement.length)
-                        reject('Could not find fkey');
+                    const fkeyElement = $(channelPage).find('#fkey');
                     const fkey = fkeyElement.val();
-                    resolve(fkey);
+                    if (!fkey)
+                        return;
+                    resolve(fkey.toString());
                 });
             });
             const expiryDate = ChatApi.GetExpiryDate();
@@ -1632,10 +1668,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         makeTrackRequest() {
             const promise = new Promise((resolve, reject) => {
-                if (!globals.isStackOverflow() || !$('#answer-' + this.answerId + ' .js-post-body').length) {
+                if (!globals.isStackOverflow() || !$('#answer-' + this.answerId + ' .js-post-body').length)
                     resolve(false);
-                }
                 const flaggerName = globals.username;
+                if (!flaggerName)
+                    return false;
                 const contentHash = this.computeContentHash($('#answer-' + this.answerId + ' .js-post-body').html().trim());
                 GM_xmlhttpRequest({
                     method: 'POST',
@@ -1805,8 +1842,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 onSave: () => {
                     const flagOptions = $('.af-section-flags').find('input').get()
                         .filter(el => $(el).prop('checked'))
-                        .map(el => Number($(el).attr('id').match(/\d+/))).sort()
-                        .sort((a, b) => a - b);
+                        .map(el => {
+                        const postId = $(el).attr('id');
+                        return postId ? Number(postId.match(/\d+/)) : 0;
+                    }).sort((a, b) => a - b);
                     GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagOptions);
                 }
             },

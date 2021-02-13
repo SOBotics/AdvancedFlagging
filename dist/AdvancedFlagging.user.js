@@ -76,7 +76,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 }`);
     }
     const userFkey = StackExchange.options.user.fkey;
-    function handleFlagAndComment(postId, flag, flagRequired, commentText, copyPastorPromise) {
+    function handleFlagAndComment(postId, flag, flagRequired, copypastorApi, commentText) {
         const result = {};
         if (commentText) {
             result.CommentPromise = new Promise((resolve, reject) => {
@@ -94,11 +94,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         if (flagRequired && flag.ReportType !== 'NoFlag') {
             // eslint-disable-next-line no-async-promise-executor
             result.FlagPromise = new Promise(async (resolve, reject) => {
-                const flagText = await copyPastorPromise.then(results => {
-                    if (flag.GetCustomFlagText && results.length) {
-                        return flag.GetCustomFlagText(results[0]);
-                    }
-                });
+                const copypastorObject = copypastorApi.getCopyPastorObject();
+                const flagText = flag.GetCustomFlagText && copypastorObject ? flag.GetCustomFlagText(copypastorObject) : undefined;
                 autoFlagging = true;
                 $.ajax({
                     url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
@@ -192,9 +189,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     function setupNattyApi(postId, nattyIcon) {
         const nattyApi = new NattyApi_1.NattyAPI(postId);
-        if (nattyIcon) {
-            nattyApi.WasReported().then(reported => reported ? globals.showInlineElement(nattyIcon) : nattyIcon.addClass('d-none'));
-        }
+        const isReported = nattyApi.WasReported();
+        if (nattyIcon)
+            isReported ? globals.showInlineElement(nattyIcon) : nattyIcon.addClass('d-none');
         return {
             name: 'Natty',
             ReportNaa: (answerDate, questionDate) => nattyApi.ReportNaa(answerDate, questionDate),
@@ -211,9 +208,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         return {
             name: 'Generic Bot',
             ReportNaa: () => genericBotAPI.ReportNaa(),
-            ReportRedFlag: () => Promise.resolve(false),
-            ReportLooksFine: () => genericBotAPI.ReportLooksFine(),
-            ReportNeedsEditing: () => genericBotAPI.ReportNeedsEditing(),
+            ReportRedFlag: () => genericBotAPI.ReportRedFlag(),
+            ReportLooksFine: () => Promise.resolve(false),
+            ReportNeedsEditing: () => Promise.resolve(false),
             ReportVandalism: () => Promise.resolve(true),
             ReportDuplicateAnswer: () => Promise.resolve(false),
             ReportPlagiarism: () => Promise.resolve(false)
@@ -240,7 +237,16 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             ReportPlagiarism: () => Promise.resolve(false)
         };
     }
-    function setupGuttenbergApi(copyPastorApi) {
+    function setupGuttenbergApi(copyPastorApi, copyPastorIcon) {
+        const copypastorObject = copyPastorApi.getCopyPastorObject();
+        if (copypastorObject && copypastorObject.post_id) {
+            copyPastorIcon.attr('Title', 'Reported by CopyPastor.');
+            globals.showInlineElement(copyPastorIcon);
+            copyPastorIcon.click(() => window.open('https://copypastor.sobotics.org/posts/' + copypastorObject.post_id));
+        }
+        else {
+            copyPastorIcon.addClass('d-none');
+        }
         return {
             name: 'Guttenberg',
             ReportNaa: () => copyPastorApi.ReportFalsePositive(),
@@ -289,44 +295,29 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             default: return '';
         }
     }
-    function getIsReportOrPlagiarism(copypastorPostId) {
-        return new Promise((resolve, reject) => {
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url: `${globals.copyPastorServer}/posts/${copypastorPostId}`,
-                onload: (response) => {
-                    const responseParsed = $(response.responseText);
-                    resolve(!!responseParsed.text().match('Reposted'));
-                },
-                onerror: (response) => {
-                    reject(response);
-                },
-            });
-        });
-    }
-    async function BuildFlaggingDialog(element, postId, postType, reputation, authorName, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorPromise) {
+    async function BuildFlaggingDialog(element, postId, postType, reputation, authorName, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi) {
+        const enabledFlagIds = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationEnabledFlags);
+        const defaultNoComment = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationDefaultNoComment);
+        const defaultNoFlag = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationDefaultNoFlag);
+        const comments = element.find('.comment-body');
         const dropDown = globals.dropDown.clone();
         const checkboxNameComment = `comment_checkbox_${postId}`;
         const checkboxNameFlag = `flag_checkbox_${postId}`;
         const leaveCommentBox = globals.getOptionBox(checkboxNameComment);
         const flagBox = globals.getOptionBox(checkboxNameFlag);
-        flagBox.prop('checked', true);
-        const comments = element.find('.comment-body');
-        const defaultNoComment = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationDefaultNoComment);
-        if (!defaultNoComment && !comments.length && isStackOverflow)
-            leaveCommentBox.prop('checked', true);
-        const enabledFlagIds = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationEnabledFlags);
+        flagBox.prop('checked', !defaultNoFlag);
+        leaveCommentBox.prop('checked', !defaultNoComment && !comments.length && isStackOverflow);
         let hasCommentOptions = false;
         let firstCategory = true;
-        FlagTypes_1.flagCategories.forEach(flagCategory => {
+        for (const flagCategory of FlagTypes_1.flagCategories) {
             if (flagCategory.AppliesTo.indexOf(postType) === -1)
-                return;
+                continue;
             const divider = globals.getDivider();
             if (!firstCategory)
                 dropDown.append(divider);
             const categoryDiv = globals.getCategoryDiv(flagCategory.IsDangerous);
             let activeLinks = flagCategory.FlagTypes.length;
-            flagCategory.FlagTypes.forEach(flagType => {
+            for (const flagType of flagCategory.FlagTypes) {
                 const reportLink = globals.reportLink.clone();
                 hasCommentOptions = !!flagType.GetComment;
                 const dropdownItem = globals.dropdownItem.clone();
@@ -347,22 +338,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 disableLink();
                 if (!enabledFlagIds || enabledFlagIds.indexOf(flagType.Id) > -1) {
                     if (flagType.Enabled) {
-                        copyPastorPromise.then(async (items) => {
-                            // If it somehow changed within the promise, check again
-                            if (flagType.Enabled) {
-                                const hasItems = !!items.length;
-                                if (!hasItems)
-                                    return;
-                                // https://github.com/SOBotics/AdvancedFlagging/issues/16
-                                const isRepost = await getIsReportOrPlagiarism(items[0].post_id);
-                                const isEnabled = flagType.Enabled(hasItems, isRepost);
-                                if (isEnabled)
-                                    enableLink();
-                            }
-                            else {
+                        const copypastorObject = copyPastorApi.getCopyPastorObject();
+                        if (copypastorObject && copypastorObject.post_id) {
+                            // https://github.com/SOBotics/AdvancedFlagging/issues/16
+                            const isRepost = copyPastorApi.getIsRepost();
+                            const isEnabled = flagType.Enabled(true, isRepost);
+                            if (isEnabled)
                                 enableLink();
-                            }
-                        });
+                        }
                     }
                     else {
                         enableLink();
@@ -381,7 +364,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                                 upvoteSameComments(element, strippedComment);
                                 commentText = undefined;
                             }
-                            const result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), commentText, copyPastorPromise);
+                            const result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), copyPastorApi, commentText);
                             if (result.CommentPromise)
                                 await waitForCommentPromise(result.CommentPromise, postId);
                             if (result.FlagPromise)
@@ -403,9 +386,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 dropdownItem.append(reportLink);
                 categoryDiv.append(dropdownItem);
                 dropDown.append(categoryDiv);
-            });
+            }
             firstCategory = false;
-        });
+        }
         hasCommentOptions = isStackOverflow;
         dropDown.append(globals.getDivider());
         if (hasCommentOptions) {
@@ -418,9 +401,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         const flagBoxLabel = globals.getOptionLabel('Flag', checkboxNameFlag);
         const flaggingRow = globals.plainDiv.clone();
-        const defaultNoFlag = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationDefaultNoFlag);
-        if (defaultNoFlag)
-            flagBox.prop('checked', false);
         flaggingRow.append(flagBox);
         flaggingRow.append(flagBoxLabel);
         dropDown.append(flaggingRow);
@@ -456,6 +436,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     let autoFlagging = false;
     async function SetupPostPage() {
+        // Collect all ids
+        await MetaSmokeAPI_1.MetaSmokeAPI.QueryMetaSmokeInternal();
+        await CopyPastorAPI_1.CopyPastorAPI.getAllCopyPastorIds();
+        await NattyApi_1.NattyAPI.getAllNattyIds();
         // The Svg object is initialised after the body has loaded :(
         while (typeof Svg === 'undefined') {
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -463,34 +447,27 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         sotools_1.parseQuestionsAndAnswers(async (post) => {
             if (!post.element.length)
                 return;
-            let iconLocation;
-            let advancedFlaggingLink = null;
+            const iconLocation = post.page === 'Question'
+                ? post.element.find('.js-post-menu').children().first()
+                : post.element.find(`a.${post.element.children().first().hasClass('answer-summary') ? 'question' : 'answer'}-hyperlink`);
+            const advancedFlaggingLink = globals.advancedFlaggingLink.clone();
+            if (post.page === 'Question')
+                iconLocation.append(globals.gridCellDiv.clone().append(advancedFlaggingLink));
             const nattyIcon = globals.getNattyIcon().click(() => window.open(`//sentinel.erwaysoftware.com/posts/aid/${post.postId}`, '_blank'));
             const copyPastorIcon = globals.getGuttenbergIcon();
             const smokeyIcon = globals.getSmokeyIcon();
-            const copyPastorApi = new CopyPastorAPI_1.CopyPastorAPI(post.postId, globals.copyPastorKey);
+            const copyPastorApi = new CopyPastorAPI_1.CopyPastorAPI(post.postId);
             const reporters = [];
             if (post.type === 'Answer') {
                 reporters.push(setupNattyApi(post.postId, nattyIcon));
                 reporters.push(setupGenericBotApi(post.postId));
-                reporters.push(setupGuttenbergApi(copyPastorApi));
-                copyPastorApi.postReportedPromise().then(items => {
-                    if (!items.length) {
-                        copyPastorIcon.addClass('d-none');
-                        return;
-                    }
-                    copyPastorIcon.attr('Title', `Reported by CopyPastor - ${items.length}`);
-                    globals.showInlineElement(copyPastorIcon);
-                    copyPastorIcon.click(() => items.forEach(item => window.open('https://copypastor.sobotics.org/posts/' + item.post_id)));
-                }).catch(error => globals.displayError(`${error} received from CopyPastor.`));
+                reporters.push(setupGuttenbergApi(copyPastorApi, copyPastorIcon));
             }
             reporters.push(setupMetasmokeApi(post.postId, post.type, smokeyIcon));
             const performedActionIcon = globals.getPerformedActionIcon();
             const reportedIcon = globals.getReportedIcon();
             if (post.page === 'Question') {
                 // Now we setup the flagging dialog
-                iconLocation = iconLocation = post.element.find('.js-post-menu').children().first();
-                advancedFlaggingLink = globals.advancedFlaggingLink.clone();
                 const questionTime = post.type === 'Answer' ? post.question.postTime : post.postTime;
                 const answerTime = post.postTime;
                 const deleted = post.element.hasClass('deleted-answer');
@@ -514,28 +491,26 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
                 const linkDisabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationLinkDisabled);
                 if (!linkDisabled && questionTime && answerTime) {
-                    const dropDown = await BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, post.authorName, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi.postReportedPromise());
+                    const dropDown = await BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, post.authorName, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi);
                     advancedFlaggingLink.append(dropDown);
-                    const link = advancedFlaggingLink;
                     const openOnHover = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationOpenOnHover);
                     const showElementOnEvent = (event) => {
                         event.stopPropagation();
-                        if (event.target !== link.get(0))
+                        if (event.target !== advancedFlaggingLink.get(0))
                             return;
                         globals.showElement(dropDown);
                     };
                     if (openOnHover) {
-                        link.hover(showElementOnEvent);
-                        link.mouseleave(e => {
+                        advancedFlaggingLink.hover(showElementOnEvent);
+                        advancedFlaggingLink.mouseleave(e => {
                             e.stopPropagation();
                             setTimeout(() => globals.hideElement(dropDown), 100); // avoid immediate closing of popover
                         });
                     }
                     else {
-                        link.click(showElementOnEvent);
+                        advancedFlaggingLink.click(showElementOnEvent);
                         $(window).click(() => globals.hideElement(dropDown));
                     }
-                    iconLocation.append(globals.gridCellDiv.clone().append(advancedFlaggingLink));
                 }
                 iconLocation.append(performedActionIcon);
                 iconLocation.append(reportedIcon);
@@ -544,7 +519,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 iconLocation.append(smokeyIcon);
             }
             else {
-                iconLocation = post.element.find('a.answer-hyperlink');
                 iconLocation.after(smokeyIcon);
                 iconLocation.after(copyPastorIcon);
                 iconLocation.after(nattyIcon);
@@ -553,8 +527,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             }
         });
     }
-    function Setup() {
-        MetaSmokeAPI_1.MetaSmokeAPI.Setup(globals.metaSmokeKey).then(() => SetupPostPage());
+    async function Setup() {
+        await MetaSmokeAPI_1.MetaSmokeAPI.Setup(globals.metaSmokeKey);
+        SetupPostPage();
         SetupStyles();
         Configuration_1.SetupConfiguration();
         document.body.appendChild(popupWrapper.get(0));
@@ -820,7 +795,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, globals) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
-    exports.parseDate = exports.parseQuestionsAndAnswers = void 0;
+    exports.getAllAnswerIds = exports.parseDate = exports.parseQuestionsAndAnswers = void 0;
     $.event.special.destroyed = {
         remove: (o) => {
             if (o.handler) {
@@ -1038,6 +1013,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         return dateStr ? new Date(dateStr.replace(' ', 'T')) : undefined;
     }
     exports.parseDate = parseDate;
+    function getAllAnswerIds() {
+        return $('[id^="answer-"]').get().map(el => $(el).data('answerid'));
+    }
+    exports.getAllAnswerIds = getAllAnswerIds;
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
@@ -1049,13 +1028,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(4)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, AdvancedFlagging_1, MetaSmokeAPI_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
-    exports.getPostUrlsFromFlagsPage = exports.getPostUrlsFromQuestionPage = exports.addXHRListener = exports.showConfirmModal = exports.Delay = exports.showMSTokenPopupAndGet = exports.inlineCheckboxesWrapper = exports.overlayModal = exports.configurationLink = exports.configurationDiv = exports.advancedFlaggingLink = exports.gridCellDiv = exports.plainDiv = exports.dropdownItem = exports.reportLink = exports.popoverArrow = exports.dropDown = exports.popupWrapper = exports.getConfigHtml = exports.getOptionLabel = exports.getCategoryDiv = exports.getOptionBox = exports.getDivider = exports.getSectionWrapper = exports.getMessageDiv = exports.getSmokeyIcon = exports.getGuttenbergIcon = exports.getNattyIcon = exports.getReportedIcon = exports.getPerformedActionIcon = exports.isUserPage = exports.isFlagsPage = exports.isQuestionPage = exports.isModPage = exports.isNatoPage = exports.isStackOverflow = exports.displayError = exports.displaySuccess = exports.showInlineElement = exports.hideElement = exports.showElement = exports.getFlagsUrlRegex = exports.flagsUrlRegex = exports.isDeleteVoteRegex = exports.isReviewItemRegex = exports.popupDelay = exports.displayStacksToast = exports.settingUpBody = exports.settingUpTitle = exports.MetaSmokeDisabledConfig = exports.MetaSmokeUserKeyConfig = exports.CacheChatApiFkey = exports.ConfigurationLinkDisabled = exports.ConfigurationEnabledFlags = exports.ConfigurationWatchQueues = exports.ConfigurationWatchFlags = exports.ConfigurationDefaultNoComment = exports.ConfigurationDefaultNoFlag = exports.ConfigurationOpenOnHover = exports.username = exports.nattyFeedbackUrl = exports.genericBotKey = exports.copyPastorServer = exports.copyPastorKey = exports.metaSmokeKey = exports.soboticsRoomId = void 0;
+    exports.getPostUrlsFromFlagsPage = exports.getPostUrlsFromQuestionPage = exports.addXHRListener = exports.showConfirmModal = exports.Delay = exports.showMSTokenPopupAndGet = exports.inlineCheckboxesWrapper = exports.overlayModal = exports.configurationLink = exports.configurationDiv = exports.advancedFlaggingLink = exports.gridCellDiv = exports.plainDiv = exports.dropdownItem = exports.reportLink = exports.popoverArrow = exports.dropDown = exports.popupWrapper = exports.getConfigHtml = exports.getOptionLabel = exports.getCategoryDiv = exports.getOptionBox = exports.getDivider = exports.getSectionWrapper = exports.getMessageDiv = exports.getSmokeyIcon = exports.getGuttenbergIcon = exports.getNattyIcon = exports.getReportedIcon = exports.getPerformedActionIcon = exports.isUserPage = exports.isFlagsPage = exports.isQuestionPage = exports.isModPage = exports.isNatoPage = exports.isStackOverflow = exports.displayError = exports.displaySuccess = exports.showInlineElement = exports.hideElement = exports.showElement = exports.getFlagsUrlRegex = exports.flagsUrlRegex = exports.isDeleteVoteRegex = exports.isReviewItemRegex = exports.popupDelay = exports.displayStacksToast = exports.settingUpBody = exports.settingUpTitle = exports.MetaSmokeDisabledConfig = exports.MetaSmokeUserKeyConfig = exports.CacheChatApiFkey = exports.ConfigurationLinkDisabled = exports.ConfigurationEnabledFlags = exports.ConfigurationWatchQueues = exports.ConfigurationWatchFlags = exports.ConfigurationDefaultNoComment = exports.ConfigurationDefaultNoFlag = exports.ConfigurationOpenOnHover = exports.username = exports.nattyAllReportsUrl = exports.genericBotKey = exports.copyPastorServer = exports.copyPastorKey = exports.metaSmokeKey = exports.soboticsRoomId = void 0;
     exports.soboticsRoomId = 111347;
     exports.metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
     exports.copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
     exports.copyPastorServer = 'https://copypastor.sobotics.org';
     exports.genericBotKey = 'Cm45BSrt51FR3ju';
-    exports.nattyFeedbackUrl = 'https://logs.sobotics.org/napi/api/feedback';
+    exports.nattyAllReportsUrl = 'https://logs.sobotics.org/napi/api/stored/all';
     exports.username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
     exports.ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
     exports.ConfigurationDefaultNoFlag = 'AdvancedFlagging.Configuration.DefaultNoFlag';
@@ -1224,7 +1203,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     exports.addXHRListener = addXHRListener;
     function getPostUrlsFromQuestionPage() {
-        return $('.question, .answer').map((_index, el) => {
+        return $('.question, .answer').get().map(el => {
             const postType = $(el).attr('data-questionid') ? 'Question' : 'Answer';
             const urlToReturn = MetaSmokeAPI_1.MetaSmokeAPI.GetQueryUrl(Number($(el).attr('data-questionid') || $(el).attr('data-answerid')), postType);
             return urlToReturn;
@@ -1232,7 +1211,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     exports.getPostUrlsFromQuestionPage = getPostUrlsFromQuestionPage;
     function getPostUrlsFromFlagsPage() {
-        return $('.flagged-post').map((_index, el) => {
+        return $('.flagged-post').get().map(el => {
             const postType = $(el).find('.answer-hyperlink').length ? 'Answer' : 'Question';
             const elementHref = $(el).find(`.${postType.toLowerCase()}-hyperlink`).attr('href');
             if (!elementHref)
@@ -1270,11 +1249,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         static async Setup(appKey) {
             MetaSmokeAPI.appKey = appKey;
             MetaSmokeAPI.accessToken = await MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
-            await MetaSmokeAPI.QueryMetaSmokeInternal();
         }
         static QueryMetaSmokeInternal() {
             const urls = globals.isQuestionPage() ? globals.getPostUrlsFromQuestionPage() : globals.getPostUrlsFromFlagsPage();
-            const urlString = $.map(urls, obj => obj).join(',');
+            const urlString = urls.join(',');
             const isDisabled = MetaSmokeAPI.IsDisabled();
             if (isDisabled)
                 return;
@@ -1458,7 +1436,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 6 */
 /***/ ((module, exports, __webpack_require__) => {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(7), __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, ChatApi_1, globals) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(7), __webpack_require__(2), __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, ChatApi_1, sotools_1, globals) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.NattyAPI = void 0;
@@ -1469,42 +1447,37 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             this.feedbackMessage = `@Natty feedback https://stackoverflow.com/a/${this.answerId}`;
             this.reportMessage = `@Natty report https://stackoverflow.com/a/${this.answerId}`;
         }
-        WasReported() {
+        static getAllNattyIds() {
             return new Promise((resolve, reject) => {
                 if (!globals.isStackOverflow())
-                    resolve(false);
-                let numTries = 0;
-                const onError = (response) => {
-                    numTries++;
-                    numTries < 3 ? makeRequest() : reject('Failed to retrieve Natty report: ' + response);
-                };
-                const makeRequest = () => {
-                    GM_xmlhttpRequest({
-                        method: 'GET',
-                        url: `${globals.nattyFeedbackUrl}/${this.answerId}`,
-                        onload: (response) => {
-                            if (response.status === 200) {
-                                const nattyResult = JSON.parse(response.responseText);
-                                resolve(nattyResult.items && nattyResult.items[0]);
-                            }
-                            else {
-                                onError(response.responseText);
-                            }
-                        },
-                        onerror: (response) => {
-                            onError(response);
-                        },
-                    });
-                };
-                makeRequest();
+                    resolve();
+                GM_xmlhttpRequest({
+                    method: 'GET',
+                    url: `${globals.nattyAllReportsUrl}`,
+                    onload: (response) => {
+                        if (response.status !== 200)
+                            reject();
+                        const result = JSON.parse(response.responseText);
+                        const allStoredIds = result.items.map((item) => Number(item.name));
+                        const answerIds = sotools_1.getAllAnswerIds();
+                        this.nattyIds = answerIds.filter(id => allStoredIds.includes(id));
+                        resolve();
+                    },
+                    onerror: () => {
+                        reject();
+                    },
+                });
             });
+        }
+        WasReported() {
+            return NattyAPI.nattyIds.includes(this.answerId);
         }
         ReportNaa(answerDate, questionDate) {
             // eslint-disable-next-line no-async-promise-executor
             return new Promise(async (resolve, reject) => {
                 if (answerDate < questionDate || !globals.isStackOverflow())
-                    reject('Answer must be posted after the question');
-                if (await this.WasReported()) {
+                    reject(false);
+                if (this.WasReported()) {
                     await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
                     resolve(true);
                 }
@@ -1519,19 +1492,19 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
         }
         async ReportRedFlag() {
-            if (!globals.isStackOverflow() || await this.WasReported())
+            if (!globals.isStackOverflow() || this.WasReported())
                 return false;
             await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
             return true;
         }
         async ReportLooksFine() {
-            if (!globals.isStackOverflow() || await this.WasReported())
+            if (!globals.isStackOverflow() || this.WasReported())
                 return false;
             await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} fp`);
             return true;
         }
         async ReportNeedsEditing() {
-            if (!globals.isStackOverflow() || await this.WasReported())
+            if (!globals.isStackOverflow() || this.WasReported())
                 return false;
             await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} ne`);
             return true;
@@ -1541,6 +1514,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
     }
     exports.NattyAPI = NattyAPI;
+    NattyAPI.nattyIds = [];
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
@@ -1565,7 +1539,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         async GetChannelFKey(roomId) {
             const getterPromise = new Promise((resolve) => {
                 this.GetChannelPage(roomId).then(channelPage => {
-                    const fkeyElement = $(channelPage).find('#fkey');
+                    const fkeyElement = $(channelPage).filter('#fkey');
                     const fkey = fkeyElement.val();
                     if (!fkey)
                         return;
@@ -1650,12 +1624,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             const response = await this.makeTrackRequest();
             return response;
         }
-        async ReportLooksFine() {
-            return false;
-        }
-        async ReportNeedsEditing() {
-            return false;
-        }
         computeContentHash(postContent) {
             if (!postContent)
                 return 0;
@@ -1667,8 +1635,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             return hash;
         }
         makeTrackRequest() {
-            const promise = new Promise((resolve, reject) => {
-                if (!globals.isStackOverflow() || !$('#answer-' + this.answerId + ' .js-post-body').length)
+            return new Promise((resolve, reject) => {
+                if (!globals.isStackOverflow())
                     resolve(false);
                 const flaggerName = globals.username;
                 if (!flaggerName)
@@ -1692,7 +1660,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     }
                 });
             });
-            return promise;
         }
     }
     exports.GenericBotAPI = GenericBotAPI;
@@ -1704,30 +1671,70 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 9 */
 /***/ ((module, exports, __webpack_require__) => {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(7), __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, ChatApi_1, globals) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(7), __webpack_require__(3), __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, ChatApi_1, globals, sotools_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.CopyPastorAPI = void 0;
     class CopyPastorAPI {
-        constructor(id, serverKey) {
+        constructor(id) {
             this.answerId = id;
-            this.key = serverKey;
         }
-        postReportedPromise() {
+        static async getAllCopyPastorIds() {
+            if (!globals.isStackOverflow())
+                return;
+            const answerIds = sotools_1.getAllAnswerIds();
+            for (const answerId of answerIds) {
+                const copypastorObject = await this.isPostReported(answerId);
+                const isReportOrPlagiarism = copypastorObject && copypastorObject.post_id
+                    ? await this.getIsReportOrPlagiarism(copypastorObject.post_id)
+                    : false;
+                this.copyPastorIds.push({ postId: answerId, copypastorObject: copypastorObject, repost: isReportOrPlagiarism });
+            }
+        }
+        static getIsReportOrPlagiarism(answerId) {
+            return new Promise(resolve => {
+                if (!answerId)
+                    resolve(false);
+                GM_xmlhttpRequest({
+                    method: 'GET',
+                    url: `${globals.copyPastorServer}/posts/${answerId}`,
+                    onload: (response) => {
+                        const responseParsed = $(response.responseText);
+                        resolve(!!responseParsed.text().match('Reposted'));
+                    },
+                    onerror: () => {
+                        resolve(false);
+                    },
+                });
+            });
+        }
+        static isPostReported(postId) {
             return new Promise((resolve, reject) => {
-                const url = `${globals.copyPastorServer}/posts/findTarget?url=//${window.location.hostname}/a/${this.answerId}`;
+                const url = `${globals.copyPastorServer}/posts/findTarget?url=//${window.location.hostname}/a/${postId}`;
                 GM_xmlhttpRequest({
                     method: 'GET',
                     url,
                     onload: (response) => {
                         const responseObject = JSON.parse(response.responseText);
-                        responseObject.status === 'success' ? resolve(responseObject.posts) : reject(responseObject.message);
+                        resolve(responseObject.status === 'success' ? (responseObject.posts[0] || {}) : {});
                     },
-                    onerror: (response) => {
-                        reject(response);
+                    onerror: () => {
+                        reject(false);
                     },
                 });
             });
+        }
+        getCopyPastorObject() {
+            const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
+            return idsObject ? idsObject.copypastorObject : 0;
+        }
+        getCopyPastorId() {
+            const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
+            return idsObject ? idsObject.postId : 0;
+        }
+        getIsRepost() {
+            const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
+            return idsObject ? idsObject.repost : false;
         }
         async ReportTruePositive() {
             return await this.SendFeedback('tp');
@@ -1737,47 +1744,39 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         async SendFeedback(type) {
             const username = globals.username;
-            const chatApi = new ChatApi_1.ChatApi();
-            const chatId = chatApi.GetChatUserId();
-            const results = await this.postReportedPromise();
-            const payloads = results.map(result => {
-                const postId = result.post_id;
-                const payload = {
-                    post_id: postId,
-                    feedback_type: type,
-                    username,
-                    link: `https://chat.stackoverflow.com/users/${chatId}`,
-                    key: this.key,
-                };
-                return payload;
-            });
-            const promises = payloads.map(payload => {
-                return new Promise((resolve, reject) => {
-                    GM_xmlhttpRequest({
-                        method: 'POST',
-                        url: `${globals.copyPastorServer}/feedback/create`,
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        data: 'post_id=' + payload.post_id
-                            + '&feedback_type=' + payload.feedback_type
-                            + '&username=' + payload.username
-                            + '&link=' + payload.link
-                            + '&key=' + payload.key,
-                        onload: (response) => {
-                            response.status === 200 ? resolve(true) : reject(JSON.parse(response.responseText));
-                        },
-                        onerror: (response) => {
-                            reject(response);
-                        },
-                    });
+            const chatId = new ChatApi_1.ChatApi().GetChatUserId();
+            const copyPastorObject = this.getCopyPastorObject();
+            if (!copyPastorObject || !copyPastorObject.post_id)
+                return false;
+            const payload = {
+                post_id: copyPastorObject.post_id,
+                feedback_type: type,
+                username,
+                link: `https://chat.stackoverflow.com/users/${chatId}`,
+                key: globals.copyPastorKey,
+            };
+            return await new Promise((resolve, reject) => {
+                GM_xmlhttpRequest({
+                    method: 'POST',
+                    url: `${globals.copyPastorServer}/feedback/create`,
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    data: 'post_id=' + payload.post_id
+                        + '&feedback_type=' + payload.feedback_type
+                        + '&username=' + payload.username
+                        + '&link=' + payload.link
+                        + '&key=' + payload.key,
+                    onload: (response) => {
+                        response.status === 200 ? resolve(true) : reject(JSON.parse(response.responseText));
+                    },
+                    onerror: (response) => {
+                        reject(response);
+                    },
                 });
             });
-            const allResults = await Promise.all(promises);
-            if (!allResults.length)
-                return false;
-            return allResults.every(result => result);
         }
     }
     exports.CopyPastorAPI = CopyPastorAPI;
+    CopyPastorAPI.copyPastorIds = [];
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 

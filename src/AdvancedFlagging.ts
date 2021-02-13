@@ -3,13 +3,12 @@ import { parseQuestionsAndAnswers, parseDate } from '@userscriptTools/sotools/so
 import { NattyAPI } from '@userscriptTools/nattyapi/NattyApi';
 import { GenericBotAPI } from '@userscriptTools/genericbotapi/GenericBotAPI';
 import { MetaSmokeAPI } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
-import { CopyPastorAPI, CopyPastorFindTargetResponseItem } from '@userscriptTools/copypastorapi/CopyPastorAPI';
+import { CopyPastorAPI } from '@userscriptTools/copypastorapi/CopyPastorAPI';
 import { SetupConfiguration } from 'Configuration';
 import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
 import * as globals from './GlobalVars';
 
 declare const GM_addStyle: any;
-declare const GM_xmlhttpRequest: any;
 declare const StackExchange: any;
 declare const Svg: any;
 
@@ -53,10 +52,12 @@ function SetupStyles() {
 }
 
 const userFkey = StackExchange.options.user.fkey;
-function handleFlagAndComment(postId: number, flag: FlagType,
+function handleFlagAndComment(
+    postId: number,
+    flag: FlagType,
     flagRequired: boolean,
-    commentText: string | undefined,
-    copyPastorPromise: Promise<CopyPastorFindTargetResponseItem[]>
+    copypastorApi: CopyPastorAPI,
+    commentText?: string,
 ) {
     const result: {
         CommentPromise?: Promise<string>;
@@ -80,11 +81,8 @@ function handleFlagAndComment(postId: number, flag: FlagType,
     if (flagRequired && flag.ReportType !== 'NoFlag') {
         // eslint-disable-next-line no-async-promise-executor
         result.FlagPromise = new Promise(async (resolve, reject) => {
-            const flagText = await copyPastorPromise.then(results => {
-                if (flag.GetCustomFlagText && results.length) {
-                    return flag.GetCustomFlagText(results[0]);
-                }
-            });
+            const copypastorObject = copypastorApi.getCopyPastorObject();
+            const flagText = flag.GetCustomFlagText && copypastorObject ? flag.GetCustomFlagText(copypastorObject) : undefined;
 
             autoFlagging = true;
             $.ajax({
@@ -187,9 +185,8 @@ function showComments(postId: number, data: any) {
 
 function setupNattyApi(postId: number, nattyIcon?: JQuery) {
     const nattyApi = new NattyAPI(postId);
-    if (nattyIcon) {
-        nattyApi.WasReported().then(reported => reported ? globals.showInlineElement(nattyIcon) : nattyIcon.addClass('d-none'));
-    }
+    const isReported = nattyApi.WasReported();
+    if (nattyIcon) isReported ? globals.showInlineElement(nattyIcon) : nattyIcon.addClass('d-none');
 
     return {
         name: 'Natty',
@@ -208,9 +205,9 @@ function setupGenericBotApi(postId: number) {
     return {
         name: 'Generic Bot',
         ReportNaa: () => genericBotAPI.ReportNaa(),
-        ReportRedFlag: () => Promise.resolve(false),
-        ReportLooksFine: () => genericBotAPI.ReportLooksFine(),
-        ReportNeedsEditing: () => genericBotAPI.ReportNeedsEditing(),
+        ReportRedFlag: () => genericBotAPI.ReportRedFlag(),
+        ReportLooksFine: () => Promise.resolve(false),
+        ReportNeedsEditing: () => Promise.resolve(false),
         ReportVandalism: () => Promise.resolve(true),
         ReportDuplicateAnswer: () => Promise.resolve(false),
         ReportPlagiarism: () => Promise.resolve(false)
@@ -239,7 +236,16 @@ function setupMetasmokeApi(postId: number, postType: 'Answer' | 'Question', smok
     };
 }
 
-function setupGuttenbergApi(copyPastorApi: CopyPastorAPI) {
+function setupGuttenbergApi(copyPastorApi: CopyPastorAPI, copyPastorIcon: JQuery) {
+    const copypastorObject = copyPastorApi.getCopyPastorObject();
+    if (copypastorObject && copypastorObject.post_id) {
+        copyPastorIcon.attr('Title', 'Reported by CopyPastor.');
+        globals.showInlineElement(copyPastorIcon);
+        copyPastorIcon.click(() => window.open('https://copypastor.sobotics.org/posts/' + copypastorObject.post_id));
+    } else {
+        copyPastorIcon.addClass('d-none');
+    }
+
     return {
         name: 'Guttenberg',
         ReportNaa: () => copyPastorApi.ReportFalsePositive(),
@@ -289,22 +295,6 @@ function getHumanFromDisplayName(displayName: string) {
     }
 }
 
-function getIsReportOrPlagiarism(copypastorPostId: string) {
-    return new Promise<boolean>((resolve, reject) => {
-        GM_xmlhttpRequest({
-            method: 'GET',
-            url: `${globals.copyPastorServer}/posts/${copypastorPostId}`,
-            onload: (response: any) => {
-                const responseParsed = $(response.responseText);
-                resolve(!!responseParsed.text().match('Reposted'));
-            },
-            onerror: (response: any) => {
-                reject(response);
-            },
-        });
-    });
-}
-
 interface Reporter {
     name: string;
     ReportNaa(answerDate: Date, questionDate: Date): Promise<boolean>;
@@ -335,33 +325,33 @@ async function BuildFlaggingDialog(element: JQuery,
     reportedIcon: JQuery,
     performedActionIcon: JQuery,
     reporters: Reporter[],
-    copyPastorPromise: Promise<CopyPastorFindTargetResponseItem[]>
+    copyPastorApi: CopyPastorAPI
 ) {
+    const enabledFlagIds = GreaseMonkeyCache.GetFromCache<number[]>(globals.ConfigurationEnabledFlags);
+    const defaultNoComment = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoComment);
+    const defaultNoFlag = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoFlag);
+    const comments = element.find('.comment-body');
+
     const dropDown = globals.dropDown.clone();
     const checkboxNameComment = `comment_checkbox_${postId}`;
     const checkboxNameFlag = `flag_checkbox_${postId}`;
     const leaveCommentBox = globals.getOptionBox(checkboxNameComment);
     const flagBox = globals.getOptionBox(checkboxNameFlag);
-    flagBox.prop('checked', true);
 
-    const comments = element.find('.comment-body');
-    const defaultNoComment = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoComment);
-
-    if (!defaultNoComment && !comments.length && isStackOverflow) leaveCommentBox.prop('checked', true);
-
-    const enabledFlagIds = GreaseMonkeyCache.GetFromCache<number[]>(globals.ConfigurationEnabledFlags);
+    flagBox.prop('checked', !defaultNoFlag);
+    leaveCommentBox.prop('checked', !defaultNoComment && !comments.length && isStackOverflow);
 
     let hasCommentOptions = false;
     let firstCategory = true;
-    flagCategories.forEach(flagCategory => {
-        if (flagCategory.AppliesTo.indexOf(postType) === -1) return;
+    for (const flagCategory of flagCategories) {
+        if (flagCategory.AppliesTo.indexOf(postType) === -1) continue;
 
         const divider = globals.getDivider();
         if (!firstCategory) dropDown.append(divider);
 
         const categoryDiv = globals.getCategoryDiv(flagCategory.IsDangerous);
         let activeLinks = flagCategory.FlagTypes.length;
-        flagCategory.FlagTypes.forEach(flagType => {
+        for (const flagType of flagCategory.FlagTypes) {
             const reportLink = globals.reportLink.clone();
             hasCommentOptions = !!flagType.GetComment;
             const dropdownItem = globals.dropdownItem.clone();
@@ -384,19 +374,13 @@ async function BuildFlaggingDialog(element: JQuery,
             disableLink();
             if (!enabledFlagIds || enabledFlagIds.indexOf(flagType.Id) > -1) {
                 if (flagType.Enabled) {
-                    copyPastorPromise.then(async items => {
-                        // If it somehow changed within the promise, check again
-                        if (flagType.Enabled) {
-                            const hasItems = !!items.length;
-                            if (!hasItems) return;
-                            // https://github.com/SOBotics/AdvancedFlagging/issues/16
-                            const isRepost = await getIsReportOrPlagiarism(items[0].post_id);
-                            const isEnabled = flagType.Enabled(hasItems, isRepost);
-                            if (isEnabled) enableLink();
-                        } else {
-                            enableLink();
-                        }
-                    });
+                    const copypastorObject = copyPastorApi.getCopyPastorObject();
+                    if (copypastorObject && copypastorObject.post_id) {
+                        // https://github.com/SOBotics/AdvancedFlagging/issues/16
+                        const isRepost = copyPastorApi.getIsRepost();
+                        const isEnabled = flagType.Enabled(true, isRepost);
+                        if (isEnabled) enableLink();
+                    }
                 } else {
                     enableLink();
                 }
@@ -417,7 +401,7 @@ async function BuildFlaggingDialog(element: JQuery,
                             commentText = undefined;
                         }
 
-                        const result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), commentText, copyPastorPromise);
+                        const result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), copyPastorApi, commentText);
                         if (result.CommentPromise) await waitForCommentPromise(result.CommentPromise, postId);
                         if (result.FlagPromise) await waitForFlagPromise(result.FlagPromise, reportedIcon, flagType.Human);
                     } catch (err) { globals.displayError(err); }
@@ -439,9 +423,9 @@ async function BuildFlaggingDialog(element: JQuery,
             categoryDiv.append(dropdownItem);
 
             dropDown.append(categoryDiv);
-        });
+        }
         firstCategory = false;
-    });
+    }
 
     hasCommentOptions = isStackOverflow;
 
@@ -459,9 +443,6 @@ async function BuildFlaggingDialog(element: JQuery,
 
     const flagBoxLabel = globals.getOptionLabel('Flag', checkboxNameFlag);
     const flaggingRow = globals.plainDiv.clone();
-
-    const defaultNoFlag = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoFlag);
-    if (defaultNoFlag) flagBox.prop('checked', false);
 
     flaggingRow.append(flagBox);
     flaggingRow.append(flagBoxLabel);
@@ -499,41 +480,36 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
 
 let autoFlagging = false;
 async function SetupPostPage() {
+    // Collect all ids
+    await MetaSmokeAPI.QueryMetaSmokeInternal();
+    await CopyPastorAPI.getAllCopyPastorIds();
+    await NattyAPI.getAllNattyIds();
+
     // The Svg object is initialised after the body has loaded :(
     while (typeof Svg === 'undefined') {
         await new Promise(resolve => setTimeout(resolve, 1000));
     }
+
     parseQuestionsAndAnswers(async post => {
         if (!post.element.length) return;
 
-        let iconLocation: JQuery;
-        let advancedFlaggingLink: JQuery | null = null;
+        const iconLocation: JQuery = post.page === 'Question'
+            ? post.element.find('.js-post-menu').children().first()
+            : post.element.find(`a.${post.element.children().first().hasClass('answer-summary') ? 'question' : 'answer'}-hyperlink`);
+        const advancedFlaggingLink: JQuery = globals.advancedFlaggingLink.clone();
+        if (post.page === 'Question') iconLocation.append(globals.gridCellDiv.clone().append(advancedFlaggingLink));
 
         const nattyIcon = globals.getNattyIcon().click(() => window.open(`//sentinel.erwaysoftware.com/posts/aid/${post.postId}`, '_blank'));
         const copyPastorIcon = globals.getGuttenbergIcon();
         const smokeyIcon = globals.getSmokeyIcon();
-
-        const copyPastorApi = new CopyPastorAPI(post.postId, globals.copyPastorKey);
+        const copyPastorApi = new CopyPastorAPI(post.postId);
 
         const reporters: Reporter[] = [];
         if (post.type === 'Answer') {
             reporters.push(setupNattyApi(post.postId, nattyIcon));
             reporters.push(setupGenericBotApi(post.postId));
-            reporters.push(setupGuttenbergApi(copyPastorApi));
-
-            copyPastorApi.postReportedPromise().then(items => {
-                if (!items.length) {
-                    copyPastorIcon.addClass('d-none');
-                    return;
-                }
-                copyPastorIcon.attr('Title', `Reported by CopyPastor - ${items.length}`);
-                globals.showInlineElement(copyPastorIcon);
-                copyPastorIcon.click(() =>
-                    items.forEach(item => window.open('https://copypastor.sobotics.org/posts/' + item.post_id))
-                );
-            }).catch(error => globals.displayError(`${error} received from CopyPastor.`));
+            reporters.push(setupGuttenbergApi(copyPastorApi, copyPastorIcon));
         }
-
         reporters.push(setupMetasmokeApi(post.postId, post.type, smokeyIcon));
 
         const performedActionIcon = globals.getPerformedActionIcon();
@@ -541,9 +517,6 @@ async function SetupPostPage() {
 
         if (post.page === 'Question') {
             // Now we setup the flagging dialog
-            iconLocation = iconLocation = post.element.find('.js-post-menu').children().first();
-            advancedFlaggingLink = globals.advancedFlaggingLink.clone();
-
             const questionTime: Date = post.type === 'Answer' ? post.question.postTime : post.postTime;
             const answerTime: Date = post.postTime;
             const deleted = post.element.hasClass('deleted-answer');
@@ -569,33 +542,31 @@ async function SetupPostPage() {
 
             const linkDisabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationLinkDisabled);
             if (!linkDisabled && questionTime && answerTime) {
-                const dropDown = await BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation as number,
-                    post.authorName, answerTime, questionTime, deleted,
-                    reportedIcon, performedActionIcon, reporters, copyPastorApi.postReportedPromise()
+                const dropDown = await BuildFlaggingDialog(
+                    post.element, post.postId, post.type, post.authorReputation as number, post.authorName, answerTime,
+                    questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi
                 );
 
                 advancedFlaggingLink.append(dropDown);
 
-                const link = advancedFlaggingLink;
                 const openOnHover = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationOpenOnHover);
                 const showElementOnEvent = (event: any) => {
                     event.stopPropagation();
-                    if (event.target !== link.get(0)) return;
+                    if (event.target !== advancedFlaggingLink.get(0)) return;
 
                     globals.showElement(dropDown);
                 };
 
                 if (openOnHover) {
-                    link.hover(showElementOnEvent);
-                    link.mouseleave(e => {
+                    advancedFlaggingLink.hover(showElementOnEvent);
+                    advancedFlaggingLink.mouseleave(e => {
                         e.stopPropagation();
                         setTimeout(() => globals.hideElement(dropDown), 100); // avoid immediate closing of popover
                     });
                 } else {
-                    link.click(showElementOnEvent);
+                    advancedFlaggingLink.click(showElementOnEvent);
                     $(window).click(() => globals.hideElement(dropDown));
                 }
-                iconLocation.append(globals.gridCellDiv.clone().append(advancedFlaggingLink));
             }
 
             iconLocation.append(performedActionIcon);
@@ -603,10 +574,7 @@ async function SetupPostPage() {
             iconLocation.append(nattyIcon);
             iconLocation.append(copyPastorIcon);
             iconLocation.append(smokeyIcon);
-
         } else {
-            iconLocation = post.element.find('a.answer-hyperlink');
-
             iconLocation.after(smokeyIcon);
             iconLocation.after(copyPastorIcon);
             iconLocation.after(nattyIcon);
@@ -616,8 +584,9 @@ async function SetupPostPage() {
     });
 }
 
-function Setup() {
-    MetaSmokeAPI.Setup(globals.metaSmokeKey).then(() => SetupPostPage());
+async function Setup() {
+    await MetaSmokeAPI.Setup(globals.metaSmokeKey);
+    SetupPostPage();
     SetupStyles();
     SetupConfiguration();
     document.body.appendChild(popupWrapper.get(0));

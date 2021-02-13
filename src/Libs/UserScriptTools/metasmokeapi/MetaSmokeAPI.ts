@@ -31,7 +31,6 @@ export class MetaSmokeAPI {
     public static async Setup(appKey: string) {
         MetaSmokeAPI.appKey = appKey;
         MetaSmokeAPI.accessToken = await MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
-        await MetaSmokeAPI.QueryMetaSmokeInternal();
     }
 
     private static codeGetter: (metaSmokeOAuthUrl: string) => Promise<string | undefined> = async (metaSmokeOAuthUrl: string | undefined) => {
@@ -57,9 +56,9 @@ export class MetaSmokeAPI {
         return returnCode;
     };
 
-    private static QueryMetaSmokeInternal() {
+    public static QueryMetaSmokeInternal() {
         const urls = globals.isQuestionPage() ? globals.getPostUrlsFromQuestionPage() : globals.getPostUrlsFromFlagsPage();
-        const urlString = $.map(urls, obj => obj).join(',');
+        const urlString = urls.join(',');
 
         const isDisabled = MetaSmokeAPI.IsDisabled();
         if (isDisabled) return;

@@ -1,4 +1,5 @@
 import { ChatApi } from '@userscriptTools/chatapi/ChatApi';
+import { getAllAnswerIds } from '@userscriptTools/sotools/sotools';
 import * as globals from '../../../GlobalVars';
 
 declare const GM_xmlhttpRequest: any;
@@ -19,6 +20,7 @@ export interface NattyFeedbackInfo {
 }
 
 export class NattyAPI {
+    private static nattyIds: number[] = [];
     private chat: ChatApi = new ChatApi();
     private answerId: number;
     private feedbackMessage: string;
@@ -30,44 +32,38 @@ export class NattyAPI {
         this.reportMessage = `@Natty report https://stackoverflow.com/a/${this.answerId}`;
     }
 
-    public WasReported(): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-            if (!globals.isStackOverflow()) resolve(false);
+    public static getAllNattyIds(): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            if (!globals.isStackOverflow()) resolve();
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: `${globals.nattyAllReportsUrl}`,
+                onload: (response: any) => {
+                    if (response.status !== 200) reject();
 
-            let numTries = 0;
-            const onError = (response: any) => {
-                numTries++;
-                numTries < 3 ? makeRequest() : reject('Failed to retrieve Natty report: ' + response);
-            };
-
-            const makeRequest = () => {
-                GM_xmlhttpRequest({
-                    method: 'GET',
-                    url: `${globals.nattyFeedbackUrl}/${this.answerId}`,
-                    onload: (response: XMLHttpRequest) => {
-                        if (response.status === 200) {
-                            const nattyResult = JSON.parse(response.responseText);
-                            resolve(nattyResult.items && nattyResult.items[0]);
-                        } else {
-                            onError(response.responseText);
-                        }
-                    },
-                    onerror: (response: any) => {
-                        onError(response);
-                    },
-                });
-            };
-
-            makeRequest();
+                    const result = JSON.parse(response.responseText);
+                    const allStoredIds = result.items.map((item: any) => Number(item.name));
+                    const answerIds = getAllAnswerIds();
+                    this.nattyIds = answerIds.filter(id => allStoredIds.includes(id));
+                    resolve();
+                },
+                onerror: () => {
+                    reject();
+                },
+            });
         });
+    }
+
+    public WasReported(): boolean {
+        return NattyAPI.nattyIds.includes(this.answerId);
     }
 
     public ReportNaa(answerDate: Date, questionDate: Date) {
         // eslint-disable-next-line no-async-promise-executor
-        return new Promise<any>(async (resolve, reject) => {
-            if (answerDate < questionDate || !globals.isStackOverflow()) reject('Answer must be posted after the question');
+        return new Promise<boolean>(async (resolve, reject) => {
+            if (answerDate < questionDate || !globals.isStackOverflow()) reject(false);
 
-            if (await this.WasReported()) {
+            if (this.WasReported()) {
                 await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
                 resolve(true);
             } else {
@@ -82,19 +78,19 @@ export class NattyAPI {
     }
 
     public async ReportRedFlag() {
-        if (!globals.isStackOverflow() || await this.WasReported()) return false;
+        if (!globals.isStackOverflow() || this.WasReported()) return false;
         await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
         return true;
     }
 
     public async ReportLooksFine() {
-        if (!globals.isStackOverflow() || await this.WasReported()) return false;
+        if (!globals.isStackOverflow() || this.WasReported()) return false;
         await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} fp`);
         return true;
     }
 
     public async ReportNeedsEditing() {
-        if (!globals.isStackOverflow() || await this.WasReported()) return false;
+        if (!globals.isStackOverflow() || this.WasReported()) return false;
         await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} ne`);
         return true;
     }

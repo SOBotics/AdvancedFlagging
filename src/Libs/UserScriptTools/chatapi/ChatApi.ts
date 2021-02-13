@@ -21,7 +21,7 @@ export class ChatApi {
     public async GetChannelFKey(roomId: number): Promise<string> {
         const getterPromise = new Promise<string>((resolve) => {
             this.GetChannelPage(roomId).then(channelPage => {
-                const fkeyElement = $(channelPage).find('#fkey');
+                const fkeyElement = $(channelPage).filter('#fkey');
                 const fkey = fkeyElement.val();
                 if (!fkey) return;
                 resolve(fkey.toString());

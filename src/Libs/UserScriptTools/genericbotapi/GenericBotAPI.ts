@@ -20,14 +20,6 @@ export class GenericBotAPI {
         return response;
     }
 
-    public async ReportLooksFine() {
-        return false;
-    }
-
-    public async ReportNeedsEditing() {
-        return false;
-    }
-
     private computeContentHash(postContent: string) {
         if (!postContent) return 0;
 
@@ -41,8 +33,8 @@ export class GenericBotAPI {
     }
 
     private makeTrackRequest() {
-        const promise = new Promise<boolean>((resolve, reject) => {
-            if (!globals.isStackOverflow() || !$('#answer-' + this.answerId + ' .js-post-body').length) resolve(false);
+        return new Promise<boolean>((resolve, reject) => {
+            if (!globals.isStackOverflow()) resolve(false);
 
             const flaggerName = globals.username;
             if (!flaggerName) return false;
@@ -66,7 +58,5 @@ export class GenericBotAPI {
                 }
             });
         });
-
-        return promise;
     }
 }

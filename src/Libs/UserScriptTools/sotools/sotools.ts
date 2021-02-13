@@ -298,3 +298,7 @@ export function parseDate(dateStr?: string) {
     // Fix for safari
     return dateStr ? new Date(dateStr.replace(' ', 'T')) : undefined;
 }
+
+export function getAllAnswerIds() {
+    return $('[id^="answer-"]').get().map(el => $(el).data('answerid'));
+}

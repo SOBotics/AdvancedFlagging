@@ -9,7 +9,7 @@ export const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20
 export const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
 export const copyPastorServer = 'https://copypastor.sobotics.org';
 export const genericBotKey = 'Cm45BSrt51FR3ju';
-export const nattyFeedbackUrl = 'https://logs.sobotics.org/napi/api/feedback';
+export const nattyAllReportsUrl = 'https://logs.sobotics.org/napi/api/stored/all';
 export const username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
 
 export const ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
@@ -162,7 +162,7 @@ export function addXHRListener(callback: (request: XMLHttpRequest) => void) {
 }
 
 export function getPostUrlsFromQuestionPage() {
-    return $('.question, .answer').map((_index, el) => {
+    return $('.question, .answer').get().map(el => {
         const postType = $(el).attr('data-questionid') ? 'Question' : 'Answer';
         const urlToReturn = MetaSmokeAPI.GetQueryUrl(Number($(el).attr('data-questionid') || $(el).attr('data-answerid')), postType);
         return urlToReturn;
@@ -170,7 +170,7 @@ export function getPostUrlsFromQuestionPage() {
 }
 
 export function getPostUrlsFromFlagsPage() {
-    return $('.flagged-post').map((_index, el) => {
+    return $('.flagged-post').get().map(el => {
         const postType = $(el).find('.answer-hyperlink').length ? 'Answer' : 'Question';
         const elementHref = $(el).find(`.${postType.toLowerCase()}-hyperlink`).attr('href');
         if (!elementHref) return;

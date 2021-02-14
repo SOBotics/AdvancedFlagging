@@ -435,14 +435,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         });
     }
     let autoFlagging = false;
-    async function SetupPostPage() {
-        // Collect all ids
-        await MetaSmokeAPI_1.MetaSmokeAPI.QueryMetaSmokeInternal();
-        await CopyPastorAPI_1.CopyPastorAPI.getAllCopyPastorIds();
-        await NattyApi_1.NattyAPI.getAllNattyIds();
+    function SetupPostPage() {
         // The Svg object is initialised after the body has loaded :(
         while (typeof Svg === 'undefined') {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            new Promise(resolve => setTimeout(resolve, 1000));
         }
         sotools_1.parseQuestionsAndAnswers(async (post) => {
             if (!post.element.length)
@@ -528,7 +524,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         });
     }
     async function Setup() {
-        await MetaSmokeAPI_1.MetaSmokeAPI.Setup(globals.metaSmokeKey);
+        // Collect all ids
+        await Promise.all([
+            MetaSmokeAPI_1.MetaSmokeAPI.Setup(globals.metaSmokeKey),
+            MetaSmokeAPI_1.MetaSmokeAPI.QueryMetaSmokeInternal(),
+            CopyPastorAPI_1.CopyPastorAPI.getAllCopyPastorIds(),
+            NattyApi_1.NattyAPI.getAllNattyIds()
+        ]);
         SetupPostPage();
         SetupStyles();
         Configuration_1.SetupConfiguration();

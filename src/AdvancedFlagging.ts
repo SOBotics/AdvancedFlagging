@@ -479,15 +479,10 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
 }
 
 let autoFlagging = false;
-async function SetupPostPage() {
-    // Collect all ids
-    await MetaSmokeAPI.QueryMetaSmokeInternal();
-    await CopyPastorAPI.getAllCopyPastorIds();
-    await NattyAPI.getAllNattyIds();
-
+function SetupPostPage() {
     // The Svg object is initialised after the body has loaded :(
     while (typeof Svg === 'undefined') {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     parseQuestionsAndAnswers(async post => {
@@ -585,7 +580,13 @@ async function SetupPostPage() {
 }
 
 async function Setup() {
-    await MetaSmokeAPI.Setup(globals.metaSmokeKey);
+    // Collect all ids
+    await Promise.all([
+        MetaSmokeAPI.Setup(globals.metaSmokeKey),
+        MetaSmokeAPI.QueryMetaSmokeInternal(),
+        CopyPastorAPI.getAllCopyPastorIds(),
+        NattyAPI.getAllNattyIds()
+    ]);
     SetupPostPage();
     SetupStyles();
     SetupConfiguration();

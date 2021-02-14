@@ -1281,9 +1281,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         static GetQueryUrl(postId, postType) {
             return `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'questions'}/${postId}`;
         }
-        static getUserKey() {
+        static async getUserKey() {
             // eslint-disable-next-line no-async-promise-executor
-            return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(globals.MetaSmokeUserKeyConfig, () => new Promise(async (resolve, reject) => {
+            return await GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(globals.MetaSmokeUserKeyConfig, () => new Promise(async (resolve, reject) => {
                 let prom = MetaSmokeAPI.actualPromise;
                 if (!prom) {
                     prom = MetaSmokeAPI.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeAPI.appKey}`);
@@ -1492,19 +1492,19 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
         }
         async ReportRedFlag() {
-            if (!globals.isStackOverflow() || this.WasReported())
+            if (!globals.isStackOverflow() || !this.WasReported())
                 return false;
             await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
             return true;
         }
         async ReportLooksFine() {
-            if (!globals.isStackOverflow() || this.WasReported())
+            if (!globals.isStackOverflow() || !this.WasReported())
                 return false;
             await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} fp`);
             return true;
         }
         async ReportNeedsEditing() {
-            if (!globals.isStackOverflow() || this.WasReported())
+            if (!globals.isStackOverflow() || !this.WasReported())
                 return false;
             await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} ne`);
             return true;
@@ -1537,7 +1537,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             return expiryDate;
         }
         async GetChannelFKey(roomId) {
-            const getterPromise = new Promise((resolve) => {
+            const expiryDate = ChatApi.GetExpiryDate();
+            return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(globals.CacheChatApiFkey, () => new Promise((resolve) => {
                 this.GetChannelPage(roomId).then(channelPage => {
                     const fkeyElement = $(channelPage).filter('#fkey');
                     const fkey = fkeyElement.val();
@@ -1545,9 +1546,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         return;
                     resolve(fkey.toString());
                 });
-            });
-            const expiryDate = ChatApi.GetExpiryDate();
-            return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(globals.CacheChatApiFkey, () => getterPromise, expiryDate);
+            }), expiryDate);
         }
         GetChatUserId() {
             return StackExchange.options.user.userId;
@@ -1555,18 +1554,17 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         SendMessage(roomId, message) {
             return new Promise((resolve, reject) => {
                 const requestFunc = async () => {
-                    const fkeyPromise = this.GetChannelFKey(roomId);
-                    const fKey = await fkeyPromise;
+                    const fkey = await this.GetChannelFKey(roomId);
                     GM_xmlhttpRequest({
                         method: 'POST',
                         url: `${this.chatRoomUrl}/chats/${roomId}/messages/new`,
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        data: 'text=' + encodeURIComponent(message) + '&fkey=' + fKey,
-                        onload: (response_1) => {
-                            response_1.status === 200 ? resolve() : onFailure(response_1.statusText);
+                        data: 'text=' + encodeURIComponent(message) + '&fkey=' + fkey,
+                        onload: (chat_response) => {
+                            chat_response.status === 200 ? resolve() : onFailure(chat_response.statusText);
                         },
-                        onerror: (response_3) => {
-                            onFailure(response_3);
+                        onerror: (error_response) => {
+                            onFailure(error_response);
                         },
                     });
                 };
@@ -1574,8 +1572,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 const onFailure = (errorMessage) => {
                     numTries++;
                     if (numTries < 3) {
-                        const fkeyCacheKey = 'StackExchange.ChatApi.FKey';
-                        GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(fkeyCacheKey);
+                        GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(globals.CacheChatApiFkey);
                         requestFunc();
                     }
                     else {
@@ -1789,6 +1786,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.SetupConfiguration = void 0;
+    const configurationEnabledFlags = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationEnabledFlags);
     async function SetupConfiguration() {
         while (typeof Svg === 'undefined') {
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1816,7 +1814,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         return flagTypes;
     }
     function SetupDefaults() {
-        const configurationEnabledFlags = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationEnabledFlags);
         if (!configurationEnabledFlags) {
             const flagTypeIds = getFlagTypes().map(f => f.Id);
             GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagTypeIds);
@@ -1915,9 +1912,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     function GetFlagSettings() {
         const checkboxes = [];
-        const flagTypeIds = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationEnabledFlags) || [];
+        if (!configurationEnabledFlags)
+            return checkboxes;
         getFlagTypes().forEach(f => {
-            const storedValue = flagTypeIds.indexOf(f.Id) > -1;
+            const storedValue = configurationEnabledFlags.indexOf(f.Id) > -1;
             checkboxes.push(createCheckbox(f.DisplayName, storedValue, 'flag-type-' + f.Id).children().eq(0).addClass('w25'));
         });
         return checkboxes;
@@ -1925,7 +1923,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     function GetAdminConfigItems() {
         return [
             $('<a>').text('Clear Metasmoke Configuration').click(async () => {
-                await MetaSmokeAPI_1.MetaSmokeAPI.Reset();
+                MetaSmokeAPI_1.MetaSmokeAPI.Reset();
                 globals.displayStacksToast('Successfully cleared MS configuration.', 'success');
             }),
             $('<a>').text('Clear chat fkey').click(() => {

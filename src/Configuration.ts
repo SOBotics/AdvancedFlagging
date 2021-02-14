@@ -6,6 +6,8 @@ import * as globals from './GlobalVars';
 declare const Stacks: any;
 declare const Svg: any;
 
+const configurationEnabledFlags = GreaseMonkeyCache.GetFromCache<number[]>(globals.ConfigurationEnabledFlags);
+
 export async function SetupConfiguration() {
     while (typeof Svg === 'undefined') {
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -35,7 +37,6 @@ function getFlagTypes() {
 }
 
 function SetupDefaults() {
-    const configurationEnabledFlags = GreaseMonkeyCache.GetFromCache<number[]>(globals.ConfigurationEnabledFlags);
     if (!configurationEnabledFlags) {
         const flagTypeIds = getFlagTypes().map(f => f.Id);
         GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagTypeIds);
@@ -141,10 +142,10 @@ function GetGeneralConfigItems() {
 
 function GetFlagSettings() {
     const checkboxes: JQuery[] = [];
-    const flagTypeIds = GreaseMonkeyCache.GetFromCache<number[]>(globals.ConfigurationEnabledFlags) || [];
+    if (!configurationEnabledFlags) return checkboxes;
 
     getFlagTypes().forEach(f => {
-        const storedValue = flagTypeIds.indexOf(f.Id) > -1;
+        const storedValue = configurationEnabledFlags.indexOf(f.Id) > -1;
         checkboxes.push(createCheckbox(f.DisplayName, storedValue, 'flag-type-' + f.Id).children().eq(0).addClass('w25'));
     });
     return checkboxes;
@@ -153,7 +154,7 @@ function GetFlagSettings() {
 function GetAdminConfigItems() {
     return [
         $('<a>').text('Clear Metasmoke Configuration').click(async () => {
-            await MetaSmokeAPI.Reset();
+            MetaSmokeAPI.Reset();
             globals.displayStacksToast('Successfully cleared MS configuration.', 'success');
         }),
         $('<a>').text('Clear chat fkey').click(() => {

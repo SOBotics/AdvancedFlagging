@@ -19,17 +19,15 @@ export class ChatApi {
     }
 
     public async GetChannelFKey(roomId: number): Promise<string> {
-        const getterPromise = new Promise<string>((resolve) => {
+        const expiryDate = ChatApi.GetExpiryDate();
+        return GreaseMonkeyCache.GetAndCache(globals.CacheChatApiFkey, () => new Promise<string>((resolve) => {
             this.GetChannelPage(roomId).then(channelPage => {
                 const fkeyElement = $(channelPage).filter('#fkey');
                 const fkey = fkeyElement.val();
                 if (!fkey) return;
                 resolve(fkey.toString());
             });
-        });
-
-        const expiryDate = ChatApi.GetExpiryDate();
-        return GreaseMonkeyCache.GetAndCache(globals.CacheChatApiFkey, () => getterPromise, expiryDate);
+        }), expiryDate);
     }
 
     public GetChatUserId(): number {
@@ -39,19 +37,18 @@ export class ChatApi {
     public SendMessage(roomId: number, message: string): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             const requestFunc = async () => {
-                const fkeyPromise = this.GetChannelFKey(roomId);
-                const fKey = await fkeyPromise;
+                const fkey = await this.GetChannelFKey(roomId);
 
                 GM_xmlhttpRequest({
                     method: 'POST',
                     url: `${this.chatRoomUrl}/chats/${roomId}/messages/new`,
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    data: 'text=' + encodeURIComponent(message) + '&fkey=' + fKey,
-                    onload: (response_1: any) => {
-                        response_1.status === 200 ? resolve() : onFailure(response_1.statusText);
+                    data: 'text=' + encodeURIComponent(message) + '&fkey=' + fkey,
+                    onload: (chat_response: any) => {
+                        chat_response.status === 200 ? resolve() : onFailure(chat_response.statusText);
                     },
-                    onerror: (response_3: any) => {
-                        onFailure(response_3);
+                    onerror: (error_response: any) => {
+                        onFailure(error_response);
                     },
                 });
             };
@@ -60,8 +57,7 @@ export class ChatApi {
             const onFailure = (errorMessage?: string) => {
                 numTries++;
                 if (numTries < 3) {
-                    const fkeyCacheKey = 'StackExchange.ChatApi.FKey';
-                    GreaseMonkeyCache.Unset(fkeyCacheKey);
+                    GreaseMonkeyCache.Unset(globals.CacheChatApiFkey);
                     requestFunc();
                 } else {
                     reject(errorMessage);

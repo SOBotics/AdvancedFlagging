@@ -1,8 +1,11 @@
-import { ExpiryingCacheItem } from '@userscriptTools/caching/ExpiringCacheItem';
-
 declare const GM_getValue: (key: string, defaultValue: any) => any;
 declare const GM_setValue: (key: string, value: any) => void;
 declare const GM_deleteValue: (key: string) => void;
+
+interface ExpiryingCacheItem<T> {
+    Data: T;
+    Expires?: Date;
+}
 
 export class GreaseMonkeyCache {
     public static async GetAndCache<T>(cacheKey: string, getterPromise: () => Promise<T>, expiresAt?: Date): Promise<T> {

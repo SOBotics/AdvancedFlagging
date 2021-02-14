@@ -78,19 +78,19 @@ export class NattyAPI {
     }
 
     public async ReportRedFlag() {
-        if (!globals.isStackOverflow() || this.WasReported()) return false;
+        if (!globals.isStackOverflow() || !this.WasReported()) return false;
         await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
         return true;
     }
 
     public async ReportLooksFine() {
-        if (!globals.isStackOverflow() || this.WasReported()) return false;
+        if (!globals.isStackOverflow() || !this.WasReported()) return false;
         await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} fp`);
         return true;
     }
 
     public async ReportNeedsEditing() {
-        if (!globals.isStackOverflow() || this.WasReported()) return false;
+        if (!globals.isStackOverflow() || !this.WasReported()) return false;
         await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} ne`);
         return true;
     }

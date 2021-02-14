@@ -89,9 +89,9 @@ export class MetaSmokeAPI {
         return `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'questions'}/${postId}`;
     }
 
-    private static getUserKey() {
+    private static async getUserKey() {
         // eslint-disable-next-line no-async-promise-executor
-        return GreaseMonkeyCache.GetAndCache(globals.MetaSmokeUserKeyConfig, () => new Promise<string>(async (resolve, reject) => {
+        return await GreaseMonkeyCache.GetAndCache(globals.MetaSmokeUserKeyConfig, () => new Promise<string>(async (resolve, reject) => {
             let prom = MetaSmokeAPI.actualPromise;
             if (!prom) {
                 prom = MetaSmokeAPI.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeAPI.appKey}`);

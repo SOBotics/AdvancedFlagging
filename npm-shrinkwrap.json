@@ -13,11 +13,11 @@
         "@typescript-eslint/eslint-plugin": "^4.15.0",
         "@typescript-eslint/parser": "^4.15.0",
         "concat-cli": "4.0.0",
-        "eslint": "^7.19.0",
-        "ts-loader": "8.0.16",
+        "eslint": "^7.20.0",
+        "ts-loader": "8.0.17",
         "tsconfig-paths-webpack-plugin": "^3.3.0",
         "typescript": "4.1.5",
-        "webpack": "5.21.2",
+        "webpack": "5.22.0",
         "webpack-cli": "^4.5.0"
       }
     },
@@ -2920,9 +2920,9 @@
       }
     },
     "node_modules/ts-loader": {
-      "version": "8.0.16",
-      "resolved": "https://registry.npmjs.org/ts-loader/-/ts-loader-8.0.16.tgz",
-      "integrity": "sha512-Cr9ywsgg1n8cjGjIogHLPlqe3WJUHzuJaqwNo5I596KpIqekKzxvSENbrXeOypHcXSPPsr8hV6mglngyXvcKrg==",
+      "version": "8.0.17",
+      "resolved": "https://registry.npmjs.org/ts-loader/-/ts-loader-8.0.17.tgz",
+      "integrity": "sha512-OeVfSshx6ot/TCxRwpBHQ/4lRzfgyTkvi7ghDVrLXOHzTbSK413ROgu/xNqM72i3AFeAIJgQy78FwSMKmOW68w==",
       "dev": true,
       "dependencies": {
         "chalk": "^4.1.0",
@@ -3172,9 +3172,9 @@
       }
     },
     "node_modules/webpack": {
-      "version": "5.21.2",
-      "resolved": "https://registry.npmjs.org/webpack/-/webpack-5.21.2.tgz",
-      "integrity": "sha512-xHflCenx+AM4uWKX71SWHhxml5aMXdy2tu/vdi4lClm7PADKxlyDAFFN1rEFzNV0MAoPpHtBeJnl/+K6F4QBPg==",
+      "version": "5.22.0",
+      "resolved": "https://registry.npmjs.org/webpack/-/webpack-5.22.0.tgz",
+      "integrity": "sha512-xqlb6r9RUXda/d9iA6P7YRTP1ChWeP50TEESKMMNIg0u8/Rb66zN9YJJO7oYgJTRyFyYi43NVC5feG45FSO1vQ==",
       "dev": true,
       "dependencies": {
         "@types/eslint-scope": "^3.7.0",
@@ -5888,9 +5888,9 @@
       }
     },
     "webpack": {
-      "version": "5.21.2",
-      "resolved": "https://registry.npmjs.org/webpack/-/webpack-5.21.2.tgz",
-      "integrity": "sha512-xHflCenx+AM4uWKX71SWHhxml5aMXdy2tu/vdi4lClm7PADKxlyDAFFN1rEFzNV0MAoPpHtBeJnl/+K6F4QBPg==",
+      "version": "5.22.0",
+      "resolved": "https://registry.npmjs.org/webpack/-/webpack-5.22.0.tgz",
+      "integrity": "sha512-xqlb6r9RUXda/d9iA6P7YRTP1ChWeP50TEESKMMNIg0u8/Rb66zN9YJJO7oYgJTRyFyYi43NVC5feG45FSO1vQ==",
       "dev": true,
       "requires": {
         "@types/eslint-scope": "^3.7.0",

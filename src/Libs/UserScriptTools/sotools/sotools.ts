@@ -1,7 +1,8 @@
 import * as globals from '../../../GlobalVars';
 
+declare const StackExchange: globals.StackExchange;
+
 export type QuestionPageInfo = QuestionQuestion | QuestionAnswer;
-declare let StackExchange: any;
 export interface QuestionQuestion {
     type: 'Question';
     element: JQuery;
@@ -60,7 +61,8 @@ export interface GenericPageInfo {
 
 export type PostInfo = NatoAnswer | QuestionPageInfo | FlagPageInfo | GenericPageInfo;
 
-($ as any).event.special.destroyed = {
+$.event.special.destroyed = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     remove: (o: any) => {
         if (o.handler) {
             o.handler();
@@ -252,14 +254,14 @@ function parseGenericPage(callback: (post: GenericPageInfo) => void) {
     });
 }
 
-export function parseQuestionsAndAnswers(callback: (post: PostInfo) => Promise<void>) {
+export function parseQuestionsAndAnswers(callback: (post: PostInfo) => Promise<void>): void {
     if (globals.isNatoPage()) {
         parseNatoPage(callback);
     } else if (globals.isQuestionPage()) {
         parseQuestionPage(callback);
     } else if (globals.isFlagsPage()) {
         parseFlagsPage(callback);
-    } else if (globals.isModPage() || globals.isUserPage() || (StackExchange as any).options.user.isModerator) {
+    } else if (globals.isModPage() || globals.isUserPage() || StackExchange.options.user.isModerator) {
         return;
     } else {
         parseGenericPage(callback);
@@ -294,11 +296,11 @@ function parseActionDate(actionDiv: JQuery) {
     return parseDate((actionDiv.hasClass('relativetime') ? actionDiv : actionDiv.find('.relativeTime')).attr('title'));
 }
 
-export function parseDate(dateStr?: string) {
+export function parseDate(dateStr?: string): Date | undefined {
     // Fix for safari
     return dateStr ? new Date(dateStr.replace(' ', 'T')) : undefined;
 }
 
-export function getAllAnswerIds() {
+export function getAllAnswerIds(): number[] {
     return $('[id^="answer-"]').get().map(el => $(el).data('answerid'));
 }

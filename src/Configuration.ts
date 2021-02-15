@@ -3,12 +3,12 @@ import { flagCategories } from 'FlagTypes';
 import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
 import * as globals from './GlobalVars';
 
-declare const Stacks: any;
-declare const Svg: any;
+declare const Svg: globals.Svg;
+declare const Stacks: globals.Stacks;
 
 const configurationEnabledFlags = GreaseMonkeyCache.GetFromCache<number[]>(globals.ConfigurationEnabledFlags);
 
-export async function SetupConfiguration() {
+export async function SetupConfiguration(): Promise<void> {
     while (typeof Svg === 'undefined') {
         await new Promise(resolve => setTimeout(resolve, 1000));
     }
@@ -62,11 +62,11 @@ function BuildConfigurationOverlay() {
             Items: GetFlagSettings(),
             onSave: () => {
                 const flagOptions = $('.af-section-flags').find('input').get()
-                                                          .filter(el => $(el).prop('checked'))
-                                                          .map(el => {
-                                                              const postId = $(el).attr('id');
-                                                              return postId ? Number(postId.match(/\d+/)) : 0;
-                                                          }).sort((a, b) => a - b);
+                    .filter(el => $(el).prop('checked'))
+                    .map(el => {
+                        const postId = $(el).attr('id');
+                        return postId ? Number(postId.match(/\d+/)) : 0;
+                    }).sort((a, b) => a - b);
                 GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagOptions);
             }
         },
@@ -88,7 +88,7 @@ function BuildConfigurationOverlay() {
     });
 
     const okayButton = overlayModal.find('.s-btn__primary');
-    okayButton.click((event) => {
+    okayButton.click(event => {
         event.preventDefault();
         sections.forEach(section => {
             if (section.onSave) section.onSave();
@@ -176,5 +176,5 @@ function createCheckbox(text: string, storedValue?: boolean, optionId: string = 
 interface ConfigSection {
     SectionName: string;
     Items: JQuery[];
-    onSave?: any;
+    onSave?(): void;
 }

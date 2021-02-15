@@ -2,22 +2,18 @@ import { ChatApi } from '@userscriptTools/chatapi/ChatApi';
 import { getAllAnswerIds } from '@userscriptTools/sotools/sotools';
 import * as globals from '../../../GlobalVars';
 
-declare const GM_xmlhttpRequest: any;
+interface NattyFeedback {
+    items: NattyFeedbackItem[];
+    message: string;
+}
 
-export interface NattyFeedbackItemInfo {
-    timestamp: number;
-    naaValue: number;
-    bodyLength: number;
-    reputation: number;
-    reasons: { reasonName: string }[];
-    link: string;
-    name: string;
-    type: 'None' | 'True Positive' | 'False Positive' | 'Needs Editing';
+interface NattyFeedbackItem {
+    name: string,
+    type: string
 }
-export interface NattyFeedbackInfo {
-    items: [null] | NattyFeedbackItemInfo[];
-    message: 'success';
-}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare const GM_xmlhttpRequest: any;
 
 export class NattyAPI {
     private static nattyIds: number[] = [];
@@ -38,11 +34,11 @@ export class NattyAPI {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: `${globals.nattyAllReportsUrl}`,
-                onload: (response: any) => {
+                onload: (response: XMLHttpRequest) => {
                     if (response.status !== 200) reject();
 
-                    const result = JSON.parse(response.responseText);
-                    const allStoredIds = result.items.map((item: any) => Number(item.name));
+                    const result = JSON.parse(response.responseText) as NattyFeedback;
+                    const allStoredIds = result.items.map((item: NattyFeedbackItem) => Number(item.name));
                     const answerIds = getAllAnswerIds();
                     this.nattyIds = answerIds.filter(id => allStoredIds.includes(id));
                     resolve();
@@ -58,44 +54,41 @@ export class NattyAPI {
         return NattyAPI.nattyIds.includes(this.answerId);
     }
 
-    public ReportNaa(answerDate: Date, questionDate: Date) {
-        // eslint-disable-next-line no-async-promise-executor
-        return new Promise<boolean>(async (resolve, reject) => {
-            if (answerDate < questionDate || !globals.isStackOverflow()) reject(false);
+    public async ReportNaa(answerDate: Date, questionDate: Date): Promise<boolean> {
+        if (answerDate < questionDate || !globals.isStackOverflow()) return false;
 
-            if (this.WasReported()) {
-                await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
-                resolve(true);
-            } else {
-                const answerAge = this.DaysBetween(answerDate, new Date());
-                const daysPostedAfterQuestion = this.DaysBetween(questionDate, answerDate);
-                if (isNaN(answerAge) || isNaN(daysPostedAfterQuestion) || answerAge > 30 || daysPostedAfterQuestion < 30) resolve(false);
+        if (this.WasReported()) {
+            await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
+            return true;
+        } else {
+            const answerAge = this.DaysBetween(answerDate, new Date());
+            const daysPostedAfterQuestion = this.DaysBetween(questionDate, answerDate);
+            if (isNaN(answerAge) || isNaN(daysPostedAfterQuestion) || answerAge > 30 || daysPostedAfterQuestion < 30) return false;
 
-                await this.chat.SendMessage(globals.soboticsRoomId, this.reportMessage);
-                resolve(true);
-            }
-        });
+            await this.chat.SendMessage(globals.soboticsRoomId, this.reportMessage);
+            return true;
+        }
     }
 
-    public async ReportRedFlag() {
+    public async ReportRedFlag(): Promise<boolean> {
         if (!globals.isStackOverflow() || !this.WasReported()) return false;
         await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
         return true;
     }
 
-    public async ReportLooksFine() {
+    public async ReportLooksFine(): Promise<boolean> {
         if (!globals.isStackOverflow() || !this.WasReported()) return false;
         await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} fp`);
         return true;
     }
 
-    public async ReportNeedsEditing() {
+    public async ReportNeedsEditing(): Promise<boolean> {
         if (!globals.isStackOverflow() || !this.WasReported()) return false;
         await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} ne`);
         return true;
     }
 
     private DaysBetween(first: Date, second: Date) {
-        return ((second as any) - (first as any)) / (1000 * 60 * 60 * 24);
+        return (second.valueOf() - first.valueOf()) / (1000 * 60 * 60 * 24);
     }
 }

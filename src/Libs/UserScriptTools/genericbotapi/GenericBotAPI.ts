@@ -1,6 +1,6 @@
 import * as globals from '../../../GlobalVars';
 
-declare const $: JQueryStatic;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const GM_xmlhttpRequest: any;
 
 export class GenericBotAPI {
@@ -10,12 +10,12 @@ export class GenericBotAPI {
         this.answerId = answerId;
     }
 
-    public async ReportNaa() {
+    public async ReportNaa(): Promise<boolean> {
         const response = await this.makeTrackRequest();
         return response;
     }
 
-    public async ReportRedFlag() {
+    public async ReportRedFlag(): Promise<boolean> {
         const response = await this.makeTrackRequest();
         return response;
     }
@@ -49,11 +49,11 @@ export class GenericBotAPI {
                     + '&postId=' + this.answerId
                     + '&contentHash=' + contentHash
                     + '&flagger=' + encodeURIComponent(flaggerName),
-                onload: (response: any) => {
+                onload: (response: XMLHttpRequest) => {
                     if (response.status !== 200) reject('Flag Tracker Error: Status ' + response.status);
                     resolve(true);
                 },
-                onerror: (response: any) => {
+                onerror: (response: XMLHttpRequest) => {
                     reject('Flag Tracker Error: ' + response.responseText);
                 }
             });

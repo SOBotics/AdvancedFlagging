@@ -11,24 +11,23 @@ interface MetaSmokeApiWrapper {
 }
 
 export class MetaSmokeAPI {
-    private static actualPromise: Promise<string | undefined>;
     private static appKey: string;
     private static accessToken: string;
     private static metasmokeIds: { sitePostId: number, metasmokeId: number }[] = [];
 
-    public static Reset() {
+    public static Reset(): void {
         GreaseMonkeyCache.Unset(globals.MetaSmokeDisabledConfig);
         GreaseMonkeyCache.Unset(globals.MetaSmokeUserKeyConfig);
     }
 
-    public static IsDisabled() {
+    public static IsDisabled(): boolean {
         const cachedDisabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.MetaSmokeDisabledConfig);
         if (!cachedDisabled) return false;
 
         return cachedDisabled;
     }
 
-    public static async Setup(appKey: string) {
+    public static async Setup(appKey: string): Promise<void> {
         MetaSmokeAPI.appKey = appKey;
         MetaSmokeAPI.accessToken = await MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
     }
@@ -44,7 +43,7 @@ export class MetaSmokeAPI {
 
         window.open(metaSmokeOAuthUrl, '_blank');
         await globals.Delay(100);
-        const returnCode = await new Promise<string | undefined>((resolve) => {
+        const returnCode = await new Promise<string | undefined>(resolve => {
             const getMSToken = async () => {
                 $(window).off('focus', getMSToken);
                 const code = await globals.showMSTokenPopupAndGet();
@@ -56,7 +55,7 @@ export class MetaSmokeAPI {
         return returnCode;
     };
 
-    public static QueryMetaSmokeInternal() {
+    public static QueryMetaSmokeInternal(): Promise<void> | undefined {
         const urls = globals.isQuestionPage() ? globals.getPostUrlsFromQuestionPage() : globals.getPostUrlsFromFlagsPage();
         const urlString = urls.join(',');
 
@@ -85,25 +84,19 @@ export class MetaSmokeAPI {
         });
     }
 
-    public static GetQueryUrl(postId: number, postType: 'Answer' | 'Question') {
+    public static GetQueryUrl(postId: number, postType: 'Answer' | 'Question'): string {
         return `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'questions'}/${postId}`;
     }
 
     private static async getUserKey() {
-        // eslint-disable-next-line no-async-promise-executor
-        return await GreaseMonkeyCache.GetAndCache(globals.MetaSmokeUserKeyConfig, () => new Promise<string>(async (resolve, reject) => {
-            let prom = MetaSmokeAPI.actualPromise;
-            if (!prom) {
-                prom = MetaSmokeAPI.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeAPI.appKey}`);
-                MetaSmokeAPI.actualPromise = prom;
-            }
-            const code = await prom;
-            if (!code) return;
-
-            $.ajax({
-                url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeAPI.appKey + '&code=' + code,
-                method: 'GET'
-            }).done(data => resolve(data.token)).fail(err => reject(err));
+        return await GreaseMonkeyCache.GetAndCache(globals.MetaSmokeUserKeyConfig, () => new Promise<string>((resolve, reject) => {
+            MetaSmokeAPI.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeAPI.appKey}`).then(code => {
+                if (!code) return;
+                $.ajax({
+                    url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeAPI.appKey + '&code=' + code,
+                    method: 'GET'
+                }).done(data => resolve(data.token)).fail(err => reject(err));
+            });
         }));
     }
 
@@ -112,7 +105,7 @@ export class MetaSmokeAPI {
         return metasmokeObject ? metasmokeObject.metasmokeId : 0;
     }
 
-    public async ReportNaa(postId: number) {
+    public async ReportNaa(postId: number): Promise<boolean> {
         const smokeyid = MetaSmokeAPI.getSmokeyId(postId);
         if (!smokeyid) return false;
 
@@ -120,7 +113,7 @@ export class MetaSmokeAPI {
         return true;
     }
 
-    public async ReportRedFlag(postId: number, postType: 'Answer' | 'Question') {
+    public async ReportRedFlag(postId: number, postType: 'Answer' | 'Question'): Promise<boolean> {
         const smokeyid = MetaSmokeAPI.getSmokeyId(postId);
         if (smokeyid) {
             await this.SendFeedback(smokeyid, 'tpu-');
@@ -143,7 +136,7 @@ export class MetaSmokeAPI {
         });
     }
 
-    public async ReportLooksFine(postId: number) {
+    public async ReportLooksFine(postId: number): Promise<boolean> {
         const smokeyid = MetaSmokeAPI.getSmokeyId(postId);
         if (!smokeyid) return false;
 
@@ -151,7 +144,7 @@ export class MetaSmokeAPI {
         return true;
     }
 
-    public async ReportNeedsEditing(postId: number) {
+    public async ReportNeedsEditing(postId: number): Promise<boolean> {
         const smokeyid = MetaSmokeAPI.getSmokeyId(postId);
         if (!smokeyid) return false;
 
@@ -159,7 +152,7 @@ export class MetaSmokeAPI {
         return true;
     }
 
-    public async ReportVandalism(postId: number) {
+    public async ReportVandalism(postId: number): Promise<boolean> {
         const smokeyid = MetaSmokeAPI.getSmokeyId(postId);
         if (!smokeyid) return false;
 

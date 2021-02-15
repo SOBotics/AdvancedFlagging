@@ -1,8 +1,43 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { displayToaster } from './AdvancedFlagging';
 import { MetaSmokeAPI } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
 
-declare const Svg: any;
-declare const StackExchange: any;
+declare const StackExchange: StackExchange;
+declare const Svg: Svg;
+
+export interface Svg {
+    CheckmarkSm(): JQuery;
+    ClearSm(): JQuery;
+    Flag(): JQuery;
+}
+
+export interface Stacks {
+    showModal(modal: HTMLElement | null): void;
+}
+
+export interface StackExchange {
+    helpers: StackExchangeHelpers;
+    options: {
+        user: {
+            fkey: string;
+            userId: number;
+            isModerator: boolean;
+        }
+    };
+    comments: { uiForPost(comments: JQuery): any };
+}
+
+export interface StackExchangeHelpers {
+    showModal(popup: JQuery): void;
+    showConfirmModal(modal: ModalType): Promise<boolean>;
+    showToast(message: string, info: { type: string }): void;
+}
+
+interface ModalType {
+    title: string;
+    bodyHtml: string;
+    buttonLabel: string;
+}
 
 export const soboticsRoomId = 111347;
 export const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
@@ -29,44 +64,44 @@ export const settingUpTitle = 'Setting up MetaSmoke';
 export const settingUpBody = 'If you do not wish to connect, press cancel and this popup won\'t show up again. '
                            + 'To reset configuration, see the footer of Stack Overflow.';
 
-export const displayStacksToast = (message: string, type: string) => StackExchange.helpers.showToast(message, { type: type });
+export const displayStacksToast = (message: string, type: string): void => StackExchange.helpers.showToast(message, { type: type });
 
 export const popupDelay = 4000;
 export const isReviewItemRegex = /(\/review\/next-task)|(\/review\/task-reviewed\/)/;
 export const isDeleteVoteRegex = /(\d+)\/vote\/10|(\d+)\/recommend-delete/;
 export const flagsUrlRegex = /flags\/posts\/\d+\/add\/[a-zA-Z]+/;
-export const getFlagsUrlRegex = (postId: number) => new RegExp(`/flags/posts/${postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`);
+export const getFlagsUrlRegex = (postId: number): RegExp => new RegExp(`/flags/posts/${postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`);
 
-export const showElement = (element: JQuery) => element.addClass('d-block').removeClass('d-none');
-export const hideElement = (element: JQuery) => element.addClass('d-none').removeClass('d-block');
-export const showInlineElement = (element: JQuery) => element.addClass('d-inline-block').removeClass('d-none');
-export const displaySuccess = (message: string) => displayToaster(message, 'success');
-export const displayError = (message: string) => displayToaster(message, 'danger');
-export const isStackOverflow = () => !!window.location.href.match(/^https:\/\/stackoverflow.com/);
-export const isNatoPage = () => !!window.location.href.match(/\/tools\/new-answers-old-questions/);
-export const isModPage = () => !!window.location.href.match(/\/admin/);
-export const isQuestionPage = () => !!window.location.href.match(/\/questions\/\d+.*/);
-export const isFlagsPage = () => !!window.location.href.match(/\/users\/flag-summary\//);
-export const isUserPage = () => !!window.location.href.match(/\/users\/\d+.*/);
+export const showElement = (element: JQuery): JQuery => element.addClass('d-block').removeClass('d-none');
+export const hideElement = (element: JQuery): JQuery => element.addClass('d-none').removeClass('d-block');
+export const showInlineElement = (element: JQuery): JQuery => element.addClass('d-inline-block').removeClass('d-none');
+export const displaySuccess = (message: string): void => displayToaster(message, 'success');
+export const displayError = (message: string): void => displayToaster(message, 'danger');
+export const isStackOverflow = (): boolean => !!window.location.href.match(/^https:\/\/stackoverflow.com/);
+export const isNatoPage = (): boolean => !!window.location.href.match(/\/tools\/new-answers-old-questions/);
+export const isModPage = (): boolean => !!window.location.href.match(/\/admin/);
+export const isQuestionPage = (): boolean => !!window.location.href.match(/\/questions\/\d+.*/);
+export const isFlagsPage = (): boolean => !!window.location.href.match(/\/users\/flag-summary\//);
+export const isUserPage = (): boolean => !!window.location.href.match(/\/users\/\d+.*/);
 
-export const getPerformedActionIcon = () => $('<div>').attr('class', 'p2 d-none').append(Svg.CheckmarkSm().addClass('fc-green-500'));
-export const getReportedIcon = () => $('<div>').attr('class', 'p2 d-none').append(Svg.Flag().addClass('fc-red-500'));
+export const getPerformedActionIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.CheckmarkSm().addClass('fc-green-500'));
+export const getReportedIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.Flag().addClass('fc-red-500'));
 
 const sampleIconClass = $('<div>').attr('class', 'advanced-flagging-icon bg-cover c-pointer w16 h16 d-none va-middle');
 sampleIconClass.addClass(window.location.href.match(/\/users\/flag-summary/) ? 'mx4' : 'm4');
-export const getNattyIcon = () => sampleIconClass.clone().attr('title', 'Reported by Natty').addClass('advanced-flagging-natty-icon');
-export const getGuttenbergIcon = () => sampleIconClass.clone().attr('title', 'Reported by Guttenberg').addClass('advanced-flagging-gut-icon');
-export const getSmokeyIcon = () => sampleIconClass.clone().attr('title', 'Reported by Smokey').addClass('advanced-flagging-smokey-icon');
+export const getNattyIcon = (): JQuery => sampleIconClass.clone().attr('title', 'Reported by Natty').addClass('advanced-flagging-natty-icon');
+export const getGuttenbergIcon = (): JQuery => sampleIconClass.clone().attr('title', 'Reported by Guttenberg').addClass('advanced-flagging-gut-icon');
+export const getSmokeyIcon = (): JQuery => sampleIconClass.clone().attr('title', 'Reported by Smokey').addClass('advanced-flagging-smokey-icon');
 
-export const getMessageDiv = (message: string, state: string) => $('<div>').attr('class', 'p12 bg-' + state).text(message);
-export const getSectionWrapper = (name: string) => $('<fieldset>').attr('class', `grid gs8 gsy fd-column af-section-${name.toLowerCase()}`)
+export const getMessageDiv = (message: string, state: string): JQuery => $('<div>').attr('class', 'p12 bg-' + state).text(message);
+export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').attr('class', `grid gs8 gsy fd-column af-section-${name.toLowerCase()}`)
     .html(`<h2 class="grid--cell">${name}</h2>`);
-export const getDivider = () => $('<hr>').attr('class', 'my8');
-export const getOptionBox = (name: string) => $('<input>').attr('type', 'checkbox').attr('name', name).attr('id', name).attr('class', 's-checkbox');
-export const getCategoryDiv = (red: boolean) => $('<div>').attr('class', `advanced-flagging-category bar-md${red ? ' bg-red-200' : ''}`);
-export const getOptionLabel = (text: string, name: string) =>
+export const getDivider = (): JQuery => $('<hr>').attr('class', 'my8');
+export const getOptionBox = (name: string): JQuery => $('<input>').attr('type', 'checkbox').attr('name', name).attr('id', name).attr('class', 's-checkbox');
+export const getCategoryDiv = (red: boolean): JQuery => $('<div>').attr('class', `advanced-flagging-category bar-md${red ? ' bg-red-200' : ''}`);
+export const getOptionLabel = (text: string, name: string): JQuery =>
     $('<label>').text(text).attr('for', name).attr('class', 's-label ml4 va-middle fs-body1 fw-normal');
-export const getConfigHtml = (optionId: string, text: string) => $(`
+export const getConfigHtml = (optionId: string, text: string): JQuery => $(`
 <div>
   <div class="grid gs8">
     <div class="grid--cell"><input class="s-checkbox" type="checkbox" id="${optionId}"/></div>
@@ -75,7 +110,7 @@ export const getConfigHtml = (optionId: string, text: string) => $(`
 </div>`);
 
 export const popupWrapper = $('<div>').attr('id', 'snackbar')
-                                      .attr('class', 'hide fc-white p16 fs-body3 ps-fixed ta-center z-popover l50 t32 wmn2');
+    .attr('class', 'hide fc-white p16 fs-body3 ps-fixed ta-center z-popover l50 t32 wmn2');
 export const dropDown = $('<div>').attr('class', 'advanced-flagging-dialog s-popover s-anchors s-anchors__default p6 mt2 c-default d-none');
 export const popoverArrow = $('<div>').attr('class', 's-popover--arrow s-popover--arrow__tc');
 export const reportLink = $('<a>').attr('class', 'd-inline-block my4');
@@ -121,7 +156,7 @@ const metasmokeTokenPopup = $(`
   </div>
 </aside>`);
 
-export function showMSTokenPopupAndGet() {
+export function showMSTokenPopupAndGet(): Promise<string | undefined> {
     return new Promise<string | undefined>(resolve => {
         StackExchange.helpers.showModal(metasmokeTokenPopup);
         $('#advanced-flagging-save-ms-token').on('click', () => {
@@ -133,11 +168,11 @@ export function showMSTokenPopupAndGet() {
     });
 }
 
-export async function Delay(milliseconds: number) {
+export async function Delay(milliseconds: number): Promise<void> {
     return await new Promise<void>(resolve => setTimeout(resolve, milliseconds));
 }
 
-export async function showConfirmModal(title: string, bodyHtml: string) {
+export async function showConfirmModal(title: string, bodyHtml: string): Promise<boolean> {
     return await StackExchange.helpers.showConfirmModal({
         title: title,
         bodyHtml: bodyHtml,
@@ -148,20 +183,20 @@ export async function showConfirmModal(title: string, bodyHtml: string) {
 // Credits: https://github.com/SOBotics/Userscripts/blob/master/Natty/NattyReporter.user.js#L101
 let initialized = false;
 const callbacks: ((request: XMLHttpRequest) => void)[] = [];
-export function addXHRListener(callback: (request: XMLHttpRequest) => void) {
+export function addXHRListener(callback: (request: XMLHttpRequest) => void): void {
     callbacks.push(callback);
     if (initialized) return;
     const open = XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open = function () {
+    XMLHttpRequest.prototype.open = function(...args: any[]) {
         this.addEventListener('load', () => {
             callbacks.forEach(cb => cb(this));
         }, false);
-        open.apply(this, arguments);
+        open.apply(this, args);
     };
     initialized = true;
 }
 
-export function getPostUrlsFromQuestionPage() {
+export function getPostUrlsFromQuestionPage(): string[] {
     return $('.question, .answer').get().map(el => {
         const postType = $(el).attr('data-questionid') ? 'Question' : 'Answer';
         const urlToReturn = MetaSmokeAPI.GetQueryUrl(Number($(el).attr('data-questionid') || $(el).attr('data-answerid')), postType);
@@ -169,7 +204,7 @@ export function getPostUrlsFromQuestionPage() {
     });
 }
 
-export function getPostUrlsFromFlagsPage() {
+export function getPostUrlsFromFlagsPage(): (string | undefined)[] {
     return $('.flagged-post').get().map(el => {
         const postType = $(el).find('.answer-hyperlink').length ? 'Answer' : 'Question';
         const elementHref = $(el).find(`.${postType.toLowerCase()}-hyperlink`).attr('href');

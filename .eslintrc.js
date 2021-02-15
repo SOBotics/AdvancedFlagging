@@ -8,11 +8,14 @@ module.exports = {
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
   ],
-  "rules": {
-    '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/no-explicit-any': 'off',
-    'prefer-rest-params': 'off',
+  rules: {
+    'arrow-parens': ['warn', 'as-needed'],
+    'prefer-arrow-callback': 'warn',
+    'no-trailing-spaces': 'error',
+    'indent': [ 'error', 4 ],
     'semi': [ 1, 'always' ],
-    'quotes': [ 2, 'single', { 'avoidEscape': true } ]
-  },
+    'quotes': [ 2, 'single', { 'avoidEscape': true } ],
+    'prefer-const': 'warn',
+    'keyword-spacing': ['error', { before: true, after: true }],
+  }
 };

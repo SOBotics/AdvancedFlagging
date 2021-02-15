@@ -50,7 +50,7 @@ export const flagCategories: FlagCategory[] = [
                 ReportType: 'PostOther',
                 Human: 'for moderator attention',
                 Enabled: (hasDuplicatePostLinks, isRepost) => hasDuplicatePostLinks && !isRepost,
-                GetCustomFlagText: (copyPastorItem) => `Possible plagiarism of another answer https:${copyPastorItem.target_url}, as can be seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}`
+                GetCustomFlagText: copyPastorItem => `Possible plagiarism of another answer https:${copyPastorItem.target_url}, as can be seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}`
             },
             {
                 Id: 4,
@@ -59,7 +59,7 @@ export const flagCategories: FlagCategory[] = [
                 Human: 'for moderator attention',
                 Enabled: (hasDuplicatePostLinks, isRepost) => hasDuplicatePostLinks && isRepost,
                 GetComment: () => 'Please don\'t add the [same answer to multiple questions](https://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.',
-                GetCustomFlagText: (copyPastorItem) => `The answer is a repost of their other answer https:${copyPastorItem.target_url}, but as there are slight differences as seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}, an auto flag wouldn't be raised.`
+                GetCustomFlagText: copyPastorItem => `The answer is a repost of their other answer https:${copyPastorItem.target_url}, but as there are slight differences as seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}, an auto flag wouldn't be raised.`
             },
             {
                 Id: 5,
@@ -67,7 +67,7 @@ export const flagCategories: FlagCategory[] = [
                 ReportType: 'PostOther',
                 Human: 'for moderator attention',
                 Enabled: (hasDuplicatePostLinks, isRepost) => hasDuplicatePostLinks && !isRepost,
-                GetCustomFlagText: (copyPastorItem) => `This post is copied from [another answer](https:${copyPastorItem.target_url}), as can be seen [here](https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}). The author only added a link to the other answer, which is [not the proper way of attribution](https://stackoverflow.blog/2009/06/25/attribution-required/).`
+                GetCustomFlagText: copyPastorItem => `This post is copied from [another answer](https:${copyPastorItem.target_url}), as can be seen [here](https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}). The author only added a link to the other answer, which is [not the proper way of attribution](https://stackoverflow.blog/2009/06/25/attribution-required/).`
             }
         ]
     },
@@ -91,7 +91,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Not an answer',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: (userDetails) => userDetails.Reputation < 50
+                GetComment: userDetails => userDetails.Reputation < 50
                     ? 'This does not provide an answer to the question. You can [search for similar questions](/search), ' +
                     'or refer to the related and linked questions on the right-hand side of the page to find an answer. ' +
                     'If you have a related but different question, [ask a new question](/questions/ask), ' +
@@ -108,7 +108,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Thanks',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: (userDetails) => userDetails.Reputation < 15
+                GetComment: userDetails => userDetails.Reputation < 15
                     ? 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
                     'and can be perceived as noise by its future visitors. Once you [earn](https://meta.stackoverflow.com/q/146472) ' +
                     'enough [reputation](/help/whats-reputation), you will gain privileges to ' +
@@ -146,7 +146,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Comment',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: (userDetails) => userDetails.Reputation < 50
+                GetComment: userDetails => userDetails.Reputation < 50
                     ? 'This does not provide an answer to the question. Once you have sufficient [reputation](/help/whats-reputation) ' +
                     'you will be able to [comment on any post](/help/privileges/comment); instead, ' +
                     '[provide answers that don\'t require clarification from the asker](https://meta.stackexchange.com/questions/214173/why-do-i-need-50-reputation-to-comment-what-can-i-do-instead).'

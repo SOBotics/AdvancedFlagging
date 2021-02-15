@@ -2,6 +2,7 @@ import { ChatApi } from '@userscriptTools/chatapi/ChatApi';
 import * as globals from '../../../GlobalVars';
 import { getAllAnswerIds } from '@userscriptTools/sotools/sotools';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const GM_xmlhttpRequest: any;
 
 export interface CopyPastorFindTargetResponseItem {
@@ -25,7 +26,7 @@ export class CopyPastorAPI {
         this.answerId = id;
     }
 
-    public static async getAllCopyPastorIds() {
+    public static async getAllCopyPastorIds(): Promise<void> {
         if (!globals.isStackOverflow()) return;
 
         const answerIds = getAllAnswerIds();
@@ -44,7 +45,7 @@ export class CopyPastorAPI {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: `${globals.copyPastorServer}/posts/${answerId}`,
-                onload: (response: any) => {
+                onload: (response: XMLHttpRequest) => {
                     const responseParsed = $(response.responseText);
                     resolve(!!responseParsed.text().match('Reposted'));
                 },
@@ -61,9 +62,9 @@ export class CopyPastorAPI {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url,
-                onload: (response: any) => {
+                onload: (response: XMLHttpRequest) => {
                     const responseObject = JSON.parse(response.responseText) as CopyPastorFindTargetResponse;
-                    resolve(responseObject.status === 'success' ? (responseObject.posts[0] || {}) : {} as any);
+                    resolve(responseObject.status === 'success' ? responseObject.posts[0] : {} as CopyPastorFindTargetResponseItem);
                 },
                 onerror: () => {
                     reject(false);
@@ -72,26 +73,26 @@ export class CopyPastorAPI {
         });
     }
 
-    public getCopyPastorObject() {
+    public getCopyPastorObject(): CopyPastorFindTargetResponseItem | 0 {
         const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
         return idsObject ? idsObject.copypastorObject : 0;
     }
 
-    public getCopyPastorId() {
+    public getCopyPastorId(): number {
         const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
         return idsObject ? idsObject.postId : 0;
     }
 
-    public getIsRepost() {
+    public getIsRepost(): boolean {
         const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
         return idsObject ? idsObject.repost : false;
     }
 
-    public async ReportTruePositive() {
+    public async ReportTruePositive(): Promise<boolean> {
         return await this.SendFeedback('tp');
     }
 
-    public async ReportFalsePositive() {
+    public async ReportFalsePositive(): Promise<boolean> {
         return await this.SendFeedback('fp');
     }
 
@@ -120,10 +121,10 @@ export class CopyPastorAPI {
                     + '&username=' + payload.username
                     + '&link=' + payload.link
                     + '&key=' + payload.key,
-                onload: (response: any) => {
+                onload: (response: XMLHttpRequest) => {
                     response.status === 200 ? resolve(true) : reject(JSON.parse(response.responseText));
                 },
-                onerror: (response: any) => {
+                onerror: (response: XMLHttpRequest) => {
                     reject(response);
                 },
             });

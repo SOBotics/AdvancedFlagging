@@ -1,9 +1,9 @@
 import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
 import * as globals from '../../../GlobalVars';
 
-declare const $: JQueryStatic;
+declare const StackExchange: globals.StackExchange;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const GM_xmlhttpRequest: any;
-declare const StackExchange: any;
 
 export class ChatApi {
     private static GetExpiryDate(): Date {
@@ -20,7 +20,7 @@ export class ChatApi {
 
     public async GetChannelFKey(roomId: number): Promise<string> {
         const expiryDate = ChatApi.GetExpiryDate();
-        return GreaseMonkeyCache.GetAndCache(globals.CacheChatApiFkey, () => new Promise<string>((resolve) => {
+        return GreaseMonkeyCache.GetAndCache(globals.CacheChatApiFkey, () => new Promise<string>(resolve => {
             this.GetChannelPage(roomId).then(channelPage => {
                 const fkeyElement = $(channelPage).filter('#fkey');
                 const fkey = fkeyElement.val();
@@ -44,11 +44,11 @@ export class ChatApi {
                     url: `${this.chatRoomUrl}/chats/${roomId}/messages/new`,
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     data: 'text=' + encodeURIComponent(message) + '&fkey=' + fkey,
-                    onload: (chat_response: any) => {
+                    onload: (chat_response: XMLHttpRequest) => {
                         chat_response.status === 200 ? resolve() : onFailure(chat_response.statusText);
                     },
-                    onerror: (error_response: any) => {
-                        onFailure(error_response);
+                    onerror: (error_response: XMLHttpRequest) => {
+                        onFailure(error_response.responseText);
                     },
                 });
             };
@@ -73,10 +73,10 @@ export class ChatApi {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: `${this.chatRoomUrl}/rooms/${roomId}`,
-                onload: (response: any) => {
+                onload: (response: XMLHttpRequest) => {
                     response.status === 200 ? resolve(response.responseText) : reject(response.statusText);
                 },
-                onerror: (data: any) => reject(data)
+                onerror: (data: XMLHttpRequest) => reject(data)
             });
         });
 

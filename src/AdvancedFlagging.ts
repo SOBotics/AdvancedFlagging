@@ -8,9 +8,9 @@ import { SetupConfiguration } from 'Configuration';
 import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
 import * as globals from './GlobalVars';
 
+declare const StackExchange: globals.StackExchange;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const GM_addStyle: any;
-declare const StackExchange: any;
-declare const Svg: any;
 
 function SetupStyles() {
     GM_addStyle(`
@@ -70,7 +70,7 @@ function handleFlagAndComment(
                 url: `/posts/${postId}/comments`,
                 type: 'POST',
                 data: { fkey: userFkey, comment: commentText }
-            }).done((data) => {
+            }).done(data => {
                 resolve(data);
             }).fail((jqXHR, textStatus, errorThrown) => {
                 reject({ jqXHR, textStatus, errorThrown });
@@ -79,8 +79,7 @@ function handleFlagAndComment(
     }
 
     if (flagRequired && flag.ReportType !== 'NoFlag') {
-        // eslint-disable-next-line no-async-promise-executor
-        result.FlagPromise = new Promise(async (resolve, reject) => {
+        result.FlagPromise = new Promise((resolve, reject) => {
             const copypastorObject = copypastorApi.getCopyPastorObject();
             const flagText = flag.GetCustomFlagText && copypastorObject ? flag.GetCustomFlagText(copypastorObject) : undefined;
 
@@ -89,7 +88,7 @@ function handleFlagAndComment(
                 url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
                 type: 'POST',
                 data: { fkey: userFkey, otherText: flag.ReportType === 'PostOther' ? flagText : '' }
-            }).done((data) => {
+            }).done(data => {
                 setTimeout(() => autoFlagging = false, 500);
                 resolve(data);
             }).fail((jqXHR, textStatus, errorThrown) => {
@@ -97,6 +96,7 @@ function handleFlagAndComment(
             });
         });
     }
+
     return result;
 }
 
@@ -110,7 +110,7 @@ function hidePopup() {
     toasterFadeTimeout = window.setTimeout(() => popupWrapper.empty().addClass('hide'), 1000);
 }
 
-export function displayToaster(message: string, state: string) {
+export function displayToaster(message: string, state: string): void {
     const messageDiv = globals.getMessageDiv(message, state);
 
     popupWrapper.append(messageDiv);
@@ -128,18 +128,18 @@ function displaySuccessFlagged(reportedIcon: JQuery, reportTypeHuman?: string) {
     globals.displaySuccess(flaggedMessage);
 }
 
-function displayErrorFlagged(message: string, error: any) {
+function displayErrorFlagged(message: string, error: string) {
     globals.displayError(message);
     console.error(error);
 }
 
 function getStrippedComment(commentText: string) {
     return commentText.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1') // Match [links](...)
-                      .replace(/\[([^\]]+)\][^(]*?/g, '$1') // Match [edit]
-                      .replace(/_([^_]+)_/g, '$1') //  _thanks_ => thanks
-                      .replace(/\*\*([^*]+)\*\*/g, '$1') // **thanks** => thanks
-                      .replace(/\*([^*]+)\*/g, '$1') // *thanks* => thanks
-                      .replace(' - From Review', '');
+        .replace(/\[([^\]]+)\][^(]*?/g, '$1') // Match [edit]
+        .replace(/_([^_]+)_/g, '$1') //  _thanks_ => thanks
+        .replace(/\*\*([^*]+)\*\*/g, '$1') // **thanks** => thanks
+        .replace(/\*([^*]+)\*/g, '$1') // *thanks* => thanks
+        .replace(' - From Review', '');
 }
 
 function upvoteSameComments(element: JQuery, strippedCommentText: string) {
@@ -151,7 +151,7 @@ function upvoteSameComments(element: JQuery, strippedCommentText: string) {
     });
 }
 
-function getErrorMessage(responseJson: any) {
+function getErrorMessage(responseJson: StackExchangeFlagResponse) {
     let message = 'Failed to flag: ';
     if (responseJson.Message.match('already flagged')) {
         message += 'post already flagged';
@@ -165,18 +165,18 @@ function getErrorMessage(responseJson: any) {
 
 function getPromiseFromFlagName(flagName: string, reporter: Reporter) {
     switch (flagName) {
-        case 'Needs Editing': return reporter.ReportNeedsEditing();
-        case 'Vandalism': return reporter.ReportVandalism();
-        case 'Looks Fine': return reporter.ReportLooksFine();
-        case 'Duplicate answer': return reporter.ReportDuplicateAnswer();
-        case 'Plagiarism': return reporter.ReportPlagiarism();
-        case 'Bad attribution': return reporter.ReportPlagiarism();
-        default:
-            throw new Error('Could not find custom flag type: ' + flagName);
+    case 'Needs Editing': return reporter.ReportNeedsEditing();
+    case 'Vandalism': return reporter.ReportVandalism();
+    case 'Looks Fine': return reporter.ReportLooksFine();
+    case 'Duplicate answer': return reporter.ReportDuplicateAnswer();
+    case 'Plagiarism': return reporter.ReportPlagiarism();
+    case 'Bad attribution': return reporter.ReportPlagiarism();
+    default:
+        throw new Error('Could not find custom flag type: ' + flagName);
     }
 }
 
-function showComments(postId: number, data: any) {
+function showComments(postId: number, data: string) {
     const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
     commentUI.addShow(true, false);
     commentUI.showComments(data, null, false, true);
@@ -279,19 +279,19 @@ async function waitForFlagPromise(flagPromise: Promise<string>, reportedIcon: JQ
             const message = getErrorMessage(responseJson);
             displayErrorFlagged(message, fullMessage);
         }
-    } catch(error) {
+    } catch (error) {
         displayErrorFlagged('Failed to flag post', error);
     }
 }
 
 function getHumanFromDisplayName(displayName: string) {
     switch (displayName) {
-        case 'AnswerNotAnAnswer': return 'as NAA';
-        case 'PostOffensive': return 'as R/A';
-        case 'PostSpam': return 'as spam';
-        case 'NoFlag': return '';
-        case 'PostOther': return 'for moderator attention';
-        default: return '';
+    case 'AnswerNotAnAnswer': return 'as NAA';
+    case 'PostOffensive': return 'as R/A';
+    case 'PostSpam': return 'as spam';
+    case 'NoFlag': return '';
+    case 'PostOther': return 'for moderator attention';
+    default: return '';
     }
 }
 
@@ -469,7 +469,7 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
         }
         if (!promise) return;
 
-        promise.then((didReport) => {
+        promise.then(didReport => {
             if (!didReport) return;
             globals.displaySuccess(`Feedback sent to ${reporter.name}`);
         }).catch(() => {
@@ -480,11 +480,6 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
 
 let autoFlagging = false;
 function SetupPostPage() {
-    // The Svg object is initialised after the body has loaded :(
-    while (typeof Svg === 'undefined') {
-        new Promise(resolve => setTimeout(resolve, 1000));
-    }
-
     parseQuestionsAndAnswers(async post => {
         if (!post.element.length) return;
 
@@ -527,7 +522,7 @@ function SetupPostPage() {
                     Id: 0,
                     ReportType: matches[1] as 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther',
                     DisplayName: matches[1],
-                    Human: getHumanFromDisplayName(matches[1]) as any
+                    Human: getHumanFromDisplayName(matches[1])
                 };
 
                 if (!questionTime || !answerTime) return;
@@ -545,21 +540,21 @@ function SetupPostPage() {
                 advancedFlaggingLink.append(dropDown);
 
                 const openOnHover = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationOpenOnHover);
-                const showElementOnEvent = (event: any) => {
-                    event.stopPropagation();
-                    if (event.target !== advancedFlaggingLink.get(0)) return;
-
-                    globals.showElement(dropDown);
-                };
 
                 if (openOnHover) {
-                    advancedFlaggingLink.hover(showElementOnEvent);
+                    advancedFlaggingLink.hover(event => {
+                        event.stopPropagation();
+                        if (event.target === advancedFlaggingLink.get(0)) globals.showElement(dropDown);
+                    });
                     advancedFlaggingLink.mouseleave(e => {
                         e.stopPropagation();
                         setTimeout(() => globals.hideElement(dropDown), 100); // avoid immediate closing of popover
                     });
                 } else {
-                    advancedFlaggingLink.click(showElementOnEvent);
+                    advancedFlaggingLink.click(event => {
+                        event.stopPropagation();
+                        if (event.target === advancedFlaggingLink.get(0)) globals.showElement(dropDown);
+                    });
                     $(window).click(() => globals.hideElement(dropDown));
                 }
             }
@@ -596,7 +591,7 @@ async function Setup() {
     const postDetails: { questionTime: Date, answerTime: Date }[] = [];
     if (!watchedQueuesEnabled) return;
 
-    globals.addXHRListener((xhr) => {
+    globals.addXHRListener(xhr => {
         if (xhr.status !== 200) return;
 
         const parseReviewDetails = (review: string) => {

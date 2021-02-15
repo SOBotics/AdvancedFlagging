@@ -84,7 +84,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     url: `/posts/${postId}/comments`,
                     type: 'POST',
                     data: { fkey: userFkey, comment: commentText }
-                }).done((data) => {
+                }).done(data => {
                     resolve(data);
                 }).fail((jqXHR, textStatus, errorThrown) => {
                     reject({ jqXHR, textStatus, errorThrown });
@@ -92,8 +92,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
         }
         if (flagRequired && flag.ReportType !== 'NoFlag') {
-            // eslint-disable-next-line no-async-promise-executor
-            result.FlagPromise = new Promise(async (resolve, reject) => {
+            result.FlagPromise = new Promise((resolve, reject) => {
                 const copypastorObject = copypastorApi.getCopyPastorObject();
                 const flagText = flag.GetCustomFlagText && copypastorObject ? flag.GetCustomFlagText(copypastorObject) : undefined;
                 autoFlagging = true;
@@ -101,7 +100,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
                     type: 'POST',
                     data: { fkey: userFkey, otherText: flag.ReportType === 'PostOther' ? flagText : '' }
-                }).done((data) => {
+                }).done(data => {
                     setTimeout(() => autoFlagging = false, 500);
                     resolve(data);
                 }).fail((jqXHR, textStatus, errorThrown) => {
@@ -425,7 +424,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             }
             if (!promise)
                 return;
-            promise.then((didReport) => {
+            promise.then(didReport => {
                 if (!didReport)
                     return;
                 globals.displaySuccess(`Feedback sent to ${reporter.name}`);
@@ -436,10 +435,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     let autoFlagging = false;
     function SetupPostPage() {
-        // The Svg object is initialised after the body has loaded :(
-        while (typeof Svg === 'undefined') {
-            new Promise(resolve => setTimeout(resolve, 1000));
-        }
         sotools_1.parseQuestionsAndAnswers(async (post) => {
             if (!post.element.length)
                 return;
@@ -490,21 +485,23 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     const dropDown = await BuildFlaggingDialog(post.element, post.postId, post.type, post.authorReputation, post.authorName, answerTime, questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi);
                     advancedFlaggingLink.append(dropDown);
                     const openOnHover = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationOpenOnHover);
-                    const showElementOnEvent = (event) => {
-                        event.stopPropagation();
-                        if (event.target !== advancedFlaggingLink.get(0))
-                            return;
-                        globals.showElement(dropDown);
-                    };
                     if (openOnHover) {
-                        advancedFlaggingLink.hover(showElementOnEvent);
+                        advancedFlaggingLink.hover(event => {
+                            event.stopPropagation();
+                            if (event.target === advancedFlaggingLink.get(0))
+                                globals.showElement(dropDown);
+                        });
                         advancedFlaggingLink.mouseleave(e => {
                             e.stopPropagation();
                             setTimeout(() => globals.hideElement(dropDown), 100); // avoid immediate closing of popover
                         });
                     }
                     else {
-                        advancedFlaggingLink.click(showElementOnEvent);
+                        advancedFlaggingLink.click(event => {
+                            event.stopPropagation();
+                            if (event.target === advancedFlaggingLink.get(0))
+                                globals.showElement(dropDown);
+                        });
                         $(window).click(() => globals.hideElement(dropDown));
                     }
                 }
@@ -539,7 +536,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         const postDetails = [];
         if (!watchedQueuesEnabled)
             return;
-        globals.addXHRListener((xhr) => {
+        globals.addXHRListener(xhr => {
             if (xhr.status !== 200)
                 return;
             const parseReviewDetails = (review) => {
@@ -638,7 +635,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     ReportType: 'PostOther',
                     Human: 'for moderator attention',
                     Enabled: (hasDuplicatePostLinks, isRepost) => hasDuplicatePostLinks && !isRepost,
-                    GetCustomFlagText: (copyPastorItem) => `Possible plagiarism of another answer https:${copyPastorItem.target_url}, as can be seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}`
+                    GetCustomFlagText: copyPastorItem => `Possible plagiarism of another answer https:${copyPastorItem.target_url}, as can be seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}`
                 },
                 {
                     Id: 4,
@@ -647,7 +644,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     Human: 'for moderator attention',
                     Enabled: (hasDuplicatePostLinks, isRepost) => hasDuplicatePostLinks && isRepost,
                     GetComment: () => 'Please don\'t add the [same answer to multiple questions](https://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.',
-                    GetCustomFlagText: (copyPastorItem) => `The answer is a repost of their other answer https:${copyPastorItem.target_url}, but as there are slight differences as seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}, an auto flag wouldn't be raised.`
+                    GetCustomFlagText: copyPastorItem => `The answer is a repost of their other answer https:${copyPastorItem.target_url}, but as there are slight differences as seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}, an auto flag wouldn't be raised.`
                 },
                 {
                     Id: 5,
@@ -655,7 +652,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     ReportType: 'PostOther',
                     Human: 'for moderator attention',
                     Enabled: (hasDuplicatePostLinks, isRepost) => hasDuplicatePostLinks && !isRepost,
-                    GetCustomFlagText: (copyPastorItem) => `This post is copied from [another answer](https:${copyPastorItem.target_url}), as can be seen [here](https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}). The author only added a link to the other answer, which is [not the proper way of attribution](https://stackoverflow.blog/2009/06/25/attribution-required/).`
+                    GetCustomFlagText: copyPastorItem => `This post is copied from [another answer](https:${copyPastorItem.target_url}), as can be seen [here](https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}). The author only added a link to the other answer, which is [not the proper way of attribution](https://stackoverflow.blog/2009/06/25/attribution-required/).`
                 }
             ]
         },
@@ -679,7 +676,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     DisplayName: 'Not an answer',
                     ReportType: 'AnswerNotAnAnswer',
                     Human: 'as NAA',
-                    GetComment: (userDetails) => userDetails.Reputation < 50
+                    GetComment: userDetails => userDetails.Reputation < 50
                         ? 'This does not provide an answer to the question. You can [search for similar questions](/search), ' +
                             'or refer to the related and linked questions on the right-hand side of the page to find an answer. ' +
                             'If you have a related but different question, [ask a new question](/questions/ask), ' +
@@ -696,7 +693,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     DisplayName: 'Thanks',
                     ReportType: 'AnswerNotAnAnswer',
                     Human: 'as NAA',
-                    GetComment: (userDetails) => userDetails.Reputation < 15
+                    GetComment: userDetails => userDetails.Reputation < 15
                         ? 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
                             'and can be perceived as noise by its future visitors. Once you [earn](https://meta.stackoverflow.com/q/146472) ' +
                             'enough [reputation](/help/whats-reputation), you will gain privileges to ' +
@@ -734,7 +731,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     DisplayName: 'Comment',
                     ReportType: 'AnswerNotAnAnswer',
                     Human: 'as NAA',
-                    GetComment: (userDetails) => userDetails.Reputation < 50
+                    GetComment: userDetails => userDetails.Reputation < 50
                         ? 'This does not provide an answer to the question. Once you have sufficient [reputation](/help/whats-reputation) ' +
                             'you will be able to [comment on any post](/help/privileges/comment); instead, ' +
                             '[provide answers that don\'t require clarification from the asker](https://meta.stackexchange.com/questions/214173/why-do-i-need-50-reputation-to-comment-what-can-i-do-instead).'
@@ -799,6 +796,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.getAllAnswerIds = exports.parseDate = exports.parseQuestionsAndAnswers = void 0;
     $.event.special.destroyed = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         remove: (o) => {
             if (o.handler) {
                 o.handler();
@@ -1195,11 +1193,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         if (initialized)
             return;
         const open = XMLHttpRequest.prototype.open;
-        XMLHttpRequest.prototype.open = function () {
+        XMLHttpRequest.prototype.open = function (...args) {
             this.addEventListener('load', () => {
                 callbacks.forEach(cb => cb(this));
             }, false);
-            open.apply(this, arguments);
+            open.apply(this, args);
         };
         initialized = true;
     }
@@ -1284,20 +1282,15 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             return `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'questions'}/${postId}`;
         }
         static async getUserKey() {
-            // eslint-disable-next-line no-async-promise-executor
-            return await GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(globals.MetaSmokeUserKeyConfig, () => new Promise(async (resolve, reject) => {
-                let prom = MetaSmokeAPI.actualPromise;
-                if (!prom) {
-                    prom = MetaSmokeAPI.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeAPI.appKey}`);
-                    MetaSmokeAPI.actualPromise = prom;
-                }
-                const code = await prom;
-                if (!code)
-                    return;
-                $.ajax({
-                    url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeAPI.appKey + '&code=' + code,
-                    method: 'GET'
-                }).done(data => resolve(data.token)).fail(err => reject(err));
+            return await GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(globals.MetaSmokeUserKeyConfig, () => new Promise((resolve, reject) => {
+                MetaSmokeAPI.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeAPI.appKey}`).then(code => {
+                    if (!code)
+                        return;
+                    $.ajax({
+                        url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeAPI.appKey + '&code=' + code,
+                        method: 'GET'
+                    }).done(data => resolve(data.token)).fail(err => reject(err));
+                });
             }));
         }
         static getSmokeyId(postId) {
@@ -1381,7 +1374,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         window.open(metaSmokeOAuthUrl, '_blank');
         await globals.Delay(100);
-        const returnCode = await new Promise((resolve) => {
+        const returnCode = await new Promise(resolve => {
             const getMSToken = async () => {
                 $(window).off('focus', getMSToken);
                 const code = await globals.showMSTokenPopupAndGet();
@@ -1474,24 +1467,21 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         WasReported() {
             return NattyAPI.nattyIds.includes(this.answerId);
         }
-        ReportNaa(answerDate, questionDate) {
-            // eslint-disable-next-line no-async-promise-executor
-            return new Promise(async (resolve, reject) => {
-                if (answerDate < questionDate || !globals.isStackOverflow())
-                    reject(false);
-                if (this.WasReported()) {
-                    await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
-                    resolve(true);
-                }
-                else {
-                    const answerAge = this.DaysBetween(answerDate, new Date());
-                    const daysPostedAfterQuestion = this.DaysBetween(questionDate, answerDate);
-                    if (isNaN(answerAge) || isNaN(daysPostedAfterQuestion) || answerAge > 30 || daysPostedAfterQuestion < 30)
-                        resolve(false);
-                    await this.chat.SendMessage(globals.soboticsRoomId, this.reportMessage);
-                    resolve(true);
-                }
-            });
+        async ReportNaa(answerDate, questionDate) {
+            if (answerDate < questionDate || !globals.isStackOverflow())
+                return false;
+            if (this.WasReported()) {
+                await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
+                return true;
+            }
+            else {
+                const answerAge = this.DaysBetween(answerDate, new Date());
+                const daysPostedAfterQuestion = this.DaysBetween(questionDate, answerDate);
+                if (isNaN(answerAge) || isNaN(daysPostedAfterQuestion) || answerAge > 30 || daysPostedAfterQuestion < 30)
+                    return false;
+                await this.chat.SendMessage(globals.soboticsRoomId, this.reportMessage);
+                return true;
+            }
         }
         async ReportRedFlag() {
             if (!globals.isStackOverflow() || !this.WasReported())
@@ -1512,7 +1502,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             return true;
         }
         DaysBetween(first, second) {
-            return (second - first) / (1000 * 60 * 60 * 24);
+            return (second.valueOf() - first.valueOf()) / (1000 * 60 * 60 * 24);
         }
     }
     exports.NattyAPI = NattyAPI;
@@ -1540,7 +1530,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         async GetChannelFKey(roomId) {
             const expiryDate = ChatApi.GetExpiryDate();
-            return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(globals.CacheChatApiFkey, () => new Promise((resolve) => {
+            return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(globals.CacheChatApiFkey, () => new Promise(resolve => {
                 this.GetChannelPage(roomId).then(channelPage => {
                     const fkeyElement = $(channelPage).filter('#fkey');
                     const fkey = fkeyElement.val();
@@ -1566,7 +1556,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             chat_response.status === 200 ? resolve() : onFailure(chat_response.statusText);
                         },
                         onerror: (error_response) => {
-                            onFailure(error_response);
+                            onFailure(error_response.responseText);
                         },
                     });
                 };
@@ -1715,7 +1705,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     url,
                     onload: (response) => {
                         const responseObject = JSON.parse(response.responseText);
-                        resolve(responseObject.status === 'success' ? (responseObject.posts[0] || {}) : {});
+                        resolve(responseObject.status === 'success' ? responseObject.posts[0] : {});
                     },
                     onerror: () => {
                         reject(false);
@@ -1862,7 +1852,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             section.Items.forEach((element) => sectionWrapper.append(element));
         });
         const okayButton = overlayModal.find('.s-btn__primary');
-        okayButton.click((event) => {
+        okayButton.click(event => {
             event.preventDefault();
             sections.forEach(section => {
                 if (section.onSave)

@@ -1,5 +1,3 @@
-import { CopyPastorFindTargetResponseItem } from '@userscriptTools/copypastorapi/CopyPastorAPI';
-
 export interface UserDetails {
     Reputation: number;
     AuthorName: string;
@@ -12,7 +10,7 @@ export interface FlagType {
     Human?: string;
     GetComment?(userDetails: UserDetails): string;
     Enabled?(hasDuplicatePostLinks: boolean, isRepost: boolean): boolean;
-    GetCustomFlagText?(copyPastorItem: CopyPastorFindTargetResponseItem): string;
+    GetCustomFlagText?(target: string, postId: number): string;
 }
 
 export interface FlagCategory {
@@ -50,7 +48,7 @@ export const flagCategories: FlagCategory[] = [
                 ReportType: 'PostOther',
                 Human: 'for moderator attention',
                 Enabled: (hasDuplicatePostLinks, isRepost) => hasDuplicatePostLinks && !isRepost,
-                GetCustomFlagText: copyPastorItem => `Possible plagiarism of another answer https:${copyPastorItem.target_url}, as can be seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}`
+                GetCustomFlagText: (target: string, postId: number) => `Possible plagiarism of another answer https:${target}, as can be seen here https://copypastor.sobotics.org/posts/${postId}`
             },
             {
                 Id: 4,
@@ -59,7 +57,7 @@ export const flagCategories: FlagCategory[] = [
                 Human: 'for moderator attention',
                 Enabled: (hasDuplicatePostLinks, isRepost) => hasDuplicatePostLinks && isRepost,
                 GetComment: () => 'Please don\'t add the [same answer to multiple questions](https://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.',
-                GetCustomFlagText: copyPastorItem => `The answer is a repost of their other answer https:${copyPastorItem.target_url}, but as there are slight differences as seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}, an auto flag wouldn't be raised.`
+                GetCustomFlagText: (target: string, postId: number) => `The answer is a repost of their other answer https:${target}, but as there are slight differences as seen here https://copypastor.sobotics.org/posts/${postId}, an auto flag wouldn't be raised.`
             },
             {
                 Id: 5,
@@ -67,7 +65,7 @@ export const flagCategories: FlagCategory[] = [
                 ReportType: 'PostOther',
                 Human: 'for moderator attention',
                 Enabled: (hasDuplicatePostLinks, isRepost) => hasDuplicatePostLinks && !isRepost,
-                GetCustomFlagText: copyPastorItem => `This post is copied from [another answer](https:${copyPastorItem.target_url}), as can be seen [here](https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}). The author only added a link to the other answer, which is [not the proper way of attribution](https://stackoverflow.blog/2009/06/25/attribution-required/).`
+                GetCustomFlagText: (target: string, postId: number) => `This post is copied from [another answer](https:${target}), as can be seen [here](https://copypastor.sobotics.org/posts/${postId}). The author only added a link to the other answer, which is [not the proper way of attribution](https://stackoverflow.blog/2009/06/25/attribution-required/).`
             }
         ]
     },

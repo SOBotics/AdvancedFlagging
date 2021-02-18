@@ -93,8 +93,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         if (flagRequired && flag.ReportType !== 'NoFlag') {
             result.FlagPromise = new Promise((resolve, reject) => {
-                const copypastorObject = copypastorApi.getCopyPastorObject();
-                const flagText = flag.GetCustomFlagText && copypastorObject ? flag.GetCustomFlagText(copypastorObject) : undefined;
+                const copypastorId = copypastorApi.getCopyPastorId();
+                const targetUrl = copypastorApi.getTargetUrl();
+                const flagText = flag.GetCustomFlagText && copypastorId && targetUrl
+                    ? flag.GetCustomFlagText(targetUrl, copypastorId)
+                    : undefined;
                 autoFlagging = true;
                 $.ajax({
                     url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
@@ -237,11 +240,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         };
     }
     function setupGuttenbergApi(copyPastorApi, copyPastorIcon) {
-        const copypastorObject = copyPastorApi.getCopyPastorObject();
-        if (copypastorObject && copypastorObject.post_id) {
+        const copypastorId = copyPastorApi.getCopyPastorId();
+        if (copypastorId) {
             copyPastorIcon.attr('Title', 'Reported by CopyPastor.');
             globals.showInlineElement(copyPastorIcon);
-            copyPastorIcon.click(() => window.open('https://copypastor.sobotics.org/posts/' + copypastorObject.post_id));
+            copyPastorIcon.click(() => window.open('https://copypastor.sobotics.org/posts/' + copypastorId));
         }
         else {
             copyPastorIcon.addClass('d-none');
@@ -337,10 +340,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 disableLink();
                 if (!enabledFlagIds || enabledFlagIds.indexOf(flagType.Id) > -1) {
                     if (flagType.Enabled) {
-                        const copypastorObject = copyPastorApi.getCopyPastorObject();
-                        if (copypastorObject && copypastorObject.post_id) {
+                        const copypastorIsRepost = copyPastorApi.getIsRepost();
+                        const copypastorId = copyPastorApi.getCopyPastorId();
+                        if (copypastorId) {
                             // https://github.com/SOBotics/AdvancedFlagging/issues/16
-                            const isRepost = copyPastorApi.getIsRepost();
+                            const isRepost = copypastorIsRepost;
                             const isEnabled = flagType.Enabled(true, isRepost);
                             if (isEnabled)
                                 enableLink();
@@ -635,7 +639,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     ReportType: 'PostOther',
                     Human: 'for moderator attention',
                     Enabled: (hasDuplicatePostLinks, isRepost) => hasDuplicatePostLinks && !isRepost,
-                    GetCustomFlagText: copyPastorItem => `Possible plagiarism of another answer https:${copyPastorItem.target_url}, as can be seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}`
+                    GetCustomFlagText: (target, postId) => `Possible plagiarism of another answer https:${target}, as can be seen here https://copypastor.sobotics.org/posts/${postId}`
                 },
                 {
                     Id: 4,
@@ -644,7 +648,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     Human: 'for moderator attention',
                     Enabled: (hasDuplicatePostLinks, isRepost) => hasDuplicatePostLinks && isRepost,
                     GetComment: () => 'Please don\'t add the [same answer to multiple questions](https://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.',
-                    GetCustomFlagText: copyPastorItem => `The answer is a repost of their other answer https:${copyPastorItem.target_url}, but as there are slight differences as seen here https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}, an auto flag wouldn't be raised.`
+                    GetCustomFlagText: (target, postId) => `The answer is a repost of their other answer https:${target}, but as there are slight differences as seen here https://copypastor.sobotics.org/posts/${postId}, an auto flag wouldn't be raised.`
                 },
                 {
                     Id: 5,
@@ -652,7 +656,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     ReportType: 'PostOther',
                     Human: 'for moderator attention',
                     Enabled: (hasDuplicatePostLinks, isRepost) => hasDuplicatePostLinks && !isRepost,
-                    GetCustomFlagText: copyPastorItem => `This post is copied from [another answer](https:${copyPastorItem.target_url}), as can be seen [here](https://copypastor.sobotics.org/posts/${copyPastorItem.post_id}). The author only added a link to the other answer, which is [not the proper way of attribution](https://stackoverflow.blog/2009/06/25/attribution-required/).`
+                    GetCustomFlagText: (target, postId) => `This post is copied from [another answer](https:${target}), as can be seen [here](https://copypastor.sobotics.org/posts/${postId}). The author only added a link to the other answer, which is [not the proper way of attribution](https://stackoverflow.blog/2009/06/25/attribution-required/).`
                 }
             ]
         },
@@ -1672,13 +1676,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             if (!globals.isStackOverflow())
                 return;
             const answerIds = sotools_1.getAllAnswerIds();
-            for (const answerId of answerIds) {
-                const copypastorObject = await this.isPostReported(answerId);
-                const isReportOrPlagiarism = copypastorObject && copypastorObject.post_id
-                    ? await this.getIsReportOrPlagiarism(copypastorObject.post_id)
-                    : false;
-                this.copyPastorIds.push({ postId: answerId, copypastorObject: copypastorObject, repost: isReportOrPlagiarism });
-            }
+            await this.storeReportedPosts(answerIds);
         }
         static getIsReportOrPlagiarism(answerId) {
             return new Promise(resolve => {
@@ -1697,25 +1695,27 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
             });
         }
-        static isPostReported(postId) {
+        static storeReportedPosts(postIds) {
             return new Promise((resolve, reject) => {
-                const url = `${globals.copyPastorServer}/posts/findTarget?url=//${window.location.hostname}/a/${postId}`;
+                const answerUrls = postIds.map(postId => `//${window.location.hostname}/a/${postId}`).join(',');
+                const url = `${globals.copyPastorServer}/posts/findTarget?url=${answerUrls}`;
                 GM_xmlhttpRequest({
                     method: 'GET',
                     url,
                     onload: (response) => {
                         const responseObject = JSON.parse(response.responseText);
-                        resolve(responseObject.status === 'success' ? responseObject.posts[0] : {});
+                        if (responseObject.status === 'failure')
+                            return;
+                        responseObject.posts.forEach(item => {
+                            this.copyPastorIds.push({ postId: Number(item.post_id), repost: item.repost, target_url: item.target_url });
+                        });
+                        resolve();
                     },
                     onerror: () => {
-                        reject(false);
+                        reject();
                     },
                 });
             });
-        }
-        getCopyPastorObject() {
-            const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
-            return idsObject ? idsObject.copypastorObject : 0;
         }
         getCopyPastorId() {
             const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
@@ -1724,6 +1724,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         getIsRepost() {
             const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
             return idsObject ? idsObject.repost : false;
+        }
+        getTargetUrl() {
+            const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
+            return idsObject ? idsObject.target_url : '';
         }
         async ReportTruePositive() {
             return await this.SendFeedback('tp');
@@ -1734,11 +1738,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         async SendFeedback(type) {
             const username = globals.username;
             const chatId = new ChatApi_1.ChatApi().GetChatUserId();
-            const copyPastorObject = this.getCopyPastorObject();
-            if (!copyPastorObject || !copyPastorObject.post_id)
+            const copyPastorId = this.getCopyPastorId();
+            if (!copyPastorId)
                 return false;
             const payload = {
-                post_id: copyPastorObject.post_id,
+                post_id: copyPastorId,
                 feedback_type: type,
                 username,
                 link: `https://chat.stackoverflow.com/users/${chatId}`,

@@ -8,6 +8,8 @@ declare const GM_xmlhttpRequest: any;
 export interface CopyPastorFindTargetResponseItem {
     post_id: string;
     target_url: string;
+    repost: boolean;
+    original_url: string;
 }
 
 export type CopyPastorFindTargetResponse = {
@@ -19,7 +21,7 @@ export type CopyPastorFindTargetResponse = {
 };
 
 export class CopyPastorAPI {
-    private static copyPastorIds: { postId: number, copypastorObject: CopyPastorFindTargetResponseItem, repost: boolean }[] = [];
+    private static copyPastorIds: { postId: number, repost: boolean, target_url: string }[] = [];
     private answerId?: number;
 
     constructor(id?: number) {
@@ -30,13 +32,7 @@ export class CopyPastorAPI {
         if (!globals.isStackOverflow()) return;
 
         const answerIds = getAllAnswerIds();
-        for (const answerId of answerIds) {
-            const copypastorObject = await this.isPostReported(answerId);
-            const isReportOrPlagiarism = copypastorObject && copypastorObject.post_id
-                ? await this.getIsReportOrPlagiarism(copypastorObject.post_id)
-                : false;
-            this.copyPastorIds.push({ postId: answerId, copypastorObject: copypastorObject, repost: isReportOrPlagiarism });
-        }
+        await this.storeReportedPosts(answerIds);
     }
 
     private static getIsReportOrPlagiarism(answerId: string) {
@@ -56,26 +52,26 @@ export class CopyPastorAPI {
         });
     }
 
-    private static isPostReported(postId: number): Promise<CopyPastorFindTargetResponseItem> {
-        return new Promise<CopyPastorFindTargetResponseItem>((resolve, reject) => {
-            const url = `${globals.copyPastorServer}/posts/findTarget?url=//${window.location.hostname}/a/${postId}`;
+    private static storeReportedPosts(postIds: number[]): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            const answerUrls = postIds.map(postId => `//${window.location.hostname}/a/${postId}`).join(',');
+            const url = `${globals.copyPastorServer}/posts/findTarget?url=${answerUrls}`;
             GM_xmlhttpRequest({
                 method: 'GET',
                 url,
                 onload: (response: XMLHttpRequest) => {
                     const responseObject = JSON.parse(response.responseText) as CopyPastorFindTargetResponse;
-                    resolve(responseObject.status === 'success' ? responseObject.posts[0] : {} as CopyPastorFindTargetResponseItem);
+                    if (responseObject.status === 'failure') return;
+                    responseObject.posts.forEach(item => {
+                        this.copyPastorIds.push({ postId: Number(item.post_id), repost: item.repost, target_url: item.target_url });
+                    });
+                    resolve();
                 },
                 onerror: () => {
-                    reject(false);
+                    reject();
                 },
             });
         });
-    }
-
-    public getCopyPastorObject(): CopyPastorFindTargetResponseItem | 0 {
-        const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
-        return idsObject ? idsObject.copypastorObject : 0;
     }
 
     public getCopyPastorId(): number {
@@ -86,6 +82,11 @@ export class CopyPastorAPI {
     public getIsRepost(): boolean {
         const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
         return idsObject ? idsObject.repost : false;
+    }
+
+    public getTargetUrl(): string {
+        const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
+        return idsObject ? idsObject.target_url : '';
     }
 
     public async ReportTruePositive(): Promise<boolean> {
@@ -99,11 +100,11 @@ export class CopyPastorAPI {
     private async SendFeedback(type: 'tp' | 'fp') {
         const username = globals.username;
         const chatId = new ChatApi().GetChatUserId();
-        const copyPastorObject = this.getCopyPastorObject();
-        if (!copyPastorObject || !copyPastorObject.post_id) return false;
+        const copyPastorId = this.getCopyPastorId();
+        if (!copyPastorId) return false;
 
         const payload = {
-            post_id: copyPastorObject.post_id,
+            post_id: copyPastorId,
             feedback_type: type,
             username,
             link: `https://chat.stackoverflow.com/users/${chatId}`,

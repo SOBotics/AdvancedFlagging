@@ -80,8 +80,11 @@ function handleFlagAndComment(
 
     if (flagRequired && flag.ReportType !== 'NoFlag') {
         result.FlagPromise = new Promise((resolve, reject) => {
-            const copypastorObject = copypastorApi.getCopyPastorObject();
-            const flagText = flag.GetCustomFlagText && copypastorObject ? flag.GetCustomFlagText(copypastorObject) : undefined;
+            const copypastorId = copypastorApi.getCopyPastorId();
+            const targetUrl = copypastorApi.getTargetUrl();
+            const flagText = flag.GetCustomFlagText && copypastorId && targetUrl
+                ? flag.GetCustomFlagText(targetUrl, copypastorId)
+                : undefined;
 
             autoFlagging = true;
             $.ajax({
@@ -237,11 +240,11 @@ function setupMetasmokeApi(postId: number, postType: 'Answer' | 'Question', smok
 }
 
 function setupGuttenbergApi(copyPastorApi: CopyPastorAPI, copyPastorIcon: JQuery) {
-    const copypastorObject = copyPastorApi.getCopyPastorObject();
-    if (copypastorObject && copypastorObject.post_id) {
+    const copypastorId = copyPastorApi.getCopyPastorId();
+    if (copypastorId) {
         copyPastorIcon.attr('Title', 'Reported by CopyPastor.');
         globals.showInlineElement(copyPastorIcon);
-        copyPastorIcon.click(() => window.open('https://copypastor.sobotics.org/posts/' + copypastorObject.post_id));
+        copyPastorIcon.click(() => window.open('https://copypastor.sobotics.org/posts/' + copypastorId));
     } else {
         copyPastorIcon.addClass('d-none');
     }
@@ -374,10 +377,11 @@ async function BuildFlaggingDialog(element: JQuery,
             disableLink();
             if (!enabledFlagIds || enabledFlagIds.indexOf(flagType.Id) > -1) {
                 if (flagType.Enabled) {
-                    const copypastorObject = copyPastorApi.getCopyPastorObject();
-                    if (copypastorObject && copypastorObject.post_id) {
+                    const copypastorIsRepost = copyPastorApi.getIsRepost();
+                    const copypastorId = copyPastorApi.getCopyPastorId();
+                    if (copypastorId) {
                         // https://github.com/SOBotics/AdvancedFlagging/issues/16
-                        const isRepost = copyPastorApi.getIsRepost();
+                        const isRepost = copypastorIsRepost;
                         const isEnabled = flagType.Enabled(true, isRepost);
                         if (isEnabled) enableLink();
                     }

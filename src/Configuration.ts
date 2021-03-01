@@ -10,17 +10,23 @@ const configurationEnabledFlags = GreaseMonkeyCache.GetFromCache<number[]>(globa
 
 export async function SetupConfiguration(): Promise<void> {
     while (typeof Svg === 'undefined') {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await globals.Delay(1000);
     }
     const bottomBox = $('.site-footer--copyright').children('.-list');
     const configurationDiv = globals.configurationDiv.clone();
+    const commentsDiv = globals.commentsDiv.clone();
 
     SetupDefaults();
     BuildConfigurationOverlay();
+    SetupCommentsAndFlagsModal();
     const configurationLink = globals.configurationLink.clone();
+    const commentsLink = globals.commentsLink.clone();
     $(document).on('click', '#af-modal-button', () => Stacks.showModal(document.querySelector('#af-config')));
+    $(document).on('click', '#af-comments-button', () => Stacks.showModal(document.querySelector('#af-comments')));
     configurationDiv.append(configurationLink);
+    commentsDiv.append(commentsLink);
     configurationDiv.insertAfter(bottomBox);
+    commentsDiv.insertAfter(bottomBox);
 }
 
 function getFlagTypes() {
@@ -44,7 +50,7 @@ function SetupDefaults() {
 }
 
 function BuildConfigurationOverlay() {
-    const overlayModal = globals.overlayModal;
+    const overlayModal = globals.overlayModal.clone();
     overlayModal.find('.s-modal--close').append(Svg.ClearSm());
 
     const sections: ConfigSection[] = [
@@ -134,7 +140,7 @@ function GetGeneralConfigItems() {
         },
     ];
     options.forEach(el => {
-        const storedValue: boolean | undefined =  GreaseMonkeyCache.GetFromCache(el.configValue);
+        const storedValue: boolean | undefined = GreaseMonkeyCache.GetFromCache(el.configValue);
         checkboxArray.push(createCheckbox(el.text, storedValue).attr('data-option-id', el.configValue));
     });
     return checkboxArray;
@@ -153,13 +159,12 @@ function GetFlagSettings() {
 
 function GetAdminConfigItems() {
     return [
-        $('<a>').text('Clear Metasmoke Configuration').click(async () => {
+        $('<a>').text('Clear Metasmoke Configuration').click(() => {
             MetaSmokeAPI.Reset();
             globals.displayStacksToast('Successfully cleared MS configuration.', 'success');
         }),
         $('<a>').text('Clear chat fkey').click(() => {
-            const fkeyCacheKey = 'StackExchange.ChatApi.FKey';
-            GreaseMonkeyCache.Unset(fkeyCacheKey);
+            GreaseMonkeyCache.Unset(globals.CacheChatApiFkey);
             globals.displayStacksToast('Successfully cleared chat fkey.', 'success');
         })
     ].map(item => item.wrap(globals.gridCellDiv.clone()).parent());
@@ -177,4 +182,61 @@ interface ConfigSection {
     SectionName: string;
     Items: JQuery[];
     onSave?(): void;
+}
+
+function createEditTextarea(type: 'flag' | 'comment', displayName: string, cacheKey: string, content?: string) {
+    return $(`
+<div class="s-sidebarwidget">
+  <button class="s-sidebarwidget--action s-btn t4 r4 af-expandable-trigger"
+          data-controller="s-expandable-control" aria-controls="${type}-${displayName}">Edit</button>
+  <button class="s-sidebarwidget--action s-btn s-btn__primary t4 r6 af-submit-content d-none">Save</button>
+  <div class="s-sidebarwidget--content d-block p12 fs-body2">${displayName}</div>
+  <div class="s-expandable" id="${type}-${displayName}">
+    <div class="s-expandable--content">
+      <textarea class="grid--cell s-textarea ml8 mb8 fs-body2" rows="4" data-cache-key=${cacheKey}>${content}</textarea>
+    </div>
+  </div>
+</div>`);
+}
+
+function SetupCommentsAndFlagsModal() {
+    const editCommentsPopup = globals.editCommentsPopup.clone();
+    editCommentsPopup.find('.s-modal--close').append(Svg.ClearSm());
+    const commentsWrapper = globals.commentsWrapper.clone();
+    const flagsWrapper = globals.flagsWrapper.clone();
+    const shouldAddAuthorName = GreaseMonkeyCache.GetFromCache(globals.CommentsAddAuthorName);
+    editCommentsPopup.find('.s-modal--body')
+        .append(globals.editContentWrapper.clone().append(commentsWrapper).append(flagsWrapper))
+        .append(createCheckbox('Add OP\'s name before comments', Boolean(shouldAddAuthorName)).attr('class', 'af-author-name mt8'));
+
+    const allFlags = globals.getAllFlags();
+    const allComments = globals.getAllComments();
+    allFlags.forEach(flag => {
+        const textarea = createEditTextarea('flag', flag.flagName, globals.getFlagKey(flag.flagName), flag.content);
+        flagsWrapper.append(textarea);
+    });
+    allComments.forEach(comment => {
+        const textarea = createEditTextarea('comment', comment.commentName, globals.getCommentKey(comment.commentName), comment.content);
+        commentsWrapper.append(textarea);
+    });
+
+    $(document).on('change', '.af-author-name', event => {
+        GreaseMonkeyCache.StoreInCache(globals.CommentsAddAuthorName, $(event.target).is(':checked'));
+        globals.displayStacksToast('Preference updated', 'success');
+    });
+    $(document).on('click', '.af-expandable-trigger', event => {
+        const element = $(event.target).next();
+        element.hasClass('d-none') ? globals.showElement(element) : globals.hideElement(element);
+    });
+    $(document).on('click', '.af-submit-content', event => {
+        const element = $(event.target);
+        const contentTextarea = element.next().next().find('textarea');
+        const newContent = contentTextarea.val();
+        const cacheKey = contentTextarea.data('cache-key');
+        const displayName = element.next().text();
+        GreaseMonkeyCache.StoreInCache(cacheKey, newContent);
+        globals.displayStacksToast(displayName + ': content saved successfully', 'success');
+        element.prev().click(); // hide the textarea
+    });
+    $('body').append(editCommentsPopup);
 }

@@ -1,3 +1,5 @@
+import * as globals from './GlobalVars';
+
 export interface UserDetails {
     Reputation: number;
     AuthorName: string;
@@ -8,9 +10,9 @@ export interface FlagType {
     DisplayName: string;
     ReportType: 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther';
     Human?: string;
-    GetComment?(userDetails: UserDetails): string;
-    Enabled?(hasDuplicatePostLinks: boolean, isRepost: boolean): boolean;
-    GetCustomFlagText?(target: string, postId: number): string;
+    GetComment?(userDetails: UserDetails): string | undefined;
+    Enabled?(isRepost: boolean): boolean;
+    GetCustomFlagText?(target: string, postId: number): string | undefined;
 }
 
 export interface FlagCategory {
@@ -19,6 +21,7 @@ export interface FlagCategory {
     FlagTypes: FlagType[];
 }
 
+const getRepLevel = (reputation: number, max: number): string => reputation > max ? 'High' : 'Low';
 export const flagCategories: FlagCategory[] = [
     {
         IsDangerous: true,
@@ -47,25 +50,25 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Plagiarism',
                 ReportType: 'PostOther',
                 Human: 'for moderator attention',
-                Enabled: (hasDuplicatePostLinks, isRepost) => hasDuplicatePostLinks && !isRepost,
-                GetCustomFlagText: (target: string, postId: number) => `Possible plagiarism of another answer https:${target}, as can be seen here https://copypastor.sobotics.org/posts/${postId}`
+                Enabled: isRepost => !isRepost,
+                GetCustomFlagText: (target, postId) => globals.getFullFlag('Plagiarism', target, postId)
             },
             {
                 Id: 4,
                 DisplayName: 'Duplicate answer',
                 ReportType: 'PostOther',
                 Human: 'for moderator attention',
-                Enabled: (hasDuplicatePostLinks, isRepost) => hasDuplicatePostLinks && isRepost,
-                GetComment: () => 'Please don\'t add the [same answer to multiple questions](https://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.',
-                GetCustomFlagText: (target: string, postId: number) => `The answer is a repost of their other answer https:${target}, but as there are slight differences as seen here https://copypastor.sobotics.org/posts/${postId}, an auto flag wouldn't be raised.`
+                Enabled: isRepost => isRepost,
+                GetComment: () => '',
+                GetCustomFlagText: (target, postId) => globals.getFullFlag('DuplicateAnswer', target, postId)
             },
             {
                 Id: 5,
                 DisplayName: 'Bad attribution',
                 ReportType: 'PostOther',
                 Human: 'for moderator attention',
-                Enabled: (hasDuplicatePostLinks, isRepost) => hasDuplicatePostLinks && !isRepost,
-                GetCustomFlagText: (target: string, postId: number) => `This post is copied from [another answer](https:${target}), as can be seen [here](https://copypastor.sobotics.org/posts/${postId}). The author only added a link to the other answer, which is [not the proper way of attribution](https://stackoverflow.blog/2009/06/25/attribution-required/).`
+                Enabled: isRepost => !isRepost,
+                GetCustomFlagText: (target, postId) => globals.getFullFlag('BadAttribution', target, postId)
             }
         ]
     },
@@ -78,99 +81,63 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Link Only',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: () => 'A link to a solution is welcome, but please ensure your answer is useful without it: ' +
-                    '[add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will ' +
-                    'have some idea what it is and why it’s there, then quote the most relevant part of the ' +
-                    'page you\'re linking to in case the target page is unavailable. ' +
-                    '[Answers that are little more than a link may be deleted.](/help/deleted-answers)'
+                GetComment: userDetails => globals.getFullComment('LinkOnly', userDetails.AuthorName)
             },
             {
                 Id: 7,
                 DisplayName: 'Not an answer',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: userDetails => userDetails.Reputation < 50
-                    ? 'This does not provide an answer to the question. You can [search for similar questions](/search), ' +
-                    'or refer to the related and linked questions on the right-hand side of the page to find an answer. ' +
-                    'If you have a related but different question, [ask a new question](/questions/ask), ' +
-                    'and include a link to this one to help provide context. ' +
-                    'See: [Ask questions, get answers, no distractions](/tour)'
-                    : 'This post doesn\'t look like an attempt to answer this question. Every post here is expected to be ' +
-                    'an explicit attempt to *answer* this question; if you have a critique or need a clarification of ' +
-                    'the question or another answer, you can [post a comment](/help/privileges/comment) ' +
-                    '(like this one) directly below it. Please remove this answer and create either a comment or a new question. ' +
-                    'See: [Ask questions, get answers, no distractions](/tour)'
+                GetComment: userDetails => globals.getFullComment(`NAA${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
             },
             {
                 Id: 8,
                 DisplayName: 'Thanks',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: userDetails => userDetails.Reputation < 15
-                    ? 'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
-                    'and can be perceived as noise by its future visitors. Once you [earn](https://meta.stackoverflow.com/q/146472) ' +
-                    'enough [reputation](/help/whats-reputation), you will gain privileges to ' +
-                    '[upvote answers](/help/privileges/vote-up) you like. This way future visitors of the question ' +
-                    'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
-                    'See [Why is voting important](/help/why-vote).'
-                    :
-                    'Please don\'t add _"thanks"_ as answers. They don\'t actually provide an answer to the question, ' +
-                    'and can be perceived as noise by its future visitors. ' +
-                    'Instead, [upvote answers](/help/privileges/vote-up) you like. This way future visitors of the question ' +
-                    'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. ' +
-                    'See [Why is voting important](/help/why-vote).'
+                GetComment: userDetails => globals.getFullComment(`Thanks${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
             },
             {
                 Id: 9,
                 DisplayName: 'Me too',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: () => 'Please don\'t add *"Me too"* as answers. It doesn\'t actually provide an answer to the question. ' +
-                    'If you have a different but related question, then [ask](/questions/ask) it ' +
-                    '(reference this one if it will help provide context). If you\'re interested in this specific question, ' +
-                    'you can [upvote](/help/privileges/vote-up) it, leave a [comment](/help/privileges/comment), ' +
-                    'or start a [bounty](/help/privileges/set-bounties) ' +
-                    'once you have enough [reputation](/help/whats-reputation).',
+                GetComment: userDetails => globals.getFullComment('MeToo', userDetails.AuthorName)
             },
             {
                 Id: 10,
                 DisplayName: 'Library',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: () => 'Please don\'t just post some tool or library as an answer. At least demonstrate [how it solves the problem](https://meta.stackoverflow.com/a/251605) in the answer itself.'
+                GetComment: userDetails => globals.getFullComment('Library', userDetails.AuthorName)
             },
             {
                 Id: 11,
                 DisplayName: 'Comment',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: userDetails => userDetails.Reputation < 50
-                    ? 'This does not provide an answer to the question. Once you have sufficient [reputation](/help/whats-reputation) ' +
-                    'you will be able to [comment on any post](/help/privileges/comment); instead, ' +
-                    '[provide answers that don\'t require clarification from the asker](https://meta.stackexchange.com/questions/214173/why-do-i-need-50-reputation-to-comment-what-can-i-do-instead).'
-                    :
-                    'This does not provide an answer to the question. Please write a comment instead.'
+                GetComment: userDetails => globals.getFullComment(`Comment${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
             },
             {
                 Id: 12,
                 DisplayName: 'Duplicate',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: () => 'Instead of posting an answer which merely links to another answer, please instead [flag the question](/help/privileges/flag-posts) as a duplicate.'
+                GetComment: userDetails => globals.getFullComment('Duplicate', userDetails.AuthorName)
             },
             {
                 Id: 13,
                 DisplayName: 'Non English',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: () => 'Welcome to Stack Overflow. Please write your answer in English, as Stack Overflow is an [English only site](https://meta.stackoverflow.com/a/297680).'
+                GetComment: userDetails => globals.getFullComment('NonEnglish', userDetails.AuthorName)
             },
             {
                 Id: 14,
                 DisplayName: 'Should be an edit',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: () => 'Please use the edit link on your question to add additional information. The Post Answer button should be used only for complete answers to the question.'
+                GetComment: userDetails => globals.getFullComment('ShouldBeAnEdit', userDetails.AuthorName)
             }
         ]
     },

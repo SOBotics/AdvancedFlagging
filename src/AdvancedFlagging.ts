@@ -48,6 +48,11 @@ function SetupStyles() {
 
 .advanced-flagging-smokey-icon {
     background-image: url("https://i.stack.imgur.com/7cmCt.png?s=128&g=1");
+}
+
+#af-comments textarea {
+    width: calc(100% - 15px);
+    resize: vertical;
 }`);
 }
 
@@ -298,6 +303,16 @@ function getHumanFromDisplayName(displayName: string) {
     }
 }
 
+const storeCommentsInCache = () => Object.entries(globals.comments).forEach(array => globals.storeCommentInCache(array));
+const storeFlagsInCache = () => Object.entries(globals.flags).forEach(array => globals.storeFlagsInCache(array));
+function SetupCommentsAndFlags() {
+    const commentsCached = Object.keys(globals.comments).every(item => !!globals.getCommentFromCache(item));
+    const flagsCached = Object.keys(globals.flags).every(item => !!globals.getFlagFromCache(item));
+
+    if (!flagsCached) storeFlagsInCache();
+    if (!commentsCached) storeCommentsInCache();
+}
+
 interface Reporter {
     name: string;
     ReportNaa(answerDate: Date, questionDate: Date): Promise<boolean>;
@@ -376,15 +391,12 @@ async function BuildFlaggingDialog(element: JQuery,
 
             disableLink();
             if (!enabledFlagIds || enabledFlagIds.indexOf(flagType.Id) > -1) {
-                if (flagType.Enabled) {
-                    const copypastorIsRepost = copyPastorApi.getIsRepost();
-                    const copypastorId = copyPastorApi.getCopyPastorId();
-                    if (copypastorId) {
-                        // https://github.com/SOBotics/AdvancedFlagging/issues/16
-                        const isRepost = copypastorIsRepost;
-                        const isEnabled = flagType.Enabled(true, isRepost);
-                        if (isEnabled) enableLink();
-                    }
+                // https://github.com/SOBotics/AdvancedFlagging/issues/16
+                const copypastorIsRepost = copyPastorApi.getIsRepost();
+                const copypastorId = copyPastorApi.getCopyPastorId();
+                if (copypastorId && flagType.Enabled) {
+                    const isEnabled = flagType.Enabled(copypastorIsRepost);
+                    if (isEnabled) enableLink();
                 } else {
                     enableLink();
                 }
@@ -393,7 +405,7 @@ async function BuildFlaggingDialog(element: JQuery,
             let commentText: string | undefined;
             if (flagType.GetComment) {
                 commentText = flagType.GetComment({ Reputation: reputation, AuthorName: authorName });
-                reportLink.attr('title', commentText);
+                reportLink.attr('title', commentText || '');
             }
 
             reportLink.click(async () => {
@@ -586,6 +598,7 @@ async function Setup() {
         CopyPastorAPI.getAllCopyPastorIds(),
         NattyAPI.getAllNattyIds()
     ]);
+    SetupCommentsAndFlags();
     SetupPostPage();
     SetupStyles();
     SetupConfiguration();

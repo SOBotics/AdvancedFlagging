@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { displayToaster } from './AdvancedFlagging';
 import { MetaSmokeAPI } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
+import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
 
 declare const StackExchange: StackExchange;
 declare const Svg: Svg;
@@ -39,11 +40,23 @@ interface ModalType {
     buttonLabel: string;
 }
 
+interface AllFlags {
+    flagName: string;
+    content?: string;
+}
+
+interface AllComments {
+    commentName: string;
+    content?: string;
+}
+
 export const soboticsRoomId = 111347;
 export const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
 export const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
 export const copyPastorServer = 'https://copypastor.sobotics.org';
 export const genericBotKey = 'Cm45BSrt51FR3ju';
+export const placeholderTarget = '$TARGET$';
+export const placeholderCopypastorLink = '$COPYPASTOR$';
 export const nattyAllReportsUrl = 'https://logs.sobotics.org/napi/api/stored/all';
 export const username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
 
@@ -57,8 +70,71 @@ export const ConfigurationLinkDisabled = 'AdvancedFlagging.Configuration.LinkDis
 export const CacheChatApiFkey = 'StackExchange.ChatApi.FKey';
 export const MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
 export const MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
-// export const ConfigurationDetectAudits = 'AdvancedFlagging.Configuration.DetectAudits';
-// export const MetaSmokeWasReportedConfig = 'MetaSmoke.WasReported';
+export const CommentsAddAuthorName = 'AdvancedFlagging.Comments.AddAuthorName';
+
+// Text for mod flags
+export const flags = {
+    Plagiarism: 'Possible plagiarism of another answer $TARGET$, as can be seen here $COPYPASTOR$',
+    DuplicateAnswer: 'The answer is a repost of their other answer $TARGET$, but as there are slight differences '
+                   + '(see $COPYPASTOR$), an auto flag would not be raised.',
+    BadAttribution: 'This post is copied from [another answer]($TARGET$), as can be seen here $COPYPASTOR$. The author only added a link'
+                  + ' to the other answer, which is [not the proper way of attribution](//stackoverflow.blog/2009/06/25/attribution-required/).'
+};
+
+// Auto comments
+export const comments = {
+    DuplicateAnswer: "Please don't add the [same answer to multiple questions](//meta.stackexchange.com/q/104227). Answer the best one "
+                   + 'and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer '
+                   + 'and tailor the post to the question.',
+    LinkOnly: 'A link to a solution is welcome, but please ensure your answer is useful without it: '
+            + '[add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will '
+            + 'have some idea what it is and why it is there, then quote the most relevant part of the page you are linking to '
+            + 'in case the target page is unavailable. [Answers that are little more than a link may be deleted.](/help/deleted-answers)',
+    NAALowRep: 'This does not provide an answer to the question. You can [search for similar questions](/search), '
+             + 'or refer to the related and linked questions on the right-hand side of the page to find an answer. '
+             + 'If you have a related but different question, [ask a new question](/questions/ask), '
+             + 'and include a link to this one to help provide context. See: [Ask questions, get answers, no distractions](/tour)',
+    NAAHighRep: 'This post doesn\'t look like an attempt to answer this question. Every post here is expected to be '
+              + 'an explicit attempt to *answer* this question; if you have a critique or need a clarification of '
+              + 'the question or another answer, you can [post a comment](/help/privileges/comment) '
+              + '(like this one) directly below it. Please remove this answer and create either a comment or a new question. '
+              + 'See: [Ask questions, get answers, no distractions](/tour).',
+    ThanksLowRep: 'Please don\'t add _thanks_ as answers. They don\'t actually provide an answer to the question, '
+                + 'and can be perceived as noise by its future visitors. Once you [earn](//meta.stackoverflow.com/q/146472) '
+                + 'enough [reputation](/help/whats-reputation), you will gain privileges to '
+                + '[upvote answers](/help/privileges/vote-up) you like. This way future visitors of the question '
+                + 'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. '
+                + 'See [Why is voting important](/help/why-vote).',
+    ThanksHighRep: 'Please don\'t add _thanks_ as answers. They don\'t actually provide an answer to the question, '
+                 + 'and can be perceived as noise by its future visitors. Instead, [upvote answers](/help/privileges/vote-up) '
+                 + 'you like. This way future visitors of the question will see a higher vote count on that answer, '
+                 + 'and the answerer will also be rewarded with reputation points. See [Why is voting important](/help/why-vote).',
+    MeToo: 'Please don\'t add *Me too* as answers. It doesn\'t actually provide an answer to the question. '
+         + 'If you have a different but related question, then [ask](/questions/ask) it '
+         + '(reference this one if it will help provide context). If you are interested in this specific question, '
+         + 'you can [upvote](/help/privileges/vote-up) it, leave a [comment](/help/privileges/comment), '
+         + 'or start a [bounty](/help/privileges/set-bounties) once you have enough [reputation](/help/whats-reputation).',
+    Library: 'Please don\'t just post some tool or library as an answer. At least demonstrate '
+           + '[how it solves the problem](//meta.stackoverflow.com/a/251605) in the answer itself.',
+    CommentLowRep: 'This does not provide an answer to the question. Once you have sufficient [reputation](/help/whats-reputation) '
+                  + 'you will be able to [comment on any post](/help/privileges/comment); instead, '
+                  + '[provide answers that don\'t require clarification from the asker](//meta.stackexchange.com/q/214173).',
+    CommentHighRep: 'This does not provide an answer to the question. Please write a comment instead.',
+    Duplicate: 'Instead of posting an answer which merely links to another answer, please instead '
+             + '[flag the question](/help/privileges/flag-posts) as a duplicate.',
+    NonEnglish: 'Please write your answer in English, as Stack Overflow is an [English-only site](//meta.stackoverflow.com/a/297680).',
+    ShouldBeAnEdit: 'Please use the edit link on your question to add additional information. '
+                  + 'The "Post Answer" button should be used only for complete answers to the question.'
+};
+export const getCommentKey = (name: string): string => 'AdvancedFlagging.Configuration.Comments.' + name;
+export const getFlagKey = (name: string): string => 'AdvancedFlagging.Configuration.Flags.' + name;
+export const getCommentFromCache = (name: string): string | undefined => GreaseMonkeyCache.GetFromCache(getCommentKey(name));
+export const getFlagFromCache = (name: string): string | undefined => GreaseMonkeyCache.GetFromCache(getFlagKey(name));
+export const storeCommentInCache = (array: string[]): void => GreaseMonkeyCache.StoreInCache(getCommentKey(array[0]), array[1]);
+export const storeFlagsInCache = (array: string[]): void => GreaseMonkeyCache.StoreInCache(getFlagKey(array[0]), array[1]);
+
+export const getAllFlags = (): AllFlags[] => Object.keys(flags).map(item => ({ flagName: item, content: getFlagFromCache(item) }));
+export const getAllComments = (): AllComments[] => Object.keys(comments).map(item => ({ commentName: item, content: getCommentFromCache(item) }));
 
 export const settingUpTitle = 'Setting up MetaSmoke';
 export const settingUpBody = 'If you do not wish to connect, press cancel and this popup won\'t show up again. '
@@ -83,6 +159,7 @@ export const isModPage = (): boolean => !!window.location.href.match(/\/admin/);
 export const isQuestionPage = (): boolean => !!window.location.href.match(/\/questions\/\d+.*/);
 export const isFlagsPage = (): boolean => !!window.location.href.match(/\/users\/flag-summary\//);
 export const isUserPage = (): boolean => !!window.location.href.match(/\/users\/\d+.*/);
+const getCopypastorLink = (postId: number) => 'https://copypastor.sobotics.org/posts/' + postId;
 
 export const getPerformedActionIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.CheckmarkSm().addClass('fc-green-500'));
 export const getReportedIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.Flag().addClass('fc-red-500'));
@@ -103,7 +180,7 @@ export const getOptionLabel = (text: string, name: string): JQuery =>
     $('<label>').text(text).attr('for', name).attr('class', 's-label ml4 va-middle fs-body1 fw-normal');
 export const getConfigHtml = (optionId: string, text: string): JQuery => $(`
 <div>
-  <div class="grid gs8">
+  <div class="grid gs4">
     <div class="grid--cell"><input class="s-checkbox" type="checkbox" id="${optionId}"/></div>
     <label class="grid--cell s-label fw-normal" for="${optionId}">${text}</label>
   </div>
@@ -120,6 +197,13 @@ export const gridCellDiv = $('<div>').attr('class', 'grid--cell');
 export const advancedFlaggingLink = $('<button>').attr('type', 'button').attr('class', 's-btn s-btn__link').text('Advanced Flagging');
 export const configurationDiv = $('<div>').attr('class', 'advanced-flagging-configuration-div ta-left pt6');
 export const configurationLink = $('<a>').attr('id', 'af-modal-button').text('AdvancedFlagging configuration');
+export const commentsDiv = configurationDiv.clone().removeClass('advanced-flagging-configuration-div').addClass('af-comments-div');
+export const commentsLink = configurationLink.clone().attr('id', 'af-comments-button').text('AdvancedFlagging: edit comments and flags');
+export const editContentWrapper = $('<div>').attr('class', 'grid grid__fl1 md:fd-column gs16');
+const commentsHeader = $('<h2>').attr('class', 'ta-center mb8').text('Comments');
+const flagsHeader = $('<h2>').attr('class', 'ta-center mb8').text('Flags');
+export const commentsWrapper = $('<div>').attr('class', 'af-comments-content grid--cell').append(commentsHeader);
+export const flagsWrapper = $('<div>').attr('class', 'af-flags-content grid--cell').append(flagsHeader);
 export const overlayModal = $(`
 <aside class="s-modal" id="af-config" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
   <div class="s-modal--dialog s-modal__full w60" role="document">
@@ -136,8 +220,8 @@ const grid = $('<div>').attr('class', 'grid');
 export const inlineCheckboxesWrapper = gridCellDiv.clone().append(grid.clone());
 const metasmokeTokenPopup = $(`
 <aside class="s-modal" id="af-ms-token" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
-  <div class="s-modal--dialog" role="document">
-    <h1 class="s-modal--header fw-bold c-movey" id="af-modal-title">Authenticate MS with AF</h1>
+  <div class="s-modal--dialog s-modal__full sm:w100 md:w100" role="document">
+    <h1 class="s-modal--header fw-bold " id="af-modal-title">Authenticate MS with AF</h1>
     <div class="s-modal--body fs-body2" id="af-modal-description">
       <div class="grid gs4 gsy fd-column">
         <div class="grid--cell">
@@ -150,6 +234,18 @@ const metasmokeTokenPopup = $(`
     </div>
     <div class="grid gs8 gsx s-modal--footer">
       <button class="grid--cell s-btn s-btn__primary" id="advanced-flagging-save-ms-token" type="button">Submit</button>
+      <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
+    </div>
+    <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
+  </div>
+</aside>`);
+export const editCommentsPopup = $(`
+<aside class="s-modal" id="af-comments" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
+  <div class="s-modal--dialog s-modal__full lg:w75 md:w75 sm:w100 w75" role="document">
+    <h1 class="s-modal--header fw-body c-movey" id="af-comments-title">AdvancedFlagging: edit comments and flags</h1>
+    <div class="s-modal--body fs-body2" id="af-comments-description"></div>
+    <div class="grid gs8 gsx s-modal--footer">
+      <button class="grid--cell s-btn s-btn__primary" type="button" data-action="s-modal#hide">I'm done!</button>
       <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
     </div>
     <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
@@ -217,4 +313,19 @@ export function getPostUrlsFromFlagsPage(): (string | undefined)[] {
         ), postType);
         return urlToReturn;
     });
+}
+
+// For GetComment() on FlagTypes. Adds the author name before the comment if the option is enabled
+export function getFullComment(name: string, authorName: string): string | undefined {
+    const shouldAddAuthorName = GreaseMonkeyCache.GetFromCache(CommentsAddAuthorName);
+    const comment = getCommentFromCache(name);
+    return comment && shouldAddAuthorName ? `${authorName}, ${comment[0].toLowerCase()}${comment.slice(1)}` : comment;
+}
+
+// For GetCustomFlagText() on FlagTypes. Replaces the placeholders with actual values
+export function getFullFlag(name: string, target: string, postId: number): string | undefined {
+    const flagContent = getFlagFromCache(name);
+    if (!flagContent) return;
+    return flagContent.replace(new RegExp(placeholderTarget, 'g'), target)
+        .replace(new RegExp(placeholderCopypastorLink, 'g'), getCopypastorLink(postId));
 }

@@ -10,6 +10,7 @@ const configurationEnabledFlags = GreaseMonkeyCache.GetFromCache<number[]>(globa
 
 export async function SetupConfiguration(): Promise<void> {
     while (typeof Svg === 'undefined') {
+        // eslint-disable-next-line no-await-in-loop
         await globals.Delay(1000);
     }
     const bottomBox = $('.site-footer--copyright').children('.-list');
@@ -29,7 +30,7 @@ export async function SetupConfiguration(): Promise<void> {
     commentsDiv.insertAfter(bottomBox);
 }
 
-function getFlagTypes() {
+function getFlagTypes(): { Id: number, DisplayName: string }[] {
     const flagTypes: { Id: number, DisplayName: string }[] = [];
     flagCategories.forEach(flagCategory => {
         flagCategory.FlagTypes.forEach(flagType => {
@@ -42,14 +43,14 @@ function getFlagTypes() {
     return flagTypes;
 }
 
-function SetupDefaults() {
+function SetupDefaults(): void {
     if (!configurationEnabledFlags) {
         const flagTypeIds = getFlagTypes().map(f => f.Id);
         GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagTypeIds);
     }
 }
 
-function BuildConfigurationOverlay() {
+function BuildConfigurationOverlay(): void {
     const overlayModal = globals.overlayModal.clone();
     overlayModal.find('.s-modal--close').append(Svg.ClearSm());
 
@@ -57,7 +58,7 @@ function BuildConfigurationOverlay() {
         {
             SectionName: 'General',
             Items: GetGeneralConfigItems(),
-            onSave: () => {
+            onSave: (): void => {
                 $('.af-section-general').find('input').each((_index, el) => {
                     GreaseMonkeyCache.StoreInCache($(el).parents().eq(2).data('option-id'), $(el).prop('checked'));
                 });
@@ -66,12 +67,12 @@ function BuildConfigurationOverlay() {
         {
             SectionName: 'Flags',
             Items: GetFlagSettings(),
-            onSave: () => {
+            onSave: (): void => {
                 const flagOptions = $('.af-section-flags').find('input').get()
                     .filter(el => $(el).prop('checked'))
                     .map(el => {
                         const postId = $(el).attr('id');
-                        return postId ? Number(postId.match(/\d+/)) : 0;
+                        return postId ? Number(/\d+/.exec(postId)) : 0;
                     }).sort((a, b) => a - b);
                 GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagOptions);
             }
@@ -100,7 +101,7 @@ function BuildConfigurationOverlay() {
             if (section.onSave) section.onSave();
         });
         globals.displayStacksToast('Configuration saved', 'success');
-        setTimeout(window.location.reload.bind(window.location), 500);
+        setTimeout(() => window.location.reload(), 500);
     });
 
     $('body').append(overlayModal);
@@ -111,7 +112,7 @@ function BuildConfigurationOverlay() {
     }
 }
 
-function GetGeneralConfigItems() {
+function GetGeneralConfigItems(): JQuery[] {
     const checkboxArray: JQuery[] = [];
     const options = [
         {
@@ -140,24 +141,24 @@ function GetGeneralConfigItems() {
         },
     ];
     options.forEach(el => {
-        const storedValue: boolean | undefined = GreaseMonkeyCache.GetFromCache(el.configValue);
+        const storedValue: boolean | null = GreaseMonkeyCache.GetFromCache(el.configValue);
         checkboxArray.push(createCheckbox(el.text, storedValue).attr('data-option-id', el.configValue));
     });
     return checkboxArray;
 }
 
-function GetFlagSettings() {
+function GetFlagSettings(): JQuery[] {
     const checkboxes: JQuery[] = [];
     if (!configurationEnabledFlags) return checkboxes;
 
     getFlagTypes().forEach(f => {
         const storedValue = configurationEnabledFlags.indexOf(f.Id) > -1;
-        checkboxes.push(createCheckbox(f.DisplayName, storedValue, 'flag-type-' + f.Id).children().eq(0).addClass('w25'));
+        checkboxes.push(createCheckbox(f.DisplayName, storedValue, `flag-type-${f.Id}`).children().eq(0).addClass('w25'));
     });
     return checkboxes;
 }
 
-function GetAdminConfigItems() {
+function GetAdminConfigItems(): JQuery[] {
     return [
         $('<a>').text('Clear Metasmoke Configuration').click(() => {
             MetaSmokeAPI.Reset();
@@ -170,7 +171,7 @@ function GetAdminConfigItems() {
     ].map(item => item.wrap(globals.gridCellDiv.clone()).parent());
 }
 
-function createCheckbox(text: string, storedValue?: boolean, optionId: string = text.toLowerCase().replace(/\s/g, '_')): JQuery {
+function createCheckbox(text: string, storedValue: boolean | null, optionId: string = text.toLowerCase().replace(/\s/g, '_')): JQuery {
     const configHTML = globals.getConfigHtml(optionId, text);
     const input = configHTML.find('input');
     if (storedValue) input.prop('checked', true);
@@ -184,7 +185,7 @@ interface ConfigSection {
     onSave?(): void;
 }
 
-function createEditTextarea(type: 'flag' | 'comment', displayName: string, cacheKey: string, content?: string) {
+function createEditTextarea(type: 'flag' | 'comment', displayName: string, cacheKey: string, content: string | null): JQuery {
     return $(`
 <div class="s-sidebarwidget">
   <button class="s-sidebarwidget--action s-btn t4 r4 af-expandable-trigger"
@@ -193,13 +194,13 @@ function createEditTextarea(type: 'flag' | 'comment', displayName: string, cache
   <div class="s-sidebarwidget--content d-block p12 fs-body2">${displayName}</div>
   <div class="s-expandable" id="${type}-${displayName}">
     <div class="s-expandable--content">
-      <textarea class="grid--cell s-textarea ml8 mb8 fs-body2" rows="4" data-cache-key=${cacheKey}>${content}</textarea>
+      <textarea class="grid--cell s-textarea ml8 mb8 fs-body2" rows="4" data-cache-key=${cacheKey}>${content || ''}</textarea>
     </div>
   </div>
 </div>`);
 }
 
-function SetupCommentsAndFlagsModal() {
+function SetupCommentsAndFlagsModal(): void {
     const editCommentsPopup = globals.editCommentsPopup.clone();
     editCommentsPopup.find('.s-modal--close').append(Svg.ClearSm());
     const commentsWrapper = globals.commentsWrapper.clone();
@@ -232,7 +233,8 @@ function SetupCommentsAndFlagsModal() {
         const element = $(event.target);
         const contentTextarea = element.next().next().find('textarea');
         const newContent = contentTextarea.val();
-        const cacheKey = contentTextarea.data('cache-key');
+        const cacheKey = contentTextarea.attr('data-cache-key');
+        if (!cacheKey) return;
         const displayName = element.next().text();
         GreaseMonkeyCache.StoreInCache(cacheKey, newContent);
         globals.displayStacksToast(displayName + ': content saved successfully', 'success');

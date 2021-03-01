@@ -9,10 +9,8 @@ import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
 import * as globals from './GlobalVars';
 
 declare const StackExchange: globals.StackExchange;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-declare const GM_addStyle: any;
 
-function SetupStyles() {
+function SetupStyles(): void {
     GM_addStyle(`
 #snackbar {
     margin-left: -125px;
@@ -62,16 +60,16 @@ function handleFlagAndComment(
     flag: FlagType,
     flagRequired: boolean,
     copypastorApi: CopyPastorAPI,
-    commentText?: string,
-) {
+    commentText?: string | null,
+): { CommentPromise?: Promise<string>; FlagPromise?: Promise<string>; } {
     const result: {
         CommentPromise?: Promise<string>;
         FlagPromise?: Promise<string>;
     } = {};
 
     if (commentText) {
-        result.CommentPromise = new Promise((resolve, reject) => {
-            $.ajax({
+        result.CommentPromise = new Promise<string>((resolve, reject) => {
+            void $.ajax({
                 url: `/posts/${postId}/comments`,
                 type: 'POST',
                 data: { fkey: userFkey, comment: commentText }
@@ -89,10 +87,10 @@ function handleFlagAndComment(
             const targetUrl = copypastorApi.getTargetUrl();
             const flagText = flag.GetCustomFlagText && copypastorId && targetUrl
                 ? flag.GetCustomFlagText(targetUrl, copypastorId)
-                : undefined;
+                : null;
 
             autoFlagging = true;
-            $.ajax({
+            void $.ajax({
                 url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
                 type: 'POST',
                 data: { fkey: userFkey, otherText: flag.ReportType === 'PostOther' ? flagText : '' }
@@ -113,7 +111,7 @@ const popupWrapper = globals.popupWrapper;
 let toasterTimeout: number | null = null;
 let toasterFadeTimeout: number | null = null;
 
-function hidePopup() {
+function hidePopup(): void {
     popupWrapper.removeClass('show').addClass('hide');
     toasterFadeTimeout = window.setTimeout(() => popupWrapper.empty().addClass('hide'), 1000);
 }
@@ -129,19 +127,20 @@ export function displayToaster(message: string, state: string): void {
     toasterTimeout = window.setTimeout(hidePopup, globals.popupDelay);
 }
 
-function displaySuccessFlagged(reportedIcon: JQuery, reportTypeHuman?: string) {
+function displaySuccessFlagged(reportedIcon: JQuery, reportTypeHuman?: string): void {
+    if (!reportTypeHuman) return;
     const flaggedMessage = `Flagged ${reportTypeHuman}`;
     reportedIcon.attr('title', flaggedMessage);
     globals.showInlineElement(reportedIcon);
     globals.displaySuccess(flaggedMessage);
 }
 
-function displayErrorFlagged(message: string, error: string) {
+function displayErrorFlagged(message: string, error: string): void {
     globals.displayError(message);
     console.error(error);
 }
 
-function getStrippedComment(commentText: string) {
+function getStrippedComment(commentText: string): string {
     return commentText.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1') // Match [links](...)
         .replace(/\[([^\]]+)\][^(]*?/g, '$1') // Match [edit]
         .replace(/_([^_]+)_/g, '$1') //  _thanks_ => thanks
@@ -150,7 +149,7 @@ function getStrippedComment(commentText: string) {
         .replace(' - From Review', '');
 }
 
-function upvoteSameComments(element: JQuery, strippedCommentText: string) {
+function upvoteSameComments(element: JQuery, strippedCommentText: string): void {
     element.find('.comment-body .comment-copy').each((_index, el) => {
         const element = $(el), text = element.text();
         if (text !== strippedCommentText) return;
@@ -159,11 +158,11 @@ function upvoteSameComments(element: JQuery, strippedCommentText: string) {
     });
 }
 
-function getErrorMessage(responseJson: StackExchangeFlagResponse) {
+function getErrorMessage(responseJson: StackExchangeFlagResponse): string {
     let message = 'Failed to flag: ';
-    if (responseJson.Message.match('already flagged')) {
+    if (/already flagged/.exec(responseJson.Message)) {
         message += 'post already flagged';
-    } else if (responseJson.Message.match('limit reached')) {
+    } else if (/'limit reached'/.exec(responseJson.Message)) {
         message += 'post flag limit reached';
     } else {
         message += responseJson.Message;
@@ -171,7 +170,7 @@ function getErrorMessage(responseJson: StackExchangeFlagResponse) {
     return message;
 }
 
-function getPromiseFromFlagName(flagName: string, reporter: Reporter) {
+function getPromiseFromFlagName(flagName: string, reporter: Reporter): Promise<boolean> {
     switch (flagName) {
     case 'Needs Editing': return reporter.ReportNeedsEditing();
     case 'Vandalism': return reporter.ReportVandalism();
@@ -184,45 +183,45 @@ function getPromiseFromFlagName(flagName: string, reporter: Reporter) {
     }
 }
 
-function showComments(postId: number, data: string) {
-    const commentUI = StackExchange.comments.uiForPost($('#comments-' + postId));
+function showComments(postId: number, data: string): void {
+    const commentUI = StackExchange.comments.uiForPost($(`#comments-${postId}`));
     commentUI.addShow(true, false);
     commentUI.showComments(data, null, false, true);
     $(document).trigger('comment', postId);
 }
 
-function setupNattyApi(postId: number, nattyIcon?: JQuery) {
+function setupNattyApi(postId: number, nattyIcon?: JQuery): Reporter {
     const nattyApi = new NattyAPI(postId);
     const isReported = nattyApi.WasReported();
     if (nattyIcon) isReported ? globals.showInlineElement(nattyIcon) : nattyIcon.addClass('d-none');
 
     return {
         name: 'Natty',
-        ReportNaa: (answerDate: Date, questionDate: Date) => nattyApi.ReportNaa(answerDate, questionDate),
-        ReportRedFlag: () => nattyApi.ReportRedFlag(),
-        ReportLooksFine: () => nattyApi.ReportLooksFine(),
-        ReportNeedsEditing: () => nattyApi.ReportNeedsEditing(),
-        ReportVandalism: () => Promise.resolve(false),
-        ReportDuplicateAnswer: () => Promise.resolve(false),
-        ReportPlagiarism: () => Promise.resolve(false)
+        ReportNaa: (answerDate: Date, questionDate: Date): Promise<boolean> => nattyApi.ReportNaa(answerDate, questionDate),
+        ReportRedFlag: (): Promise<boolean> => nattyApi.ReportRedFlag(),
+        ReportLooksFine: (): Promise<boolean> => nattyApi.ReportLooksFine(),
+        ReportNeedsEditing: (): Promise<boolean> => nattyApi.ReportNeedsEditing(),
+        ReportVandalism: (): Promise<boolean> => Promise.resolve(false),
+        ReportDuplicateAnswer: (): Promise<boolean> => Promise.resolve(false),
+        ReportPlagiarism: (): Promise<boolean> => Promise.resolve(false)
     };
 }
 
-function setupGenericBotApi(postId: number) {
+function setupGenericBotApi(postId: number): Reporter {
     const genericBotAPI = new GenericBotAPI(postId);
     return {
         name: 'Generic Bot',
-        ReportNaa: () => genericBotAPI.ReportNaa(),
-        ReportRedFlag: () => genericBotAPI.ReportRedFlag(),
-        ReportLooksFine: () => Promise.resolve(false),
-        ReportNeedsEditing: () => Promise.resolve(false),
-        ReportVandalism: () => Promise.resolve(true),
-        ReportDuplicateAnswer: () => Promise.resolve(false),
-        ReportPlagiarism: () => Promise.resolve(false)
+        ReportNaa: (): Promise<boolean> => genericBotAPI.ReportNaa(),
+        ReportRedFlag: (): Promise<boolean> => genericBotAPI.ReportRedFlag(),
+        ReportLooksFine: (): Promise<boolean> => Promise.resolve(false),
+        ReportNeedsEditing: (): Promise<boolean> => Promise.resolve(false),
+        ReportVandalism: (): Promise<boolean> => Promise.resolve(true),
+        ReportDuplicateAnswer: (): Promise<boolean> => Promise.resolve(false),
+        ReportPlagiarism: (): Promise<boolean> => Promise.resolve(false)
     };
 }
 
-function setupMetasmokeApi(postId: number, postType: 'Answer' | 'Question', smokeyIcon: JQuery) {
+function setupMetasmokeApi(postId: number, postType: 'Answer' | 'Question', smokeyIcon: JQuery): Reporter {
     const metaSmoke = new MetaSmokeAPI();
     const isReported = MetaSmokeAPI.getSmokeyId(postId);
     if (!isReported) {
@@ -234,39 +233,39 @@ function setupMetasmokeApi(postId: number, postType: 'Answer' | 'Question', smok
 
     return {
         name: 'Smokey',
-        ReportNaa: () => metaSmoke.ReportNaa(postId),
-        ReportRedFlag: () => metaSmoke.ReportRedFlag(postId, postType),
-        ReportLooksFine: () => metaSmoke.ReportLooksFine(postId),
-        ReportNeedsEditing: () => metaSmoke.ReportNeedsEditing(postId),
-        ReportVandalism: () => metaSmoke.ReportVandalism(postId),
-        ReportDuplicateAnswer: () => Promise.resolve(false),
-        ReportPlagiarism: () => Promise.resolve(false)
+        ReportNaa: (): Promise<boolean> => metaSmoke.ReportNaa(postId),
+        ReportRedFlag: (): Promise<boolean> => metaSmoke.ReportRedFlag(postId, postType),
+        ReportLooksFine: (): Promise<boolean> => metaSmoke.ReportLooksFine(postId),
+        ReportNeedsEditing: (): Promise<boolean> => metaSmoke.ReportNeedsEditing(postId),
+        ReportVandalism: (): Promise<boolean> => metaSmoke.ReportVandalism(postId),
+        ReportDuplicateAnswer: (): Promise<boolean> => Promise.resolve(false),
+        ReportPlagiarism: (): Promise<boolean> => Promise.resolve(false)
     };
 }
 
-function setupGuttenbergApi(copyPastorApi: CopyPastorAPI, copyPastorIcon: JQuery) {
+function setupGuttenbergApi(copyPastorApi: CopyPastorAPI, copyPastorIcon: JQuery): Reporter {
     const copypastorId = copyPastorApi.getCopyPastorId();
     if (copypastorId) {
         copyPastorIcon.attr('Title', 'Reported by CopyPastor.');
         globals.showInlineElement(copyPastorIcon);
-        copyPastorIcon.click(() => window.open('https://copypastor.sobotics.org/posts/' + copypastorId));
+        copyPastorIcon.click(() => window.open(`https://copypastor.sobotics.org/posts/${copypastorId}`));
     } else {
         copyPastorIcon.addClass('d-none');
     }
 
     return {
         name: 'Guttenberg',
-        ReportNaa: () => copyPastorApi.ReportFalsePositive(),
-        ReportRedFlag: () => Promise.resolve(false),
-        ReportLooksFine: () => copyPastorApi.ReportFalsePositive(),
-        ReportNeedsEditing: () => copyPastorApi.ReportFalsePositive(),
-        ReportVandalism: () => copyPastorApi.ReportFalsePositive(),
-        ReportDuplicateAnswer: () => copyPastorApi.ReportTruePositive(),
-        ReportPlagiarism: () => copyPastorApi.ReportTruePositive()
+        ReportNaa: (): Promise<boolean> => copyPastorApi.ReportFalsePositive(),
+        ReportRedFlag: (): Promise<boolean> => Promise.resolve(false),
+        ReportLooksFine: (): Promise<boolean> => copyPastorApi.ReportFalsePositive(),
+        ReportNeedsEditing: (): Promise<boolean> => copyPastorApi.ReportFalsePositive(),
+        ReportVandalism: (): Promise<boolean> => copyPastorApi.ReportFalsePositive(),
+        ReportDuplicateAnswer: (): Promise<boolean> => copyPastorApi.ReportTruePositive(),
+        ReportPlagiarism: (): Promise<boolean> => copyPastorApi.ReportTruePositive()
     };
 }
 
-async function waitForCommentPromise(commentPromise: Promise<string>, postId: number) {
+async function waitForCommentPromise(commentPromise: Promise<string>, postId: number): Promise<void> {
     try {
         const commentPromiseValue = await commentPromise;
         showComments(postId, commentPromiseValue);
@@ -276,7 +275,7 @@ async function waitForCommentPromise(commentPromise: Promise<string>, postId: nu
     }
 }
 
-async function waitForFlagPromise(flagPromise: Promise<string>, reportedIcon: JQuery, reportTypeHuman?: string) {
+async function waitForFlagPromise(flagPromise: Promise<string>, reportedIcon: JQuery, reportTypeHuman?: string): Promise<void> {
     try {
         const flagPromiseValue = await flagPromise;
         const responseJson = JSON.parse(JSON.stringify(flagPromiseValue)) as StackExchangeFlagResponse;
@@ -292,7 +291,7 @@ async function waitForFlagPromise(flagPromise: Promise<string>, reportedIcon: JQ
     }
 }
 
-function getHumanFromDisplayName(displayName: string) {
+function getHumanFromDisplayName(displayName: string): string {
     switch (displayName) {
     case 'AnswerNotAnAnswer': return 'as NAA';
     case 'PostOffensive': return 'as R/A';
@@ -303,14 +302,28 @@ function getHumanFromDisplayName(displayName: string) {
     }
 }
 
-const storeCommentsInCache = () => Object.entries(globals.comments).forEach(array => globals.storeCommentInCache(array));
-const storeFlagsInCache = () => Object.entries(globals.flags).forEach(array => globals.storeFlagsInCache(array));
-function SetupCommentsAndFlags() {
-    const commentsCached = Object.keys(globals.comments).every(item => !!globals.getCommentFromCache(item));
-    const flagsCached = Object.keys(globals.flags).every(item => !!globals.getFlagFromCache(item));
+const storeCommentsInCache = (): void => Object.entries(globals.comments).forEach(array => globals.storeCommentInCache(array));
+const storeFlagsInCache = (): void => Object.entries(globals.flags).forEach(array => globals.storeFlagsInCache(array));
+function SetupCommentsAndFlags(): void {
+    const commentsCached = Object.keys(globals.comments).every(item => globals.getCommentFromCache(item));
+    const flagsCached = Object.keys(globals.flags).every(item => globals.getFlagFromCache(item));
 
     if (!flagsCached) storeFlagsInCache();
     if (!commentsCached) storeCommentsInCache();
+}
+
+function disableLink(activeLinks: number, reportLink: JQuery, divider: JQuery): void {
+    globals.hideElement(reportLink);
+    if (!divider || activeLinks > 0) return;
+
+    globals.hideElement(divider);
+}
+
+function enableLink(activeLinks: number, reportLink: JQuery, divider: JQuery): void {
+    globals.showElement(reportLink);
+    if (!divider || activeLinks <= 0) return;
+
+    globals.showElement(divider);
 }
 
 interface Reporter {
@@ -332,7 +345,12 @@ interface StackExchangeFlagResponse {
     Success: boolean;
 }
 
-async function BuildFlaggingDialog(element: JQuery,
+interface ReviewResponse {
+    postId: number;
+    content: string;
+}
+
+function BuildFlaggingDialog(element: JQuery,
     postId: number,
     postType: 'Question' | 'Answer',
     reputation: number,
@@ -344,7 +362,7 @@ async function BuildFlaggingDialog(element: JQuery,
     performedActionIcon: JQuery,
     reporters: Reporter[],
     copyPastorApi: CopyPastorAPI
-) {
+): JQuery {
     const enabledFlagIds = GreaseMonkeyCache.GetFromCache<number[]>(globals.ConfigurationEnabledFlags);
     const defaultNoComment = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoComment);
     const defaultNoFlag = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoFlag);
@@ -359,7 +377,6 @@ async function BuildFlaggingDialog(element: JQuery,
     flagBox.prop('checked', !defaultNoFlag);
     leaveCommentBox.prop('checked', !defaultNoComment && !comments.length && isStackOverflow);
 
-    let hasCommentOptions = false;
     let firstCategory = true;
     for (const flagCategory of flagCategories) {
         if (flagCategory.AppliesTo.indexOf(postType) === -1) continue;
@@ -371,38 +388,27 @@ async function BuildFlaggingDialog(element: JQuery,
         let activeLinks = flagCategory.FlagTypes.length;
         for (const flagType of flagCategory.FlagTypes) {
             const reportLink = globals.reportLink.clone();
-            hasCommentOptions = !!flagType.GetComment;
             const dropdownItem = globals.dropdownItem.clone();
 
-            const disableLink = () => {
-                activeLinks--;
-                globals.hideElement(reportLink);
-                if (!divider || activeLinks > 0) return;
-
-                globals.hideElement(divider);
-            };
-            const enableLink = () => {
-                activeLinks++;
-                globals.showElement(reportLink);
-                if (!divider || activeLinks <= 0) return;
-
-                globals.showElement(divider);
-            };
-
-            disableLink();
+            disableLink(activeLinks, reportLink, divider);
+            activeLinks--;
             if (!enabledFlagIds || enabledFlagIds.indexOf(flagType.Id) > -1) {
                 // https://github.com/SOBotics/AdvancedFlagging/issues/16
                 const copypastorIsRepost = copyPastorApi.getIsRepost();
                 const copypastorId = copyPastorApi.getCopyPastorId();
                 if (copypastorId && flagType.Enabled) {
                     const isEnabled = flagType.Enabled(copypastorIsRepost);
-                    if (isEnabled) enableLink();
+                    if (isEnabled) {
+                        enableLink(activeLinks, reportLink, divider);
+                        activeLinks--;
+                    }
                 } else {
-                    enableLink();
+                    enableLink(activeLinks, reportLink, divider);
+                    activeLinks--;
                 }
             }
 
-            let commentText: string | undefined;
+            let commentText: string | undefined | null;
             if (flagType.GetComment) {
                 commentText = flagType.GetComment({ Reputation: reputation, AuthorName: authorName });
                 reportLink.attr('title', commentText || '');
@@ -414,13 +420,15 @@ async function BuildFlaggingDialog(element: JQuery,
                         if (!leaveCommentBox.is(':checked') && commentText) {
                             const strippedComment = getStrippedComment(commentText);
                             upvoteSameComments(element, strippedComment);
-                            commentText = undefined;
+                            commentText = null;
                         }
 
                         const result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), copyPastorApi, commentText);
                         if (result.CommentPromise) await waitForCommentPromise(result.CommentPromise, postId);
                         if (result.FlagPromise) await waitForFlagPromise(result.FlagPromise, reportedIcon, flagType.Human);
-                    } catch (err) { globals.displayError(err); }
+                    } catch (err) {
+                        globals.displayError(err);
+                    }
                 }
 
                 const noFlag = flagType.ReportType === 'NoFlag';
@@ -443,10 +451,8 @@ async function BuildFlaggingDialog(element: JQuery,
         firstCategory = false;
     }
 
-    hasCommentOptions = isStackOverflow;
-
     dropDown.append(globals.getDivider());
-    if (hasCommentOptions) {
+    if (isStackOverflow) {
         const commentBoxLabel = globals.getOptionLabel('Leave comment', checkboxNameComment);
 
         const commentingRow = globals.plainDiv.clone();
@@ -469,7 +475,7 @@ async function BuildFlaggingDialog(element: JQuery,
     return dropDown;
 }
 
-function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date, questionTime: Date) {
+function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date, questionTime: Date): void {
     const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
     const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
     const customFlag = flagType.ReportType === 'PostOther';
@@ -495,8 +501,8 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
 }
 
 let autoFlagging = false;
-function SetupPostPage() {
-    parseQuestionsAndAnswers(async post => {
+function SetupPostPage(): void {
+    parseQuestionsAndAnswers(post => {
         if (!post.element.length) return;
 
         const iconLocation: JQuery = post.page === 'Question'
@@ -548,7 +554,7 @@ function SetupPostPage() {
 
             const linkDisabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationLinkDisabled);
             if (!linkDisabled && questionTime && answerTime) {
-                const dropDown = await BuildFlaggingDialog(
+                const dropDown = BuildFlaggingDialog(
                     post.element, post.postId, post.type, post.authorReputation as number, post.authorName, answerTime,
                     questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi
                 );
@@ -590,7 +596,7 @@ function SetupPostPage() {
     });
 }
 
-async function Setup() {
+async function Setup(): Promise<void> {
     // Collect all ids
     await Promise.all([
         MetaSmokeAPI.Setup(globals.metaSmokeKey),
@@ -601,7 +607,7 @@ async function Setup() {
     SetupCommentsAndFlags();
     SetupPostPage();
     SetupStyles();
-    SetupConfiguration();
+    void SetupConfiguration();
     document.body.appendChild(popupWrapper.get(0));
 
     const watchedQueuesEnabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationWatchQueues);
@@ -611,8 +617,8 @@ async function Setup() {
     globals.addXHRListener(xhr => {
         if (xhr.status !== 200) return;
 
-        const parseReviewDetails = (review: string) => {
-            const reviewJson = JSON.parse(review);
+        const parseReviewDetails = (review: string): void => {
+            const reviewJson = JSON.parse(review) as ReviewResponse;
             const postId = reviewJson.postId;
             const content = $(reviewJson.content);
 
@@ -656,10 +662,10 @@ async function Setup() {
 
 $(() => {
     let started = false;
-    function actionWatcher() {
+    function actionWatcher(): void {
         if (!started) {
             started = true;
-            Setup();
+            void Setup();
         }
         $(window).off('focus', actionWatcher);
         $(window).off('mousemove', actionWatcher);

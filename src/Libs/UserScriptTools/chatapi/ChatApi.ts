@@ -2,8 +2,6 @@ import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
 import * as globals from '../../../GlobalVars';
 
 declare const StackExchange: globals.StackExchange;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-declare const GM_xmlhttpRequest: any;
 
 export class ChatApi {
     private static GetExpiryDate(): Date {
@@ -18,15 +16,15 @@ export class ChatApi {
         this.chatRoomUrl = chatUrl;
     }
 
-    public async GetChannelFKey(roomId: number): Promise<string> {
+    public GetChannelFKey(roomId: number): Promise<string> {
         const expiryDate = ChatApi.GetExpiryDate();
-        return GreaseMonkeyCache.GetAndCache(globals.CacheChatApiFkey, () => new Promise<string>(resolve => {
+        return GreaseMonkeyCache.GetAndCache(globals.CacheChatApiFkey, () => new Promise<string>((resolve, reject) => {
             this.GetChannelPage(roomId).then(channelPage => {
                 const fkeyElement = $(channelPage).filter('#fkey');
                 const fkey = fkeyElement.val();
                 if (!fkey) return;
                 resolve(fkey.toString());
-            });
+            }).catch(() => reject());
         }), expiryDate);
     }
 
@@ -36,35 +34,34 @@ export class ChatApi {
 
     public SendMessage(roomId: number, message: string): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            const requestFunc = async () => {
+            const requestFunc = async (): Promise<void> => {
                 const fkey = await this.GetChannelFKey(roomId);
-
                 GM_xmlhttpRequest({
                     method: 'POST',
                     url: `${this.chatRoomUrl}/chats/${roomId}/messages/new`,
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     data: 'text=' + encodeURIComponent(message) + '&fkey=' + fkey,
-                    onload: (chat_response: XMLHttpRequest) => {
-                        chat_response.status === 200 ? resolve() : onFailure(chat_response.statusText);
+                    onload: (chatResponse: { status: number }) => {
+                        chatResponse.status === 200 ? resolve() : onFailure();
                     },
-                    onerror: (error_response: XMLHttpRequest) => {
-                        onFailure(error_response.responseText);
+                    onerror: () => {
+                        onFailure();
                     },
                 });
             };
 
             let numTries = 0;
-            const onFailure = (errorMessage?: string) => {
+            const onFailure = (): void => {
                 numTries++;
                 if (numTries < 3) {
                     GreaseMonkeyCache.Unset(globals.CacheChatApiFkey);
-                    requestFunc();
+                    void requestFunc();
                 } else {
-                    reject(errorMessage);
+                    reject();
                 }
             };
 
-            requestFunc();
+            void requestFunc();
         });
     }
 
@@ -73,10 +70,10 @@ export class ChatApi {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: `${this.chatRoomUrl}/rooms/${roomId}`,
-                onload: (response: XMLHttpRequest) => {
-                    response.status === 200 ? resolve(response.responseText) : reject(response.statusText);
+                onload: (response: { status: number, responseText: string }) => {
+                    response.status === 200 ? resolve(response.responseText) : reject();
                 },
-                onerror: (data: XMLHttpRequest) => reject(data)
+                onerror: () => reject()
             });
         });
 

@@ -1,8 +1,5 @@
 import * as globals from '../../../GlobalVars';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-declare const GM_xmlhttpRequest: any;
-
 export class GenericBotAPI {
     private answerId: number;
 
@@ -20,7 +17,7 @@ export class GenericBotAPI {
         return response;
     }
 
-    private computeContentHash(postContent: string) {
+    private computeContentHash(postContent: string): number {
         if (!postContent) return 0;
 
         let hash = 0;
@@ -32,29 +29,27 @@ export class GenericBotAPI {
         return hash;
     }
 
-    private makeTrackRequest() {
+    private makeTrackRequest(): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
             if (!globals.isStackOverflow()) resolve(false);
 
-            const flaggerName = globals.username;
-            if (!flaggerName) return false;
+            const flaggerName = encodeURIComponent(globals.username || '');
+            if (!flaggerName) resolve(false);
 
-            const contentHash = this.computeContentHash($('#answer-' + this.answerId + ' .js-post-body').html().trim());
+            const contentHash = this.computeContentHash($(`#answer-${this.answerId} .js-post-body`).html().trim());
 
             GM_xmlhttpRequest({
                 method: 'POST',
                 url: 'https://so.floern.com/api/trackpost.php',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                data: `key=${globals.genericBotKey}`
-                    + '&postId=' + this.answerId
-                    + '&contentHash=' + contentHash
-                    + '&flagger=' + encodeURIComponent(flaggerName),
-                onload: (response: XMLHttpRequest) => {
-                    if (response.status !== 200) reject('Flag Tracker Error: Status ' + response.status);
+                data: `key=${globals.genericBotKey}&postId=${this.answerId}&contentHash=${contentHash}&flagger=${flaggerName}`,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onload: (response: { status: number }) => {
+                    if (response.status !== 200) reject(false);
                     resolve(true);
                 },
-                onerror: (response: XMLHttpRequest) => {
-                    reject('Flag Tracker Error: ' + response.responseText);
+                onerror: () => {
+                    reject(false);
                 }
             });
         });

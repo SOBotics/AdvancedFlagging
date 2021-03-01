@@ -25,7 +25,12 @@ export interface StackExchange {
             isModerator: boolean;
         }
     };
-    comments: { uiForPost(comments: JQuery): any };
+    comments: {
+        uiForPost(comments: JQuery): {
+            addShow(value1: boolean, value2: boolean): void;
+            showComments(value1: string, value2: string | null, value3: boolean, value4: boolean): void;
+        };
+    };
 }
 
 export interface StackExchangeHelpers {
@@ -42,12 +47,12 @@ interface ModalType {
 
 interface AllFlags {
     flagName: string;
-    content?: string;
+    content: string | null;
 }
 
 interface AllComments {
     commentName: string;
-    content?: string;
+    content: string | null;
 }
 
 export const soboticsRoomId = 111347;
@@ -128,8 +133,8 @@ export const comments = {
 };
 export const getCommentKey = (name: string): string => 'AdvancedFlagging.Configuration.Comments.' + name;
 export const getFlagKey = (name: string): string => 'AdvancedFlagging.Configuration.Flags.' + name;
-export const getCommentFromCache = (name: string): string | undefined => GreaseMonkeyCache.GetFromCache(getCommentKey(name));
-export const getFlagFromCache = (name: string): string | undefined => GreaseMonkeyCache.GetFromCache(getFlagKey(name));
+export const getCommentFromCache = (name: string): string | null => GreaseMonkeyCache.GetFromCache(getCommentKey(name));
+export const getFlagFromCache = (name: string): string | null => GreaseMonkeyCache.GetFromCache(getFlagKey(name));
 export const storeCommentInCache = (array: string[]): void => GreaseMonkeyCache.StoreInCache(getCommentKey(array[0]), array[1]);
 export const storeFlagsInCache = (array: string[]): void => GreaseMonkeyCache.StoreInCache(getFlagKey(array[0]), array[1]);
 
@@ -153,19 +158,19 @@ export const hideElement = (element: JQuery): JQuery => element.addClass('d-none
 export const showInlineElement = (element: JQuery): JQuery => element.addClass('d-inline-block').removeClass('d-none');
 export const displaySuccess = (message: string): void => displayToaster(message, 'success');
 export const displayError = (message: string): void => displayToaster(message, 'danger');
-export const isStackOverflow = (): boolean => !!window.location.href.match(/^https:\/\/stackoverflow.com/);
-export const isNatoPage = (): boolean => !!window.location.href.match(/\/tools\/new-answers-old-questions/);
-export const isModPage = (): boolean => !!window.location.href.match(/\/admin/);
-export const isQuestionPage = (): boolean => !!window.location.href.match(/\/questions\/\d+.*/);
-export const isFlagsPage = (): boolean => !!window.location.href.match(/\/users\/flag-summary\//);
-export const isUserPage = (): boolean => !!window.location.href.match(/\/users\/\d+.*/);
-const getCopypastorLink = (postId: number) => 'https://copypastor.sobotics.org/posts/' + postId;
+export const isStackOverflow = (): boolean => Boolean(/^https:\/\/stackoverflow.com/.exec(window.location.href));
+export const isNatoPage = (): boolean => Boolean(/\/tools\/new-answers-old-questions/.exec(window.location.href));
+export const isModPage = (): boolean => Boolean(/\/admin/.exec(window.location.href));
+export const isQuestionPage = (): boolean => Boolean(/\/questions\/\d+.*/.exec(window.location.href));
+export const isFlagsPage = (): boolean => Boolean(/\/users\/flag-summary\//.exec(window.location.href));
+export const isUserPage = (): boolean => Boolean(/\/users\/\d+.*/.exec(window.location.href));
+const getCopypastorLink = (postId: number): string => `https://copypastor.sobotics.org/posts/${postId}`;
 
 export const getPerformedActionIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.CheckmarkSm().addClass('fc-green-500'));
 export const getReportedIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.Flag().addClass('fc-red-500'));
 
 const sampleIconClass = $('<div>').attr('class', 'advanced-flagging-icon bg-cover c-pointer w16 h16 d-none va-middle');
-sampleIconClass.addClass(window.location.href.match(/\/users\/flag-summary/) ? 'mx4' : 'm4');
+sampleIconClass.addClass(/\/users\/flag-summary/.exec(window.location.href) ? 'mx4' : 'm4');
 export const getNattyIcon = (): JQuery => sampleIconClass.clone().attr('title', 'Reported by Natty').addClass('advanced-flagging-natty-icon');
 export const getGuttenbergIcon = (): JQuery => sampleIconClass.clone().attr('title', 'Reported by Guttenberg').addClass('advanced-flagging-gut-icon');
 export const getSmokeyIcon = (): JQuery => sampleIconClass.clone().attr('title', 'Reported by Smokey').addClass('advanced-flagging-smokey-icon');
@@ -282,8 +287,9 @@ const callbacks: ((request: XMLHttpRequest) => void)[] = [];
 export function addXHRListener(callback: (request: XMLHttpRequest) => void): void {
     callbacks.push(callback);
     if (initialized) return;
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const open = XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open = function(...args: any[]) {
+    XMLHttpRequest.prototype.open = function(...args: any[]): void {
         this.addEventListener('load', () => {
             callbacks.forEach(cb => cb(this));
         }, false);
@@ -316,7 +322,7 @@ export function getPostUrlsFromFlagsPage(): (string | undefined)[] {
 }
 
 // For GetComment() on FlagTypes. Adds the author name before the comment if the option is enabled
-export function getFullComment(name: string, authorName: string): string | undefined {
+export function getFullComment(name: string, authorName: string): string | null {
     const shouldAddAuthorName = GreaseMonkeyCache.GetFromCache(CommentsAddAuthorName);
     const comment = getCommentFromCache(name);
     return comment && shouldAddAuthorName ? `${authorName}, ${comment[0].toLowerCase()}${comment.slice(1)}` : comment;

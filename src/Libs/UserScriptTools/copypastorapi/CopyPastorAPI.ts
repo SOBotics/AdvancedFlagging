@@ -2,9 +2,6 @@ import { ChatApi } from '@userscriptTools/chatapi/ChatApi';
 import * as globals from '../../../GlobalVars';
 import { getAllAnswerIds } from '@userscriptTools/sotools/sotools';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-declare const GM_xmlhttpRequest: any;
-
 export interface CopyPastorFindTargetResponseItem {
     post_id: string;
     target_url: string;
@@ -35,15 +32,16 @@ export class CopyPastorAPI {
         await this.storeReportedPosts(answerIds);
     }
 
-    private static getIsReportOrPlagiarism(answerId: string) {
+    private static getIsReportOrPlagiarism(answerId: string): Promise<boolean> {
         return new Promise<boolean>(resolve => {
             if (!answerId) resolve(false);
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: `${globals.copyPastorServer}/posts/${answerId}`,
-                onload: (response: XMLHttpRequest) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onload: (response: { responseText: string }) => {
                     const responseParsed = $(response.responseText);
-                    resolve(!!responseParsed.text().match('Reposted'));
+                    resolve(Boolean(/Reposted/.exec(responseParsed.text())));
                 },
                 onerror: () => {
                     resolve(false);
@@ -59,7 +57,7 @@ export class CopyPastorAPI {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url,
-                onload: (response: XMLHttpRequest) => {
+                onload: (response: { responseText: string }) => {
                     const responseObject = JSON.parse(response.responseText) as CopyPastorFindTargetResponse;
                     if (responseObject.status === 'failure') return;
                     responseObject.posts.forEach(item => {
@@ -97,7 +95,7 @@ export class CopyPastorAPI {
         return await this.SendFeedback('fp');
     }
 
-    private async SendFeedback(type: 'tp' | 'fp') {
+    private async SendFeedback(type: 'tp' | 'fp'): Promise<boolean> {
         const username = globals.username;
         const chatId = new ChatApi().GetChatUserId();
         const copyPastorId = this.getCopyPastorId();
@@ -116,17 +114,12 @@ export class CopyPastorAPI {
                 method: 'POST',
                 url: `${globals.copyPastorServer}/feedback/create`,
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                data:
-                    'post_id=' + payload.post_id
-                    + '&feedback_type=' + payload.feedback_type
-                    + '&username=' + payload.username
-                    + '&link=' + payload.link
-                    + '&key=' + payload.key,
-                onload: (response: XMLHttpRequest) => {
-                    response.status === 200 ? resolve(true) : reject(JSON.parse(response.responseText));
+                data: Object.entries(payload).map(item => item.join('=')).join('&'),
+                onload: (response: { status: number }) => {
+                    response.status === 200 ? resolve(true) : reject(false);
                 },
-                onerror: (response: XMLHttpRequest) => {
-                    reject(response);
+                onerror: () => {
+                    reject(false);
                 },
             });
         });

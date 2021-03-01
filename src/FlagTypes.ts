@@ -10,7 +10,7 @@ export interface FlagType {
     DisplayName: string;
     ReportType: 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther';
     Human?: string;
-    GetComment?(userDetails: UserDetails): string | undefined;
+    GetComment?(userDetails: UserDetails): string | null;
     Enabled?(isRepost: boolean): boolean;
     GetCustomFlagText?(target: string, postId: number): string | undefined;
 }
@@ -50,25 +50,24 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Plagiarism',
                 ReportType: 'PostOther',
                 Human: 'for moderator attention',
-                Enabled: isRepost => !isRepost,
-                GetCustomFlagText: (target, postId) => globals.getFullFlag('Plagiarism', target, postId)
+                Enabled: (isRepost): boolean => !isRepost,
+                GetCustomFlagText: (target, postId): string | undefined => globals.getFullFlag('Plagiarism', target, postId)
             },
             {
                 Id: 4,
                 DisplayName: 'Duplicate answer',
                 ReportType: 'PostOther',
                 Human: 'for moderator attention',
-                Enabled: isRepost => isRepost,
-                GetComment: () => '',
-                GetCustomFlagText: (target, postId) => globals.getFullFlag('DuplicateAnswer', target, postId)
+                Enabled: (isRepost): boolean => isRepost,
+                GetCustomFlagText: (target, postId): string | undefined => globals.getFullFlag('DuplicateAnswer', target, postId)
             },
             {
                 Id: 5,
                 DisplayName: 'Bad attribution',
                 ReportType: 'PostOther',
                 Human: 'for moderator attention',
-                Enabled: isRepost => !isRepost,
-                GetCustomFlagText: (target, postId) => globals.getFullFlag('BadAttribution', target, postId)
+                Enabled: (isRepost): boolean => !isRepost,
+                GetCustomFlagText: (target, postId): string | undefined => globals.getFullFlag('BadAttribution', target, postId)
             }
         ]
     },
@@ -81,63 +80,63 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Link Only',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: userDetails => globals.getFullComment('LinkOnly', userDetails.AuthorName)
+                GetComment: (userDetails): string | null => globals.getFullComment('LinkOnly', userDetails.AuthorName)
             },
             {
                 Id: 7,
                 DisplayName: 'Not an answer',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: userDetails => globals.getFullComment(`NAA${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
+                GetComment: (userDetails): string | null => globals.getFullComment(`NAA${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
             },
             {
                 Id: 8,
                 DisplayName: 'Thanks',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: userDetails => globals.getFullComment(`Thanks${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
+                GetComment: (userDetails): string | null => globals.getFullComment(`Thanks${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
             },
             {
                 Id: 9,
                 DisplayName: 'Me too',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: userDetails => globals.getFullComment('MeToo', userDetails.AuthorName)
+                GetComment: (userDetails): string | null => globals.getFullComment('MeToo', userDetails.AuthorName)
             },
             {
                 Id: 10,
                 DisplayName: 'Library',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: userDetails => globals.getFullComment('Library', userDetails.AuthorName)
+                GetComment: (userDetails): string | null => globals.getFullComment('Library', userDetails.AuthorName)
             },
             {
                 Id: 11,
                 DisplayName: 'Comment',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: userDetails => globals.getFullComment(`Comment${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
+                GetComment: (userDetails): string | null => globals.getFullComment(`Comment${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
             },
             {
                 Id: 12,
                 DisplayName: 'Duplicate',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: userDetails => globals.getFullComment('Duplicate', userDetails.AuthorName)
+                GetComment: (userDetails): string | null => globals.getFullComment('Duplicate', userDetails.AuthorName)
             },
             {
                 Id: 13,
                 DisplayName: 'Non English',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: userDetails => globals.getFullComment('NonEnglish', userDetails.AuthorName)
+                GetComment: (userDetails): string | null => globals.getFullComment('NonEnglish', userDetails.AuthorName)
             },
             {
                 Id: 14,
                 DisplayName: 'Should be an edit',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                GetComment: userDetails => globals.getFullComment('ShouldBeAnEdit', userDetails.AuthorName)
+                GetComment: (userDetails): string | null => globals.getFullComment('ShouldBeAnEdit', userDetails.AuthorName)
             }
         ]
     },

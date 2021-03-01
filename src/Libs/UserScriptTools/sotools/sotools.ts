@@ -63,14 +63,13 @@ export type PostInfo = NatoAnswer | QuestionPageInfo | FlagPageInfo | GenericPag
 
 $.event.special.destroyed = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    remove: (o: any) => {
-        if (o.handler) {
-            o.handler();
-        }
+    remove: (o: any): void => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        if (o.handler) o.handler();
     }
 };
 
-function parseNatoPage(callback: (post: NatoAnswer) => void) {
+function parseNatoPage(callback: (post: NatoAnswer) => void): void {
     $('.answer-hyperlink').parent().parent().each((_index, element) => {
         const node = $(element);
         const answerHref = node.find('.answer-hyperlink').attr('href');
@@ -99,7 +98,7 @@ function parseNatoPage(callback: (post: NatoAnswer) => void) {
     });
 }
 
-function getPostDetails(node: JQuery) {
+function getPostDetails(node: JQuery): { score: number, authorReputation?: number, authorName: string, authorId?: number, postTime: Date | null } {
     const score = parseInt(node.find('.js-vote-count').text(), 10);
 
     const authorReputation = parseReputation(node.find('.user-info .reputation-score').last());
@@ -109,7 +108,7 @@ function getPostDetails(node: JQuery) {
     return { score, authorReputation, authorName, authorId, postTime };
 }
 
-function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) => void, question: QuestionQuestion) {
+function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) => void, question: QuestionQuestion): void {
     const answerIdString = aNode.attr('data-answerid');
     if (!answerIdString) return;
 
@@ -138,9 +137,9 @@ function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) =>
     });
 }
 
-function parseQuestionPage(callback: (post: QuestionPageInfo) => void) {
+function parseQuestionPage(callback: (post: QuestionPageInfo) => void): void {
     let question: QuestionQuestion;
-    const parseQuestionDetails = (qNode: JQuery) => {
+    const parseQuestionDetails = (qNode: JQuery): void => {
         const questionIdString = qNode.attr('data-questionid');
         if (!questionIdString) return;
 
@@ -174,7 +173,7 @@ function parseQuestionPage(callback: (post: QuestionPageInfo) => void) {
     $('.answer').each((_index, element) => parseAnswerDetails($(element), callback, question));
 }
 
-function parseFlagsPage(callback: (post: FlagPageInfo) => void) {
+function parseFlagsPage(callback: (post: FlagPageInfo) => void): void {
     $('.flagged-post').each((_index, nodeEl) => {
         const node = $(nodeEl);
         const type = node.find('.answer-hyperlink').length ? 'Answer' : 'Question';
@@ -199,7 +198,7 @@ function parseFlagsPage(callback: (post: FlagPageInfo) => void) {
         const handledComment = fullHandledResult.slice(1).join(' - ').trim();
 
         callback({
-            type: type as 'Answer' | 'Question',
+            type: type,
             element: node,
             page: 'Flags' as const,
             postId,
@@ -214,7 +213,7 @@ function parseFlagsPage(callback: (post: FlagPageInfo) => void) {
     });
 }
 
-function parseGenericPage(callback: (post: GenericPageInfo) => void) {
+function parseGenericPage(callback: (post: GenericPageInfo) => void): void {
     $('.question-hyperlink').each((_index, node) => {
         const questionNode = $(node);
         const questionHref = questionNode.attr('href');
@@ -254,34 +253,32 @@ function parseGenericPage(callback: (post: GenericPageInfo) => void) {
     });
 }
 
-export function parseQuestionsAndAnswers(callback: (post: PostInfo) => Promise<void>): void {
+export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): void {
     if (globals.isNatoPage()) {
         parseNatoPage(callback);
     } else if (globals.isQuestionPage()) {
         parseQuestionPage(callback);
     } else if (globals.isFlagsPage()) {
         parseFlagsPage(callback);
-    } else if (globals.isModPage() || globals.isUserPage() || StackExchange.options.user.isModerator) {
-        return;
-    } else {
+    } else if (!globals.isModPage() && !globals.isUserPage() && !StackExchange.options.user.isModerator) {
         parseGenericPage(callback);
     }
 }
 
-function parseReputation(reputationDiv: JQuery) {
+function parseReputation(reputationDiv: JQuery): number {
     let reputationText = reputationDiv.text();
     const reputationDivTitle = reputationDiv.attr('title');
-    if (!reputationDivTitle) return;
+    if (!reputationDivTitle) return 0;
 
     if (reputationText.indexOf('k') !== -1) {
         reputationText = reputationDivTitle.substr('reputation score '.length);
     }
     reputationText = reputationText.replace(',', '');
 
-    return parseInt(reputationText, 10) || undefined;
+    return parseInt(reputationText, 10);
 }
 
-function parseAuthorDetails(authorDiv: JQuery) {
+function parseAuthorDetails(authorDiv: JQuery): { authorName: string, authorId?: number } {
     const userLink = authorDiv.find('a');
     const authorName = userLink.text();
     const userLinkRef = userLink.attr('href');
@@ -292,15 +289,15 @@ function parseAuthorDetails(authorDiv: JQuery) {
     return { authorName, authorId };
 }
 
-function parseActionDate(actionDiv: JQuery) {
+function parseActionDate(actionDiv: JQuery): Date | null {
     return parseDate((actionDiv.hasClass('relativetime') ? actionDiv : actionDiv.find('.relativeTime')).attr('title'));
 }
 
-export function parseDate(dateStr?: string): Date | undefined {
+export function parseDate(dateStr?: string): Date | null {
     // Fix for safari
-    return dateStr ? new Date(dateStr.replace(' ', 'T')) : undefined;
+    return dateStr ? new Date(dateStr.replace(' ', 'T')) : null;
 }
 
 export function getAllAnswerIds(): number[] {
-    return $('[id^="answer-"]').get().map(el => $(el).data('answerid'));
+    return $('[id^="answer-"]').get().map(el => Number($(el).attr('data-answerid')));
 }

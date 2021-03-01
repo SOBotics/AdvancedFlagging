@@ -1,7 +1,3 @@
-declare const GM_getValue: (key: string, defaultValue?: string) => string;
-declare const GM_setValue: (key: string, value: string) => void;
-declare const GM_deleteValue: (key: string) => void;
-
 interface ExpiryingCacheItem<T> {
     Data: T;
     Expires?: Date;
@@ -17,12 +13,12 @@ export class GreaseMonkeyCache {
         return result;
     }
 
-    public static GetFromCache<T>(cacheKey: string): T | undefined {
-        const jsonItem = GM_getValue(cacheKey, undefined);
-        if (!jsonItem) return undefined;
+    public static GetFromCache<T>(cacheKey: string): T | null {
+        const jsonItem = GM_getValue(cacheKey, null);
+        if (!jsonItem) return null;
 
         const dataItem = JSON.parse(jsonItem) as ExpiryingCacheItem<T>;
-        if (dataItem.Expires && new Date(dataItem.Expires) < new Date()) return undefined;
+        if (dataItem.Expires && new Date(dataItem.Expires) < new Date()) return null;
 
         return dataItem.Data;
     }

@@ -12,9 +12,6 @@ interface NattyFeedbackItem {
     type: string
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-declare const GM_xmlhttpRequest: any;
-
 export class NattyAPI {
     private static nattyIds: number[] = [];
     private chat: ChatApi = new ChatApi();
@@ -34,7 +31,7 @@ export class NattyAPI {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: `${globals.nattyAllReportsUrl}`,
-                onload: (response: XMLHttpRequest) => {
+                onload: (response: { status: number, responseText: string }) => {
                     if (response.status !== 200) reject();
 
                     const result = JSON.parse(response.responseText) as NattyFeedback;
@@ -88,7 +85,7 @@ export class NattyAPI {
         return true;
     }
 
-    private DaysBetween(first: Date, second: Date) {
+    private DaysBetween(first: Date, second: Date): number {
         return (second.valueOf() - first.valueOf()) / (1000 * 60 * 60 * 24);
     }
 }

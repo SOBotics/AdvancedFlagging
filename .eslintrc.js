@@ -44,6 +44,7 @@ module.exports = {
         'quotes': [2, 'single', { 'avoidEscape': true }],
         'require-await': 'warn',
         'semi': [1, 'always'],
-        'space-in-parens': 'off'
+        'space-in-parens': 'off',
+        '@typescript-eslint/explicit-function-return-type': 'warn'
     }
 };

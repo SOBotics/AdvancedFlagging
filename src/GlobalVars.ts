@@ -211,7 +211,7 @@ export const commentsWrapper = $('<div>').attr('class', 'af-comments-content gri
 export const flagsWrapper = $('<div>').attr('class', 'af-flags-content grid--cell').append(flagsHeader);
 export const overlayModal = $(`
 <aside class="s-modal" id="af-config" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
-  <div class="s-modal--dialog s-modal__full w60" role="document">
+  <div class="s-modal--dialog s-modal__full w60 sm:w100" role="document">
     <h1 class="s-modal--header fw-body c-movey" id="af-modal-title">AdvancedFlagging configuration</h1>
     <div class="s-modal--body fs-body2" id="af-modal-description"></div>
     <div class="grid gs8 gsx s-modal--footer">
@@ -221,8 +221,8 @@ export const overlayModal = $(`
     <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
   </div>
 </aside>`);
-const grid = $('<div>').attr('class', 'grid');
-export const inlineCheckboxesWrapper = gridCellDiv.clone().append(grid.clone());
+const grid = $('<div>').attr('class', 'grid lg:grid md:fd-column sm:fd-column');
+export const inlineCheckboxesWrapper = gridCellDiv.clone().addClass('grid--cell lg:grid--cell md:m0 sm:m0').append(grid.clone());
 const metasmokeTokenPopup = $(`
 <aside class="s-modal" id="af-ms-token" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
   <div class="s-modal--dialog s-modal__full sm:w100 md:w100" role="document">

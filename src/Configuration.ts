@@ -153,7 +153,8 @@ function GetFlagSettings(): JQuery[] {
 
     getFlagTypes().forEach(f => {
         const storedValue = configurationEnabledFlags.indexOf(f.Id) > -1;
-        checkboxes.push(createCheckbox(f.DisplayName, storedValue, `flag-type-${f.Id}`).children().eq(0).addClass('w25'));
+        const checkbox = createCheckbox(f.DisplayName, storedValue, `flag-type-${f.Id}`).children().eq(0);
+        checkboxes.push(checkbox.addClass('w25 lg:w25 md:w100 sm:w100'));
     });
     return checkboxes;
 }

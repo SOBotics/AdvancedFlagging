@@ -312,20 +312,6 @@ function SetupCommentsAndFlags(): void {
     if (!commentsCached) storeCommentsInCache();
 }
 
-function disableLink(activeLinks: number, reportLink: JQuery, divider: JQuery): void {
-    globals.hideElement(reportLink);
-    if (!divider || activeLinks > 0) return;
-
-    globals.hideElement(divider);
-}
-
-function enableLink(activeLinks: number, reportLink: JQuery, divider: JQuery): void {
-    globals.showElement(reportLink);
-    if (!divider || activeLinks <= 0) return;
-
-    globals.showElement(divider);
-}
-
 interface Reporter {
     name: string;
     ReportNaa(answerDate: Date, questionDate: Date): Promise<boolean>;
@@ -377,52 +363,45 @@ function BuildFlaggingDialog(element: JQuery,
     flagBox.prop('checked', !defaultNoFlag);
     leaveCommentBox.prop('checked', !defaultNoComment && !comments.length && isStackOverflow);
 
-    let firstCategory = true;
-    for (const flagCategory of flagCategories) {
-        if (flagCategory.AppliesTo.indexOf(postType) === -1) continue;
-
-        const divider = globals.getDivider();
-        if (!firstCategory) dropDown.append(divider);
-
+    const newCategories = flagCategories.filter(item => item.AppliesTo.includes(postType)
+                                                     && item.FlagTypes.some(flag => enabledFlagIds && enabledFlagIds.includes(flag.Id)));
+    for (const flagCategory of newCategories) {
         const categoryDiv = globals.getCategoryDiv(flagCategory.IsDangerous);
-        let activeLinks = flagCategory.FlagTypes.length;
-        for (const flagType of flagCategory.FlagTypes) {
+        for (const flagType of flagCategory.FlagTypes.filter(flag => enabledFlagIds && enabledFlagIds.includes(flag.Id))) {
             const reportLink = globals.reportLink.clone();
             const dropdownItem = globals.dropdownItem.clone();
 
-            disableLink(activeLinks, reportLink, divider);
-            activeLinks--;
-            if (!enabledFlagIds || enabledFlagIds.indexOf(flagType.Id) > -1) {
-                // https://github.com/SOBotics/AdvancedFlagging/issues/16
-                const copypastorIsRepost = copyPastorApi.getIsRepost();
-                const copypastorId = copyPastorApi.getCopyPastorId();
-                if (copypastorId && flagType.Enabled) {
-                    const isEnabled = flagType.Enabled(copypastorIsRepost);
-                    if (isEnabled) {
-                        enableLink(activeLinks, reportLink, divider);
-                        activeLinks--;
-                    }
-                } else {
-                    enableLink(activeLinks, reportLink, divider);
-                    activeLinks--;
-                }
+            // https://github.com/SOBotics/AdvancedFlagging/issues/16
+            const copypastorIsRepost = copyPastorApi.getIsRepost();
+            const copypastorId = copyPastorApi.getCopyPastorId();
+            if (flagType.Enabled) {
+                if (copypastorId && flagType.Enabled(copypastorIsRepost)) globals.showElement(reportLink);
+                else continue;
+            } else {
+                globals.showElement(reportLink);
             }
 
-            let commentText: string | undefined | null;
-            if (flagType.GetComment) {
-                commentText = flagType.GetComment({ Reputation: reputation, AuthorName: authorName });
-                reportLink.attr('title', commentText || '');
-            }
+            reportLink.text(flagType.DisplayName);
+            dropdownItem.append(reportLink);
+            categoryDiv.append(dropdownItem);
+
+            dropDown.append(categoryDiv);
 
             reportLink.click(async () => {
-                if (!deleted) {
-                    try {
-                        if (!leaveCommentBox.is(':checked') && commentText) {
-                            const strippedComment = getStrippedComment(commentText);
-                            upvoteSameComments(element, strippedComment);
-                            commentText = null;
-                        }
+                let commentText: string | undefined | null;
+                if (flagType.GetComment) {
+                    commentText = flagType.GetComment({ Reputation: reputation, AuthorName: authorName });
+                    reportLink.attr('title', commentText || '');
+                }
 
+                if (!deleted) {
+                    if (!leaveCommentBox.is(':checked') && commentText) {
+                        const strippedComment = getStrippedComment(commentText);
+                        upvoteSameComments(element, strippedComment);
+                        commentText = null;
+                    }
+
+                    try {
                         const result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), copyPastorApi, commentText);
                         if (result.CommentPromise) await waitForCommentPromise(result.CommentPromise, postId);
                         if (result.FlagPromise) await waitForFlagPromise(result.FlagPromise, reportedIcon, flagType.Human);
@@ -431,27 +410,18 @@ function BuildFlaggingDialog(element: JQuery,
                     }
                 }
 
-                const noFlag = flagType.ReportType === 'NoFlag';
-                if (noFlag) {
+                if (flagType.ReportType === 'NoFlag') {
                     performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
                     globals.showElement(performedActionIcon);
                 }
 
                 handleFlag(flagType, reporters, answerTime, questionTime);
-
-                globals.hideElement(dropDown);
+                globals.hideElement(dropDown); // hide the dropdown after clicking one of the options
             });
-
-            reportLink.text(flagType.DisplayName);
-            dropdownItem.append(reportLink);
-            categoryDiv.append(dropdownItem);
-
-            dropDown.append(categoryDiv);
         }
-        firstCategory = false;
+        if (categoryDiv.html()) dropDown.append(globals.getDivider()); // at least one option exists for the category
     }
 
-    dropDown.append(globals.getDivider());
     if (isStackOverflow) {
         const commentBoxLabel = globals.getOptionLabel('Leave comment', checkboxNameComment);
 

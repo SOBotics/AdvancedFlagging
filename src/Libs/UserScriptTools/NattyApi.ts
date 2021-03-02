@@ -1,6 +1,6 @@
-import { ChatApi } from '@userscriptTools/chatapi/ChatApi';
-import { getAllAnswerIds } from '@userscriptTools/sotools/sotools';
-import * as globals from '../../../GlobalVars';
+import { ChatApi } from '@userscriptTools/ChatApi';
+import { getAllAnswerIds } from '@userscriptTools/sotools';
+import * as globals from '../../GlobalVars';
 
 interface NattyFeedback {
     items: NattyFeedbackItem[];

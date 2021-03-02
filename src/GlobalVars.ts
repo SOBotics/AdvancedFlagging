@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { displayToaster } from './AdvancedFlagging';
-import { MetaSmokeAPI } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
-import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
+import { MetaSmokeAPI } from '@userscriptTools/MetaSmokeAPI';
+import { GreaseMonkeyCache } from '@userscriptTools/GreaseMonkeyCache';
 
 declare const StackExchange: StackExchange;
 declare const Svg: Svg;

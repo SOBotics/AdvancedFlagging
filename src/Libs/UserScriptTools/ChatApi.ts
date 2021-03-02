@@ -1,5 +1,5 @@
-import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
-import * as globals from '../../../GlobalVars';
+import { GreaseMonkeyCache } from '@userscriptTools/GreaseMonkeyCache';
+import * as globals from '../../GlobalVars';
 
 declare const StackExchange: globals.StackExchange;
 

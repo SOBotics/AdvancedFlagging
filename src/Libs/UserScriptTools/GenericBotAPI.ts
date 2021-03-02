@@ -1,4 +1,4 @@
-import * as globals from '../../../GlobalVars';
+import * as globals from '../../GlobalVars';
 
 export class GenericBotAPI {
     private answerId: number;

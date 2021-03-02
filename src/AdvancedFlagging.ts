@@ -1,11 +1,11 @@
 import { FlagType, flagCategories } from './FlagTypes';
-import { parseQuestionsAndAnswers, parseDate } from '@userscriptTools/sotools/sotools';
-import { NattyAPI } from '@userscriptTools/nattyapi/NattyApi';
-import { GenericBotAPI } from '@userscriptTools/genericbotapi/GenericBotAPI';
-import { MetaSmokeAPI } from '@userscriptTools/metasmokeapi/MetaSmokeAPI';
-import { CopyPastorAPI } from '@userscriptTools/copypastorapi/CopyPastorAPI';
+import { parseQuestionsAndAnswers, parseDate } from '@userscriptTools/sotools';
+import { NattyAPI } from '@userscriptTools/NattyApi';
+import { GenericBotAPI } from '@userscriptTools/GenericBotAPI';
+import { MetaSmokeAPI } from '@userscriptTools/MetaSmokeAPI';
+import { CopyPastorAPI } from '@userscriptTools/CopyPastorAPI';
 import { SetupConfiguration } from 'Configuration';
-import { GreaseMonkeyCache } from '@userscriptTools/caching/GreaseMonkeyCache';
+import { GreaseMonkeyCache } from '@userscriptTools/GreaseMonkeyCache';
 import * as globals from './GlobalVars';
 
 declare const StackExchange: globals.StackExchange;

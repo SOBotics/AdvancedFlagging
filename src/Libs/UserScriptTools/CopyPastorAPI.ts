@@ -1,6 +1,6 @@
-import { ChatApi } from '@userscriptTools/chatapi/ChatApi';
-import * as globals from '../../../GlobalVars';
-import { getAllAnswerIds } from '@userscriptTools/sotools/sotools';
+import { ChatApi } from '@userscriptTools/ChatApi';
+import * as globals from '../../GlobalVars';
+import { getAllAnswerIds } from '@userscriptTools/sotools';
 
 export interface CopyPastorFindTargetResponseItem {
     post_id: string;

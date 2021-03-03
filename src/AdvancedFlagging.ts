@@ -162,8 +162,10 @@ function getErrorMessage(responseJson: StackExchangeFlagResponse): string {
     let message = 'Failed to flag: ';
     if (/already flagged/.exec(responseJson.Message)) {
         message += 'post already flagged';
-    } else if (/'limit reached'/.exec(responseJson.Message)) {
+    } else if (/limit reached/.exec(responseJson.Message)) {
         message += 'post flag limit reached';
+    } else if (/You may only flag a post every \d+ seconds?/.exec(JSON.stringify(responseJson))) {
+        message += 'rate-limited';
     } else {
         message += responseJson.Message;
     }

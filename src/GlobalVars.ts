@@ -60,8 +60,8 @@ export const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20
 export const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
 export const copyPastorServer = 'https://copypastor.sobotics.org';
 export const genericBotKey = 'Cm45BSrt51FR3ju';
-export const placeholderTarget = '$TARGET$';
-export const placeholderCopypastorLink = '$COPYPASTOR$';
+export const placeholderTarget = /\$TARGET\$/g;
+export const placeholderCopypastorLink = /\$COPYPASTOR\$/g;
 export const nattyAllReportsUrl = 'https://logs.sobotics.org/napi/api/stored/all';
 export const username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
 export const dayMillis = 1000 * 60 * 60 * 24;
@@ -333,8 +333,7 @@ export function getFullComment(name: string, authorName: string): string | null 
 export function getFullFlag(name: string, target: string, postId: number): string | undefined {
     const flagContent = getFlagFromCache(name);
     if (!flagContent) return;
-    return flagContent.replace(new RegExp(placeholderTarget, 'g'), target)
-        .replace(new RegExp(placeholderCopypastorLink, 'g'), getCopypastorLink(postId));
+    return flagContent.replace(placeholderTarget, target).replace(placeholderCopypastorLink, getCopypastorLink(postId));
 }
 
 export function qualifiesForVlq(postScore: number, creationDate: Date): boolean {

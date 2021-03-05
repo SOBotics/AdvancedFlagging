@@ -64,6 +64,7 @@ export const placeholderTarget = '$TARGET$';
 export const placeholderCopypastorLink = '$COPYPASTOR$';
 export const nattyAllReportsUrl = 'https://logs.sobotics.org/napi/api/stored/all';
 export const username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
+export const dayMillis = 1000 * 60 * 60 * 24;
 
 export const ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
 export const ConfigurationDefaultNoFlag = 'AdvancedFlagging.Configuration.DefaultNoFlag';
@@ -148,10 +149,10 @@ export const settingUpBody = 'If you do not wish to connect, press cancel and th
 export const displayStacksToast = (message: string, type: string): void => StackExchange.helpers.showToast(message, { type: type });
 
 export const popupDelay = 4000;
-export const isReviewItemRegex = /(\/review\/next-task)|(\/review\/task-reviewed\/)/;
+export const isReviewItemRegex = /\/review\/(next-task|task-reviewed\/)/;
 export const isDeleteVoteRegex = /(\d+)\/vote\/10|(\d+)\/recommend-delete/;
 export const flagsUrlRegex = /flags\/posts\/\d+\/add\/[a-zA-Z]+/;
-export const getFlagsUrlRegex = (postId: number): RegExp => new RegExp(`/flags/posts/${postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther)`);
+export const getFlagsUrlRegex = (postId: number): RegExp => new RegExp(`/flags/posts/${postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther|PostLowQuality)`);
 
 export const showElement = (element: JQuery): JQuery => element.addClass('d-block').removeClass('d-none');
 export const hideElement = (element: JQuery): JQuery => element.addClass('d-none').removeClass('d-block');
@@ -334,4 +335,8 @@ export function getFullFlag(name: string, target: string, postId: number): strin
     if (!flagContent) return;
     return flagContent.replace(new RegExp(placeholderTarget, 'g'), target)
         .replace(new RegExp(placeholderCopypastorLink, 'g'), getCopypastorLink(postId));
+}
+
+export function qualifiesForVlq(postScore: number, creationDate: Date): boolean {
+    return postScore <= 0 && (new Date().valueOf() - creationDate.valueOf()) < dayMillis;
 }

@@ -86,6 +86,6 @@ export class NattyAPI {
     }
 
     private DaysBetween(first: Date, second: Date): number {
-        return (second.valueOf() - first.valueOf()) / (1000 * 60 * 60 * 24);
+        return (second.valueOf() - first.valueOf()) / globals.dayMillis;
     }
 }

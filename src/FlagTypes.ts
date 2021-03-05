@@ -8,7 +8,7 @@ export interface UserDetails {
 export interface FlagType {
     Id: number;
     DisplayName: string;
-    ReportType: 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther';
+    ReportType: 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther' | 'PostLowQuality';
     Human?: string;
     GetComment?(userDetails: UserDetails): string | null;
     Enabled?(isRepost: boolean): boolean;
@@ -78,7 +78,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 Id: 6,
                 DisplayName: 'Link Only',
-                ReportType: 'AnswerNotAnAnswer',
+                ReportType: 'PostLowQuality',
                 Human: 'as NAA',
                 GetComment: (userDetails): string | null => globals.getFullComment('LinkOnly', userDetails.AuthorName)
             },
@@ -106,7 +106,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 Id: 10,
                 DisplayName: 'Library',
-                ReportType: 'AnswerNotAnAnswer',
+                ReportType: 'PostLowQuality',
                 Human: 'as NAA',
                 GetComment: (userDetails): string | null => globals.getFullComment('Library', userDetails.AuthorName)
             },
@@ -127,7 +127,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 Id: 13,
                 DisplayName: 'Non English',
-                ReportType: 'AnswerNotAnAnswer',
+                ReportType: 'PostLowQuality',
                 Human: 'as NAA',
                 GetComment: (userDetails): string | null => globals.getFullComment('NonEnglish', userDetails.AuthorName)
             },

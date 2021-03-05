@@ -9,7 +9,6 @@ import { GreaseMonkeyCache } from '@userscriptTools/GreaseMonkeyCache';
 import * as globals from './GlobalVars';
 
 declare const StackExchange: globals.StackExchange;
-
 function SetupStyles(): void {
     GM_addStyle(`
 #snackbar {
@@ -60,6 +59,8 @@ function handleFlagAndComment(
     flag: FlagType,
     flagRequired: boolean,
     copypastorApi: CopyPastorAPI,
+    score: number,
+    creationDate: Date,
     commentText?: string | null,
 ): { CommentPromise?: Promise<string>; FlagPromise?: Promise<string>; } {
     const result: {
@@ -90,8 +91,10 @@ function handleFlagAndComment(
                 : null;
 
             autoFlagging = true;
+            const flagName = flag.ReportType === 'PostLowQuality' ?
+                (globals.qualifiesForVlq(score, creationDate) ? 'PostLowQuality' : 'AnswerNotAnAnswer') : flag.ReportType;
             void $.ajax({
-                url: `//${window.location.hostname}/flags/posts/${postId}/add/${flag.ReportType}`,
+                url: `//${window.location.hostname}/flags/posts/${postId}/add/${flagName}`,
                 type: 'POST',
                 data: { fkey: userFkey, otherText: flag.ReportType === 'PostOther' ? flagText : '' }
             }).done(data => {
@@ -300,6 +303,7 @@ function getHumanFromDisplayName(displayName: string): string {
     case 'PostSpam': return 'as spam';
     case 'NoFlag': return '';
     case 'PostOther': return 'for moderator attention';
+    case 'PostLowQuality': return 'as VLQ';
     default: return '';
     }
 }
@@ -346,6 +350,7 @@ function BuildFlaggingDialog(element: JQuery,
     answerTime: Date,
     questionTime: Date,
     deleted: boolean,
+    score: number,
     reportedIcon: JQuery,
     performedActionIcon: JQuery,
     reporters: Reporter[],
@@ -404,7 +409,7 @@ function BuildFlaggingDialog(element: JQuery,
                     }
 
                     try {
-                        const result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), copyPastorApi, commentText);
+                        const result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), copyPastorApi, score, answerTime, commentText);
                         if (result.CommentPromise) await waitForCommentPromise(result.CommentPromise, postId);
                         if (result.FlagPromise) await waitForFlagPromise(result.FlagPromise, reportedIcon, flagType.Human);
                     } catch (err) {
@@ -449,7 +454,7 @@ function BuildFlaggingDialog(element: JQuery,
 
 function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date, questionTime: Date): void {
     const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
-    const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer';
+    const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer' || flagType.ReportType === 'PostLowQuality';
     const customFlag = flagType.ReportType === 'PostOther';
     const noFlag = flagType.ReportType === 'NoFlag';
     reporters.forEach(reporter => {
@@ -514,10 +519,10 @@ function SetupPostPage(): void {
 
                 const flagType = {
                     Id: 0,
-                    ReportType: matches[1] as 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther',
+                    ReportType: matches[1],
                     DisplayName: matches[1],
                     Human: getHumanFromDisplayName(matches[1])
-                };
+                } as FlagType;
 
                 if (!questionTime || !answerTime) return;
                 handleFlag(flagType, reporters, answerTime, questionTime);
@@ -528,7 +533,7 @@ function SetupPostPage(): void {
             if (!linkDisabled && questionTime && answerTime) {
                 const dropDown = BuildFlaggingDialog(
                     post.element, post.postId, post.type, post.authorReputation as number, post.authorName, answerTime,
-                    questionTime, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi
+                    questionTime, deleted, post.score, reportedIcon, performedActionIcon, reporters, copyPastorApi
                 );
 
                 advancedFlaggingLink.append(dropDown);
@@ -624,11 +629,12 @@ async function Setup(): Promise<void> {
         const currentPostDetails = postDetails[postId];
         if (!currentPostDetails || !$('.answers-subheader').length) return;
 
-        handleFlag(
-            { Id: 0, ReportType: 'AnswerNotAnAnswer', DisplayName: 'AnswerNotAnAnswer' },
-            [ setupNattyApi(postId) ],
-            currentPostDetails.answerTime, currentPostDetails.questionTime
-        );
+        const flagType = {
+            Id: 0,
+            ReportType: 'AnswerNotAnAnswer',
+            DisplayName: 'AnswerNotAnAnswer'
+        } as FlagType;
+        handleFlag(flagType, [setupNattyApi(postId)], currentPostDetails.answerTime, currentPostDetails.questionTime);
     });
 }
 

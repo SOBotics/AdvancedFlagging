@@ -394,13 +394,13 @@ function BuildFlaggingDialog(element: JQuery,
 
             dropDown.append(categoryDiv);
 
-            reportLink.click(async () => {
-                let commentText: string | undefined | null;
-                if (flagType.GetComment) {
-                    commentText = flagType.GetComment({ Reputation: reputation, AuthorName: authorName });
-                    reportLink.attr('title', commentText || '');
-                }
+            let commentText: string | undefined | null;
+            if (flagType.GetComment) {
+                commentText = flagType.GetComment({ Reputation: reputation, AuthorName: authorName });
+                reportLink.attr('title', commentText || '');
+            }
 
+            reportLink.click(async () => {
                 if (!deleted) {
                     if (!leaveCommentBox.is(':checked') && commentText) {
                         const strippedComment = getStrippedComment(commentText);

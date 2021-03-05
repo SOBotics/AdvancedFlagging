@@ -227,7 +227,9 @@ function SetupCommentsAndFlagsModal(): void {
         globals.displayStacksToast('Preference updated', 'success');
     });
     $(document).on('click', '.af-expandable-trigger', event => {
-        const element = $(event.target).next();
+        const button = $(event.target);
+        button.text(button.text() === 'Edit' ? 'Hide' : 'Edit');
+        const element = button.next();
         element.hasClass('d-none') ? globals.showElement(element) : globals.hideElement(element);
     });
     $(document).on('click', '.af-submit-content', event => {

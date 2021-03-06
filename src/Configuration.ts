@@ -225,14 +225,12 @@ function SetupCommentsAndFlagsModal(): void {
     $(document).on('change', '.af-author-name', event => {
         GreaseMonkeyCache.StoreInCache(globals.CommentsAddAuthorName, $(event.target).is(':checked'));
         globals.displayStacksToast('Preference updated', 'success');
-    });
-    $(document).on('click', '.af-expandable-trigger', event => {
+    }).on('click', '.af-expandable-trigger', event => {
         const button = $(event.target);
         button.text(button.text() === 'Edit' ? 'Hide' : 'Edit');
         const element = button.next();
         element.hasClass('d-none') ? globals.showElement(element) : globals.hideElement(element);
-    });
-    $(document).on('click', '.af-submit-content', event => {
+    }).on('click', '.af-submit-content', event => {
         const element = $(event.target);
         const contentTextarea = element.next().next().find('textarea');
         const newContent = contentTextarea.val();

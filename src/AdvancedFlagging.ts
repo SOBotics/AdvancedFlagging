@@ -381,12 +381,8 @@ function BuildFlaggingDialog(element: JQuery,
             // https://github.com/SOBotics/AdvancedFlagging/issues/16
             const copypastorIsRepost = copyPastorApi.getIsRepost();
             const copypastorId = copyPastorApi.getCopyPastorId();
-            if (flagType.Enabled) {
-                if (copypastorId && flagType.Enabled(copypastorIsRepost)) globals.showElement(reportLink);
-                else continue;
-            } else {
-                globals.showElement(reportLink);
-            }
+            if (flagType.Enabled(copypastorIsRepost, copypastorId)) globals.showElement(reportLink);
+            else continue;
 
             reportLink.text(flagType.DisplayName);
             dropdownItem.append(reportLink);

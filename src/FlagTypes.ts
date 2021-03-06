@@ -11,7 +11,7 @@ export interface FlagType {
     ReportType: 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther' | 'PostLowQuality';
     Human?: string;
     GetComment?(userDetails: UserDetails): string | null;
-    Enabled?(isRepost: boolean): boolean;
+    Enabled(isRepost: boolean, copypastorId: number): boolean;
     GetCustomFlagText?(target: string, postId: number): string | undefined;
 }
 
@@ -31,13 +31,15 @@ export const flagCategories: FlagCategory[] = [
                 Id: 1,
                 DisplayName: 'Spam',
                 ReportType: 'PostSpam',
-                Human: 'as spam'
+                Human: 'as spam',
+                Enabled: (): boolean => true
             },
             {
                 Id: 2,
                 DisplayName: 'Rude or Abusive',
                 ReportType: 'PostOffensive',
-                Human: 'as R/A'
+                Human: 'as R/A',
+                Enabled: (): boolean => true
             }
         ]
     },
@@ -50,7 +52,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Plagiarism',
                 ReportType: 'PostOther',
                 Human: 'for moderator attention',
-                Enabled: (isRepost): boolean => !isRepost,
+                Enabled: (isRepost, copypastorId): boolean => !isRepost && Boolean(copypastorId),
                 GetCustomFlagText: (target, postId): string | undefined => globals.getFullFlag('Plagiarism', target, postId)
             },
             {
@@ -58,7 +60,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Duplicate answer',
                 ReportType: 'PostOther',
                 Human: 'for moderator attention',
-                Enabled: (isRepost): boolean => isRepost,
+                Enabled: (isRepost, copypastorId): boolean => isRepost && Boolean(copypastorId),
                 GetCustomFlagText: (target, postId): string | undefined => globals.getFullFlag('DuplicateAnswer', target, postId)
             },
             {
@@ -66,7 +68,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Bad attribution',
                 ReportType: 'PostOther',
                 Human: 'for moderator attention',
-                Enabled: (isRepost): boolean => !isRepost,
+                Enabled: (isRepost, copypastorId): boolean => !isRepost && Boolean(copypastorId),
                 GetCustomFlagText: (target, postId): string | undefined => globals.getFullFlag('BadAttribution', target, postId)
             }
         ]
@@ -80,6 +82,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Link Only',
                 ReportType: 'PostLowQuality',
                 Human: 'as NAA',
+                Enabled: (): boolean => globals.isStackOverflow(),
                 GetComment: (userDetails): string | null => globals.getFullComment('LinkOnly', userDetails.AuthorName)
             },
             {
@@ -87,6 +90,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Not an answer',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
+                Enabled: (): boolean => globals.isStackOverflow(),
                 GetComment: (userDetails): string | null => globals.getFullComment(`NAA${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
             },
             {
@@ -94,6 +98,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Thanks',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
+                Enabled: (): boolean => globals.isStackOverflow(),
                 GetComment: (userDetails): string | null => globals.getFullComment(`Thanks${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
             },
             {
@@ -101,6 +106,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Me too',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
+                Enabled: (): boolean => globals.isStackOverflow(),
                 GetComment: (userDetails): string | null => globals.getFullComment('MeToo', userDetails.AuthorName)
             },
             {
@@ -108,6 +114,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Library',
                 ReportType: 'PostLowQuality',
                 Human: 'as NAA',
+                Enabled: (): boolean => globals.isStackOverflow(),
                 GetComment: (userDetails): string | null => globals.getFullComment('Library', userDetails.AuthorName)
             },
             {
@@ -115,6 +122,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Comment',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
+                Enabled: (): boolean => globals.isStackOverflow(),
                 GetComment: (userDetails): string | null => globals.getFullComment(`Comment${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
             },
             {
@@ -122,6 +130,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Duplicate',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
+                Enabled: (): boolean => globals.isStackOverflow(),
                 GetComment: (userDetails): string | null => globals.getFullComment('Duplicate', userDetails.AuthorName)
             },
             {
@@ -129,6 +138,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Non English',
                 ReportType: 'PostLowQuality',
                 Human: 'as NAA',
+                Enabled: (): boolean => globals.isStackOverflow(),
                 GetComment: (userDetails): string | null => globals.getFullComment('NonEnglish', userDetails.AuthorName)
             },
             {
@@ -136,6 +146,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Should be an edit',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
+                Enabled: (): boolean => globals.isStackOverflow(),
                 GetComment: (userDetails): string | null => globals.getFullComment('ShouldBeAnEdit', userDetails.AuthorName)
             }
         ]
@@ -147,17 +158,20 @@ export const flagCategories: FlagCategory[] = [
             {
                 Id: 15,
                 DisplayName: 'Looks Fine',
-                ReportType: 'NoFlag'
+                ReportType: 'NoFlag',
+                Enabled: (): boolean => true
             },
             {
                 Id: 16,
                 DisplayName: 'Needs Editing',
-                ReportType: 'NoFlag'
+                ReportType: 'NoFlag',
+                Enabled: (): boolean => true
             },
             {
                 Id: 17,
                 DisplayName: 'Vandalism',
-                ReportType: 'NoFlag'
+                ReportType: 'NoFlag',
+                Enabled: (): boolean => true
             }
         ]
     }

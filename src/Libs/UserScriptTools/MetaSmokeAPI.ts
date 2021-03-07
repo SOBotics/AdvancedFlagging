@@ -69,7 +69,9 @@ export class MetaSmokeAPI {
                 url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
                 data: {
                     urls: urlString,
-                    key: `${MetaSmokeAPI.appKey}`
+                    key: `${MetaSmokeAPI.appKey}`,
+                    per_page: 1000,
+                    filter: 'GGJFNNKKJFHFKJFLJLGIJMFIHNNJNINJ' // only include id and link fields
                 }
             }).done((metaSmokeResult: MetaSmokeApiWrapper) => {
                 metaSmokeResult.items.forEach(item => {

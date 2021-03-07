@@ -65,6 +65,9 @@ export const placeholderCopypastorLink = /\$COPYPASTOR\$/g;
 export const nattyAllReportsUrl = 'https://logs.sobotics.org/napi/api/stored/all';
 export const username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
 export const dayMillis = 1000 * 60 * 60 * 24;
+const nattyImage = 'https://i.stack.imgur.com/aMUMt.jpg?s=32&g=1';
+const guttenbergImage = 'https://i.stack.imgur.com/tzKAI.png?s=32&g=1';
+const smokeyImage = 'https://i.stack.imgur.com/7cmCt.png?s=32&g=1';
 
 export const ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
 export const ConfigurationDefaultNoFlag = 'AdvancedFlagging.Configuration.DefaultNoFlag';
@@ -84,7 +87,7 @@ export const flags = {
     DuplicateAnswer: 'The answer is a repost of their other answer $TARGET$, but as there are slight differences '
                    + '(see $COPYPASTOR$), an auto flag would not be raised.',
     BadAttribution: 'This post is copied from [another answer]($TARGET$), as can be seen here $COPYPASTOR$. The author only added a link'
-                  + ' to the other answer, which is [not the proper way of attribution](//stackoverflow.blog/2009/06/25/attribution-required/).'
+                  + ' to the other answer, which is [not the proper way of attribution](//stackoverflow.blog/2009/06/25/attribution-required).'
 };
 
 // Auto comments
@@ -170,11 +173,12 @@ const getCopypastorLink = (postId: number): string => `https://copypastor.soboti
 export const getPerformedActionIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.CheckmarkSm().addClass('fc-green-500'));
 export const getReportedIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.Flag().addClass('fc-red-500'));
 
-const sampleIconClass = $('<div>').attr('class', 'advanced-flagging-icon bg-cover c-pointer w16 h16 d-none va-middle');
-sampleIconClass.addClass(/\/users\/flag-summary/.exec(window.location.href) ? 'mx4' : 'm4');
-export const getNattyIcon = (): JQuery => sampleIconClass.clone().attr('title', 'Reported by Natty').addClass('advanced-flagging-natty-icon');
-export const getGuttenbergIcon = (): JQuery => sampleIconClass.clone().attr('title', 'Reported by Guttenberg').addClass('advanced-flagging-gut-icon');
-export const getSmokeyIcon = (): JQuery => sampleIconClass.clone().attr('title', 'Reported by Smokey').addClass('advanced-flagging-smokey-icon');
+const sampleIcon = $('<a>').attr('class', 's-avatar s-avatar__16 s-user-card--avatar d-none')
+    .addClass(/\/users\/flag-summary/.exec(window.location.href) ? 'mx4' : 'm4')
+    .append($('<img>').addClass('s-avatar--image'));
+export const getNattyIcon = (): JQuery => sampleIcon.clone().attr('title', 'Reported by Natty').find('img').attr('src', nattyImage).parent();
+export const getGuttenbergIcon = (): JQuery => sampleIcon.clone().attr('title', 'Reported by Guttenberg').find('img').attr('src', guttenbergImage).parent();
+export const getSmokeyIcon = (): JQuery => sampleIcon.clone().attr('title', 'Reported by Smokey').find('img').attr('src', smokeyImage).parent();
 
 export const getMessageDiv = (message: string, state: string): JQuery => $('<div>').attr('class', 'p12 bg-' + state).text(message);
 export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').attr('class', `grid gs8 gsy fd-column af-section-${name.toLowerCase()}`)

@@ -35,18 +35,6 @@ function SetupStyles(): void {
     min-width: 10rem !important;
 }
 
-.advanced-flagging-natty-icon {
-    background-image: url("https://i.stack.imgur.com/aMUMt.jpg?s=128&g=1");
-}
-
-.advanced-flagging-gut-icon {
-    background-image: url("https://i.stack.imgur.com/A0JRA.png?s=128&g=1");
-}
-
-.advanced-flagging-smokey-icon {
-    background-image: url("https://i.stack.imgur.com/7cmCt.png?s=128&g=1");
-}
-
 #af-comments textarea {
     width: calc(100% - 15px);
     resize: vertical;
@@ -198,7 +186,10 @@ function showComments(postId: number, data: string): void {
 function setupNattyApi(postId: number, nattyIcon?: JQuery): Reporter {
     const nattyApi = new NattyAPI(postId);
     const isReported = nattyApi.WasReported();
-    if (nattyIcon) isReported ? globals.showInlineElement(nattyIcon) : nattyIcon.addClass('d-none');
+    if (nattyIcon && isReported) {
+        globals.showInlineElement(nattyIcon);
+        nattyIcon.attr('href', `//sentinel.erwaysoftware.com/posts/aid/${postId}`).attr('target', '_blank');
+    }
 
     return {
         name: 'Natty',
@@ -229,10 +220,8 @@ function setupGenericBotApi(postId: number): Reporter {
 function setupMetasmokeApi(postId: number, postType: 'Answer' | 'Question', smokeyIcon: JQuery): Reporter {
     const metaSmoke = new MetaSmokeAPI();
     const isReported = MetaSmokeAPI.getSmokeyId(postId);
-    if (!isReported) {
-        smokeyIcon.addClass('d-none');
-    } else {
-        smokeyIcon.click(() => window.open(`https://metasmoke.erwaysoftware.com/post/${isReported}`, '_blank'));
+    if (isReported) {
+        smokeyIcon.attr('href', `https://metasmoke.erwaysoftware.com/post/${isReported}`).attr('target', '_blank');
         globals.showInlineElement(smokeyIcon);
     }
 
@@ -251,11 +240,8 @@ function setupMetasmokeApi(postId: number, postType: 'Answer' | 'Question', smok
 function setupGuttenbergApi(copyPastorApi: CopyPastorAPI, copyPastorIcon: JQuery): Reporter {
     const copypastorId = copyPastorApi.getCopyPastorId();
     if (copypastorId) {
-        copyPastorIcon.attr('Title', 'Reported by CopyPastor.');
         globals.showInlineElement(copyPastorIcon);
-        copyPastorIcon.click(() => window.open(`https://copypastor.sobotics.org/posts/${copypastorId}`));
-    } else {
-        copyPastorIcon.addClass('d-none');
+        copyPastorIcon.attr('href', `https://copypastor.sobotics.org/posts/${copypastorId}`).attr('target', '_blank');
     }
 
     return {
@@ -484,7 +470,7 @@ function SetupPostPage(): void {
         const advancedFlaggingLink: JQuery = globals.advancedFlaggingLink.clone();
         if (post.page === 'Question') iconLocation.append(globals.gridCellDiv.clone().append(advancedFlaggingLink));
 
-        const nattyIcon = globals.getNattyIcon().click(() => window.open(`//sentinel.erwaysoftware.com/posts/aid/${post.postId}`, '_blank'));
+        const nattyIcon = globals.getNattyIcon();
         const copyPastorIcon = globals.getGuttenbergIcon();
         const smokeyIcon = globals.getSmokeyIcon();
         const copyPastorApi = new CopyPastorAPI(post.postId);

@@ -1,5 +1,4 @@
 import { ChatApi } from '@userscriptTools/ChatApi';
-import { getAllAnswerIds } from '@userscriptTools/sotools';
 import * as globals from '../../GlobalVars';
 
 interface NattyFeedback {
@@ -36,7 +35,7 @@ export class NattyAPI {
 
                     const result = JSON.parse(response.responseText) as NattyFeedback;
                     const allStoredIds = result.items.map((item: NattyFeedbackItem) => Number(item.name));
-                    const answerIds = getAllAnswerIds();
+                    const answerIds = globals.getAllPostIds(false, false) as number[];
                     this.nattyIds = answerIds.filter(id => allStoredIds.includes(id));
                     resolve();
                 },

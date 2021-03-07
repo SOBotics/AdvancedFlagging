@@ -466,7 +466,7 @@ function SetupPostPage(): void {
 
         const iconLocation: JQuery = post.page === 'Question'
             ? post.element.find('.js-post-menu').children().first()
-            : post.element.find(`a.${post.element.children().first().hasClass('answer-summary') ? 'question' : 'answer'}-hyperlink`);
+            : post.element.find(`a.${post.type === 'Question' ? 'question' : 'answer'}-hyperlink`);
         const advancedFlaggingLink: JQuery = globals.advancedFlaggingLink.clone();
         if (post.page === 'Question') iconLocation.append(globals.gridCellDiv.clone().append(advancedFlaggingLink));
 

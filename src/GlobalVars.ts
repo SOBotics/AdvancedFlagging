@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { displayToaster } from './AdvancedFlagging';
-import { MetaSmokeAPI } from '@userscriptTools/MetaSmokeAPI';
 import { GreaseMonkeyCache } from '@userscriptTools/GreaseMonkeyCache';
 
 declare const StackExchange: StackExchange;
@@ -310,27 +309,20 @@ export function addXHRListener(callback: (request: XMLHttpRequest) => void): voi
     initialized = true;
 }
 
-export function getPostUrlsFromQuestionPage(): string[] {
-    return $('.question, .answer').get().map(el => {
-        const postType = $(el).attr('data-questionid') ? 'Question' : 'Answer';
-        const urlToReturn = MetaSmokeAPI.GetQueryUrl(Number($(el).attr('data-questionid') || $(el).attr('data-answerid')), postType);
-        return urlToReturn;
-    });
-}
-
-export function getPostUrlsFromFlagsPage(): (string | undefined)[] {
-    return $('.flagged-post').get().map(el => {
-        const postType = $(el).find('.answer-hyperlink').length ? 'Answer' : 'Question';
-        const elementHref = $(el).find(`.${postType.toLowerCase()}-hyperlink`).attr('href');
-        if (!elementHref) return;
-
-        const urlToReturn = MetaSmokeAPI.GetQueryUrl(Number(
-            postType === 'Answer'
-                ? elementHref.split('#')[1]
-                : elementHref.split('/')[2]
-        ), postType);
-        return urlToReturn;
-    });
+export function getAllPostIds(includeQuestion: boolean, urlForm: boolean): (number | string)[] {
+    return $(isQuestionPage() ? '.question, .answer' : '.flagged-post').get().map(item => {
+        const el = $(item);
+        const postType = (isQuestionPage() ? el.attr('data-questionid') : el.find('.question-hyperlink').length) ? 'Question' : 'Answer';
+        if (!includeQuestion && postType === 'Question') return 0;
+        const elementHref = el.find(`.${postType.toLowerCase()}-hyperlink`).attr('href');
+        let postId: number;
+        if (elementHref) { // We're on flags page. We have to fetch the post id from the post URL
+            postId = Number(postType === 'Answer' ? elementHref.split('#')[1] : elementHref.split('/')[2]);
+        } else { // instead, on the question page, the element has a data-questionid or data-answerid attribute with the post id
+            postId = Number(el.attr('data-questionid') || el.attr('data-answerid'));
+        }
+        return urlForm ? `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'questions'}/${postId}` : postId;
+    }).filter(postId => postId); // remove null/empty values
 }
 
 // For GetComment() on FlagTypes. Adds the author name before the comment if the option is enabled

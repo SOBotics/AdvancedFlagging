@@ -56,7 +56,7 @@ export class MetaSmokeAPI {
     };
 
     public static QueryMetaSmokeInternal(): Promise<void> | undefined {
-        const urls = globals.isQuestionPage() ? globals.getPostUrlsFromQuestionPage() : globals.getPostUrlsFromFlagsPage();
+        const urls = globals.getAllPostIds(true, true);
         const urlString = urls.join(',');
 
         const isDisabled = MetaSmokeAPI.IsDisabled();

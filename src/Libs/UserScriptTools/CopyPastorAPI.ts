@@ -1,6 +1,5 @@
 import { ChatApi } from '@userscriptTools/ChatApi';
 import * as globals from '../../GlobalVars';
-import { getAllAnswerIds } from '@userscriptTools/sotools';
 
 export interface CopyPastorFindTargetResponseItem {
     post_id: string;
@@ -28,14 +27,13 @@ export class CopyPastorAPI {
     public static async getAllCopyPastorIds(): Promise<void> {
         if (!globals.isStackOverflow()) return;
 
-        const answerIds = getAllAnswerIds();
-        await this.storeReportedPosts(answerIds);
+        const postUrls = globals.getAllPostIds(false, false);
+        await this.storeReportedPosts(postUrls as string[]);
     }
 
-    private static storeReportedPosts(postIds: number[]): Promise<void> {
+    private static storeReportedPosts(postUrls: string[]): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            const answerUrls = postIds.map(postId => `//${window.location.hostname}/a/${postId}`).join(',');
-            const url = `${globals.copyPastorServer}/posts/findTarget?url=${answerUrls}`;
+            const url = `${globals.copyPastorServer}/posts/findTarget?url=${postUrls.join(',')}`;
             GM_xmlhttpRequest({
                 method: 'GET',
                 url,

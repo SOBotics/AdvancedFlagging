@@ -408,7 +408,7 @@ function BuildFlaggingDialog(element: JQuery,
                 globals.hideElement(dropDown); // hide the dropdown after clicking one of the options
             });
         }
-        if (categoryDiv.html()) dropDown.append(globals.getDivider()); // at least one option exists for the category
+        if (categoryDiv.html()) dropDown.append(globals.divider.clone()); // at least one option exists for the category
     }
 
     if (isStackOverflow) {
@@ -470,9 +470,9 @@ function SetupPostPage(): void {
         const advancedFlaggingLink: JQuery = globals.advancedFlaggingLink.clone();
         if (post.page === 'Question') iconLocation.append(globals.gridCellDiv.clone().append(advancedFlaggingLink));
 
-        const nattyIcon = globals.getNattyIcon();
-        const copyPastorIcon = globals.getGuttenbergIcon();
-        const smokeyIcon = globals.getSmokeyIcon();
+        const nattyIcon = globals.nattyIcon.clone();
+        const copyPastorIcon = globals.guttenbergIcon.clone();
+        const smokeyIcon = globals.smokeyIcon.clone();
         const copyPastorApi = new CopyPastorAPI(post.postId);
 
         const reporters: Reporter[] = [];
@@ -483,8 +483,8 @@ function SetupPostPage(): void {
         }
         reporters.push(setupMetasmokeApi(post.postId, post.type, smokeyIcon));
 
-        const performedActionIcon = globals.getPerformedActionIcon();
-        const reportedIcon = globals.getReportedIcon();
+        const performedActionIcon = globals.performedActionIcon();
+        const reportedIcon = globals.reportedIcon();
 
         if (post.page === 'Question') {
             // Now we setup the flagging dialog

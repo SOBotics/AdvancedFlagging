@@ -6,6 +6,7 @@ import { GreaseMonkeyCache } from '@userscriptTools/GreaseMonkeyCache';
 declare const StackExchange: StackExchange;
 declare const Svg: Svg;
 
+// StackExchange objects
 export interface Svg {
     CheckmarkSm(): JQuery;
     ClearSm(): JQuery;
@@ -45,6 +46,7 @@ interface ModalType {
     buttonLabel: string;
 }
 
+// For comment and flag information acquired from cache
 interface AllFlags {
     flagName: string;
     content: string | null;
@@ -55,6 +57,7 @@ interface AllComments {
     content: string | null;
 }
 
+// Constants
 export const soboticsRoomId = 111347;
 export const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
 export const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
@@ -65,10 +68,14 @@ export const placeholderCopypastorLink = /\$COPYPASTOR\$/g;
 export const nattyAllReportsUrl = 'https://logs.sobotics.org/napi/api/stored/all';
 export const username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
 export const dayMillis = 1000 * 60 * 60 * 24;
+export const settingUpTitle = 'Setting up MetaSmoke';
+export const settingUpBody = 'If you do not wish to connect, press cancel and this popup won\'t show up again. '
+                           + 'To reset configuration, see the footer of Stack Overflow.';
 const nattyImage = 'https://i.stack.imgur.com/aMUMt.jpg?s=32&g=1';
 const guttenbergImage = 'https://i.stack.imgur.com/tzKAI.png?s=32&g=1';
 const smokeyImage = 'https://i.stack.imgur.com/7cmCt.png?s=32&g=1';
 
+// Cache keys
 export const ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
 export const ConfigurationDefaultNoFlag = 'AdvancedFlagging.Configuration.DefaultNoFlag';
 export const ConfigurationDefaultNoComment = 'AdvancedFlagging.Configuration.DefaultNoComment';
@@ -135,6 +142,7 @@ export const comments = {
     ShouldBeAnEdit: 'Please use the edit link on your question to add additional information. '
                   + 'The "Post Answer" button should be used only for complete answers to the question.'
 };
+// helper functions for retrieving flags & comments from cache
 export const getCommentKey = (name: string): string => 'AdvancedFlagging.Configuration.Comments.' + name;
 export const getFlagKey = (name: string): string => 'AdvancedFlagging.Configuration.Flags.' + name;
 export const getCommentFromCache = (name: string): string | null => GreaseMonkeyCache.GetFromCache(getCommentKey(name));
@@ -145,18 +153,16 @@ export const storeFlagsInCache = (array: string[]): void => GreaseMonkeyCache.St
 export const getAllFlags = (): AllFlags[] => Object.keys(flags).map(item => ({ flagName: item, content: getFlagFromCache(item) }));
 export const getAllComments = (): AllComments[] => Object.keys(comments).map(item => ({ commentName: item, content: getCommentFromCache(item) }));
 
-export const settingUpTitle = 'Setting up MetaSmoke';
-export const settingUpBody = 'If you do not wish to connect, press cancel and this popup won\'t show up again. '
-                           + 'To reset configuration, see the footer of Stack Overflow.';
-
 export const displayStacksToast = (message: string, type: string): void => StackExchange.helpers.showToast(message, { type: type });
 
+// regexes
 export const popupDelay = 4000;
 export const isReviewItemRegex = /\/review\/(next-task|task-reviewed\/)/;
 export const isDeleteVoteRegex = /(\d+)\/vote\/10|(\d+)\/recommend-delete/;
 export const flagsUrlRegex = /flags\/posts\/\d+\/add\/[a-zA-Z]+/;
 export const getFlagsUrlRegex = (postId: number): RegExp => new RegExp(`/flags/posts/${postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther|PostLowQuality)`);
 
+// helper functions
 export const showElement = (element: JQuery): JQuery => element.addClass('d-block').removeClass('d-none');
 export const hideElement = (element: JQuery): JQuery => element.addClass('d-none').removeClass('d-block');
 export const showInlineElement = (element: JQuery): JQuery => element.addClass('d-inline-block').removeClass('d-none');
@@ -170,20 +176,18 @@ export const isFlagsPage = (): boolean => Boolean(/\/users\/flag-summary\//.exec
 export const isUserPage = (): boolean => Boolean(/\/users\/\d+.*/.exec(window.location.href));
 const getCopypastorLink = (postId: number): string => `https://copypastor.sobotics.org/posts/${postId}`;
 
-export const getPerformedActionIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.CheckmarkSm().addClass('fc-green-500'));
-export const getReportedIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.Flag().addClass('fc-red-500'));
-
+// jQuery icon elements
 const sampleIcon = $('<a>').attr('class', 's-avatar s-avatar__16 s-user-card--avatar d-none')
     .addClass(/\/users\/flag-summary/.exec(window.location.href) ? 'mx4' : 'm4')
     .append($('<img>').addClass('s-avatar--image'));
-export const getNattyIcon = (): JQuery => sampleIcon.clone().attr('title', 'Reported by Natty').find('img').attr('src', nattyImage).parent();
-export const getGuttenbergIcon = (): JQuery => sampleIcon.clone().attr('title', 'Reported by Guttenberg').find('img').attr('src', guttenbergImage).parent();
-export const getSmokeyIcon = (): JQuery => sampleIcon.clone().attr('title', 'Reported by Smokey').find('img').attr('src', smokeyImage).parent();
+export const nattyIcon = sampleIcon.clone().attr('title', 'Reported by Natty').find('img').attr('src', nattyImage).parent();
+export const guttenbergIcon = sampleIcon.clone().attr('title', 'Reported by Guttenberg').find('img').attr('src', guttenbergImage).parent();
+export const smokeyIcon = sampleIcon.clone().attr('title', 'Reported by Smokey').find('img').attr('src', smokeyImage).parent();
 
+// dynamically generated jQuery elements based on the parameters passed
 export const getMessageDiv = (message: string, state: string): JQuery => $('<div>').attr('class', 'p12 bg-' + state).text(message);
 export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').attr('class', `grid gs8 gsy fd-column af-section-${name.toLowerCase()}`)
     .html(`<h2 class="grid--cell">${name}</h2>`);
-export const getDivider = (): JQuery => $('<hr>').attr('class', 'my8');
 export const getOptionBox = (name: string): JQuery => $('<input>').attr('type', 'checkbox').attr('name', name).attr('id', name).attr('class', 's-checkbox');
 export const getCategoryDiv = (red: boolean): JQuery => $('<div>').attr('class', `advanced-flagging-category bar-md${red ? ' bg-red-200' : ''}`);
 export const getOptionLabel = (text: string, name: string): JQuery =>
@@ -196,6 +200,9 @@ export const getConfigHtml = (optionId: string, text: string): JQuery => $(`
   </div>
 </div>`);
 
+export const performedActionIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.CheckmarkSm().addClass('fc-green-500'));
+export const reportedIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.Flag().addClass('fc-red-500'));
+export const divider = $('<hr>').attr('class', 'my8');
 export const popupWrapper = $('<div>').attr('id', 'snackbar')
     .attr('class', 'hide fc-white p16 fs-body3 ps-fixed ta-center z-popover l50 t32 wmn2');
 export const dropDown = $('<div>').attr('class', 'advanced-flagging-dialog s-popover s-anchors s-anchors__default p6 mt2 c-default d-none');

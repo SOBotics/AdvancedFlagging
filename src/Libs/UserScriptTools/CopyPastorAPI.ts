@@ -27,7 +27,7 @@ export class CopyPastorAPI {
     public static async getAllCopyPastorIds(): Promise<void> {
         if (!globals.isStackOverflow()) return;
 
-        const postUrls = globals.getAllPostIds(false, false);
+        const postUrls = globals.getAllPostIds(false, true);
         await this.storeReportedPosts(postUrls as string[]);
     }
 

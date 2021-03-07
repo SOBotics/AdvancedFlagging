@@ -1,6 +1,8 @@
 import { GreaseMonkeyCache } from '@userscriptTools/GreaseMonkeyCache';
 import * as globals from '../../GlobalVars';
 
+declare const StackExchange: globals.StackExchange;
+
 interface MetaSmokeApiItem {
     id: number;
     link: string;
@@ -89,6 +91,10 @@ export class MetaSmokeAPI {
     }
 
     private static async getUserKey(): Promise<string> {
+        while (typeof StackExchange.helpers.showConfirmModal === 'undefined') {
+            // eslint-disable-next-line no-await-in-loop
+            await globals.Delay(100);
+        }
         return await GreaseMonkeyCache.GetAndCache(globals.MetaSmokeUserKeyConfig, () => new Promise<string>((resolve, reject) => {
             MetaSmokeAPI.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeAPI.appKey}`).then(code => {
                 if (!code) return;

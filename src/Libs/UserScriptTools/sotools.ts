@@ -12,7 +12,7 @@ export interface QuestionQuestion {
     score: number;
     authorReputation?: number;
     authorName: string;
-    authorId?: number;
+    // authorId?: number;
 }
 export interface QuestionAnswer {
     type: 'Answer';
@@ -24,7 +24,7 @@ export interface QuestionAnswer {
     score: number;
     authorReputation?: number;
     authorName: string;
-    authorId?: number;
+    // authorId?: number;
 }
 export interface NatoAnswer {
     type: 'Answer';
@@ -35,7 +35,7 @@ export interface NatoAnswer {
     questionTime: Date;
     authorReputation?: number;
     authorName: string;
-    authorId?: number;
+    // authorId?: number;
 }
 
 export interface FlagPageInfo {
@@ -43,13 +43,13 @@ export interface FlagPageInfo {
     element: JQuery;
     page: 'Flags';
     postId: number;
-    score: number;
+    // score: number;
     postTime: Date;
-    handledTime: Date;
-    handledResult: string;
-    handledComment: string;
+    // handledTime: Date;
+    // handledResult: string;
+    // handledComment: string;
     authorName: string;
-    authorId?: number;
+    // authorId?: number;
 }
 
 export interface GenericPageInfo {
@@ -75,14 +75,14 @@ function parseNatoPage(callback: (post: NatoAnswer) => void): void {
         const answerHref = node.find('.answer-hyperlink').attr('href');
         if (!answerHref) return;
 
-        const postId = parseInt(answerHref.split('#')[1], 10);
+        const postId = Number(answerHref.split('#')[1]);
 
         const answerTime = parseActionDate(node.find('.user-action-time'));
         const questionTime = parseActionDate(node.find('td .relativetime'));
         if (!answerTime || !questionTime) return;
 
         const authorReputation = parseReputation(node.find('.reputation-score'));
-        const { authorName, authorId } = parseAuthorDetails(node.find('.user-details'));
+        const { authorName, /*authorId*/ } = parseAuthorDetails(node.find('.user-details'));
 
         callback({
             type: 'Answer' as const,
@@ -93,26 +93,26 @@ function parseNatoPage(callback: (post: NatoAnswer) => void): void {
             questionTime,
             authorReputation,
             authorName,
-            authorId,
+            // authorId,
         });
     });
 }
 
 function getPostDetails(node: JQuery): { score: number, authorReputation?: number, authorName: string, authorId?: number, postTime: Date | null } {
-    const score = parseInt(node.find('.js-vote-count').text(), 10);
+    const score = Number(node.find('.js-vote-count').text());
 
     const authorReputation = parseReputation(node.find('.user-info .reputation-score').last());
-    const { authorName, authorId } = parseAuthorDetails(node.find('.user-info .user-details').last());
+    const { authorName, /*authorId*/ } = parseAuthorDetails(node.find('.user-info .user-details').last());
 
     const postTime = parseActionDate(node.find('.user-info .relativetime').last());
-    return { score, authorReputation, authorName, authorId, postTime };
+    return { score, authorReputation, authorName, /*authorId,*/ postTime };
 }
 
 function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) => void, question: QuestionQuestion): void {
     const answerIdString = aNode.attr('data-answerid');
     if (!answerIdString) return;
 
-    const answerId = parseInt(answerIdString, 10);
+    const answerId = Number(answerIdString);
     const postDetails = getPostDetails(aNode);
     if (!postDetails.postTime) return;
 
@@ -133,7 +133,7 @@ function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) =>
         score: postDetails.score,
         authorReputation: postDetails.authorReputation,
         authorName: postDetails.authorName,
-        authorId: postDetails.authorId
+        // authorId: postDetails.authorId
     });
 }
 
@@ -143,7 +143,7 @@ function parseQuestionPage(callback: (post: QuestionPageInfo) => void): void {
         const questionIdString = qNode.attr('data-questionid');
         if (!questionIdString) return;
 
-        const postId = parseInt(questionIdString, 10);
+        const postId = Number(questionIdString);
         const postDetails = getPostDetails(qNode);
         if (!postDetails.postTime) return;
 
@@ -163,7 +163,7 @@ function parseQuestionPage(callback: (post: QuestionPageInfo) => void): void {
             score: postDetails.score,
             authorReputation: postDetails.authorReputation,
             authorName: postDetails.authorName,
-            authorId: postDetails.authorId
+            // authorId: postDetails.authorId
         };
         callback(question);
     };
@@ -180,35 +180,29 @@ function parseFlagsPage(callback: (post: FlagPageInfo) => void): void {
         const elementHref = node.find(`.${type.toLowerCase()}-hyperlink`).attr('href');
         if (!elementHref) return;
 
-        const postId =
-            parseInt(
-                type === 'Answer'
-                    ? elementHref.split('#')[1]
-                    : elementHref.split('/')[2]
-                , 10);
-        const score = parseInt(node.find('.answer-votes').text(), 10);
-
-        const { authorName, authorId } = parseAuthorDetails(node.find('.post-user-info'));
+        const postId = Number(type === 'Answer' ? elementHref.split('#')[1] : elementHref.split('/')[2]);
+        const { authorName, /* authorId */ } = parseAuthorDetails(node.find('.post-user-info'));
         const postTime = parseActionDate(node.find('.post-user-info .relativetime'));
-        const handledTime = parseActionDate(node.find('.mod-flag .relativetime'));
-        if (!postTime || !handledTime) return;
+        //const handledTime = parseActionDate(node.find('.mod-flag .relativetime'));
+        if (!postTime /* || !handledTime */) return;
 
-        const fullHandledResult = node.find('.flag-outcome').text().trim().split(' - ');
-        const handledResult = fullHandledResult[0].trim();
-        const handledComment = fullHandledResult.slice(1).join(' - ').trim();
+        // const fullHandledResult = node.find('.flag-outcome').text().trim().split(' - ');
+        // const handledResult = fullHandledResult[0].trim();
+        // const handledComment = fullHandledResult.slice(1).join(' - ').trim();
+        // const score = Number(node.find('.answer-votes').text());
 
         callback({
             type: type,
             element: node,
             page: 'Flags' as const,
             postId,
-            score,
+            // score,
             postTime,
-            handledTime,
-            handledResult,
-            handledComment,
+            // handledTime,
+            // handledResult,
+            // handledComment,
             authorName,
-            authorId
+            // authorId
         });
     });
 }
@@ -223,7 +217,7 @@ function parseGenericPage(callback: (post: GenericPageInfo) => void): void {
         if (fragment.indexOf('_') >= 0) {
             fragment = fragment.split('_')[1];
         }
-        const postId = parseInt(fragment, 10);
+        const postId = Number(fragment);
 
         callback({
             type: 'Question' as const,
@@ -242,7 +236,7 @@ function parseGenericPage(callback: (post: GenericPageInfo) => void): void {
         if (fragment.indexOf('_') >= 0) {
             fragment = fragment.split('_')[1];
         }
-        const postId = parseInt(fragment, 10);
+        const postId = Number(fragment);
 
         callback({
             type: 'Answer' as const,
@@ -275,18 +269,18 @@ function parseReputation(reputationDiv: JQuery): number {
     }
     reputationText = reputationText.replace(',', '');
 
-    return parseInt(reputationText, 10);
+    return Number(reputationText);
 }
 
 function parseAuthorDetails(authorDiv: JQuery): { authorName: string, authorId?: number } {
     const userLink = authorDiv.find('a');
     const authorName = userLink.text();
-    const userLinkRef = userLink.attr('href');
-    let authorId: number | undefined;
+    // const userLinkRef = userLink.attr('href');
+    // let authorId: number | undefined;
     // Users can be deleted, and thus have no link to their profile.
-    if (userLinkRef) authorId = parseInt(userLinkRef.split('/')[2], 10);
+    // if (userLinkRef) authorId = Number(userLinkRef.split('/')[2]);
 
-    return { authorName, authorId };
+    return { authorName, /* authorId */ };
 }
 
 function parseActionDate(actionDiv: JQuery): Date | null {

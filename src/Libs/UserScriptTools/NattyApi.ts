@@ -52,36 +52,36 @@ export class NattyAPI {
     }
 
     public async ReportNaa(answerDate: Date, questionDate: Date): Promise<boolean> {
-        if (answerDate < questionDate || !globals.isStackOverflow()) return false;
+        if (answerDate < questionDate) return false;
 
         if (this.WasReported()) {
-            await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
+            await this.chat.SendMessage(`${this.feedbackMessage} tp`);
             return true;
         } else {
             const answerAge = this.DaysBetween(answerDate, new Date());
             const daysPostedAfterQuestion = this.DaysBetween(questionDate, answerDate);
             if (isNaN(answerAge) || isNaN(daysPostedAfterQuestion) || answerAge > 30 || daysPostedAfterQuestion < 30) return false;
 
-            await this.chat.SendMessage(globals.soboticsRoomId, this.reportMessage);
+            await this.chat.SendMessage(this.reportMessage);
             return true;
         }
     }
 
     public async ReportRedFlag(): Promise<boolean> {
-        if (!globals.isStackOverflow() || !this.WasReported()) return false;
-        await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} tp`);
+        if (!this.WasReported()) return false;
+        await this.chat.SendMessage(`${this.feedbackMessage} tp`);
         return true;
     }
 
     public async ReportLooksFine(): Promise<boolean> {
-        if (!globals.isStackOverflow() || !this.WasReported()) return false;
-        await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} fp`);
+        if (!this.WasReported()) return false;
+        await this.chat.SendMessage(`${this.feedbackMessage} fp`);
         return true;
     }
 
     public async ReportNeedsEditing(): Promise<boolean> {
-        if (!globals.isStackOverflow() || !this.WasReported()) return false;
-        await this.chat.SendMessage(globals.soboticsRoomId, `${this.feedbackMessage} ne`);
+        if (!this.WasReported()) return false;
+        await this.chat.SendMessage(`${this.feedbackMessage} ne`);
         return true;
     }
 

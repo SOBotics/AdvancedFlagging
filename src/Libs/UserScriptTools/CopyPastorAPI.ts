@@ -32,24 +32,6 @@ export class CopyPastorAPI {
         await this.storeReportedPosts(answerIds);
     }
 
-    private static getIsReportOrPlagiarism(answerId: string): Promise<boolean> {
-        return new Promise<boolean>(resolve => {
-            if (!answerId) resolve(false);
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url: `${globals.copyPastorServer}/posts/${answerId}`,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onload: (response: { responseText: string }) => {
-                    const responseParsed = $(response.responseText);
-                    resolve(Boolean(/Reposted/.exec(responseParsed.text())));
-                },
-                onerror: () => {
-                    resolve(false);
-                },
-            });
-        });
-    }
-
     private static storeReportedPosts(postIds: number[]): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             const answerUrls = postIds.map(postId => `//${window.location.hostname}/a/${postId}`).join(',');

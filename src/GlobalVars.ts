@@ -178,7 +178,7 @@ const getCopypastorLink = (postId: number): string => `https://copypastor.soboti
 
 // jQuery icon elements
 const sampleIcon = $('<a>').attr('class', 's-avatar s-avatar__16 s-user-card--avatar d-none')
-    .addClass(/\/users\/flag-summary/.exec(window.location.href) ? 'mx4' : 'm4')
+    .addClass(/\/users\/flag-summary/.exec(window.location.href) ? 'mx4 my2' : 'm4')
     .append($('<img>').addClass('s-avatar--image'));
 export const nattyIcon = sampleIcon.clone().attr('title', 'Reported by Natty').find('img').attr('src', nattyImage).parent();
 export const guttenbergIcon = sampleIcon.clone().attr('title', 'Reported by Guttenberg').find('img').attr('src', guttenbergImage).parent();

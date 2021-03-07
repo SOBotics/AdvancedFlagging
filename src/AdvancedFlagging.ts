@@ -219,9 +219,9 @@ function setupGenericBotApi(postId: number): Reporter {
 
 function setupMetasmokeApi(postId: number, postType: 'Answer' | 'Question', smokeyIcon: JQuery): Reporter {
     const metaSmoke = new MetaSmokeAPI();
-    const isReported = MetaSmokeAPI.getSmokeyId(postId);
-    if (isReported) {
-        smokeyIcon.attr('href', `https://metasmoke.erwaysoftware.com/post/${isReported}`).attr('target', '_blank');
+    const smokeyId = MetaSmokeAPI.getSmokeyId(postId);
+    if (smokeyId) {
+        smokeyIcon.attr('href', `https://metasmoke.erwaysoftware.com/post/${smokeyId}`).attr('target', '_blank');
         globals.showInlineElement(smokeyIcon);
     }
 
@@ -367,9 +367,9 @@ function BuildFlaggingDialog(element: JQuery,
             // https://github.com/SOBotics/AdvancedFlagging/issues/16
             const copypastorIsRepost = copyPastorApi.getIsRepost();
             const copypastorId = copyPastorApi.getCopyPastorId();
-            if (flagType.Enabled(copypastorIsRepost, copypastorId)) globals.showElement(reportLink);
-            else continue;
+            if (!flagType.Enabled(copypastorIsRepost, copypastorId)) continue;
 
+            globals.showElement(reportLink);
             reportLink.text(flagType.DisplayName);
             dropdownItem.append(reportLink);
             categoryDiv.append(dropdownItem);
@@ -476,7 +476,7 @@ function SetupPostPage(): void {
         const copyPastorApi = new CopyPastorAPI(post.postId);
 
         const reporters: Reporter[] = [];
-        if (post.type === 'Answer') {
+        if (post.type === 'Answer' && globals.isStackOverflow()) {
             reporters.push(setupNattyApi(post.postId, nattyIcon));
             reporters.push(setupGenericBotApi(post.postId));
             reporters.push(setupGuttenbergApi(copyPastorApi, copyPastorIcon));
@@ -511,46 +511,35 @@ function SetupPostPage(): void {
                 displaySuccessFlagged(reportedIcon, flagType.Human);
             });
 
+            iconLocation.append(performedActionIcon, reportedIcon, nattyIcon, copyPastorIcon, smokeyIcon);
+
             const linkDisabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationLinkDisabled);
-            if (!linkDisabled && questionTime && answerTime) {
-                const dropDown = BuildFlaggingDialog(
-                    post.element, post.postId, post.type, post.authorReputation as number, post.authorName, answerTime,
-                    questionTime, deleted, post.score, reportedIcon, performedActionIcon, reporters, copyPastorApi
-                );
+            if (linkDisabled || !questionTime || !answerTime) return;
+            const dropDown = BuildFlaggingDialog(
+                post.element, post.postId, post.type, post.authorReputation as number, post.authorName, answerTime,
+                questionTime, deleted, post.score, reportedIcon, performedActionIcon, reporters, copyPastorApi
+            );
 
-                advancedFlaggingLink.append(dropDown);
+            advancedFlaggingLink.append(dropDown);
 
-                const openOnHover = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationOpenOnHover);
-
-                if (openOnHover) {
-                    advancedFlaggingLink.hover(event => {
-                        event.stopPropagation();
-                        if (event.target === advancedFlaggingLink.get(0)) globals.showElement(dropDown);
-                    });
-                    advancedFlaggingLink.mouseleave(e => {
-                        e.stopPropagation();
-                        setTimeout(() => globals.hideElement(dropDown), 100); // avoid immediate closing of popover
-                    });
-                } else {
-                    advancedFlaggingLink.click(event => {
-                        event.stopPropagation();
-                        if (event.target === advancedFlaggingLink.get(0)) globals.showElement(dropDown);
-                    });
-                    $(window).click(() => globals.hideElement(dropDown));
-                }
+            const openOnHover = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationOpenOnHover);
+            if (openOnHover) {
+                advancedFlaggingLink.hover(event => {
+                    event.stopPropagation();
+                    if (event.target === advancedFlaggingLink.get(0)) globals.showElement(dropDown);
+                }).mouseleave(e => {
+                    e.stopPropagation();
+                    setTimeout(() => globals.hideElement(dropDown), 100); // avoid immediate closing of the popover
+                });
+            } else {
+                advancedFlaggingLink.click(event => {
+                    event.stopPropagation();
+                    if (event.target === advancedFlaggingLink.get(0)) globals.showElement(dropDown);
+                });
+                $(window).click(() => globals.hideElement(dropDown));
             }
-
-            iconLocation.append(performedActionIcon);
-            iconLocation.append(reportedIcon);
-            iconLocation.append(nattyIcon);
-            iconLocation.append(copyPastorIcon);
-            iconLocation.append(smokeyIcon);
         } else {
-            iconLocation.after(smokeyIcon);
-            iconLocation.after(copyPastorIcon);
-            iconLocation.after(nattyIcon);
-            iconLocation.after(reportedIcon);
-            iconLocation.after(performedActionIcon);
+            iconLocation.after(smokeyIcon, copyPastorIcon, nattyIcon, reportedIcon, performedActionIcon);
         }
     });
 }

@@ -43,7 +43,6 @@ export class GenericBotAPI {
                 url: 'https://so.floern.com/api/trackpost.php',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 data: `key=${globals.genericBotKey}&postId=${this.answerId}&contentHash=${contentHash}&flagger=${flaggerName}`,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 onload: (response: { status: number }) => {
                     if (response.status !== 200) reject(false);
                     resolve(true);

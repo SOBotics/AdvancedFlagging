@@ -32,7 +32,7 @@ export class ChatApi {
         return StackExchange.options.user.userId;
     }
 
-    public SendMessage(roomId: number, message: string): Promise<void> {
+    public SendMessage(message: string, roomId: number = globals.soboticsRoomId): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             const requestFunc = async (): Promise<void> => {
                 const fkey = await this.GetChannelFKey(roomId);

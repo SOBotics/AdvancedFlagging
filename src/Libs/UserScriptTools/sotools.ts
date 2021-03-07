@@ -12,7 +12,6 @@ export interface QuestionQuestion {
     score: number;
     authorReputation?: number;
     authorName: string;
-    // authorId?: number;
 }
 export interface QuestionAnswer {
     type: 'Answer';
@@ -24,7 +23,6 @@ export interface QuestionAnswer {
     score: number;
     authorReputation?: number;
     authorName: string;
-    // authorId?: number;
 }
 export interface NatoAnswer {
     type: 'Answer';
@@ -35,7 +33,6 @@ export interface NatoAnswer {
     questionTime: Date;
     authorReputation?: number;
     authorName: string;
-    // authorId?: number;
 }
 
 export interface FlagPageInfo {
@@ -43,13 +40,8 @@ export interface FlagPageInfo {
     element: JQuery;
     page: 'Flags';
     postId: number;
-    // score: number;
     postTime: Date;
-    // handledTime: Date;
-    // handledResult: string;
-    // handledComment: string;
     authorName: string;
-    // authorId?: number;
 }
 
 export interface GenericPageInfo {
@@ -82,7 +74,7 @@ function parseNatoPage(callback: (post: NatoAnswer) => void): void {
         if (!answerTime || !questionTime) return;
 
         const authorReputation = parseReputation(node.find('.reputation-score'));
-        const { authorName, /*authorId*/ } = parseAuthorDetails(node.find('.user-details'));
+        const authorName = parseAuthorDetails(node.find('.user-details'));
 
         callback({
             type: 'Answer' as const,
@@ -92,8 +84,7 @@ function parseNatoPage(callback: (post: NatoAnswer) => void): void {
             answerTime,
             questionTime,
             authorReputation,
-            authorName,
-            // authorId,
+            authorName
         });
     });
 }
@@ -102,10 +93,10 @@ function getPostDetails(node: JQuery): { score: number, authorReputation?: numbe
     const score = Number(node.find('.js-vote-count').text());
 
     const authorReputation = parseReputation(node.find('.user-info .reputation-score').last());
-    const { authorName, /*authorId*/ } = parseAuthorDetails(node.find('.user-info .user-details').last());
+    const authorName = parseAuthorDetails(node.find('.user-info .user-details').last());
 
     const postTime = parseActionDate(node.find('.user-info .relativetime').last());
-    return { score, authorReputation, authorName, /*authorId,*/ postTime };
+    return { score, authorReputation, authorName, postTime };
 }
 
 function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) => void, question: QuestionQuestion): void {
@@ -132,8 +123,7 @@ function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) =>
         postTime: postDetails.postTime,
         score: postDetails.score,
         authorReputation: postDetails.authorReputation,
-        authorName: postDetails.authorName,
-        // authorId: postDetails.authorId
+        authorName: postDetails.authorName
     });
 }
 
@@ -162,8 +152,7 @@ function parseQuestionPage(callback: (post: QuestionPageInfo) => void): void {
             postTime: postDetails.postTime,
             score: postDetails.score,
             authorReputation: postDetails.authorReputation,
-            authorName: postDetails.authorName,
-            // authorId: postDetails.authorId
+            authorName: postDetails.authorName
         };
         callback(question);
     };
@@ -181,28 +170,17 @@ function parseFlagsPage(callback: (post: FlagPageInfo) => void): void {
         if (!elementHref) return;
 
         const postId = Number(type === 'Answer' ? elementHref.split('#')[1] : elementHref.split('/')[2]);
-        const { authorName, /* authorId */ } = parseAuthorDetails(node.find('.post-user-info'));
+        const authorName = parseAuthorDetails(node.find('.post-user-info'));
         const postTime = parseActionDate(node.find('.post-user-info .relativetime'));
-        //const handledTime = parseActionDate(node.find('.mod-flag .relativetime'));
-        if (!postTime /* || !handledTime */) return;
-
-        // const fullHandledResult = node.find('.flag-outcome').text().trim().split(' - ');
-        // const handledResult = fullHandledResult[0].trim();
-        // const handledComment = fullHandledResult.slice(1).join(' - ').trim();
-        // const score = Number(node.find('.answer-votes').text());
+        if (!postTime) return;
 
         callback({
             type: type,
             element: node,
             page: 'Flags' as const,
             postId,
-            // score,
             postTime,
-            // handledTime,
-            // handledResult,
-            // handledComment,
-            authorName,
-            // authorId
+            authorName
         });
     });
 }
@@ -272,15 +250,11 @@ function parseReputation(reputationDiv: JQuery): number {
     return Number(reputationText);
 }
 
-function parseAuthorDetails(authorDiv: JQuery): { authorName: string, authorId?: number } {
+function parseAuthorDetails(authorDiv: JQuery): string {
     const userLink = authorDiv.find('a');
     const authorName = userLink.text();
-    // const userLinkRef = userLink.attr('href');
-    // let authorId: number | undefined;
-    // Users can be deleted, and thus have no link to their profile.
-    // if (userLinkRef) authorId = Number(userLinkRef.split('/')[2]);
 
-    return { authorName, /* authorId */ };
+    return authorName;
 }
 
 function parseActionDate(actionDiv: JQuery): Date | null {

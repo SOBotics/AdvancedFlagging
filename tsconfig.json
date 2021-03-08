@@ -15,7 +15,7 @@
     "module": "amd",
     "target": "esnext",
     "lib": [
-      "es2015",
+      "es2020",
       "DOM"
     ],
     "baseUrl": "src",

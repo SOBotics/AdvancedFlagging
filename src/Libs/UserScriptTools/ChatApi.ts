@@ -66,7 +66,7 @@ export class ChatApi {
     }
 
     private GetChannelPage(roomId: number): Promise<string> {
-        const getterPromise = new Promise<string>((resolve, reject) => {
+        return new Promise<string>((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: `${this.chatRoomUrl}/rooms/${roomId}`,
@@ -76,7 +76,5 @@ export class ChatApi {
                 onerror: () => reject()
             });
         });
-
-        return getterPromise;
     }
 }

@@ -42,59 +42,57 @@ function SetupStyles(): void {
 }
 
 const userFkey = StackExchange.options.user.fkey;
-function handleFlagAndComment(
+async function handleFlagAndComment(
     postId: number,
     flag: FlagType,
     flagRequired: boolean,
     copypastorApi: CopyPastorAPI,
     score: number,
     creationDate: Date,
+    reportedIcon: JQuery,
     commentText?: string | null,
-): { CommentPromise?: Promise<string>; FlagPromise?: Promise<string>; } {
-    const result: {
-        CommentPromise?: Promise<string>;
-        FlagPromise?: Promise<string>;
-    } = {};
-
+): Promise<void> {
     if (commentText) {
-        result.CommentPromise = new Promise<string>((resolve, reject) => {
-            void $.ajax({
-                url: `/posts/${postId}/comments`,
-                type: 'POST',
-                data: { fkey: userFkey, comment: commentText }
-            }).done(data => {
-                resolve(data);
-            }).fail((jqXHR, textStatus, errorThrown) => {
-                reject({ jqXHR, textStatus, errorThrown });
+        try {
+            const postComment = await fetch(`/posts/${postId}/comments`, {
+                method: 'POST',
+                body: globals.getFormDataFromObject({ fkey: userFkey, comment: commentText })
             });
-        });
+            const commentResult = await postComment.text();
+            showComments(postId, commentResult);
+        } catch (error) {
+            globals.displayError('Failed to comment on post');
+            console.error(error);
+        }
     }
 
     if (flagRequired && flag.ReportType !== 'NoFlag') {
-        result.FlagPromise = new Promise((resolve, reject) => {
-            const copypastorId = copypastorApi.getCopyPastorId();
-            const targetUrl = copypastorApi.getTargetUrl();
-            const flagText = flag.GetCustomFlagText && copypastorId && targetUrl
-                ? flag.GetCustomFlagText(targetUrl, copypastorId)
-                : null;
+        const copypastorId = copypastorApi.getCopyPastorId();
+        const targetUrl = copypastorApi.getTargetUrl();
+        const flagText = flag.GetCustomFlagText && copypastorId && targetUrl
+            ? flag.GetCustomFlagText(targetUrl, copypastorId)
+            : null;
 
-            autoFlagging = true;
-            const flagName = flag.ReportType === 'PostLowQuality' ?
-                (globals.qualifiesForVlq(score, creationDate) ? 'PostLowQuality' : 'AnswerNotAnAnswer') : flag.ReportType;
-            void $.ajax({
-                url: `//${window.location.hostname}/flags/posts/${postId}/add/${flagName}`,
-                type: 'POST',
-                data: { fkey: userFkey, otherText: flag.ReportType === 'PostOther' ? flagText : '' }
-            }).done(data => {
-                setTimeout(() => autoFlagging = false, 500);
-                resolve(data);
-            }).fail((jqXHR, textStatus, errorThrown) => {
-                reject({ jqXHR, textStatus, errorThrown });
+        autoFlagging = true;
+        const flagName = flag.ReportType === 'PostLowQuality' ?
+            (globals.qualifiesForVlq(score, creationDate) ? 'PostLowQuality' : 'AnswerNotAnAnswer') : flag.ReportType;
+        try {
+            const flagPost = await fetch(`//${window.location.hostname}/flags/posts/${postId}/add/${flagName}`, {
+                method: 'POST',
+                body: globals.getFormDataFromObject({ fkey: userFkey, otherText: flag.ReportType === 'PostOther' ? flagText : '' })
             });
-        });
+            const responseJson = await flagPost.json() as StackExchangeFlagResponse;
+            if (responseJson.Success) {
+                displaySuccessFlagged(reportedIcon, flag.Human);
+            } else { // sometimes, although the status is 200, the post isn't flagged.
+                const fullMessage = `Failed to flag the post with outcome ${responseJson.Outcome}: ${responseJson.Message}.`;
+                const message = getErrorMessage(responseJson);
+                displayErrorFlagged(message, fullMessage);
+            }
+        } catch (error) {
+            displayErrorFlagged('Failed to flag post', error);
+        }
     }
-
-    return result;
 }
 
 const isStackOverflow = globals.isStackOverflow();
@@ -256,32 +254,6 @@ function setupGuttenbergApi(copyPastorApi: CopyPastorAPI, copyPastorIcon: JQuery
     };
 }
 
-async function waitForCommentPromise(commentPromise: Promise<string>, postId: number): Promise<void> {
-    try {
-        const commentPromiseValue = await commentPromise;
-        showComments(postId, commentPromiseValue);
-    } catch (error) {
-        globals.displayError('Failed to comment on post');
-        console.error(error);
-    }
-}
-
-async function waitForFlagPromise(flagPromise: Promise<string>, reportedIcon: JQuery, reportTypeHuman?: string): Promise<void> {
-    try {
-        const flagPromiseValue = await flagPromise;
-        const responseJson = JSON.parse(JSON.stringify(flagPromiseValue)) as StackExchangeFlagResponse;
-        if (responseJson.Success) {
-            displaySuccessFlagged(reportedIcon, reportTypeHuman);
-        } else { // sometimes, although the status is 200, the post isn't flagged.
-            const fullMessage = `Failed to flag the post with outcome ${responseJson.Outcome}: ${responseJson.Message}.`;
-            const message = getErrorMessage(responseJson);
-            displayErrorFlagged(message, fullMessage);
-        }
-    } catch (error) {
-        displayErrorFlagged('Failed to flag post', error);
-    }
-}
-
 function getHumanFromDisplayName(displayName: string): string {
     switch (displayName) {
     case 'AnswerNotAnAnswer': return 'as NAA';
@@ -390,13 +362,9 @@ function BuildFlaggingDialog(element: JQuery,
                         commentText = null;
                     }
 
-                    try {
-                        const result = handleFlagAndComment(postId, flagType, flagBox.is(':checked'), copyPastorApi, score, answerTime, commentText);
-                        if (result.CommentPromise) await waitForCommentPromise(result.CommentPromise, postId);
-                        if (result.FlagPromise) await waitForFlagPromise(result.FlagPromise, reportedIcon, flagType.Human);
-                    } catch (err) {
-                        globals.displayError(err);
-                    }
+                    await handleFlagAndComment(
+                        postId, flagType, flagBox.is(':checked'), copyPastorApi, score, answerTime, reportedIcon, commentText
+                    );
                 }
 
                 if (flagType.ReportType === 'NoFlag') {

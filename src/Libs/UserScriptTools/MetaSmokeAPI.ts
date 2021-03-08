@@ -45,47 +45,35 @@ export class MetaSmokeAPI {
 
         window.open(metaSmokeOAuthUrl, '_blank');
         await globals.Delay(100);
-        const returnCode = await new Promise<string | undefined>(resolve => {
-            const getMSToken = async (): Promise<void> => {
-                $(window).off('focus', getMSToken);
-                const code = await globals.showMSTokenPopupAndGet();
-
-                resolve(code);
-            };
-            $(window).focus(getMSToken);
-        });
-        return returnCode;
+        return await globals.showMSTokenPopupAndGet();
     };
 
-    public static QueryMetaSmokeInternal(): Promise<void> | undefined {
+    public static async QueryMetaSmokeInternal(): Promise<void> {
         const urls = globals.getAllPostIds(true, true);
         const urlString = urls.join(',');
 
         const isDisabled = MetaSmokeAPI.IsDisabled();
         if (isDisabled) return;
-        return new Promise<void>((resolve, reject) => {
-            void $.ajax({
-                type: 'GET',
-                url: 'https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls',
-                data: {
-                    urls: urlString,
-                    key: `${MetaSmokeAPI.appKey}`,
-                    per_page: 1000,
-                    filter: 'GGJFNNKKJFHFKJFLJLGIJMFIHNNJNINJ' // only include id and link fields
-                }
-            }).done((metaSmokeResult: MetaSmokeApiWrapper) => {
-                metaSmokeResult.items.forEach(item => {
-                    const postId = /\d+$/.exec(item.link);
-                    if (!postId) return;
-
-                    MetaSmokeAPI.metasmokeIds.push({ sitePostId: Number(postId[0]), metasmokeId: item.id });
-                });
-                resolve();
-            }).fail(error => {
-                console.error('Failed to get Metasmoke URLs', error);
-                reject();
-            });
+        const parameters = globals.getParamsFromObject({
+            urls: urlString,
+            key: `${MetaSmokeAPI.appKey}`,
+            per_page: 1000,
+            filter: globals.metasmokeApiFilter // only include id and link fields
         });
+
+        try {
+            const metasmokeApiCall = await fetch(`https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls?${parameters}`);
+            const metasmokeResult = await metasmokeApiCall.json() as MetaSmokeApiWrapper;
+            metasmokeResult.items.forEach(item => {
+                const postId = /\d+$/.exec(item.link);
+                if (!postId) return;
+
+                MetaSmokeAPI.metasmokeIds.push({ sitePostId: Number(postId[0]), metasmokeId: item.id });
+            });
+        } catch (error) {
+            globals.displayError('Failed to get Metasmoke URLs.');
+            console.error(error);
+        }
     }
 
     public static GetQueryUrl(postId: number, postType: 'Answer' | 'Question'): string {
@@ -97,15 +85,16 @@ export class MetaSmokeAPI {
             // eslint-disable-next-line no-await-in-loop
             await globals.Delay(100);
         }
-        return await GreaseMonkeyCache.GetAndCache(globals.MetaSmokeUserKeyConfig, () => new Promise<string>((resolve, reject) => {
-            MetaSmokeAPI.codeGetter(`https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeAPI.appKey}`).then(code => {
-                if (!code) return;
-                void $.ajax({
-                    url: 'https://metasmoke.erwaysoftware.com/oauth/token?key=' + MetaSmokeAPI.appKey + '&code=' + code,
-                    method: 'GET'
-                }).done((data: { token: string }) => resolve(data.token)).fail(err => reject(err));
-            }).catch(() => reject());
-        }));
+
+        return await GreaseMonkeyCache.GetAndCache(globals.MetaSmokeUserKeyConfig, async (): Promise<string> => {
+            const keyUrl = `https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeAPI.appKey}`;
+            const code = await MetaSmokeAPI.codeGetter(keyUrl);
+            if (!code) return '';
+
+            const tokenCall = await fetch(`https://metasmoke.erwaysoftware.com/oauth/token?key=${MetaSmokeAPI.appKey}&code=${code}`);
+            const data = await tokenCall.json() as { token: string };
+            return data.token;
+        });
     }
 
     public static getSmokeyId(postId: number): number {
@@ -128,20 +117,18 @@ export class MetaSmokeAPI {
             return true;
         }
 
-        const urlStr = MetaSmokeAPI.GetQueryUrl(postId, postType);
+        const urlString = MetaSmokeAPI.GetQueryUrl(postId, postType);
         if (!MetaSmokeAPI.accessToken) return false;
 
-        return new Promise<boolean>((resolve, reject) => {
-            void $.ajax({
-                type: 'POST',
-                url: 'https://metasmoke.erwaysoftware.com/api/w/post/report',
-                data: {
-                    post_link: urlStr,
-                    key: MetaSmokeAPI.appKey,
-                    token: MetaSmokeAPI.accessToken
-                }
-            }).done(() => resolve(true)).fail(() => reject(false));
-        });
+        try {
+            await fetch('https://metasmoke.erwaysoftware.com/api/w/post/report', {
+                method: 'POST',
+                body: globals.getFormDataFromObject({ post_link: urlString, key: MetaSmokeAPI.appKey, token: MetaSmokeAPI.accessToken})
+            });
+            return true;
+        } catch (error) {
+            return false;
+        }
     }
 
     public async ReportLooksFine(postId: number): Promise<boolean> {
@@ -168,18 +155,11 @@ export class MetaSmokeAPI {
         return true;
     }
 
-    private SendFeedback(metaSmokeId: number, feedbackType: 'fp-' | 'tp-' | 'tpu-' | 'naa-'): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            if (!MetaSmokeAPI.accessToken) reject();
-            void $.ajax({
-                type: 'POST',
-                url: `https://metasmoke.erwaysoftware.com/api/w/post/${metaSmokeId}/feedback`,
-                data: {
-                    type: feedbackType,
-                    key: MetaSmokeAPI.appKey,
-                    token: MetaSmokeAPI.accessToken
-                }
-            }).done(() => resolve()).fail(() => reject());
+    private async SendFeedback(metaSmokeId: number, feedbackType: 'fp-' | 'tp-' | 'tpu-' | 'naa-'): Promise<void> {
+        if (!MetaSmokeAPI.accessToken) return;
+        await fetch(`https://metasmoke.erwaysoftware.com/api/w/post/${metaSmokeId}/feedback`, {
+            method: 'POST',
+            body: globals.getFormDataFromObject({type: feedbackType, key: MetaSmokeAPI.appKey, token: MetaSmokeAPI.accessToken })
         });
     }
 }

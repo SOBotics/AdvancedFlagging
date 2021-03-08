@@ -59,6 +59,7 @@ interface AllComments {
 // Constants
 export const soboticsRoomId = 111347;
 export const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
+export const metasmokeApiFilter = 'GGJFNNKKJFHFKJFLJLGIJMFIHNNJNINJ';
 export const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
 export const copyPastorServer = 'https://copypastor.sobotics.org';
 export const genericBotKey = 'Cm45BSrt51FR3ju';
@@ -173,6 +174,14 @@ export const isModPage = (): boolean => Boolean(/\/admin/.exec(window.location.h
 export const isQuestionPage = (): boolean => Boolean(/\/questions\/\d+.*/.exec(window.location.href));
 export const isFlagsPage = (): boolean => Boolean(/\/users\/flag-summary\//.exec(window.location.href));
 export const isUserPage = (): boolean => Boolean(/\/users\/\d+.*/.exec(window.location.href));
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export const getParamsFromObject = (object: any): string => Object.entries(object).map(item => item.join('=')).join('&');
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export const getFormDataFromObject = (object: any): FormData => Object.keys(object).reduce((formData, key) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    formData.append(key, object[key]);
+    return formData;
+}, new FormData());
 const getCopypastorLink = (postId: number): string => `https://copypastor.sobotics.org/posts/${postId}`;
 
 // jQuery icon elements

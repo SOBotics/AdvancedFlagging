@@ -45,9 +45,7 @@ export class CopyPastorAPI {
                     });
                     resolve();
                 },
-                onerror: () => {
-                    reject();
-                },
+                onerror: () => reject()
             });
         });
     }
@@ -75,11 +73,11 @@ export class CopyPastorAPI {
         return await this.SendFeedback('fp');
     }
 
-    private async SendFeedback(type: 'tp' | 'fp'): Promise<boolean> {
+    private SendFeedback(type: 'tp' | 'fp'): Promise<boolean> {
         const username = globals.username;
         const chatId = new ChatApi().GetChatUserId();
         const copyPastorId = this.getCopyPastorId();
-        if (!copyPastorId) return false;
+        if (!copyPastorId) return Promise.resolve(false);
 
         const payload = {
             post_id: copyPastorId,
@@ -89,7 +87,7 @@ export class CopyPastorAPI {
             key: globals.copyPastorKey,
         };
 
-        return await new Promise<boolean>((resolve, reject) => {
+        return new Promise<boolean>((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'POST',
                 url: `${globals.copyPastorServer}/feedback/create`,

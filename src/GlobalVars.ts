@@ -74,6 +74,10 @@ export const settingUpBody = 'If you do not wish to connect, press cancel and th
 const nattyImage = 'https://i.stack.imgur.com/aMUMt.jpg?s=32&g=1';
 const guttenbergImage = 'https://i.stack.imgur.com/tzKAI.png?s=32&g=1';
 const smokeyImage = 'https://i.stack.imgur.com/7cmCt.png?s=32&g=1';
+export const isStackOverflow = Boolean(/^https:\/\/stackoverflow.com/.exec(window.location.href));
+export const isNatoPage = Boolean(/\/tools\/new-answers-old-questions/.exec(window.location.href));
+export const isQuestionPage = Boolean(/\/questions\/\d+.*/.exec(window.location.href));
+export const isFlagsPage = Boolean(/\/users\/flag-summary\//.exec(window.location.href));
 
 // Cache keys
 export const ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
@@ -168,12 +172,6 @@ export const hideElement = (element: JQuery): JQuery => element.addClass('d-none
 export const showInlineElement = (element: JQuery): JQuery => element.addClass('d-inline-block').removeClass('d-none');
 export const displaySuccess = (message: string): void => displayToaster(message, 'success');
 export const displayError = (message: string): void => displayToaster(message, 'danger');
-export const isStackOverflow = (): boolean => Boolean(/^https:\/\/stackoverflow.com/.exec(window.location.href));
-export const isNatoPage = (): boolean => Boolean(/\/tools\/new-answers-old-questions/.exec(window.location.href));
-export const isModPage = (): boolean => Boolean(/\/admin/.exec(window.location.href));
-export const isQuestionPage = (): boolean => Boolean(/\/questions\/\d+.*/.exec(window.location.href));
-export const isFlagsPage = (): boolean => Boolean(/\/users\/flag-summary\//.exec(window.location.href));
-export const isUserPage = (): boolean => Boolean(/\/users\/\d+.*/.exec(window.location.href));
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const getParamsFromObject = (object: any): string => Object.entries(object).map(item => item.join('=')).join('&');
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
@@ -319,9 +317,9 @@ export function addXHRListener(callback: (request: XMLHttpRequest) => void): voi
 }
 
 export function getAllPostIds(includeQuestion: boolean, urlForm: boolean): (number | string)[] {
-    return $(isQuestionPage() ? '.question, .answer' : '.flagged-post').get().map(item => {
+    return $(isQuestionPage ? '.question, .answer' : '.flagged-post').get().map(item => {
         const el = $(item);
-        const postType = (isQuestionPage() ? el.attr('data-questionid') : el.find('.question-hyperlink').length) ? 'Question' : 'Answer';
+        const postType = (isQuestionPage ? el.attr('data-questionid') : el.find('.question-hyperlink').length) ? 'Question' : 'Answer';
         if (!includeQuestion && postType === 'Question') return 0;
         const elementHref = el.find(`.${postType.toLowerCase()}-hyperlink`).attr('href');
         let postId: number;

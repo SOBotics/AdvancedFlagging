@@ -82,7 +82,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Link Only',
                 ReportType: 'PostLowQuality',
                 Human: 'as NAA',
-                Enabled: (): boolean => globals.isStackOverflow(),
+                Enabled: (): boolean => globals.isStackOverflow,
                 GetComment: (userDetails): string | null => globals.getFullComment('LinkOnly', userDetails.AuthorName)
             },
             {
@@ -90,7 +90,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Not an answer',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                Enabled: (): boolean => globals.isStackOverflow(),
+                Enabled: (): boolean => globals.isStackOverflow,
                 GetComment: (userDetails): string | null => globals.getFullComment(`NAA${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
             },
             {
@@ -98,7 +98,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Thanks',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                Enabled: (): boolean => globals.isStackOverflow(),
+                Enabled: (): boolean => globals.isStackOverflow,
                 GetComment: (userDetails): string | null => globals.getFullComment(`Thanks${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
             },
             {
@@ -106,7 +106,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Me too',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                Enabled: (): boolean => globals.isStackOverflow(),
+                Enabled: (): boolean => globals.isStackOverflow,
                 GetComment: (userDetails): string | null => globals.getFullComment('MeToo', userDetails.AuthorName)
             },
             {
@@ -114,7 +114,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Library',
                 ReportType: 'PostLowQuality',
                 Human: 'as NAA',
-                Enabled: (): boolean => globals.isStackOverflow(),
+                Enabled: (): boolean => globals.isStackOverflow,
                 GetComment: (userDetails): string | null => globals.getFullComment('Library', userDetails.AuthorName)
             },
             {
@@ -122,7 +122,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Comment',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                Enabled: (): boolean => globals.isStackOverflow(),
+                Enabled: (): boolean => globals.isStackOverflow,
                 GetComment: (userDetails): string | null => globals.getFullComment(`Comment${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
             },
             {
@@ -130,7 +130,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Duplicate',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                Enabled: (): boolean => globals.isStackOverflow(),
+                Enabled: (): boolean => globals.isStackOverflow,
                 GetComment: (userDetails): string | null => globals.getFullComment('Duplicate', userDetails.AuthorName)
             },
             {
@@ -138,7 +138,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Non English',
                 ReportType: 'PostLowQuality',
                 Human: 'as NAA',
-                Enabled: (): boolean => globals.isStackOverflow(),
+                Enabled: (): boolean => globals.isStackOverflow,
                 GetComment: (userDetails): string | null => globals.getFullComment('NonEnglish', userDetails.AuthorName)
             },
             {
@@ -146,7 +146,7 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Should be an edit',
                 ReportType: 'AnswerNotAnAnswer',
                 Human: 'as NAA',
-                Enabled: (): boolean => globals.isStackOverflow(),
+                Enabled: (): boolean => globals.isStackOverflow,
                 GetComment: (userDetails): string | null => globals.getFullComment('ShouldBeAnEdit', userDetails.AuthorName)
             }
         ]

@@ -50,7 +50,7 @@ export class GenericBotAPI {
 
     private makeTrackRequest(): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
-            if (!globals.isStackOverflow()) resolve(false);
+            if (!globals.isStackOverflow) resolve(false);
 
             const flaggerName = encodeURIComponent(globals.username || '');
             if (!flaggerName) resolve(false);

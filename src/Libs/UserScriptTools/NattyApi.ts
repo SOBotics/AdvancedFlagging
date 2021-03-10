@@ -31,7 +31,7 @@ export class NattyAPI {
 
     public static getAllNattyIds(): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            if (!globals.isStackOverflow()) resolve();
+            if (!globals.isStackOverflow) resolve();
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: `${globals.nattyAllReportsUrl}`,

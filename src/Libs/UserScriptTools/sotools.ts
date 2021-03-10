@@ -188,11 +188,11 @@ function parseFlagsPage(callback: (post: FlagPageInfo) => void): void {
 }
 
 export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): void {
-    if (globals.isNatoPage()) {
+    if (globals.isNatoPage) {
         parseNatoPage(callback);
-    } else if (globals.isQuestionPage()) {
+    } else if (globals.isQuestionPage) {
         parseQuestionPage(callback);
-    } else if (globals.isFlagsPage()) {
+    } else if (globals.isFlagsPage) {
         parseFlagsPage(callback);
     }
 }

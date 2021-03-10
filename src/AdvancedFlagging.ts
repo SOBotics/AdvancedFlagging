@@ -94,7 +94,6 @@ async function handleFlagAndComment(
     }
 }
 
-const isStackOverflow = globals.isStackOverflow();
 const popupWrapper = globals.popupWrapper;
 let toasterTimeout: number | null = null;
 let toasterFadeTimeout: number | null = null;
@@ -273,7 +272,7 @@ function BuildFlaggingDialog(
     const flagBox = globals.getOptionBox(checkboxNameFlag);
 
     flagBox.prop('checked', !defaultNoFlag);
-    leaveCommentBox.prop('checked', !defaultNoComment && !comments.length && isStackOverflow);
+    leaveCommentBox.prop('checked', !defaultNoComment && !comments.length && globals.isStackOverflow);
 
     const newCategories = flagCategories.filter(item => item.AppliesTo.includes(post.type)
                                                      && item.FlagTypes.some(flag => enabledFlagIds && enabledFlagIds.includes(flag.Id)));
@@ -326,7 +325,7 @@ function BuildFlaggingDialog(
         if (categoryDiv.html()) dropDown.append(globals.divider.clone()); // at least one option exists for the category
     }
 
-    if (isStackOverflow) {
+    if (globals.isStackOverflow) {
         const commentBoxLabel = globals.getOptionLabel('Leave comment', checkboxNameComment);
         const commentingRow = globals.plainDiv.clone();
         commentingRow.append(leaveCommentBox, commentBoxLabel);
@@ -385,7 +384,7 @@ function SetupPostPage(): void {
         const copyPastorApi = new CopyPastorAPI(post.postId);
 
         const reporters: Reporter[] = [];
-        if (post.type === 'Answer' && globals.isStackOverflow()) {
+        if (post.type === 'Answer' && globals.isStackOverflow) {
             reporters.push(setupNattyApi(post.postId, questionTime, answerTime, nattyIcon));
             reporters.push(setupGenericBotApi(post.postId));
             reporters.push(setupGuttenbergApi(copyPastorApi, copyPastorIcon));

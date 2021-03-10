@@ -2,19 +2,38 @@ import * as globals from '../../GlobalVars';
 
 export class GenericBotAPI {
     private answerId: number;
+    public name = 'Generic Bot';
 
     constructor(answerId: number) {
         this.answerId = answerId;
     }
 
     public async ReportNaa(): Promise<boolean> {
-        const response = await this.makeTrackRequest();
-        return response;
+        return await this.makeTrackRequest();
     }
 
     public async ReportRedFlag(): Promise<boolean> {
-        const response = await this.makeTrackRequest();
-        return response;
+        return await this.makeTrackRequest();
+    }
+
+    public ReportLooksFine(): Promise<boolean> {
+        return Promise.resolve(false);
+    }
+
+    public ReportNeedsEditing(): Promise<boolean> {
+        return Promise.resolve(false);
+    }
+
+    public ReportVandalism(): Promise<boolean> {
+        return Promise.resolve(false);
+    }
+
+    public ReportDuplicateAnswer(): Promise<boolean> {
+        return Promise.resolve(false);
+    }
+
+    public ReportPlagiarism(): Promise<boolean> {
+        return Promise.resolve(false);
     }
 
     private computeContentHash(postContent: string): number {

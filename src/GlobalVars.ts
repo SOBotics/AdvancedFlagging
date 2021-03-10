@@ -351,3 +351,8 @@ export function getFullFlag(name: string, target: string, postId: number): strin
 export function qualifiesForVlq(postScore: number, creationDate: Date): boolean {
     return postScore <= 0 && (new Date().valueOf() - creationDate.valueOf()) < dayMillis;
 }
+
+export function parseDate(dateStr?: string): Date | null {
+    // Fix for safari
+    return dateStr ? new Date(dateStr.replace(' ', 'T')) : null;
+}

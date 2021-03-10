@@ -17,9 +17,14 @@ export class NattyAPI {
     private answerId: number;
     private feedbackMessage: string;
     private reportMessage: string;
+    private questionDate: Date;
+    private answerDate: Date;
+    public name = 'Natty';
 
-    constructor(answerId: number) {
+    constructor(answerId: number, questionDate: Date, answerDate: Date) {
         this.answerId = answerId;
+        this.questionDate = questionDate;
+        this.answerDate = answerDate;
         this.feedbackMessage = `@Natty feedback https://stackoverflow.com/a/${this.answerId}`;
         this.reportMessage = `@Natty report https://stackoverflow.com/a/${this.answerId}`;
     }
@@ -50,15 +55,15 @@ export class NattyAPI {
         return NattyAPI.nattyIds.includes(this.answerId);
     }
 
-    public async ReportNaa(answerDate: Date, questionDate: Date): Promise<boolean> {
-        if (answerDate < questionDate) return false;
+    public async ReportNaa(): Promise<boolean> {
+        if (this.answerDate < this.questionDate) return false;
 
         if (this.WasReported()) {
             await this.chat.SendMessage(`${this.feedbackMessage} tp`);
             return true;
         } else {
-            const answerAge = this.DaysBetween(answerDate, new Date());
-            const daysPostedAfterQuestion = this.DaysBetween(questionDate, answerDate);
+            const answerAge = this.DaysBetween(this.answerDate, new Date());
+            const daysPostedAfterQuestion = this.DaysBetween(this.questionDate, this.answerDate);
             if (isNaN(answerAge) || isNaN(daysPostedAfterQuestion) || answerAge > 30 || daysPostedAfterQuestion < 30) return false;
 
             await this.chat.SendMessage(this.reportMessage);
@@ -82,6 +87,19 @@ export class NattyAPI {
         if (!this.WasReported()) return false;
         await this.chat.SendMessage(`${this.feedbackMessage} ne`);
         return true;
+    }
+
+
+    public ReportVandalism(): Promise<boolean> {
+        return Promise.resolve(false);
+    }
+
+    public ReportDuplicateAnswer(): Promise<boolean> {
+        return Promise.resolve(false);
+    }
+
+    public ReportPlagiarism(): Promise<boolean> {
+        return Promise.resolve(false);
     }
 
     private DaysBetween(first: Date, second: Date): number {

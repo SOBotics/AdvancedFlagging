@@ -16,6 +16,14 @@ export class MetaSmokeAPI {
     private static appKey: string;
     private static accessToken: string;
     private static metasmokeIds: { sitePostId: number, metasmokeId: number }[] = [];
+    private postId: number;
+    private postType: 'Question' | 'Answer';
+    public name = 'Smokey';
+
+    constructor(postId: number, postType: 'Question' | 'Answer') {
+        this.postId = postId;
+        this.postType = postType;
+    }
 
     public static Reset(): void {
         GreaseMonkeyCache.Unset(globals.MetaSmokeDisabledConfig);
@@ -102,22 +110,22 @@ export class MetaSmokeAPI {
         return metasmokeObject ? metasmokeObject.metasmokeId : 0;
     }
 
-    public async ReportNaa(postId: number): Promise<boolean> {
-        const smokeyid = MetaSmokeAPI.getSmokeyId(postId);
+    public async ReportNaa(): Promise<boolean> {
+        const smokeyid = MetaSmokeAPI.getSmokeyId(this.postId);
         if (!smokeyid) return false;
 
         await this.SendFeedback(smokeyid, 'naa-');
         return true;
     }
 
-    public async ReportRedFlag(postId: number, postType: 'Answer' | 'Question'): Promise<boolean> {
-        const smokeyid = MetaSmokeAPI.getSmokeyId(postId);
+    public async ReportRedFlag(): Promise<boolean> {
+        const smokeyid = MetaSmokeAPI.getSmokeyId(this.postId);
         if (smokeyid) {
             await this.SendFeedback(smokeyid, 'tpu-');
             return true;
         }
 
-        const urlString = MetaSmokeAPI.GetQueryUrl(postId, postType);
+        const urlString = MetaSmokeAPI.GetQueryUrl(this.postId, this.postType);
         if (!MetaSmokeAPI.accessToken) return false;
 
         try {
@@ -131,28 +139,36 @@ export class MetaSmokeAPI {
         }
     }
 
-    public async ReportLooksFine(postId: number): Promise<boolean> {
-        const smokeyid = MetaSmokeAPI.getSmokeyId(postId);
+    public async ReportLooksFine(): Promise<boolean> {
+        const smokeyid = MetaSmokeAPI.getSmokeyId(this.postId);
         if (!smokeyid) return false;
 
         await this.SendFeedback(smokeyid, 'fp-');
         return true;
     }
 
-    public async ReportNeedsEditing(postId: number): Promise<boolean> {
-        const smokeyid = MetaSmokeAPI.getSmokeyId(postId);
+    public async ReportNeedsEditing(): Promise<boolean> {
+        const smokeyid = MetaSmokeAPI.getSmokeyId(this.postId);
         if (!smokeyid) return false;
 
         await this.SendFeedback(smokeyid, 'fp-');
         return true;
     }
 
-    public async ReportVandalism(postId: number): Promise<boolean> {
-        const smokeyid = MetaSmokeAPI.getSmokeyId(postId);
+    public async ReportVandalism(): Promise<boolean> {
+        const smokeyid = MetaSmokeAPI.getSmokeyId(this.postId);
         if (!smokeyid) return false;
 
         await this.SendFeedback(smokeyid, 'tp-');
         return true;
+    }
+
+    public ReportDuplicateAnswer(): Promise<boolean> {
+        return Promise.resolve(false);
+    }
+
+    public ReportPlagiarism(): Promise<boolean> {
+        return Promise.resolve(false);
     }
 
     private async SendFeedback(metaSmokeId: number, feedbackType: 'fp-' | 'tp-' | 'tpu-' | 'naa-'): Promise<void> {

@@ -19,8 +19,9 @@ export type CopyPastorFindTargetResponse = {
 export class CopyPastorAPI {
     private static copyPastorIds: { postId: number, repost: boolean, target_url: string }[] = [];
     private answerId?: number;
+    public name = 'Guttenberg';
 
-    constructor(id?: number) {
+    constructor(id: number) {
         this.answerId = id;
     }
 
@@ -65,12 +66,40 @@ export class CopyPastorAPI {
         return idsObject ? idsObject.target_url : '';
     }
 
-    public async ReportTruePositive(): Promise<boolean> {
+    private async ReportTruePositive(): Promise<boolean> {
         return await this.SendFeedback('tp');
     }
 
-    public async ReportFalsePositive(): Promise<boolean> {
+    private async ReportFalsePositive(): Promise<boolean> {
         return await this.SendFeedback('fp');
+    }
+
+    public async ReportNaa(): Promise<boolean> {
+        return await this.ReportFalsePositive();
+    }
+
+    public ReportRedFlag(): Promise<boolean> {
+        return Promise.resolve(false);
+    }
+
+    public async ReportLooksFine(): Promise<boolean> {
+        return await this.ReportFalsePositive();
+    }
+
+    public async ReportNeedsEditing(): Promise<boolean> {
+        return await this.ReportFalsePositive();
+    }
+
+    public async ReportVandalism(): Promise<boolean> {
+        return await this.ReportFalsePositive();
+    }
+
+    public async ReportDuplicateAnswer(): Promise<boolean> {
+        return await this.ReportTruePositive();
+    }
+
+    public async ReportPlagiarism(): Promise<boolean> {
+        return await this.ReportTruePositive();
     }
 
     private SendFeedback(type: 'tp' | 'fp'): Promise<boolean> {

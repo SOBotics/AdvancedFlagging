@@ -1,57 +1,59 @@
 import * as globals from '../../GlobalVars';
 
-declare const StackExchange: globals.StackExchange;
-
 export type QuestionPageInfo = QuestionQuestion | QuestionAnswer;
-export interface QuestionQuestion {
+type PostInfo = NatoAnswer | QuestionPageInfo | FlagPageInfo;
+
+interface QuestionQuestion { // the question on a question page
     type: 'Question';
     element: JQuery;
     page: 'Question';
     postId: number;
-    postTime: Date;
+    creationDate: Date;
     score: number;
     authorReputation?: number;
     authorName: string;
 }
-export interface QuestionAnswer {
+
+interface QuestionAnswer { // an answer on a question page
     type: 'Answer';
     element: JQuery;
     page: 'Question';
     postId: number;
-    question: QuestionQuestion;
-    postTime: Date;
+    questionTime: Date;
+    creationDate: Date;
     score: number;
     authorReputation?: number;
     authorName: string;
 }
-export interface NatoAnswer {
+
+interface NatoAnswer {
     type: 'Answer';
     element: JQuery;
     page: 'NATO';
     postId: number;
-    answerTime: Date;
+    creationDate: Date;
     questionTime: Date;
     authorReputation?: number;
     authorName: string;
 }
 
-export interface FlagPageInfo {
+interface FlagPageInfo {
     type: 'Answer' | 'Question';
     element: JQuery;
     page: 'Flags';
     postId: number;
-    postTime: Date;
+    creationDate: Date;
     authorName: string;
+    questionTime: null;
 }
 
-export interface GenericPageInfo {
-    type: 'Question' | 'Answer';
-    element: JQuery;
-    page: 'Unknown';
-    postId: number;
+interface PostDetails {
+    score: number;
+    authorReputation?: number;
+    authorName: string;
+    authorId?: number;
+    creationDate: Date | null;
 }
-
-export type PostInfo = NatoAnswer | QuestionPageInfo | FlagPageInfo | GenericPageInfo;
 
 $.event.special.destroyed = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -69,9 +71,9 @@ function parseNatoPage(callback: (post: NatoAnswer) => void): void {
 
         const postId = Number(answerHref.split('#')[1]);
 
-        const answerTime = parseActionDate(node.find('.user-action-time'));
+        const creationDate = parseActionDate(node.find('.user-action-time'));
         const questionTime = parseActionDate(node.find('td .relativetime'));
-        if (!answerTime || !questionTime) return;
+        if (!creationDate || !questionTime) return;
 
         const authorReputation = parseReputation(node.find('.reputation-score'));
         const authorName = parseAuthorDetails(node.find('.user-details'));
@@ -81,7 +83,7 @@ function parseNatoPage(callback: (post: NatoAnswer) => void): void {
             element: node,
             page: 'NATO' as const,
             postId,
-            answerTime,
+            creationDate,
             questionTime,
             authorReputation,
             authorName
@@ -89,28 +91,28 @@ function parseNatoPage(callback: (post: NatoAnswer) => void): void {
     });
 }
 
-function getPostDetails(node: JQuery): { score: number, authorReputation?: number, authorName: string, authorId?: number, postTime: Date | null } {
+function getPostDetails(node: JQuery): PostDetails {
     const score = Number(node.find('.js-vote-count').text());
 
     const authorReputation = parseReputation(node.find('.user-info .reputation-score').last());
     const authorName = parseAuthorDetails(node.find('.user-info .user-details').last());
 
-    const postTime = parseActionDate(node.find('.user-info .relativetime').last());
-    return { score, authorReputation, authorName, postTime };
+    const creationDate = parseActionDate(node.find('.user-info .relativetime').last());
+    return { score, authorReputation, authorName, creationDate };
 }
 
-function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) => void, question: QuestionQuestion): void {
+function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) => void, questionTime: Date): void {
     const answerIdString = aNode.attr('data-answerid');
     if (!answerIdString) return;
 
     const answerId = Number(answerIdString);
     const postDetails = getPostDetails(aNode);
-    if (!postDetails.postTime) return;
+    if (!postDetails.creationDate) return;
 
     aNode.find('.answercell').bind('destroyed', () => {
         setTimeout(() => {
             const updatedAnswerNode = $(`#answer-${answerId}`);
-            parseAnswerDetails(updatedAnswerNode, callback, question);
+            parseAnswerDetails(updatedAnswerNode, callback, questionTime);
         });
     });
 
@@ -119,8 +121,8 @@ function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) =>
         element: aNode,
         page: 'Question' as const,
         postId: answerId,
-        question,
-        postTime: postDetails.postTime,
+        questionTime,
+        creationDate: postDetails.creationDate,
         score: postDetails.score,
         authorReputation: postDetails.authorReputation,
         authorName: postDetails.authorName
@@ -135,7 +137,7 @@ function parseQuestionPage(callback: (post: QuestionPageInfo) => void): void {
 
         const postId = Number(questionIdString);
         const postDetails = getPostDetails(qNode);
-        if (!postDetails.postTime) return;
+        if (!postDetails.creationDate) return;
 
         qNode.find('.postcell').bind('destroyed', () => {
             setTimeout(() => {
@@ -144,22 +146,21 @@ function parseQuestionPage(callback: (post: QuestionPageInfo) => void): void {
             });
         });
 
-        question = {
+        callback(question = {
             type: 'Question' as const,
             element: qNode,
             page: 'Question' as const,
             postId,
-            postTime: postDetails.postTime,
+            creationDate: postDetails.creationDate,
             score: postDetails.score,
             authorReputation: postDetails.authorReputation,
             authorName: postDetails.authorName
-        };
-        callback(question);
+        });
     };
     const questionNode = $('.question');
     parseQuestionDetails(questionNode);
 
-    $('.answer').each((_index, element) => parseAnswerDetails($(element), callback, question));
+    $('.answer').each((_index, element) => parseAnswerDetails($(element), callback, question.creationDate));
 }
 
 function parseFlagsPage(callback: (post: FlagPageInfo) => void): void {
@@ -171,56 +172,17 @@ function parseFlagsPage(callback: (post: FlagPageInfo) => void): void {
 
         const postId = Number(type === 'Answer' ? elementHref.split('#')[1] : elementHref.split('/')[2]);
         const authorName = parseAuthorDetails(node.find('.post-user-info'));
-        const postTime = parseActionDate(node.find('.post-user-info .relativetime'));
-        if (!postTime) return;
+        const creationDate = parseActionDate(node.find('.post-user-info .relativetime'));
+        if (!creationDate) return;
 
         callback({
             type: type,
             element: node,
             page: 'Flags' as const,
             postId,
-            postTime,
-            authorName
-        });
-    });
-}
-
-function parseGenericPage(callback: (post: GenericPageInfo) => void): void {
-    $('.question-hyperlink').each((_index, node) => {
-        const questionNode = $(node);
-        const questionHref = questionNode.attr('href');
-        if (!questionHref) return;
-
-        let fragment = questionHref.split('/')[2];
-        if (fragment.indexOf('_') >= 0) {
-            fragment = fragment.split('_')[1];
-        }
-        const postId = Number(fragment);
-
-        callback({
-            type: 'Question' as const,
-            element: questionNode,
-            page: 'Unknown' as const,
-            postId
-        });
-    });
-
-    $('.answer-hyperlink').each((_index, element) => {
-        const answerNode = $(element);
-        const answerNodeHref = answerNode.attr('href');
-        if (!answerNodeHref) return;
-
-        let fragment = answerNodeHref.split('#')[1];
-        if (fragment.indexOf('_') >= 0) {
-            fragment = fragment.split('_')[1];
-        }
-        const postId = Number(fragment);
-
-        callback({
-            type: 'Answer' as const,
-            element: answerNode,
-            page: 'Unknown' as const,
-            postId
+            creationDate,
+            authorName,
+            questionTime: null
         });
     });
 }
@@ -232,8 +194,6 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): vo
         parseQuestionPage(callback);
     } else if (globals.isFlagsPage()) {
         parseFlagsPage(callback);
-    } else if (!globals.isModPage() && !globals.isUserPage() && !StackExchange.options.user.isModerator) {
-        parseGenericPage(callback);
     }
 }
 
@@ -258,10 +218,5 @@ function parseAuthorDetails(authorDiv: JQuery): string {
 }
 
 function parseActionDate(actionDiv: JQuery): Date | null {
-    return parseDate((actionDiv.hasClass('relativetime') ? actionDiv : actionDiv.find('.relativeTime')).attr('title'));
-}
-
-export function parseDate(dateStr?: string): Date | null {
-    // Fix for safari
-    return dateStr ? new Date(dateStr.replace(' ', 'T')) : null;
+    return globals.parseDate((actionDiv.hasClass('relativetime') ? actionDiv : actionDiv.find('.relativeTime')).attr('title'));
 }

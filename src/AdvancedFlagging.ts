@@ -1,5 +1,5 @@
 import { FlagType, flagCategories } from './FlagTypes';
-import { parseQuestionsAndAnswers, parseDate } from '@userscriptTools/sotools';
+import { parseQuestionsAndAnswers, QuestionPageInfo } from '@userscriptTools/sotools';
 import { NattyAPI } from '@userscriptTools/NattyApi';
 import { GenericBotAPI } from '@userscriptTools/GenericBotAPI';
 import { MetaSmokeAPI } from '@userscriptTools/MetaSmokeAPI';
@@ -47,10 +47,9 @@ async function handleFlagAndComment(
     flag: FlagType,
     flagRequired: boolean,
     copypastorApi: CopyPastorAPI,
-    score: number,
-    creationDate: Date,
     reportedIcon: JQuery,
-    commentText?: string | null,
+    qualifiesForVlq: boolean,
+    commentText?: string | null
 ): Promise<void> {
     if (commentText) {
         try {
@@ -75,7 +74,7 @@ async function handleFlagAndComment(
 
         autoFlagging = true;
         const flagName = flag.ReportType === 'PostLowQuality' ?
-            (globals.qualifiesForVlq(score, creationDate) ? 'PostLowQuality' : 'AnswerNotAnAnswer') : flag.ReportType;
+            (qualifiesForVlq ? 'PostLowQuality' : 'AnswerNotAnAnswer') : flag.ReportType;
         try {
             const flagPost = await fetch(`//${window.location.hostname}/flags/posts/${postId}/add/${flagName}`, {
                 method: 'POST',
@@ -181,77 +180,39 @@ function showComments(postId: number, data: string): void {
     $(document).trigger('comment', postId);
 }
 
-function setupNattyApi(postId: number, nattyIcon?: JQuery): Reporter {
-    const nattyApi = new NattyAPI(postId);
+function setupNattyApi(postId: number, questionTime?: Date | null, answerTime?: Date | null, nattyIcon?: JQuery): NattyAPI {
+    const nattyApi = new NattyAPI(postId, questionTime || new Date(), answerTime || new Date());
     const isReported = nattyApi.WasReported();
     if (nattyIcon && isReported) {
         globals.showInlineElement(nattyIcon);
         nattyIcon.attr('href', `//sentinel.erwaysoftware.com/posts/aid/${postId}`).attr('target', '_blank');
     }
 
-    return {
-        name: 'Natty',
-        ReportNaa: (answerDate: Date, questionDate: Date): Promise<boolean> => nattyApi.ReportNaa(answerDate, questionDate),
-        ReportRedFlag: (): Promise<boolean> => nattyApi.ReportRedFlag(),
-        ReportLooksFine: (): Promise<boolean> => nattyApi.ReportLooksFine(),
-        ReportNeedsEditing: (): Promise<boolean> => nattyApi.ReportNeedsEditing(),
-        ReportVandalism: (): Promise<boolean> => Promise.resolve(false),
-        ReportDuplicateAnswer: (): Promise<boolean> => Promise.resolve(false),
-        ReportPlagiarism: (): Promise<boolean> => Promise.resolve(false)
-    };
+    return nattyApi;
 }
 
-function setupGenericBotApi(postId: number): Reporter {
-    const genericBotAPI = new GenericBotAPI(postId);
-    return {
-        name: 'Generic Bot',
-        ReportNaa: (): Promise<boolean> => genericBotAPI.ReportNaa(),
-        ReportRedFlag: (): Promise<boolean> => genericBotAPI.ReportRedFlag(),
-        ReportLooksFine: (): Promise<boolean> => Promise.resolve(false),
-        ReportNeedsEditing: (): Promise<boolean> => Promise.resolve(false),
-        ReportVandalism: (): Promise<boolean> => Promise.resolve(true),
-        ReportDuplicateAnswer: (): Promise<boolean> => Promise.resolve(false),
-        ReportPlagiarism: (): Promise<boolean> => Promise.resolve(false)
-    };
+function setupGenericBotApi(postId: number): GenericBotAPI {
+    return new GenericBotAPI(postId);
 }
 
-function setupMetasmokeApi(postId: number, postType: 'Answer' | 'Question', smokeyIcon: JQuery): Reporter {
-    const metaSmoke = new MetaSmokeAPI();
+function setupMetasmokeApi(postId: number, postType: 'Answer' | 'Question', smokeyIcon: JQuery): MetaSmokeAPI {
     const smokeyId = MetaSmokeAPI.getSmokeyId(postId);
     if (smokeyId) {
         smokeyIcon.attr('href', `https://metasmoke.erwaysoftware.com/post/${smokeyId}`).attr('target', '_blank');
         globals.showInlineElement(smokeyIcon);
     }
 
-    return {
-        name: 'Smokey',
-        ReportNaa: (): Promise<boolean> => metaSmoke.ReportNaa(postId),
-        ReportRedFlag: (): Promise<boolean> => metaSmoke.ReportRedFlag(postId, postType),
-        ReportLooksFine: (): Promise<boolean> => metaSmoke.ReportLooksFine(postId),
-        ReportNeedsEditing: (): Promise<boolean> => metaSmoke.ReportNeedsEditing(postId),
-        ReportVandalism: (): Promise<boolean> => metaSmoke.ReportVandalism(postId),
-        ReportDuplicateAnswer: (): Promise<boolean> => Promise.resolve(false),
-        ReportPlagiarism: (): Promise<boolean> => Promise.resolve(false)
-    };
+    return new MetaSmokeAPI(postId, postType);
 }
 
-function setupGuttenbergApi(copyPastorApi: CopyPastorAPI, copyPastorIcon: JQuery): Reporter {
+function setupGuttenbergApi(copyPastorApi: CopyPastorAPI, copyPastorIcon: JQuery): CopyPastorAPI {
     const copypastorId = copyPastorApi.getCopyPastorId();
     if (copypastorId) {
         globals.showInlineElement(copyPastorIcon);
         copyPastorIcon.attr('href', `https://copypastor.sobotics.org/posts/${copypastorId}`).attr('target', '_blank');
     }
 
-    return {
-        name: 'Guttenberg',
-        ReportNaa: (): Promise<boolean> => copyPastorApi.ReportFalsePositive(),
-        ReportRedFlag: (): Promise<boolean> => Promise.resolve(false),
-        ReportLooksFine: (): Promise<boolean> => copyPastorApi.ReportFalsePositive(),
-        ReportNeedsEditing: (): Promise<boolean> => copyPastorApi.ReportFalsePositive(),
-        ReportVandalism: (): Promise<boolean> => copyPastorApi.ReportFalsePositive(),
-        ReportDuplicateAnswer: (): Promise<boolean> => copyPastorApi.ReportTruePositive(),
-        ReportPlagiarism: (): Promise<boolean> => copyPastorApi.ReportTruePositive()
-    };
+    return copyPastorApi;
 }
 
 function getHumanFromDisplayName(displayName: string): string {
@@ -276,16 +237,7 @@ function SetupCommentsAndFlags(): void {
     if (!commentsCached) storeCommentsInCache();
 }
 
-interface Reporter {
-    name: string;
-    ReportNaa(answerDate: Date, questionDate: Date): Promise<boolean>;
-    ReportRedFlag(): Promise<boolean>;
-    ReportLooksFine(): Promise<boolean>;
-    ReportNeedsEditing(): Promise<boolean>;
-    ReportVandalism(): Promise<boolean>;
-    ReportDuplicateAnswer(): Promise<boolean>;
-    ReportPlagiarism(): Promise<boolean>;
-}
+type Reporter = CopyPastorAPI | MetaSmokeAPI | NattyAPI | GenericBotAPI;
 
 interface StackExchangeFlagResponse {
     FlagType: number;
@@ -300,35 +252,30 @@ interface ReviewResponse {
     content: string;
 }
 
-function BuildFlaggingDialog(element: JQuery,
-    postId: number,
-    postType: 'Question' | 'Answer',
-    reputation: number,
-    authorName: string,
-    answerTime: Date,
-    questionTime: Date,
+function BuildFlaggingDialog(
+    post: QuestionPageInfo,
     deleted: boolean,
-    score: number,
     reportedIcon: JQuery,
     performedActionIcon: JQuery,
     reporters: Reporter[],
-    copyPastorApi: CopyPastorAPI
+    copyPastorApi: CopyPastorAPI,
+    shouldRaiseVlq: boolean
 ): JQuery {
     const enabledFlagIds = GreaseMonkeyCache.GetFromCache<number[]>(globals.ConfigurationEnabledFlags);
     const defaultNoComment = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoComment);
     const defaultNoFlag = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoFlag);
-    const comments = element.find('.comment-body');
+    const comments = post.element.find('.comment-body');
 
     const dropDown = globals.dropDown.clone();
-    const checkboxNameComment = `comment_checkbox_${postId}`;
-    const checkboxNameFlag = `flag_checkbox_${postId}`;
+    const checkboxNameComment = `comment_checkbox_${post.postId}`;
+    const checkboxNameFlag = `flag_checkbox_${post.postId}`;
     const leaveCommentBox = globals.getOptionBox(checkboxNameComment);
     const flagBox = globals.getOptionBox(checkboxNameFlag);
 
     flagBox.prop('checked', !defaultNoFlag);
     leaveCommentBox.prop('checked', !defaultNoComment && !comments.length && isStackOverflow);
 
-    const newCategories = flagCategories.filter(item => item.AppliesTo.includes(postType)
+    const newCategories = flagCategories.filter(item => item.AppliesTo.includes(post.type)
                                                      && item.FlagTypes.some(flag => enabledFlagIds && enabledFlagIds.includes(flag.Id)));
     for (const flagCategory of newCategories) {
         const categoryDiv = globals.getCategoryDiv(flagCategory.IsDangerous);
@@ -350,7 +297,7 @@ function BuildFlaggingDialog(element: JQuery,
 
             let commentText: string | undefined | null;
             if (flagType.GetComment) {
-                commentText = flagType.GetComment({ Reputation: reputation, AuthorName: authorName });
+                commentText = flagType.GetComment({ Reputation: post.authorReputation || 0, AuthorName: post.authorName });
                 reportLink.attr('title', commentText || '');
             }
 
@@ -358,12 +305,12 @@ function BuildFlaggingDialog(element: JQuery,
                 if (!deleted) {
                     if (!leaveCommentBox.is(':checked') && commentText) {
                         const strippedComment = getStrippedComment(commentText);
-                        upvoteSameComments(element, strippedComment);
+                        upvoteSameComments(post.element, strippedComment);
                         commentText = null;
                     }
 
                     await handleFlagAndComment(
-                        postId, flagType, flagBox.is(':checked'), copyPastorApi, score, answerTime, reportedIcon, commentText
+                        post.postId, flagType, flagBox.is(':checked'), copyPastorApi, reportedIcon, shouldRaiseVlq, commentText
                     );
                 }
 
@@ -372,7 +319,7 @@ function BuildFlaggingDialog(element: JQuery,
                     globals.showElement(performedActionIcon);
                 }
 
-                handleFlag(flagType, reporters, answerTime, questionTime);
+                handleFlag(flagType, reporters);
                 globals.hideElement(dropDown); // hide the dropdown after clicking one of the options
             });
         }
@@ -381,28 +328,20 @@ function BuildFlaggingDialog(element: JQuery,
 
     if (isStackOverflow) {
         const commentBoxLabel = globals.getOptionLabel('Leave comment', checkboxNameComment);
-
         const commentingRow = globals.plainDiv.clone();
-        commentingRow.append(leaveCommentBox);
-        commentingRow.append(commentBoxLabel);
-
+        commentingRow.append(leaveCommentBox, commentBoxLabel);
         dropDown.append(commentingRow);
-        commentingRow.children();
     }
 
     const flagBoxLabel = globals.getOptionLabel('Flag', checkboxNameFlag);
     const flaggingRow = globals.plainDiv.clone();
-
-    flaggingRow.append(flagBox);
-    flaggingRow.append(flagBoxLabel);
-
-    dropDown.append(flaggingRow);
-    dropDown.append(globals.popoverArrow.clone());
+    flaggingRow.append(flagBox, flagBoxLabel);
+    dropDown.append(flaggingRow, globals.popoverArrow.clone());
 
     return dropDown;
 }
 
-function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date, questionTime: Date): void {
+function handleFlag(flagType: FlagType, reporters: Reporter[]): void {
     const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
     const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer' || flagType.ReportType === 'PostLowQuality';
     const customFlag = flagType.ReportType === 'PostOther';
@@ -412,7 +351,7 @@ function handleFlag(flagType: FlagType, reporters: Reporter[], answerTime: Date,
         if (rudeFlag) {
             promise = reporter.ReportRedFlag();
         } else if (naaFlag) {
-            promise = reporter.ReportNaa(answerTime, questionTime);
+            promise = reporter.ReportNaa();
         } else if (noFlag || customFlag) {
             promise = getPromiseFromFlagName(flagType.DisplayName, reporter);
         }
@@ -432,6 +371,8 @@ function SetupPostPage(): void {
     parseQuestionsAndAnswers(post => {
         if (!post.element.length) return;
 
+        const questionTime: Date | null = post.type === 'Answer' ? post.questionTime : post.creationDate;
+        const answerTime: Date | null = post.type === 'Answer' ? post.creationDate : null;
         const iconLocation: JQuery = post.page === 'Question'
             ? post.element.find('.js-post-menu').children().first()
             : post.element.find(`a.${post.type === 'Question' ? 'question' : 'answer'}-hyperlink`);
@@ -445,7 +386,7 @@ function SetupPostPage(): void {
 
         const reporters: Reporter[] = [];
         if (post.type === 'Answer' && globals.isStackOverflow()) {
-            reporters.push(setupNattyApi(post.postId, nattyIcon));
+            reporters.push(setupNattyApi(post.postId, questionTime, answerTime, nattyIcon));
             reporters.push(setupGenericBotApi(post.postId));
             reporters.push(setupGuttenbergApi(copyPastorApi, copyPastorIcon));
         }
@@ -456,8 +397,6 @@ function SetupPostPage(): void {
 
         if (post.page === 'Question') {
             // Now we setup the flagging dialog
-            const questionTime: Date = post.type === 'Answer' ? post.question.postTime : post.postTime;
-            const answerTime: Date = post.postTime;
             const deleted = post.element.hasClass('deleted-answer');
 
             const isEnabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationWatchFlags);
@@ -474,18 +413,17 @@ function SetupPostPage(): void {
                     Human: getHumanFromDisplayName(matches[1])
                 } as FlagType;
 
-                if (!questionTime || !answerTime) return;
-                handleFlag(flagType, reporters, answerTime, questionTime);
+                handleFlag(flagType, reporters);
                 displaySuccessFlagged(reportedIcon, flagType.Human);
             });
 
             iconLocation.append(performedActionIcon, reportedIcon, nattyIcon, copyPastorIcon, smokeyIcon);
 
             const linkDisabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationLinkDisabled);
-            if (linkDisabled || !questionTime || !answerTime) return;
+            if (linkDisabled) return;
+            const shouldRaiseVlq = globals.qualifiesForVlq(post.score, answerTime || new Date());
             const dropDown = BuildFlaggingDialog(
-                post.element, post.postId, post.type, post.authorReputation as number, post.authorName, answerTime,
-                questionTime, deleted, post.score, reportedIcon, performedActionIcon, reporters, copyPastorApi
+                post, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi, shouldRaiseVlq
             );
 
             advancedFlaggingLink.append(dropDown);
@@ -538,8 +476,8 @@ async function Setup(): Promise<void> {
             const postId = reviewJson.postId;
             const content = $(reviewJson.content);
 
-            const questionTime = parseDate($('.post-signature.owner .user-action-time span', content).attr('title'));
-            const answerTime = parseDate($('.user-info .user-action-time span', content).attr('title'));
+            const questionTime = globals.parseDate($('.post-signature.owner .user-action-time span', content).attr('title'));
+            const answerTime = globals.parseDate($('.user-info .user-action-time span', content).attr('title'));
             if (!questionTime || !answerTime) return;
             postDetails[postId] = {
                 questionTime: questionTime,
@@ -573,7 +511,7 @@ async function Setup(): Promise<void> {
             ReportType: 'AnswerNotAnAnswer',
             DisplayName: 'AnswerNotAnAnswer'
         } as FlagType;
-        handleFlag(flagType, [setupNattyApi(postId)], currentPostDetails.answerTime, currentPostDetails.questionTime);
+        handleFlag(flagType, [setupNattyApi(postId)]);
     });
 }
 

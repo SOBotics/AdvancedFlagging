@@ -68,15 +68,15 @@ export class NattyAPI {
     }
 
     public async ReportRedFlag(): Promise<boolean> {
-        return this.WasReported() && await this.chat.SendMessage(`${this.feedbackMessage} tp`);
+        return await this.SendFeedback(`${this.feedbackMessage} tp`);
     }
 
     public async ReportLooksFine(): Promise<boolean> {
-        return this.WasReported() && await this.chat.SendMessage(`${this.feedbackMessage} fp`);
+        return await this.SendFeedback(`${this.feedbackMessage} fp`);
     }
 
     public async ReportNeedsEditing(): Promise<boolean> {
-        return this.WasReported() && await this.chat.SendMessage(`${this.feedbackMessage} ne`);
+        return await this.SendFeedback(`${this.feedbackMessage} ne`);
     }
 
 
@@ -94,5 +94,9 @@ export class NattyAPI {
 
     private DaysBetween(first: Date, second: Date): number {
         return (second.valueOf() - first.valueOf()) / dayMillis;
+    }
+
+    private async SendFeedback(message: string): Promise<boolean> {
+        return this.WasReported() && await this.chat.SendMessage(message);        
     }
 }

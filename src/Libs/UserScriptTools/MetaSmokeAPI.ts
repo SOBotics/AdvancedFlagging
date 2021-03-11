@@ -103,14 +103,13 @@ export class MetaSmokeAPI {
     }
 
     public async ReportNaa(): Promise<boolean> {
-        const smokeyId = MetaSmokeAPI.getSmokeyId(this.postId);
-        return smokeyId !== 0 && await this.SendFeedback(smokeyId, 'naa-');
+        return await this.SendFeedback('naa-');
     }
 
     public async ReportRedFlag(): Promise<boolean> {
         const smokeyid = MetaSmokeAPI.getSmokeyId(this.postId);
         if (smokeyid) {
-            return await this.SendFeedback(smokeyid, 'tpu-');
+            return await this.SendFeedback('tpu-');
         }
 
         const urlString = MetaSmokeAPI.GetQueryUrl(this.postId, this.postType);
@@ -128,18 +127,15 @@ export class MetaSmokeAPI {
     }
 
     public async ReportLooksFine(): Promise<boolean> {
-        const smokeyId = MetaSmokeAPI.getSmokeyId(this.postId);
-        return smokeyId !== 0 && await this.SendFeedback(smokeyId, 'fp-');
+        return await this.SendFeedback('fp-');
     }
 
     public async ReportNeedsEditing(): Promise<boolean> {
-        const smokeyId = MetaSmokeAPI.getSmokeyId(this.postId);
-        return smokeyId !== 0 && await this.SendFeedback(smokeyId, 'fp-');
+        return await this.SendFeedback('fp-');
     }
 
     public async ReportVandalism(): Promise<boolean> {
-        const smokeyId = MetaSmokeAPI.getSmokeyId(this.postId);
-        return smokeyId !== 0 && await this.SendFeedback(smokeyId, 'tp-');
+        return await this.SendFeedback('tp-');
     }
 
     public ReportDuplicateAnswer(): Promise<boolean> {
@@ -150,9 +146,10 @@ export class MetaSmokeAPI {
         return Promise.resolve(false);
     }
 
-    private async SendFeedback(metaSmokeId: number, feedbackType: 'fp-' | 'tp-' | 'tpu-' | 'naa-'): Promise<boolean> {
-        if (!MetaSmokeAPI.accessToken) return false;
-        const feedbackRequest = await fetch(`https://metasmoke.erwaysoftware.com/api/w/post/${metaSmokeId}/feedback`, {
+    private async SendFeedback(feedbackType: 'fp-' | 'tp-' | 'tpu-' | 'naa-'): Promise<boolean> {
+        const smokeyId = MetaSmokeAPI.getSmokeyId(this.postId);
+        if (!MetaSmokeAPI.accessToken || !smokeyId) return false;
+        const feedbackRequest = await fetch(`https://metasmoke.erwaysoftware.com/api/w/post/${smokeyId}/feedback`, {
             method: 'POST',
             body: globals.getFormDataFromObject({type: feedbackType, key: MetaSmokeAPI.appKey, token: MetaSmokeAPI.accessToken })
         });

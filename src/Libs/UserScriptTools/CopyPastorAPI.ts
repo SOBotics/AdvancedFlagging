@@ -1,5 +1,5 @@
 import { ChatApi } from '@userscriptTools/ChatApi';
-import * as globals from '../../GlobalVars';
+import { isStackOverflow, getAllPostIds, copyPastorServer, username, copyPastorKey } from 'GlobalVars';
 
 export interface CopyPastorFindTargetResponseItem {
     post_id: string;
@@ -26,15 +26,15 @@ export class CopyPastorAPI {
     }
 
     public static async getAllCopyPastorIds(): Promise<void> {
-        if (!globals.isStackOverflow) return;
+        if (!isStackOverflow) return;
 
-        const postUrls = globals.getAllPostIds(false, true);
+        const postUrls = getAllPostIds(false, true);
         await this.storeReportedPosts(postUrls as string[]);
     }
 
     private static storeReportedPosts(postUrls: string[]): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            const url = `${globals.copyPastorServer}/posts/findTarget?url=${postUrls.join(',')}`;
+            const url = `${copyPastorServer}/posts/findTarget?url=${postUrls.join(',')}`;
             GM_xmlhttpRequest({
                 method: 'GET',
                 url,
@@ -103,7 +103,6 @@ export class CopyPastorAPI {
     }
 
     private SendFeedback(type: 'tp' | 'fp'): Promise<boolean> {
-        const username = globals.username;
         const chatId = new ChatApi().GetChatUserId();
         const copyPastorId = this.getCopyPastorId();
         if (!copyPastorId) return Promise.resolve(false);
@@ -113,13 +112,13 @@ export class CopyPastorAPI {
             feedback_type: type,
             username,
             link: `https://chat.stackoverflow.com/users/${chatId}`,
-            key: globals.copyPastorKey,
+            key: copyPastorKey,
         };
 
         return new Promise<boolean>((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'POST',
-                url: `${globals.copyPastorServer}/feedback/create`,
+                url: `${copyPastorServer}/feedback/create`,
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 data: Object.entries(payload).map(item => item.join('=')).join('&'),
                 onload: (response: { status: number }) => {

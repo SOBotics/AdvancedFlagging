@@ -95,13 +95,6 @@ async function handleFlagAndComment(
 }
 
 const popupWrapper = globals.popupWrapper;
-let toasterTimeout: number | null = null;
-let toasterFadeTimeout: number | null = null;
-
-function hidePopup(): void {
-    popupWrapper.removeClass('show').addClass('hide');
-    toasterFadeTimeout = window.setTimeout(() => popupWrapper.empty().addClass('hide'), 1000);
-}
 
 export function displayToaster(message: string, state: string): void {
     const messageDiv = globals.getMessageDiv(message, state);
@@ -109,9 +102,7 @@ export function displayToaster(message: string, state: string): void {
     popupWrapper.append(messageDiv);
     popupWrapper.removeClass('hide').addClass('show');
 
-    if (toasterFadeTimeout) clearTimeout(toasterFadeTimeout);
-    if (toasterTimeout) clearTimeout(toasterTimeout);
-    toasterTimeout = window.setTimeout(hidePopup, globals.popupDelay);
+    window.setTimeout(() => popupWrapper.removeClass('show').addClass('hide'), globals.popupDelay);
 }
 
 function displaySuccessFlagged(reportedIcon: JQuery, reportTypeHuman?: string): void {
@@ -226,16 +217,6 @@ function getHumanFromDisplayName(displayName: string): string {
     }
 }
 
-const storeCommentsInCache = (): void => Object.entries(globals.comments).forEach(array => globals.storeCommentInCache(array));
-const storeFlagsInCache = (): void => Object.entries(globals.flags).forEach(array => globals.storeFlagsInCache(array));
-function SetupCommentsAndFlags(): void {
-    const commentsCached = Object.keys(globals.comments).every(item => globals.getCommentFromCache(item));
-    const flagsCached = Object.keys(globals.flags).every(item => globals.getFlagFromCache(item));
-
-    if (!flagsCached) storeFlagsInCache();
-    if (!commentsCached) storeCommentsInCache();
-}
-
 type Reporter = CopyPastorAPI | MetaSmokeAPI | NattyAPI | GenericBotAPI;
 
 interface StackExchangeFlagResponse {
@@ -300,7 +281,8 @@ function BuildFlaggingDialog(
                 reportLink.attr('title', commentText || '');
             }
 
-            reportLink.click(async () => {
+            // eslint-disable-next-line @typescript-eslint/no-misused-promises
+            reportLink.on('click', async () => {
                 if (!deleted) {
                     if (!leaveCommentBox.is(':checked') && commentText) {
                         const strippedComment = getStrippedComment(commentText);
@@ -367,6 +349,8 @@ function handleFlag(flagType: FlagType, reporters: Reporter[]): void {
 
 let autoFlagging = false;
 function SetupPostPage(): void {
+    const linkDisabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationLinkDisabled);
+    if (linkDisabled) return;
     parseQuestionsAndAnswers(post => {
         if (!post.element.length) return;
 
@@ -418,8 +402,6 @@ function SetupPostPage(): void {
 
             iconLocation.append(performedActionIcon, reportedIcon, nattyIcon, copyPastorIcon, smokeyIcon);
 
-            const linkDisabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationLinkDisabled);
-            if (linkDisabled) return;
             const shouldRaiseVlq = globals.qualifiesForVlq(post.score, answerTime || new Date());
             const dropDown = BuildFlaggingDialog(
                 post, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi, shouldRaiseVlq
@@ -429,19 +411,19 @@ function SetupPostPage(): void {
 
             const openOnHover = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationOpenOnHover);
             if (openOnHover) {
-                advancedFlaggingLink.hover(event => {
+                advancedFlaggingLink.on('mouseover', event => {
                     event.stopPropagation();
                     if (event.target === advancedFlaggingLink.get(0)) globals.showElement(dropDown);
-                }).mouseleave(e => {
+                }).on('mouseleave', e => {
                     e.stopPropagation();
-                    setTimeout(() => globals.hideElement(dropDown), 100); // avoid immediate closing of the popover
+                    setTimeout(() => globals.hideElement(dropDown), 200); // avoid immediate closing of the popover
                 });
             } else {
-                advancedFlaggingLink.click(event => {
+                advancedFlaggingLink.on('click', event => {
                     event.stopPropagation();
                     if (event.target === advancedFlaggingLink.get(0)) globals.showElement(dropDown);
                 });
-                $(window).click(() => globals.hideElement(dropDown));
+                $(window).on('click', () => globals.hideElement(dropDown));
             }
         } else {
             iconLocation.after(smokeyIcon, copyPastorIcon, nattyIcon, reportedIcon, performedActionIcon);
@@ -456,9 +438,7 @@ async function Setup(): Promise<void> {
         MetaSmokeAPI.QueryMetaSmokeInternal(),
         CopyPastorAPI.getAllCopyPastorIds(),
         NattyAPI.getAllNattyIds()
-    ]);
-    SetupCommentsAndFlags();
-    SetupPostPage();
+    ]).then(() => SetupPostPage());
     SetupStyles();
     void SetupConfiguration();
     document.body.appendChild(popupWrapper.get(0));
@@ -501,7 +481,7 @@ async function Setup(): Promise<void> {
         if (!matches) return;
 
         const postIdStr = matches[1] || matches[2];
-        const postId = parseInt(postIdStr, 10);
+        const postId = Number(postIdStr);
         const currentPostDetails = postDetails[postId];
         if (!currentPostDetails || !$('.answers-subheader').length) return;
 
@@ -526,9 +506,9 @@ $(() => {
     }
 
     // If the window gains focus
-    $(window).focus(actionWatcher);
+    $(window).on('focus', actionWatcher);
     // Or we have mouse movement
-    $(window).mousemove(actionWatcher);
+    $(window).on('mousemove', actionWatcher);
 
     // Or the document is already focused,
     // Then we execute the script.

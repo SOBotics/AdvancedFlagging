@@ -1,5 +1,5 @@
 import { ChatApi } from '@userscriptTools/ChatApi';
-import * as globals from '../../GlobalVars';
+import { isStackOverflow, nattyAllReportsUrl, getAllPostIds, dayMillis } from '../../GlobalVars';
 
 interface NattyFeedback {
     items: NattyFeedbackItem[];
@@ -7,8 +7,8 @@ interface NattyFeedback {
 }
 
 interface NattyFeedbackItem {
-    name: string,
-    type: string
+    name: string;
+    type: string;
 }
 
 export class NattyAPI {
@@ -31,22 +31,20 @@ export class NattyAPI {
 
     public static getAllNattyIds(): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            if (!globals.isStackOverflow) resolve();
+            if (!isStackOverflow) resolve();
             GM_xmlhttpRequest({
                 method: 'GET',
-                url: `${globals.nattyAllReportsUrl}`,
+                url: `${nattyAllReportsUrl}`,
                 onload: (response: { status: number, responseText: string }) => {
                     if (response.status !== 200) reject();
 
                     const result = JSON.parse(response.responseText) as NattyFeedback;
-                    const allStoredIds = result.items.map((item: NattyFeedbackItem) => Number(item.name));
-                    const answerIds = globals.getAllPostIds(false, false) as number[];
+                    const allStoredIds = result.items.map(item => Number(item.name));
+                    const answerIds = getAllPostIds(false, false) as number[];
                     this.nattyIds = answerIds.filter(id => allStoredIds.includes(id));
                     resolve();
                 },
-                onerror: () => {
-                    reject();
-                },
+                onerror: () => reject()
             });
         });
     }
@@ -59,34 +57,26 @@ export class NattyAPI {
         if (this.answerDate < this.questionDate) return false;
 
         if (this.WasReported()) {
-            await this.chat.SendMessage(`${this.feedbackMessage} tp`);
-            return true;
+            return await this.chat.SendMessage(`${this.feedbackMessage} tp`);
         } else {
             const answerAge = this.DaysBetween(this.answerDate, new Date());
             const daysPostedAfterQuestion = this.DaysBetween(this.questionDate, this.answerDate);
             if (isNaN(answerAge) || isNaN(daysPostedAfterQuestion) || answerAge > 30 || daysPostedAfterQuestion < 30) return false;
 
-            await this.chat.SendMessage(this.reportMessage);
-            return true;
+            return isNaN(answerAge + daysPostedAfterQuestion) && await this.chat.SendMessage(this.reportMessage);
         }
     }
 
     public async ReportRedFlag(): Promise<boolean> {
-        if (!this.WasReported()) return false;
-        await this.chat.SendMessage(`${this.feedbackMessage} tp`);
-        return true;
+        return this.WasReported() && await this.chat.SendMessage(`${this.feedbackMessage} tp`);
     }
 
     public async ReportLooksFine(): Promise<boolean> {
-        if (!this.WasReported()) return false;
-        await this.chat.SendMessage(`${this.feedbackMessage} fp`);
-        return true;
+        return this.WasReported() && await this.chat.SendMessage(`${this.feedbackMessage} fp`);
     }
 
     public async ReportNeedsEditing(): Promise<boolean> {
-        if (!this.WasReported()) return false;
-        await this.chat.SendMessage(`${this.feedbackMessage} ne`);
-        return true;
+        return this.WasReported() && await this.chat.SendMessage(`${this.feedbackMessage} ne`);
     }
 
 
@@ -103,6 +93,6 @@ export class NattyAPI {
     }
 
     private DaysBetween(first: Date, second: Date): number {
-        return (second.valueOf() - first.valueOf()) / globals.dayMillis;
+        return (second.valueOf() - first.valueOf()) / dayMillis;
     }
 }

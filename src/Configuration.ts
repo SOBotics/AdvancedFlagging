@@ -6,48 +6,43 @@ import * as globals from './GlobalVars';
 declare const Svg: globals.Svg;
 declare const Stacks: globals.Stacks;
 
-const configurationEnabledFlags = GreaseMonkeyCache.GetFromCache<number[]>(globals.ConfigurationEnabledFlags);
+const enabledFlags = GreaseMonkeyCache.GetFromCache<number[]>(globals.ConfigurationEnabledFlags);
+const flagTypes = flagCategories.flatMap(category => category.FlagTypes).map(flag => ({ Id: flag.Id, DisplayName: flag.DisplayName }));
+const storeCommentsInCache = (): void => Object.entries(globals.comments).forEach(array => globals.storeCommentInCache(array));
+const storeFlagsInCache = (): void => Object.entries(globals.flags).forEach(array => globals.storeFlagsInCache(array));
 
 export async function SetupConfiguration(): Promise<void> {
     while (typeof Svg === 'undefined') {
         // eslint-disable-next-line no-await-in-loop
         await globals.Delay(1000);
     }
-    const bottomBox = $('.site-footer--copyright').children('.-list');
-    const configurationDiv = globals.configurationDiv.clone();
-    const commentsDiv = globals.commentsDiv.clone();
+    SetupDefaults(); // stores default values if they haven't already been
+    BuildConfigurationOverlay(); // the configuration modal
+    SetupCommentsAndFlagsModal(); // the comments & flags modal
 
-    SetupDefaults();
-    BuildConfigurationOverlay();
-    SetupCommentsAndFlagsModal();
-    const configurationLink = globals.configurationLink.clone();
-    const commentsLink = globals.commentsLink.clone();
+    const bottomBox = $('.site-footer--copyright').children('.-list');
+    const configurationDiv = globals.configurationDiv.clone(), commentsDiv = globals.commentsDiv.clone();
+    const configurationLink = globals.configurationLink.clone(), commentsLink = globals.commentsLink.clone();
     $(document).on('click', '#af-modal-button', () => Stacks.showModal(document.querySelector('#af-config')));
     $(document).on('click', '#af-comments-button', () => Stacks.showModal(document.querySelector('#af-comments')));
-    configurationDiv.append(configurationLink);
-    commentsDiv.append(commentsLink);
-    configurationDiv.insertAfter(bottomBox);
-    commentsDiv.insertAfter(bottomBox);
-}
 
-function getFlagTypes(): { Id: number, DisplayName: string }[] {
-    const flagTypes: { Id: number, DisplayName: string }[] = [];
-    flagCategories.forEach(flagCategory => {
-        flagCategory.FlagTypes.forEach(flagType => {
-            flagTypes.push({
-                Id: flagType.Id,
-                DisplayName: flagType.DisplayName
-            });
-        });
-    });
-    return flagTypes;
+    configurationDiv.append(configurationLink).insertAfter(bottomBox);
+    commentsDiv.append(commentsLink).insertAfter(bottomBox);
 }
 
 function SetupDefaults(): void {
-    if (!configurationEnabledFlags) {
-        const flagTypeIds = getFlagTypes().map(f => f.Id);
+    // store all flags if they don't exist
+    if (!enabledFlags) {
+        const flagTypeIds = flagTypes.map(flag => flag.Id);
         GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagTypeIds);
     }
+
+    const commentsCached = Object.keys(globals.comments).every(item => globals.getCommentFromCache(item));
+    const flagsCached = Object.keys(globals.flags).every(item => globals.getFlagFromCache(item));
+
+    // store all comments/flags content if it doesn't exist
+    if (!flagsCached) storeFlagsInCache();
+    if (!commentsCached) storeCommentsInCache();
 }
 
 function BuildConfigurationOverlay(): void {
@@ -59,6 +54,7 @@ function BuildConfigurationOverlay(): void {
             SectionName: 'General',
             Items: GetGeneralConfigItems(),
             onSave: (): void => {
+                // find the option id (it's the data-option-id attribute) and store whether the box is checked or not
                 $('.af-section-general').find('input').each((_index, el) => {
                     GreaseMonkeyCache.StoreInCache($(el).parents().eq(2).data('option-id'), $(el).prop('checked'));
                 });
@@ -68,16 +64,18 @@ function BuildConfigurationOverlay(): void {
             SectionName: 'Flags',
             Items: GetFlagSettings(),
             onSave: (): void => {
+                // collect all flag ids (flag-type-ID) and store them
                 const flagOptions = $('.af-section-flags').find('input').get()
                     .filter(el => $(el).prop('checked'))
                     .map(el => {
                         const postId = $(el).attr('id');
                         return postId ? Number(/\d+/.exec(postId)) : 0;
-                    }).sort((a, b) => a - b);
+                    }).sort((a, b) => a - b); // sort the ids before storing them
                 GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagOptions);
             }
         },
         {
+            // nothing to do onSave here because there's nothing to save :)
             SectionName: 'Admin',
             Items: GetAdminConfigItems()
         }
@@ -94,8 +92,7 @@ function BuildConfigurationOverlay(): void {
         section.Items.forEach((element: JQuery) => sectionWrapper.append(element));
     });
 
-    const okayButton = overlayModal.find('.s-btn__primary');
-    okayButton.click(event => {
+    overlayModal.find('.s-btn__primary').on('click', event => {
         event.preventDefault();
         sections.forEach(section => {
             if (section.onSave) section.onSave();
@@ -105,16 +102,16 @@ function BuildConfigurationOverlay(): void {
     });
 
     $('body').append(overlayModal);
-    $('label[for="flag-type-16"]').parent().removeClass('w25').css('width', '20.8%'); // because without it, the CSS breaks
     const flagOptions = $('.af-section-flags').children('div');
     for (let i = 0; i < flagOptions.length; i += 5) {
         flagOptions.slice(i, i + 5).wrapAll(globals.inlineCheckboxesWrapper.clone());
     }
+    // dynamically generate the width
+    $('label[for="flag-type-16"]').parent().css('width', $('label[for="flag-type-11"]').parent().css('width')).removeClass('w25 lg:w25');
 }
 
 function GetGeneralConfigItems(): JQuery[] {
-    const checkboxArray: JQuery[] = [];
-    const options = [
+    return [
         {
             text: 'Open dropdown on hover',
             configValue: globals.ConfigurationOpenOnHover
@@ -132,40 +129,38 @@ function GetGeneralConfigItems(): JQuery[] {
             configValue: globals.ConfigurationLinkDisabled
         },
         {
-            text: 'Uncheck \'Comment\' by default',
+            text: 'Uncheck \'Leave comment\' by default',
             configValue: globals.ConfigurationDefaultNoComment
         },
         {
-            text: 'Uncheck \'flag\' by default',
+            text: 'Uncheck \'Flag\' by default',
             configValue: globals.ConfigurationDefaultNoFlag
         },
-    ];
-    options.forEach(el => {
-        const storedValue: boolean | null = GreaseMonkeyCache.GetFromCache(el.configValue);
-        checkboxArray.push(createCheckbox(el.text, storedValue).attr('data-option-id', el.configValue));
+    ].map(item => {
+        const storedValue: boolean | null = GreaseMonkeyCache.GetFromCache(item.configValue);
+        return createCheckbox(item.text, storedValue).attr('data-option-id', item.configValue);
     });
-    return checkboxArray;
 }
 
 function GetFlagSettings(): JQuery[] {
     const checkboxes: JQuery[] = [];
-    if (!configurationEnabledFlags) return checkboxes;
+    if (!enabledFlags) return checkboxes;
 
-    getFlagTypes().forEach(f => {
-        const storedValue = configurationEnabledFlags.indexOf(f.Id) > -1;
-        const checkbox = createCheckbox(f.DisplayName, storedValue, `flag-type-${f.Id}`).children().eq(0);
-        checkboxes.push(checkbox.addClass('w25 lg:w25 md:w100 sm:w100'));
+    flagTypes.forEach(flag => {
+        const storedValue = enabledFlags.indexOf(flag.Id) > -1;
+        const checkbox = createCheckbox(flag.DisplayName, storedValue, `flag-type-${flag.Id}`).children().eq(0);
+        checkboxes.push(checkbox.addClass('w25 lg:w25 md:w100 sm:w100')); // responsiveness
     });
     return checkboxes;
 }
 
 function GetAdminConfigItems(): JQuery[] {
     return [
-        $('<a>').text('Clear Metasmoke Configuration').click(() => {
+        $('<a>').text('Clear Metasmoke Configuration').on('click', () => {
             MetaSmokeAPI.Reset();
             globals.displayStacksToast('Successfully cleared MS configuration.', 'success');
         }),
-        $('<a>').text('Clear chat fkey').click(() => {
+        $('<a>').text('Clear chat fkey').on('click', () => {
             GreaseMonkeyCache.Unset(globals.CacheChatApiFkey);
             globals.displayStacksToast('Successfully cleared chat fkey.', 'success');
         })
@@ -239,7 +234,7 @@ function SetupCommentsAndFlagsModal(): void {
         const displayName = element.next().text();
         GreaseMonkeyCache.StoreInCache(cacheKey, newContent);
         globals.displayStacksToast(displayName + ': content saved successfully', 'success');
-        element.prev().click(); // hide the textarea
+        element.prev().trigger('click'); // hide the textarea
     });
     $('body').append(editCommentsPopup);
 }

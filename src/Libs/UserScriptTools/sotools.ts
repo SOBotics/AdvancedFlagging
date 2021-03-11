@@ -1,4 +1,4 @@
-import * as globals from '../../GlobalVars';
+import { isFlagsPage, isQuestionPage, isNatoPage, parseDate } from '../../GlobalVars';
 
 export type QuestionPageInfo = QuestionQuestion | QuestionAnswer;
 type PostInfo = NatoAnswer | QuestionPageInfo | FlagPageInfo;
@@ -109,7 +109,7 @@ function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) =>
     const postDetails = getPostDetails(aNode);
     if (!postDetails.creationDate) return;
 
-    aNode.find('.answercell').bind('destroyed', () => {
+    aNode.find('.answercell').on('destroyed', () => {
         setTimeout(() => {
             const updatedAnswerNode = $(`#answer-${answerId}`);
             parseAnswerDetails(updatedAnswerNode, callback, questionTime);
@@ -139,7 +139,7 @@ function parseQuestionPage(callback: (post: QuestionPageInfo) => void): void {
         const postDetails = getPostDetails(qNode);
         if (!postDetails.creationDate) return;
 
-        qNode.find('.postcell').bind('destroyed', () => {
+        qNode.find('.postcell').on('destroyed', () => {
             setTimeout(() => {
                 const updatedQuestionNode = $(`[data-questionid="${postId}"]`);
                 parseQuestionDetails(updatedQuestionNode);
@@ -188,11 +188,11 @@ function parseFlagsPage(callback: (post: FlagPageInfo) => void): void {
 }
 
 export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): void {
-    if (globals.isNatoPage) {
+    if (isNatoPage) {
         parseNatoPage(callback);
-    } else if (globals.isQuestionPage) {
+    } else if (isQuestionPage) {
         parseQuestionPage(callback);
-    } else if (globals.isFlagsPage) {
+    } else if (isFlagsPage) {
         parseFlagsPage(callback);
     }
 }
@@ -211,12 +211,9 @@ function parseReputation(reputationDiv: JQuery): number {
 }
 
 function parseAuthorDetails(authorDiv: JQuery): string {
-    const userLink = authorDiv.find('a');
-    const authorName = userLink.text();
-
-    return authorName;
+    return authorDiv.find('a').text();
 }
 
 function parseActionDate(actionDiv: JQuery): Date | null {
-    return globals.parseDate((actionDiv.hasClass('relativetime') ? actionDiv : actionDiv.find('.relativeTime')).attr('title'));
+    return parseDate((actionDiv.hasClass('relativetime') ? actionDiv : actionDiv.find('.relativeTime')).attr('title'));
 }

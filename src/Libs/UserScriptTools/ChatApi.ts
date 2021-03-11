@@ -1,7 +1,7 @@
 import { GreaseMonkeyCache } from '@userscriptTools/GreaseMonkeyCache';
-import * as globals from '../../GlobalVars';
+import { StackExchange, CacheChatApiFkey, soboticsRoomId } from 'GlobalVars';
 
-declare const StackExchange: globals.StackExchange;
+declare const StackExchange: StackExchange;
 
 export class ChatApi {
     private static GetExpiryDate(): Date {
@@ -18,7 +18,7 @@ export class ChatApi {
 
     public GetChannelFKey(roomId: number): Promise<string> {
         const expiryDate = ChatApi.GetExpiryDate();
-        return GreaseMonkeyCache.GetAndCache(globals.CacheChatApiFkey, () => new Promise<string>((resolve, reject) => {
+        return GreaseMonkeyCache.GetAndCache(CacheChatApiFkey, () => new Promise<string>((resolve, reject) => {
             this.GetChannelPage(roomId).then(channelPage => {
                 const fkeyElement = $(channelPage).filter('#fkey');
                 const fkey = fkeyElement.val();
@@ -32,36 +32,37 @@ export class ChatApi {
         return StackExchange.options.user.userId;
     }
 
-    public SendMessage(message: string, roomId: number = globals.soboticsRoomId): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            const requestFunc = async (): Promise<void> => {
-                const fkey = await this.GetChannelFKey(roomId);
-                GM_xmlhttpRequest({
-                    method: 'POST',
-                    url: `${this.chatRoomUrl}/chats/${roomId}/messages/new`,
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    data: 'text=' + encodeURIComponent(message) + '&fkey=' + fkey,
-                    onload: (chatResponse: { status: number }) => {
-                        chatResponse.status === 200 ? resolve() : onFailure();
-                    },
-                    onerror: () => {
-                        onFailure();
-                    },
-                });
-            };
+    public async SendMessage(message: string, roomId: number = soboticsRoomId): Promise<boolean> {
+        const makeRequest = async (): Promise<boolean> => await this.SendRequestToChat(message, roomId);
+        let numTries = 0;
+        const onFailure = async (): Promise<boolean> => {
+            numTries++;
+            if (numTries < 3) {
+                GreaseMonkeyCache.Unset(CacheChatApiFkey);
+                if (!await makeRequest()) return onFailure();
+            } else {
+                throw new Error(); // failed to send message to chat!
+            }
+            return true;
+        };
 
-            let numTries = 0;
-            const onFailure = (): void => {
-                numTries++;
-                if (numTries < 3) {
-                    GreaseMonkeyCache.Unset(globals.CacheChatApiFkey);
-                    void requestFunc();
-                } else {
-                    reject();
-                }
-            };
+        if (!await makeRequest()) return onFailure();
+        return true;
+    }
 
-            void requestFunc();
+    private async SendRequestToChat(message: string, roomId: number): Promise<boolean> {
+        const fkey = await this.GetChannelFKey(roomId);
+        return new Promise(resolve => {
+            GM_xmlhttpRequest({
+                method: 'POST',
+                url: `${this.chatRoomUrl}/chats/${roomId}/messages/new`,
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                data: 'text=' + encodeURIComponent(message) + '&fkey=' + fkey,
+                onload: (chatResponse: { status: number }) => {
+                    resolve(chatResponse.status === 200);
+                },
+                onerror: () => resolve(false),
+            });
         });
     }
 

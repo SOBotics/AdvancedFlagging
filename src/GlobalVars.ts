@@ -36,7 +36,7 @@ export interface StackExchange {
 export interface StackExchangeHelpers {
     showModal(popup: JQuery): void;
     showConfirmModal(modal: ModalType): Promise<boolean>;
-    showToast(message: string, info: { type: string }): void;
+    showToast(message: string, info: { type: string, transientTimeout: number }): void;
 }
 
 interface ModalType {
@@ -157,7 +157,10 @@ export const storeFlagsInCache = (array: string[]): void => GreaseMonkeyCache.St
 export const getAllFlags = (): AllFlags[] => Object.keys(flags).map(item => ({ flagName: item, content: getFlagFromCache(item) }));
 export const getAllComments = (): AllComments[] => Object.keys(comments).map(item => ({ commentName: item, content: getCommentFromCache(item) }));
 
-export const displayStacksToast = (message: string, type: string): void => StackExchange.helpers.showToast(message, { type: type });
+export const displayStacksToast = (message: string, type: string): void => StackExchange.helpers.showToast(message, {
+    type: type,
+    transientTimeout: popupDelay
+});
 
 // regexes
 export const popupDelay = 4000;
@@ -229,7 +232,7 @@ export const commentsWrapper = $('<div>').attr('class', 'af-comments-content gri
 export const flagsWrapper = $('<div>').attr('class', 'af-flags-content grid--cell').append(flagsHeader);
 export const overlayModal = $(`
 <aside class="s-modal" id="af-config" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
-  <div class="s-modal--dialog s-modal__full w60 sm:w100" role="document">
+  <div class="s-modal--dialog s-modal__full w60 sm:w100 md:w75 lg:w75" role="document">
     <h1 class="s-modal--header fw-body c-movey" id="af-modal-title">AdvancedFlagging configuration</h1>
     <div class="s-modal--body fs-body2" id="af-modal-description"></div>
     <div class="grid gs8 gsx s-modal--footer">

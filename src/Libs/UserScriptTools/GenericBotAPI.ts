@@ -1,4 +1,4 @@
-import * as globals from '../../GlobalVars';
+import { isStackOverflow, username, genericBotKey } from 'GlobalVars';
 
 export class GenericBotAPI {
     private answerId: number;
@@ -50,9 +50,9 @@ export class GenericBotAPI {
 
     private makeTrackRequest(): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
-            if (!globals.isStackOverflow) resolve(false);
+            if (!isStackOverflow) resolve(false);
 
-            const flaggerName = encodeURIComponent(globals.username || '');
+            const flaggerName = encodeURIComponent(username || '');
             if (!flaggerName) resolve(false);
 
             const contentHash = this.computeContentHash($(`#answer-${this.answerId} .js-post-body`).html().trim());
@@ -61,7 +61,7 @@ export class GenericBotAPI {
                 method: 'POST',
                 url: 'https://so.floern.com/api/trackpost.php',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                data: `key=${globals.genericBotKey}&postId=${this.answerId}&contentHash=${contentHash}&flagger=${flaggerName}`,
+                data: `key=${genericBotKey}&postId=${this.answerId}&contentHash=${contentHash}&flagger=${flaggerName}`,
                 onload: (response: { status: number }) => {
                     if (response.status !== 200) reject(false);
                     resolve(true);

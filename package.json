@@ -8,6 +8,7 @@
   "license": "ISC",
   "devDependencies": {
     "@types/jquery": "^3.5.5",
+    "@types/tampermonkey": "^4.0.0",
     "@typescript-eslint/eslint-plugin": "^4.17.0",
     "@typescript-eslint/parser": "^4.17.0",
     "concat-cli": "4.0.0",
@@ -21,8 +22,5 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/SOBotics/AdvancedFlagging.git"
-  },
-  "dependencies": {
-    "@types/tampermonkey": "^4.0.0"
   }
 }

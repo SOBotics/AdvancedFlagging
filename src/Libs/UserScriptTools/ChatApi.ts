@@ -18,14 +18,17 @@ export class ChatApi {
 
     public GetChannelFKey(roomId: number): Promise<string> {
         const expiryDate = ChatApi.GetExpiryDate();
-        return GreaseMonkeyCache.GetAndCache(CacheChatApiFkey, () => new Promise<string>((resolve, reject) => {
-            this.GetChannelPage(roomId).then(channelPage => {
+        return GreaseMonkeyCache.GetAndCache(CacheChatApiFkey, async () => {
+            try {
+                const channelPage = await this.GetChannelPage(roomId);
                 const fkeyElement = $(channelPage).filter('#fkey');
                 const fkey = fkeyElement.val();
-                if (!fkey) return;
-                resolve(fkey.toString());
-            }).catch(() => reject());
-        }), expiryDate);
+                return fkey?.toString() || '';
+            } catch (error) {
+                console.error(error);
+                throw new Error('Failed to get chat fkey');
+            }
+        }, expiryDate);
     }
 
     public GetChatUserId(): number {

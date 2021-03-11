@@ -33,8 +33,8 @@ export class CopyPastorAPI {
     }
 
     private static storeReportedPosts(postUrls: string[]): Promise<void> {
+        const url = `${copyPastorServer}/posts/findTarget?url=${postUrls.join(',')}`;
         return new Promise<void>((resolve, reject) => {
-            const url = `${copyPastorServer}/posts/findTarget?url=${postUrls.join(',')}`;
             GM_xmlhttpRequest({
                 method: 'GET',
                 url,

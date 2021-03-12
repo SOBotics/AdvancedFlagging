@@ -441,9 +441,9 @@ function SetupPostPage(): void {
     });
 }
 
-async function Setup(): Promise<void> {
+function Setup(): void {
     // Collect all ids
-    await Promise.all([
+    void Promise.all([
         MetaSmokeAPI.Setup(globals.metaSmokeKey),
         MetaSmokeAPI.QueryMetaSmokeInternal(),
         CopyPastorAPI.getAllCopyPastorIds(),
@@ -509,7 +509,7 @@ $(() => {
     function actionWatcher(): void {
         if (!started) {
             started = true;
-            void Setup();
+            Setup();
         }
         $(window).off('focus', actionWatcher);
         $(window).off('mousemove', actionWatcher);

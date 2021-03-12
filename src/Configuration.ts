@@ -187,7 +187,7 @@ function createEditTextarea(type: 'flag' | 'comment', displayName: string, cache
   <button class="s-sidebarwidget--action s-btn t4 r4 af-expandable-trigger"
           data-controller="s-expandable-control" aria-controls="${type}-${displayName}">Edit</button>
   <button class="s-sidebarwidget--action s-btn s-btn__primary t4 r6 af-submit-content d-none">Save</button>
-  <div class="s-sidebarwidget--content d-block p12 fs-body2">${displayName}</div>
+  <div class="s-sidebarwidget--content d-block p12 fs-body3">${displayName}</div>
   <div class="s-expandable" id="${type}-${displayName}">
     <div class="s-expandable--content">
       <textarea class="grid--cell s-textarea ml8 mb8 fs-body2" rows="4" data-cache-key=${cacheKey}>${content || ''}</textarea>
@@ -201,10 +201,8 @@ function SetupCommentsAndFlagsModal(): void {
     editCommentsPopup.find('.s-modal--close').append(Svg.ClearSm());
     const commentsWrapper = globals.commentsWrapper.clone();
     const flagsWrapper = globals.flagsWrapper.clone();
-    const shouldAddAuthorName = GreaseMonkeyCache.GetFromCache(globals.CommentsAddAuthorName);
-    editCommentsPopup.find('.s-modal--body')
-        .append(globals.editContentWrapper.clone().append(commentsWrapper).append(flagsWrapper))
-        .append(createCheckbox('Add OP\'s name before comments', Boolean(shouldAddAuthorName)).attr('class', 'af-author-name mt8'));
+    const shouldAddAuthorName: boolean | null = GreaseMonkeyCache.GetFromCache(globals.CommentsAddAuthorName);
+    editCommentsPopup.find('.s-modal--body').append(globals.editContentWrapper.clone().append(commentsWrapper).append(flagsWrapper));
 
     const allFlags = globals.getAllFlags();
     const allComments = globals.getAllComments();
@@ -216,6 +214,7 @@ function SetupCommentsAndFlagsModal(): void {
         const textarea = createEditTextarea('comment', comment.commentName, globals.getCommentKey(comment.commentName), comment.content);
         commentsWrapper.append(textarea);
     });
+    commentsWrapper.append(createCheckbox('Add OP\'s name before comments', shouldAddAuthorName).attr('class', 'af-author-name mt8'));
 
     $(document).on('change', '.af-author-name', event => {
         GreaseMonkeyCache.StoreInCache(globals.CommentsAddAuthorName, $(event.target).is(':checked'));

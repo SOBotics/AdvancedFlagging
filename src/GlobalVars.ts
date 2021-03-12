@@ -209,7 +209,7 @@ export const getConfigHtml = (optionId: string, text: string): JQuery => $(`
 <div>
   <div class="grid gs4">
     <div class="grid--cell"><input class="s-checkbox" type="checkbox" id="${optionId}"/></div>
-    <label class="grid--cell s-label fw-normal" for="${optionId}">${text}</label>
+    <label class="grid--cell s-label fw-normal pt2" for="${optionId}">${text}</label>
   </div>
 </div>`);
 
@@ -231,8 +231,8 @@ export const configurationLink = $('<a>').attr('id', 'af-modal-button').text('Ad
 export const commentsDiv = configurationDiv.clone().removeClass('advanced-flagging-configuration-div').addClass('af-comments-div');
 export const commentsLink = configurationLink.clone().attr('id', 'af-comments-button').text('AdvancedFlagging: edit comments and flags');
 export const editContentWrapper = $('<div>').attr('class', 'grid grid__fl1 md:fd-column gs16');
-const commentsHeader = $('<h2>').attr('class', 'ta-center mb8').text('Comments');
-const flagsHeader = $('<h2>').attr('class', 'ta-center mb8').text('Flags');
+const commentsHeader = $('<h2>').attr('class', 'ta-center mb8 fs-title').text('Comments');
+const flagsHeader = $('<h2>').attr('class', 'ta-center mb8 fs-title').text('Flags');
 export const commentsWrapper = $('<div>').attr('class', 'af-comments-content grid--cell').append(commentsHeader);
 export const flagsWrapper = $('<div>').attr('class', 'af-flags-content grid--cell').append(flagsHeader);
 export const overlayModal = $(`

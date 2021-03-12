@@ -97,6 +97,7 @@ async function handleFlagAndComment(
 const popupWrapper = globals.popupWrapper;
 
 export function displayToaster(message: string, state: string): void {
+    if (popupWrapper.hasClass('hide')) popupWrapper.empty(); // if the toaster is hidden, then remove any appended messages
     const messageDiv = globals.getMessageDiv(message, state);
 
     popupWrapper.append(messageDiv);
@@ -150,7 +151,7 @@ function getErrorMessage(responseJson: StackExchangeFlagResponse): string {
     return message;
 }
 
-function getPromiseFromFlagName(flagName: string, reporter: Reporter): Promise<boolean> {
+function getPromiseFromFlagName(flagName: string, reporter: Reporter): Promise<string> {
     switch (flagName) {
     case 'Needs Editing': return reporter.ReportNeedsEditing();
     case 'Vandalism': return reporter.ReportVandalism();
@@ -239,7 +240,8 @@ function BuildFlaggingDialog(
     performedActionIcon: JQuery,
     reporters: Reporter[],
     copyPastorApi: CopyPastorAPI,
-    shouldRaiseVlq: boolean
+    shouldRaiseVlq: boolean,
+    failedActionIcon: JQuery
 ): JQuery {
     const enabledFlagIds = GreaseMonkeyCache.GetFromCache<number[]>(globals.ConfigurationEnabledFlags);
     const defaultNoComment = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoComment);
@@ -281,7 +283,6 @@ function BuildFlaggingDialog(
                 reportLink.attr('title', commentText || '');
             }
 
-            // eslint-disable-next-line @typescript-eslint/no-misused-promises
             reportLink.on('click', async () => {
                 if (!deleted) {
                     if (!leaveCommentBox.is(':checked') && commentText) {
@@ -295,13 +296,17 @@ function BuildFlaggingDialog(
                     );
                 }
 
-                if (flagType.ReportType === 'NoFlag') {
+                const success = await handleFlag(flagType, reporters);
+                globals.hideElement(dropDown); // hide the dropdown after clicking one of the options
+                if (flagType.ReportType !== 'NoFlag') return;
+
+                if (success) {
                     performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
                     globals.showElement(performedActionIcon);
+                } else {
+                    failedActionIcon.attr('title', `Failed to perform action: ${flagType.DisplayName}`);
+                    globals.showElement(failedActionIcon);
                 }
-
-                handleFlag(flagType, reporters);
-                globals.hideElement(dropDown); // hide the dropdown after clicking one of the options
             });
         }
         if (categoryDiv.html()) dropDown.append(globals.divider.clone()); // at least one option exists for the category
@@ -322,13 +327,13 @@ function BuildFlaggingDialog(
     return dropDown;
 }
 
-function handleFlag(flagType: FlagType, reporters: Reporter[]): void {
+async function handleFlag(flagType: FlagType, reporters: Reporter[]): Promise<boolean> {
     const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
     const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer' || flagType.ReportType === 'PostLowQuality';
     const customFlag = flagType.ReportType === 'PostOther';
     const noFlag = flagType.ReportType === 'NoFlag';
-    reporters.forEach(reporter => {
-        let promise: Promise<boolean> | null = null;
+    for (const reporter of reporters) {
+        let promise: Promise<string> | null = null;
         if (rudeFlag) {
             promise = reporter.ReportRedFlag();
         } else if (naaFlag) {
@@ -336,15 +341,19 @@ function handleFlag(flagType: FlagType, reporters: Reporter[]): void {
         } else if (noFlag || customFlag) {
             promise = getPromiseFromFlagName(flagType.DisplayName, reporter);
         }
-        if (!promise) return;
+        if (!promise) continue;
 
-        promise.then(didReport => {
-            if (!didReport) return;
-            globals.displaySuccess(`Feedback sent to ${reporter.name}`);
-        }).catch(() => {
-            globals.displayError(`Failed to send feedback to ${reporter.name}.`);
-        });
-    });
+        try {
+            // eslint-disable-next-line no-await-in-loop
+            const promiseValue = await promise;
+            if (!promiseValue) continue;
+            globals.displaySuccess(promiseValue);
+        } catch (error) {
+            globals.displayError((error as Error).message);
+            return false;
+        }
+    }
+    return true;
 }
 
 let autoFlagging = false;
@@ -376,6 +385,7 @@ function SetupPostPage(): void {
         reporters.push(setupMetasmokeApi(post.postId, post.type, smokeyIcon));
 
         const performedActionIcon = globals.performedActionIcon();
+        const failedActionIcon = globals.failedActionIcon();
         const reportedIcon = globals.reportedIcon();
 
         if (post.page === 'Question') {
@@ -396,15 +406,15 @@ function SetupPostPage(): void {
                     Human: getHumanFromDisplayName(matches[1])
                 } as FlagType;
 
-                handleFlag(flagType, reporters);
                 displaySuccessFlagged(reportedIcon, flagType.Human);
+                void handleFlag(flagType, reporters);
             });
 
-            iconLocation.append(performedActionIcon, reportedIcon, nattyIcon, copyPastorIcon, smokeyIcon);
+            iconLocation.append(performedActionIcon, reportedIcon, failedActionIcon, nattyIcon, copyPastorIcon, smokeyIcon);
 
             const shouldRaiseVlq = globals.qualifiesForVlq(post.score, answerTime || new Date());
             const dropDown = BuildFlaggingDialog(
-                post, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi, shouldRaiseVlq
+                post, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi, shouldRaiseVlq, failedActionIcon
             );
 
             advancedFlaggingLink.append(dropDown);
@@ -426,7 +436,7 @@ function SetupPostPage(): void {
                 $(window).on('click', () => globals.hideElement(dropDown));
             }
         } else {
-            iconLocation.after(smokeyIcon, copyPastorIcon, nattyIcon, reportedIcon, performedActionIcon);
+            iconLocation.after(smokeyIcon, copyPastorIcon, nattyIcon, reportedIcon, failedActionIcon, performedActionIcon);
         }
     });
 }
@@ -441,7 +451,7 @@ async function Setup(): Promise<void> {
     ]).then(() => SetupPostPage());
     SetupStyles();
     void SetupConfiguration();
-    document.body.appendChild(popupWrapper.get(0));
+    $('body').append(popupWrapper);
 
     const watchedQueuesEnabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationWatchQueues);
     const postDetails: { questionTime: Date, answerTime: Date }[] = [];
@@ -490,7 +500,7 @@ async function Setup(): Promise<void> {
             ReportType: 'AnswerNotAnAnswer',
             DisplayName: 'AnswerNotAnAnswer'
         } as FlagType;
-        handleFlag(flagType, [setupNattyApi(postId)]);
+        void handleFlag(flagType, [setupNattyApi(postId)]);
     });
 }
 

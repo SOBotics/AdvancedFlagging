@@ -71,6 +71,10 @@ export const dayMillis = 1000 * 60 * 60 * 24;
 export const settingUpTitle = 'Setting up MetaSmoke';
 export const settingUpBody = 'If you do not wish to connect, press cancel and this popup won\'t show up again. '
                            + 'To reset configuration, see the footer of Stack Overflow.';
+export const genericBotFailure = 'Server refused to track the post';
+export const metasmokeReportedMessage = 'Post reported to Smokey';
+export const metasmokeFailureMessage = 'Failed to report post to Smokey';
+export const chatFailureMessage = 'Failed to send message to chat';
 const nattyImage = 'https://i.stack.imgur.com/aMUMt.jpg?s=32&g=1';
 const guttenbergImage = 'https://i.stack.imgur.com/tzKAI.png?s=32&g=1';
 const smokeyImage = 'https://i.stack.imgur.com/7cmCt.png?s=32&g=1';
@@ -210,6 +214,7 @@ export const getConfigHtml = (optionId: string, text: string): JQuery => $(`
 </div>`);
 
 export const performedActionIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.CheckmarkSm().addClass('fc-green-500'));
+export const failedActionIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.ClearSm().addClass('fc-red-500'));
 export const reportedIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.Flag().addClass('fc-red-500'));
 export const divider = $('<hr>').attr('class', 'my8');
 export const popupWrapper = $('<div>').attr('id', 'snackbar')
@@ -356,4 +361,8 @@ export function qualifiesForVlq(postScore: number, creationDate: Date): boolean 
 export function parseDate(dateStr?: string): Date | null {
     // Fix for safari
     return dateStr ? new Date(dateStr.replace(' ', 'T')) : null;
+}
+
+export function getSentMessage(success: boolean, feedback: string, bot: string): string {
+    return success ? `Feedback ${feedback} sent to ${bot}` : `Failed to send feedback ${feedback} to ${bot}`;
 }

@@ -102,57 +102,63 @@ export class MetaSmokeAPI {
         return MetaSmokeAPI.metasmokeIds.find(item => item.sitePostId === postId)?.metasmokeId || 0;
     }
 
-    public async ReportNaa(): Promise<boolean> {
+    public async ReportNaa(): Promise<string> {
         return await this.SendFeedback('naa-');
     }
 
-    public async ReportRedFlag(): Promise<boolean> {
-        const smokeyid = MetaSmokeAPI.getSmokeyId(this.postId);
-        if (smokeyid) {
+    public async ReportRedFlag(): Promise<string> {
+        const smokeyId = MetaSmokeAPI.getSmokeyId(this.postId);
+        if (smokeyId) {
             return await this.SendFeedback('tpu-');
         }
 
         const urlString = MetaSmokeAPI.GetQueryUrl(this.postId, this.postType);
-        if (!MetaSmokeAPI.accessToken) return false;
+        if (!MetaSmokeAPI.accessToken) return '';
 
-        try {
-            const reportRequest = await fetch('https://metasmoke.erwaysoftware.com/api/w/post/report', {
-                method: 'POST',
-                body: globals.getFormDataFromObject({ post_link: urlString, key: MetaSmokeAPI.appKey, token: MetaSmokeAPI.accessToken})
-            });
-            return reportRequest.status === 200 || reportRequest.status === 201;
-        } catch (error) {
-            return false;
+        const reportRequest = await fetch('https://metasmoke.erwaysoftware.com/api/w/post/report', {
+            method: 'POST',
+            body: globals.getFormDataFromObject({ post_link: urlString, key: MetaSmokeAPI.appKey, token: MetaSmokeAPI.accessToken })
+        });
+        const requestResponse = await reportRequest.json() as unknown;
+        if (!reportRequest.ok) {
+            console.error(`Failed to send feedback to Smokey (postId: ${smokeyId})`, requestResponse);
+            throw new Error(globals.metasmokeFailureMessage);
         }
+        return globals.metasmokeReportedMessage;
     }
 
-    public async ReportLooksFine(): Promise<boolean> {
+    public async ReportLooksFine(): Promise<string> {
         return await this.SendFeedback('fp-');
     }
 
-    public async ReportNeedsEditing(): Promise<boolean> {
+    public async ReportNeedsEditing(): Promise<string> {
         return await this.SendFeedback('fp-');
     }
 
-    public async ReportVandalism(): Promise<boolean> {
+    public async ReportVandalism(): Promise<string> {
         return await this.SendFeedback('tp-');
     }
 
-    public ReportDuplicateAnswer(): Promise<boolean> {
-        return Promise.resolve(false);
+    public ReportDuplicateAnswer(): Promise<string> {
+        return Promise.resolve('');
     }
 
-    public ReportPlagiarism(): Promise<boolean> {
-        return Promise.resolve(false);
+    public ReportPlagiarism(): Promise<string> {
+        return Promise.resolve('');
     }
 
-    private async SendFeedback(feedbackType: 'fp-' | 'tp-' | 'tpu-' | 'naa-'): Promise<boolean> {
+    private async SendFeedback(feedbackType: 'fp-' | 'tp-' | 'tpu-' | 'naa-'): Promise<string> {
         const smokeyId = MetaSmokeAPI.getSmokeyId(this.postId);
-        if (!MetaSmokeAPI.accessToken || !smokeyId) return false;
+        if (!MetaSmokeAPI.accessToken || !smokeyId) return '';
         const feedbackRequest = await fetch(`https://metasmoke.erwaysoftware.com/api/w/post/${smokeyId}/feedback`, {
             method: 'POST',
-            body: globals.getFormDataFromObject({type: feedbackType, key: MetaSmokeAPI.appKey, token: MetaSmokeAPI.accessToken })
+            body: globals.getFormDataFromObject({ type: feedbackType, key: MetaSmokeAPI.appKey, token: MetaSmokeAPI.accessToken })
         });
-        return feedbackRequest.status === 201 || feedbackRequest.status === 200;
+        const feedbackResponse = await feedbackRequest.json() as unknown;
+        if (!feedbackRequest.ok) {
+            console.error(`Failed to send feedback to Smokey (postId: ${smokeyId})`, feedbackResponse);
+            throw new Error(globals.getSentMessage(false, feedbackType, this.name));
+        }
+        return globals.getSentMessage(true, feedbackType, this.name);
     }
 }

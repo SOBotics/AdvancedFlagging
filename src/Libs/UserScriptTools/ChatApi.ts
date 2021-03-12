@@ -1,5 +1,5 @@
 import { GreaseMonkeyCache } from '@userscriptTools/GreaseMonkeyCache';
-import { StackExchange, CacheChatApiFkey, soboticsRoomId } from 'GlobalVars';
+import { StackExchange, CacheChatApiFkey, soboticsRoomId, getSentMessage, chatFailureMessage } from 'GlobalVars';
 
 declare const StackExchange: StackExchange;
 
@@ -35,22 +35,22 @@ export class ChatApi {
         return StackExchange.options.user.userId;
     }
 
-    public async SendMessage(message: string, roomId: number = soboticsRoomId): Promise<boolean> {
+    public async SendMessage(message: string, bot: string, roomId: number = soboticsRoomId): Promise<string> {
         const makeRequest = async (): Promise<boolean> => await this.SendRequestToChat(message, roomId);
         let numTries = 0;
-        const onFailure = async (): Promise<boolean> => {
+        const onFailure = async (): Promise<string> => {
             numTries++;
             if (numTries < 3) {
                 GreaseMonkeyCache.Unset(CacheChatApiFkey);
                 if (!await makeRequest()) return onFailure();
             } else {
-                throw new Error(); // failed to send message to chat!
+                throw new Error(chatFailureMessage); // retry limit exceeded
             }
-            return true;
+            return getSentMessage(true, message.split(' ').pop() || '', bot);
         };
 
         if (!await makeRequest()) return onFailure();
-        return true;
+        return getSentMessage(true, message.split(' ').pop() || '', bot);
     }
 
     private async SendRequestToChat(message: string, roomId: number): Promise<boolean> {

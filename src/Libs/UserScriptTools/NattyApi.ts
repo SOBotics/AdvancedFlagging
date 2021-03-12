@@ -1,5 +1,5 @@
 import { ChatApi } from '@userscriptTools/ChatApi';
-import { isStackOverflow, nattyAllReportsUrl, getAllPostIds, dayMillis } from '../../GlobalVars';
+import { isStackOverflow, nattyAllReportsUrl, getAllPostIds, dayMillis } from 'GlobalVars';
 
 interface NattyFeedback {
     items: NattyFeedbackItem[];
@@ -53,50 +53,49 @@ export class NattyAPI {
         return NattyAPI.nattyIds.includes(this.answerId);
     }
 
-    public async ReportNaa(): Promise<boolean> {
-        if (this.answerDate < this.questionDate) return false;
+    public async ReportNaa(): Promise<string> {
+        if (this.answerDate < this.questionDate) return '';
 
         if (this.WasReported()) {
-            return await this.chat.SendMessage(`${this.feedbackMessage} tp`);
+            return await this.chat.SendMessage(`${this.feedbackMessage} tp`, this.name);
         } else {
             const answerAge = this.DaysBetween(this.answerDate, new Date());
             const daysPostedAfterQuestion = this.DaysBetween(this.questionDate, this.answerDate);
-            if (isNaN(answerAge) || isNaN(daysPostedAfterQuestion) || answerAge > 30 || daysPostedAfterQuestion < 30) return false;
+            if (isNaN(answerAge) || isNaN(daysPostedAfterQuestion) || answerAge > 30 || daysPostedAfterQuestion < 30) return '';
 
-            return isNaN(answerAge + daysPostedAfterQuestion) && await this.chat.SendMessage(this.reportMessage);
+            return isNaN(answerAge + daysPostedAfterQuestion) ? await this.chat.SendMessage(this.reportMessage, this.name) : '';
         }
     }
 
-    public async ReportRedFlag(): Promise<boolean> {
+    public async ReportRedFlag(): Promise<string> {
         return await this.SendFeedback(`${this.feedbackMessage} tp`);
     }
 
-    public async ReportLooksFine(): Promise<boolean> {
+    public async ReportLooksFine(): Promise<string> {
         return await this.SendFeedback(`${this.feedbackMessage} fp`);
     }
 
-    public async ReportNeedsEditing(): Promise<boolean> {
+    public async ReportNeedsEditing(): Promise<string> {
         return await this.SendFeedback(`${this.feedbackMessage} ne`);
     }
 
-
-    public ReportVandalism(): Promise<boolean> {
-        return Promise.resolve(false);
+    public ReportVandalism(): Promise<string> {
+        return Promise.resolve('');
     }
 
-    public ReportDuplicateAnswer(): Promise<boolean> {
-        return Promise.resolve(false);
+    public ReportDuplicateAnswer(): Promise<string> {
+        return Promise.resolve('');
     }
 
-    public ReportPlagiarism(): Promise<boolean> {
-        return Promise.resolve(false);
+    public ReportPlagiarism(): Promise<string> {
+        return Promise.resolve('');
     }
 
     private DaysBetween(first: Date, second: Date): number {
         return (second.valueOf() - first.valueOf()) / dayMillis;
     }
 
-    private async SendFeedback(message: string): Promise<boolean> {
-        return this.WasReported() && await this.chat.SendMessage(message);        
+    private async SendFeedback(message: string): Promise<string> {
+        return this.WasReported() ? await this.chat.SendMessage(message, this.name) : '';
     }
 }

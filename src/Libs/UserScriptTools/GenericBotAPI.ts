@@ -1,4 +1,4 @@
-import { isStackOverflow, username, genericBotKey } from 'GlobalVars';
+import { isStackOverflow, username, genericBotKey, getSentMessage, genericBotFailure } from 'GlobalVars';
 
 export class GenericBotAPI {
     private answerId: number;
@@ -8,32 +8,32 @@ export class GenericBotAPI {
         this.answerId = answerId;
     }
 
-    public async ReportNaa(): Promise<boolean> {
+    public async ReportNaa(): Promise<string> {
         return await this.makeTrackRequest();
     }
 
-    public async ReportRedFlag(): Promise<boolean> {
+    public async ReportRedFlag(): Promise<string> {
         return await this.makeTrackRequest();
     }
 
-    public ReportLooksFine(): Promise<boolean> {
-        return Promise.resolve(false);
+    public ReportLooksFine(): Promise<string> {
+        return Promise.resolve('');
     }
 
-    public ReportNeedsEditing(): Promise<boolean> {
-        return Promise.resolve(false);
+    public ReportNeedsEditing(): Promise<string> {
+        return Promise.resolve('');
     }
 
-    public ReportVandalism(): Promise<boolean> {
-        return Promise.resolve(false);
+    public ReportVandalism(): Promise<string> {
+        return Promise.resolve('');
     }
 
-    public ReportDuplicateAnswer(): Promise<boolean> {
-        return Promise.resolve(false);
+    public ReportDuplicateAnswer(): Promise<string> {
+        return Promise.resolve('');
     }
 
-    public ReportPlagiarism(): Promise<boolean> {
-        return Promise.resolve(false);
+    public ReportPlagiarism(): Promise<string> {
+        return Promise.resolve('');
     }
 
     private computeContentHash(postContent: string): number {
@@ -48,12 +48,10 @@ export class GenericBotAPI {
         return hash;
     }
 
-    private makeTrackRequest(): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-            if (!isStackOverflow) resolve(false);
-
+    private makeTrackRequest(): Promise<string> {
+        return new Promise<string>((resolve, reject) => {
             const flaggerName = encodeURIComponent(username || '');
-            if (!flaggerName) resolve(false);
+            if (!isStackOverflow || !flaggerName) resolve('');
 
             const contentHash = this.computeContentHash($(`#answer-${this.answerId} .js-post-body`).html().trim());
 
@@ -63,12 +61,13 @@ export class GenericBotAPI {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 data: `key=${genericBotKey}&postId=${this.answerId}&contentHash=${contentHash}&flagger=${flaggerName}`,
                 onload: (response: { status: number }) => {
-                    if (response.status !== 200) reject(false);
-                    resolve(true);
+                    if (response.status !== 200) {
+                        console.error('Failed to send track request.', response);
+                        reject(genericBotFailure);
+                    }
+                    resolve(getSentMessage(true, '', this.name));
                 },
-                onerror: () => {
-                    reject(false);
-                }
+                onerror: () => reject(genericBotFailure)
             });
         });
     }

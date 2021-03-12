@@ -1,5 +1,5 @@
 import { ChatApi } from '@userscriptTools/ChatApi';
-import { isStackOverflow, getAllPostIds, copyPastorServer, username, copyPastorKey } from 'GlobalVars';
+import { isStackOverflow, getAllPostIds, copyPastorServer, username, copyPastorKey, getSentMessage } from 'GlobalVars';
 
 export interface CopyPastorFindTargetResponseItem {
     post_id: string;
@@ -52,61 +52,60 @@ export class CopyPastorAPI {
     }
 
     public getCopyPastorId(): number {
-        const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
-        return idsObject ? idsObject.postId : 0;
+        return CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId)?.postId || 0;
     }
 
     public getIsRepost(): boolean {
-        const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
-        return idsObject ? idsObject.repost : false;
+        return CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId)?.repost || false;
     }
 
     public getTargetUrl(): string {
-        const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
-        return idsObject ? idsObject.target_url : '';
+        return CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId)?.target_url || '';
     }
 
-    private async ReportTruePositive(): Promise<boolean> {
+    private async ReportTruePositive(): Promise<string> {
         return await this.SendFeedback('tp');
     }
 
-    private async ReportFalsePositive(): Promise<boolean> {
+    private async ReportFalsePositive(): Promise<string> {
         return await this.SendFeedback('fp');
     }
 
-    public async ReportNaa(): Promise<boolean> {
+    public async ReportNaa(): Promise<string> {
         return await this.ReportFalsePositive();
     }
 
-    public ReportRedFlag(): Promise<boolean> {
-        return Promise.resolve(false);
+    public ReportRedFlag(): Promise<string> {
+        return Promise.resolve('');
     }
 
-    public async ReportLooksFine(): Promise<boolean> {
+    public async ReportLooksFine(): Promise<string> {
         return await this.ReportFalsePositive();
     }
 
-    public async ReportNeedsEditing(): Promise<boolean> {
+    public async ReportNeedsEditing(): Promise<string> {
         return await this.ReportFalsePositive();
     }
 
-    public async ReportVandalism(): Promise<boolean> {
+    public async ReportVandalism(): Promise<string> {
         return await this.ReportFalsePositive();
     }
 
-    public async ReportDuplicateAnswer(): Promise<boolean> {
+    public async ReportDuplicateAnswer(): Promise<string> {
         return await this.ReportTruePositive();
     }
 
-    public async ReportPlagiarism(): Promise<boolean> {
+    public async ReportPlagiarism(): Promise<string> {
         return await this.ReportTruePositive();
     }
 
-    private SendFeedback(type: 'tp' | 'fp'): Promise<boolean> {
+    private SendFeedback(type: 'tp' | 'fp'): Promise<string> {
         const chatId = new ChatApi().GetChatUserId();
         const copyPastorId = this.getCopyPastorId();
-        if (!copyPastorId) return Promise.resolve(false);
+        if (!copyPastorId) return Promise.resolve('');
 
+        const successMessage = getSentMessage(true, type, this.name);
+        const failureMessage = getSentMessage(false, type, this.name);
         const payload = {
             post_id: copyPastorId,
             feedback_type: type,
@@ -115,18 +114,16 @@ export class CopyPastorAPI {
             key: copyPastorKey,
         };
 
-        return new Promise<boolean>((resolve, reject) => {
+        return new Promise<string>((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'POST',
                 url: `${copyPastorServer}/feedback/create`,
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 data: Object.entries(payload).map(item => item.join('=')).join('&'),
                 onload: (response: { status: number }) => {
-                    response.status === 200 ? resolve(true) : reject(false);
+                    response.status === 200 ? resolve(successMessage) : reject(failureMessage);
                 },
-                onerror: () => {
-                    reject(false);
-                },
+                onerror: () => reject(failureMessage)
             });
         });
     }

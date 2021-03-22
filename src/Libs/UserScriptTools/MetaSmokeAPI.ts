@@ -119,9 +119,9 @@ export class MetaSmokeAPI {
             method: 'POST',
             body: globals.getFormDataFromObject({ post_link: urlString, key: MetaSmokeAPI.appKey, token: MetaSmokeAPI.accessToken })
         });
-        const requestResponse = await reportRequest.json() as unknown;
-        if (!reportRequest.ok) {
-            console.error(`Failed to send feedback to Smokey (postId: ${smokeyId})`, requestResponse);
+        const requestResponse = await reportRequest.text();
+        if (!reportRequest.ok || requestResponse !== 'OK') { // if the post is successfully reported, the response is a plain OK
+            console.error(`Failed to report post to Smokey (postId: ${smokeyId})`, requestResponse);
             throw new Error(globals.metasmokeFailureMessage);
         }
         return globals.metasmokeReportedMessage;

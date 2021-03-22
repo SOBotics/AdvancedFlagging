@@ -22,7 +22,7 @@ module.exports = {
         'dot-notation': 'warn',
         'eqeqeq': 'warn',
         'func-call-spacing': 'warn',
-        'indent': ['error', 4],
+        'indent': ['error', 4, { 'SwitchCase': 1 }],
         'keyword-spacing': ['error', { 'before': true, 'after': true }],
         'no-alert': 'error',
         'no-await-in-loop': 'warn',

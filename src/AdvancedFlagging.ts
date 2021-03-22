@@ -1,4 +1,4 @@
-import { FlagType, flagCategories } from './FlagTypes';
+import { FlagType, flagCategories, Flags } from './FlagTypes';
 import { parseQuestionsAndAnswers, QuestionPageInfo } from '@userscriptTools/sotools';
 import { NattyAPI } from '@userscriptTools/NattyApi';
 import { GenericBotAPI } from '@userscriptTools/GenericBotAPI';
@@ -36,7 +36,6 @@ function SetupStyles(): void {
 }
 
 #af-comments textarea {
-    width: calc(100% - 15px);
     resize: vertical;
 }`);
 }
@@ -73,7 +72,7 @@ async function handleFlagAndComment(
             : null;
 
         autoFlagging = true;
-        const flagName = flag.ReportType === 'PostLowQuality' ?
+        const flagName: Flags = flag.ReportType === 'PostLowQuality' ?
             (qualifiesForVlq ? 'PostLowQuality' : 'AnswerNotAnAnswer') : flag.ReportType;
         try {
             const flagPost = await fetch(`//${window.location.hostname}/flags/posts/${postId}/add/${flagName}`, {
@@ -82,7 +81,7 @@ async function handleFlagAndComment(
             });
             const responseJson = await flagPost.json() as StackExchangeFlagResponse;
             if (responseJson.Success) {
-                displaySuccessFlagged(reportedIcon, flag.Human);
+                displaySuccessFlagged(reportedIcon, flag.ReportType);
             } else { // sometimes, although the status is 200, the post isn't flagged.
                 const fullMessage = `Failed to flag the post with outcome ${responseJson.Outcome}: ${responseJson.Message}.`;
                 const message = getErrorMessage(responseJson);
@@ -106,9 +105,9 @@ export function displayToaster(message: string, state: string): void {
     window.setTimeout(() => popupWrapper.removeClass('show').addClass('hide'), globals.popupDelay);
 }
 
-function displaySuccessFlagged(reportedIcon: JQuery, reportTypeHuman?: string): void {
-    if (!reportTypeHuman) return;
-    const flaggedMessage = `Flagged ${reportTypeHuman}`;
+function displaySuccessFlagged(reportedIcon: JQuery, reportType?: Flags): void {
+    if (!reportType) return;
+    const flaggedMessage = `Flagged ${getHumanFromDisplayName(reportType)}`;
     reportedIcon.attr('title', flaggedMessage);
     globals.showInlineElement(reportedIcon);
     globals.displaySuccess(flaggedMessage);
@@ -149,19 +148,6 @@ function getErrorMessage(responseJson: StackExchangeFlagResponse): string {
         message += responseJson.Message;
     }
     return message;
-}
-
-function getPromiseFromFlagName(flagName: string, reporter: Reporter): Promise<string> {
-    switch (flagName) {
-    case 'Needs Editing': return reporter.ReportNeedsEditing();
-    case 'Vandalism': return reporter.ReportVandalism();
-    case 'Looks Fine': return reporter.ReportLooksFine();
-    case 'Duplicate answer': return reporter.ReportDuplicateAnswer();
-    case 'Plagiarism': return reporter.ReportPlagiarism();
-    case 'Bad attribution': return reporter.ReportPlagiarism();
-    default:
-        throw new Error('Could not find custom flag type: ' + flagName);
-    }
 }
 
 function showComments(postId: number, data: string): void {
@@ -206,19 +192,19 @@ function setupGuttenbergApi(copyPastorApi: CopyPastorAPI, copyPastorIcon: JQuery
     return copyPastorApi;
 }
 
-function getHumanFromDisplayName(displayName: string): string {
+function getHumanFromDisplayName(displayName: Flags): string {
     switch (displayName) {
-    case 'AnswerNotAnAnswer': return 'as NAA';
-    case 'PostOffensive': return 'as R/A';
-    case 'PostSpam': return 'as spam';
-    case 'NoFlag': return '';
-    case 'PostOther': return 'for moderator attention';
-    case 'PostLowQuality': return 'as VLQ';
-    default: return '';
+        case 'AnswerNotAnAnswer': return 'as NAA';
+        case 'PostOffensive': return 'as R/A';
+        case 'PostSpam': return 'as spam';
+        case 'NoFlag': return '';
+        case 'PostOther': return 'for moderator attention';
+        case 'PostLowQuality': return 'as VLQ';
+        default: return '';
     }
 }
 
-type Reporter = CopyPastorAPI | MetaSmokeAPI | NattyAPI | GenericBotAPI;
+export type Reporter = CopyPastorAPI | MetaSmokeAPI | NattyAPI | GenericBotAPI;
 
 interface StackExchangeFlagResponse {
     FlagType: number;
@@ -277,7 +263,7 @@ function BuildFlaggingDialog(
 
             dropDown.append(categoryDiv);
 
-            let commentText: string | undefined | null;
+            let commentText: string | null;
             if (flagType.GetComment) {
                 commentText = flagType.GetComment({ Reputation: post.authorReputation || 0, AuthorName: post.authorName });
                 reportLink.attr('title', commentText || '');
@@ -296,8 +282,8 @@ function BuildFlaggingDialog(
                     );
                 }
 
-                const success = await handleFlag(flagType, reporters);
                 globals.hideElement(dropDown); // hide the dropdown after clicking one of the options
+                const success = await handleFlag(flagType, reporters);
                 if (flagType.ReportType !== 'NoFlag') return;
 
                 if (success) {
@@ -328,22 +314,9 @@ function BuildFlaggingDialog(
 }
 
 async function handleFlag(flagType: FlagType, reporters: Reporter[]): Promise<boolean> {
-    const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
-    const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer' || flagType.ReportType === 'PostLowQuality';
-    const customFlag = flagType.ReportType === 'PostOther';
-    const noFlag = flagType.ReportType === 'NoFlag';
     for (const reporter of reporters) {
-        let promise: Promise<string> | null = null;
-        if (rudeFlag) {
-            promise = reporter.ReportRedFlag();
-        } else if (naaFlag) {
-            promise = reporter.ReportNaa();
-        } else if (noFlag || customFlag) {
-            promise = getPromiseFromFlagName(flagType.DisplayName, reporter);
-        }
-        if (!promise) continue;
-
         try {
+            const promise = flagType.SendFeedback(reporter);
             // eslint-disable-next-line no-await-in-loop
             const promiseValue = await promise;
             if (!promiseValue) continue;
@@ -399,14 +372,11 @@ function SetupPostPage(): void {
                 const matches = globals.getFlagsUrlRegex(post.postId).exec(xhr.responseURL);
                 if (!matches) return;
 
-                const flagType = {
-                    Id: 0,
-                    ReportType: matches[1],
-                    DisplayName: matches[1],
-                    Human: getHumanFromDisplayName(matches[1])
-                } as FlagType;
+                const flagTypes = flagCategories.flatMap(category => category.FlagTypes);
+                const flagType = flagTypes.find(item => item.ReportType === (matches[1] as Flags));
+                if (!flagType) return;
 
-                displaySuccessFlagged(reportedIcon, flagType.Human);
+                displaySuccessFlagged(reportedIcon, flagType.ReportType);
                 void handleFlag(flagType, reporters);
             });
 
@@ -495,11 +465,7 @@ function Setup(): void {
         const currentPostDetails = postDetails[postId];
         if (!currentPostDetails || !$('.answers-subheader').length) return;
 
-        const flagType = {
-            Id: 0,
-            ReportType: 'AnswerNotAnAnswer',
-            DisplayName: 'AnswerNotAnAnswer'
-        } as FlagType;
+        const flagType = flagCategories[2].FlagTypes[1]; // the not an answer flag type
         void handleFlag(flagType, [setupNattyApi(postId)]);
     });
 }
@@ -523,5 +489,5 @@ $(() => {
     // Or the document is already focused,
     // Then we execute the script.
     // This is done to prevent DOSing dashboard apis, if a bunch of links are opened at once.
-    if (document.hasFocus && document.hasFocus()) actionWatcher();
+    if (document.hasFocus?.()) actionWatcher();
 });

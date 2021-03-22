@@ -1,5 +1,5 @@
 import { MetaSmokeAPI} from '@userscriptTools/MetaSmokeAPI';
-import { flagCategories } from 'FlagTypes';
+import { flagCategories, Flags } from 'FlagTypes';
 import { GreaseMonkeyCache } from '@userscriptTools/GreaseMonkeyCache';
 import * as globals from './GlobalVars';
 
@@ -7,9 +7,22 @@ declare const Svg: globals.Svg;
 declare const Stacks: globals.Stacks;
 
 const enabledFlags = GreaseMonkeyCache.GetFromCache<number[]>(globals.ConfigurationEnabledFlags);
-const flagTypes = flagCategories.flatMap(category => category.FlagTypes).map(flag => ({ Id: flag.Id, DisplayName: flag.DisplayName }));
-const storeCommentsInCache = (): void => Object.entries(globals.comments).forEach(array => globals.storeCommentInCache(array));
-const storeFlagsInCache = (): void => Object.entries(globals.flags).forEach(array => globals.storeFlagsInCache(array));
+const flagTypes = flagCategories.flatMap(category => category.FlagTypes);
+const flagNames = [...new Set(flagTypes.map(flagType => flagType.DefaultReportType))];
+const optionTypes = flagNames.filter(item => !/Post(?:Other|Offensive|Spam)/.exec(item));
+const cacheFlags = (): void => GreaseMonkeyCache.StoreInCache(globals.FlagTypesKey, flagTypes.map(flagType => {
+    return {
+        Id: flagType.Id,
+        FlagText: flagType.DefaultFlagText || '',
+        Comments: {
+            Low: flagType.DefaultComment || '',
+            High: flagType.DefaultCommentHigh || ''
+        },
+        ReportType: flagType.DefaultReportType
+    } as globals.CachedFlag;
+}));
+const getOption = (flag: Flags, name: string): string => `<option${flag === name ? ' selected' : ''}>${flag}</option>`;
+const getFlagOptions = (name: string): string => optionTypes.map(flag => getOption(flag, name)).join('');
 
 export async function SetupConfiguration(): Promise<void> {
     while (typeof Svg === 'undefined') {
@@ -26,8 +39,8 @@ export async function SetupConfiguration(): Promise<void> {
     $(document).on('click', '#af-modal-button', () => Stacks.showModal(document.querySelector('#af-config')));
     $(document).on('click', '#af-comments-button', () => Stacks.showModal(document.querySelector('#af-comments')));
 
-    configurationDiv.append(configurationLink).insertAfter(bottomBox);
     commentsDiv.append(commentsLink).insertAfter(bottomBox);
+    configurationDiv.append(configurationLink).insertAfter(bottomBox);
 }
 
 function SetupDefaults(): void {
@@ -37,14 +50,29 @@ function SetupDefaults(): void {
         GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagTypeIds);
     }
 
-    const commentsCached = Object.keys(globals.comments).every(item => globals.getCommentFromCache(item));
-    const flagsCached = Object.keys(globals.flags).every(item => globals.getFlagFromCache(item));
-
-    // store all comments/flags content if it doesn't exist
-    if (!flagsCached) storeFlagsInCache();
-    if (!commentsCached) storeCommentsInCache();
+    const cachedFlagTypes = GreaseMonkeyCache.GetFromCache<globals.CachedFlag[]>(globals.FlagTypesKey);
+    // in case we add a new flag type, make sure it will be automatically be saved (compare types)
+    if (cachedFlagTypes?.length !== flagTypes.length) cacheFlags();
 }
 
+/* The configuration modal has three sections:
+   - General (uses cache): general options. They are properties of the main Configuration object and accept Boolean values
+     All options are disabled by default
+   - Flags (uses cache): the flag Ids are stored in an array. All are enabled by default
+   - Admin doesn't use cache, but it interacts with it (deletes values)
+   Sample cache:
+   AdvancedFlagging.Configuration: {
+       OpenOnHover: true,
+       AnotherOption: false,
+       DoFooBar: true,
+       Flags: [1, 2, 4, 5, 6, 10, 14, 15]
+   }
+
+   Notes:
+   - In General, the checkboxes and the corresponding labels are wrapped in a div that has a data-option-id attribute.
+     This is the property of the option that will be used in cache.
+   - In Flags, each checkbox has a flag-type-<FLAG_ID> id. This is used to determine the flag id
+*/
 function BuildConfigurationOverlay(): void {
     const overlayModal = globals.overlayModal.clone();
     overlayModal.find('.s-modal--close').append(Svg.ClearSm());
@@ -94,9 +122,7 @@ function BuildConfigurationOverlay(): void {
 
     overlayModal.find('.s-btn__primary').on('click', event => {
         event.preventDefault();
-        sections.forEach(section => {
-            if (section.onSave) section.onSave();
-        });
+        sections.forEach(section => section.onSave?.());
         globals.displayStacksToast('Configuration saved', 'success');
         setTimeout(() => window.location.reload(), 500);
     });
@@ -136,8 +162,12 @@ function GetGeneralConfigItems(): JQuery[] {
             text: 'Uncheck \'Flag\' by default',
             configValue: globals.ConfigurationDefaultNoFlag
         },
+        {
+            text: 'Add author\'s name before comments',
+            configValue: globals.ConfigurationAddAuthorName
+        }
     ].map(item => {
-        const storedValue: boolean | null = GreaseMonkeyCache.GetFromCache(item.configValue);
+        const storedValue: boolean | null = GreaseMonkeyCache.GetFromCache<boolean>(item.configValue);
         return createCheckbox(item.text, storedValue).attr('data-option-id', item.configValue);
     });
 }
@@ -181,58 +211,108 @@ interface ConfigSection {
     onSave?(): void;
 }
 
-function createEditTextarea(type: 'flag' | 'comment', displayName: string, cacheKey: string, content: string | null): JQuery {
+function createFlagTypeDiv(type: 'flag' | 'comment', displayName: string, flagId: number, reportType?: string): JQuery {
+    const displayStyle = reportType ? 'd-block' : 'd-none';
+    const expandableId = `${type}-${displayName}`.toLowerCase().replace(/\s/g, '');
     return $(`
-<div class="s-sidebarwidget">
+<div class="s-sidebarwidget" data-flag-id=${flagId}>
   <button class="s-sidebarwidget--action s-btn t4 r4 af-expandable-trigger"
-          data-controller="s-expandable-control" aria-controls="${type}-${displayName}">Edit</button>
+          data-controller="s-expandable-control" aria-controls="${expandableId}">Edit</button>
   <button class="s-sidebarwidget--action s-btn s-btn__primary t4 r6 af-submit-content d-none">Save</button>
   <div class="s-sidebarwidget--content d-block p12 fs-body3">${displayName}</div>
-  <div class="s-expandable" id="${type}-${displayName}">
-    <div class="s-expandable--content">
-      <textarea class="grid--cell s-textarea ml8 mb8 fs-body2" rows="4" data-cache-key=${cacheKey}>${content || ''}</textarea>
+  <div class="s-expandable" id="${expandableId}">
+    <div class="s-expandable--content px8">
+      <div class="advanced-flagging-flag-option py8 mln6 ${displayStyle}">
+        <label class="fw-bold ps-relative d-inline-block z-selected l16">Flag as:</label>'
+        <div class="s-select d-inline-block r48"><select class="pl64">${getFlagOptions(reportType || '')}</select></div>
+      </div>
     </div>
   </div>
 </div>`);
 }
 
+/* In this case, we are caching a FlagType, but removing unnecessary properties.
+   Only the Id, FlagText, and Comments (both LowRep and HighRep) are cached if they exist.
+   Sample cache (undefined values are empty strings):
+       AdvancedFlagging.FlagTypes: [{
+           Id: 1,
+           FlagText: 'This is some text',
+           Comments: {
+               Low: 'This is a LowRep comment',
+               High: ''
+           },
+           ReportType: 'PostOther'
+       }, {
+           Id: 2,
+           FlagText: '',
+           Comments: {
+               Low: 'This is a LowRep comment',
+               High: 'This is a HighRep comment'
+           },
+           ReportType: 'AnswerNotAnAnswer'
+       }]
+
+    Notes:
+    - The Spam, Rude or Abusive and the - by default - NoFlag FlagTypes won't be displayed.
+    - The ReportType can't be changed to/from PostOther.
+    - The Human field is retrieved when the flag is raised based on ReportType.
+    - Each div has a data-flag-id attribute based on which we can store the information on cache again
+*/
 function SetupCommentsAndFlagsModal(): void {
     const editCommentsPopup = globals.editCommentsPopup.clone();
     editCommentsPopup.find('.s-modal--close').append(Svg.ClearSm());
     const commentsWrapper = globals.commentsWrapper.clone();
     const flagsWrapper = globals.flagsWrapper.clone();
-    const shouldAddAuthorName: boolean | null = GreaseMonkeyCache.GetFromCache(globals.CommentsAddAuthorName);
-    editCommentsPopup.find('.s-modal--body').append(globals.editContentWrapper.clone().append(commentsWrapper).append(flagsWrapper));
+    editCommentsPopup.find('.s-modal--body').append(globals.editContentWrapper.clone().append(commentsWrapper, flagsWrapper));
 
-    const allFlags = globals.getAllFlags();
-    const allComments = globals.getAllComments();
-    allFlags.forEach(flag => {
-        const textarea = createEditTextarea('flag', flag.flagName, globals.getFlagKey(flag.flagName), flag.content);
-        flagsWrapper.append(textarea);
-    });
-    allComments.forEach(comment => {
-        const textarea = createEditTextarea('comment', comment.commentName, globals.getCommentKey(comment.commentName), comment.content);
-        commentsWrapper.append(textarea);
-    });
-    commentsWrapper.append(createCheckbox('Add OP\'s name before comments', shouldAddAuthorName).attr('class', 'af-author-name mt8'));
+    flagTypes.filter(item => item.DefaultComment || item.DefaultFlagText).forEach(flagType => {
+        const comments = flagType.Comments;
+        const flagText = flagType.FlagText;
 
-    $(document).on('change', '.af-author-name', event => {
-        GreaseMonkeyCache.StoreInCache(globals.CommentsAddAuthorName, $(event.target).is(':checked'));
-        globals.displayStacksToast('Preference updated', 'success');
-    }).on('click', '.af-expandable-trigger', event => {
-        const button = $(event.target);
+        if (flagText) {
+            const mainWrapper = createFlagTypeDiv('flag', flagType.DisplayName, flagType.Id);
+            mainWrapper.find('.s-expandable--content').prepend(globals.getTextarea(flagText, 'af-flag-content'));
+            flagsWrapper.append(mainWrapper);
+        }
+
+        if (!comments?.Low) return;
+        const mainWrapper = createFlagTypeDiv('comment', flagType.DisplayName, flagType.Id, flagType.ReportType);
+        const expandable = mainWrapper.find('.s-expandable--content');
+        const labelDisplay = comments.High ? 'd-block' : 'd-none';
+        const getLabel = (type: string): JQuery => $('<label>').addClass(`grid--cell s-label ${labelDisplay}`).html(`${type} comment`);
+        if (comments.High) expandable.prepend(getLabel('HighRep').addClass('pt4'), globals.getTextarea(comments.High, 'af-highrep'));
+        expandable.prepend(getLabel('LowRep'), globals.getTextarea(comments.Low, 'af-lowrep'));
+
+        commentsWrapper.append(mainWrapper);
+    });
+
+    $(document).on('click', '.af-expandable-trigger', event => {
+        const button = $(event.target), saveButton = button.next();
         button.text(button.text() === 'Edit' ? 'Hide' : 'Edit');
-        const element = button.next();
-        element.hasClass('d-none') ? globals.showElement(element) : globals.hideElement(element);
+        saveButton.hasClass('d-none') ? globals.showElement(saveButton) : globals.hideElement(saveButton);
+    }).on('change', '.advanced-flagging-flag-option select', event => {
+        const element = $(event.target);
+        const newReportType = element.val() as string;
+        const flagId = Number(element.parents('.s-sidebarwidget').attr('data-flag-id'));
+        globals.savePropertyToCache(flagId, 'ReportType', newReportType);
+        globals.displayStacksToast('Successfully changed the report flag type.', 'success');
     }).on('click', '.af-submit-content', event => {
         const element = $(event.target);
-        const contentTextarea = element.next().next().find('textarea');
-        const newContent = contentTextarea.val();
-        const cacheKey = contentTextarea.attr('data-cache-key');
-        if (!cacheKey) return;
-        const displayName = element.next().text();
-        GreaseMonkeyCache.StoreInCache(cacheKey, newContent);
-        globals.displayStacksToast(displayName + ': content saved successfully', 'success');
+        const expandable = element.next().next();
+        const flagId = Number(element.parents('.s-sidebarwidget').attr('data-flag-id'));
+        if (!flagId) {
+            globals.displayStacksToast('Failed to save options', 'danger');
+            return;
+        }
+
+        const flagContent = expandable.find('.af-flag-content').val() as string || '';
+        const commentLowRep = expandable.find('.af-lowrep').val() as string || '';
+        const commentHighRep = expandable.find('.af-highrep').val() as string || '';
+
+        if (flagContent) globals.savePropertyToCache(flagId, 'FlagText', flagContent);
+        else globals.saveCommentsToCache(flagId, { Low: commentLowRep, High: commentHighRep });
+
+        globals.displayStacksToast('Content saved successfully', 'success');
         element.prev().trigger('click'); // hide the textarea
     });
     $('body').append(editCommentsPopup);

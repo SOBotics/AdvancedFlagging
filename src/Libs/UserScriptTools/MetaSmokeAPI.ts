@@ -108,9 +108,7 @@ export class MetaSmokeAPI {
 
     public async ReportRedFlag(): Promise<string> {
         const smokeyId = MetaSmokeAPI.getSmokeyId(this.postId);
-        if (smokeyId) {
-            return await this.SendFeedback('tpu-');
-        }
+        if (smokeyId) return await this.SendFeedback('tpu-');
 
         const urlString = MetaSmokeAPI.GetQueryUrl(this.postId, this.postType);
         if (!MetaSmokeAPI.accessToken) return '';

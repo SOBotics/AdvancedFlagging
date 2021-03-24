@@ -25,7 +25,6 @@
 // @grant        GM_setValue
 // @grant        GM_deleteValue
 // @grant        GM_addStyle
-// @run-at       document-body
 // ==/UserScript==
 
 /******/ (() => { // webpackBootstrap
@@ -64,7 +63,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 }
 
 #af-comments textarea {
-    width: calc(100% - 15px);
     resize: vertical;
 }`);
     }
@@ -100,7 +98,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 });
                 const responseJson = await flagPost.json();
                 if (responseJson.Success) {
-                    displaySuccessFlagged(reportedIcon, flag.Human);
+                    displaySuccessFlagged(reportedIcon, flag.ReportType);
                 }
                 else { // sometimes, although the status is 200, the post isn't flagged.
                     const fullMessage = `Failed to flag the post with outcome ${responseJson.Outcome}: ${responseJson.Message}.`;
@@ -114,28 +112,20 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
     }
     const popupWrapper = globals.popupWrapper;
-    let toasterTimeout = null;
-    let toasterFadeTimeout = null;
-    function hidePopup() {
-        popupWrapper.removeClass('show').addClass('hide');
-        toasterFadeTimeout = window.setTimeout(() => popupWrapper.empty().addClass('hide'), 1000);
-    }
     function displayToaster(message, state) {
+        if (popupWrapper.hasClass('hide'))
+            popupWrapper.empty(); // if the toaster is hidden, then remove any appended messages
         const messageDiv = globals.getMessageDiv(message, state);
         popupWrapper.append(messageDiv);
         popupWrapper.removeClass('hide').addClass('show');
-        if (toasterFadeTimeout)
-            clearTimeout(toasterFadeTimeout);
-        if (toasterTimeout)
-            clearTimeout(toasterTimeout);
-        toasterTimeout = window.setTimeout(hidePopup, globals.popupDelay);
+        window.setTimeout(() => popupWrapper.removeClass('show').addClass('hide'), globals.popupDelay);
     }
     exports.displayToaster = displayToaster;
-    function displaySuccessFlagged(reportedIcon, reportTypeHuman) {
-        if (!reportTypeHuman)
+    function displaySuccessFlagged(reportedIcon, reportType) {
+        if (!reportType)
             return;
-        const flaggedMessage = `Flagged ${reportTypeHuman}`;
-        reportedIcon.attr('title', flaggedMessage);
+        const flaggedMessage = `Flagged ${getHumanFromDisplayName(reportType)}`;
+        void globals.attachPopover(reportedIcon[0], flaggedMessage, 'bottom-start');
         globals.showInlineElement(reportedIcon);
         globals.displaySuccess(flaggedMessage);
     }
@@ -174,18 +164,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             message += responseJson.Message;
         }
         return message;
-    }
-    function getPromiseFromFlagName(flagName, reporter) {
-        switch (flagName) {
-            case 'Needs Editing': return reporter.ReportNeedsEditing();
-            case 'Vandalism': return reporter.ReportVandalism();
-            case 'Looks Fine': return reporter.ReportLooksFine();
-            case 'Duplicate answer': return reporter.ReportDuplicateAnswer();
-            case 'Plagiarism': return reporter.ReportPlagiarism();
-            case 'Bad attribution': return reporter.ReportPlagiarism();
-            default:
-                throw new Error('Could not find custom flag type: ' + flagName);
-        }
     }
     function showComments(postId, data) {
         const commentUI = StackExchange.comments.uiForPost($(`#comments-${postId}`));
@@ -232,17 +210,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             default: return '';
         }
     }
-    const storeCommentsInCache = () => Object.entries(globals.comments).forEach(array => globals.storeCommentInCache(array));
-    const storeFlagsInCache = () => Object.entries(globals.flags).forEach(array => globals.storeFlagsInCache(array));
-    function SetupCommentsAndFlags() {
-        const commentsCached = Object.keys(globals.comments).every(item => globals.getCommentFromCache(item));
-        const flagsCached = Object.keys(globals.flags).every(item => globals.getFlagFromCache(item));
-        if (!flagsCached)
-            storeFlagsInCache();
-        if (!commentsCached)
-            storeCommentsInCache();
+    function increasePopoverWidth(reportLink) {
+        const popoverId = reportLink.parent().attr('aria-describedby') || '';
+        $(`#${popoverId}`).addClass('sm:wmn-initial md:wmn-initial wmn4');
     }
-    function BuildFlaggingDialog(post, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi, shouldRaiseVlq) {
+    function BuildFlaggingDialog(post, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi, shouldRaiseVlq, failedActionIcon) {
         const enabledFlagIds = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationEnabledFlags);
         const defaultNoComment = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationDefaultNoComment);
         const defaultNoFlag = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationDefaultNoFlag);
@@ -271,12 +243,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 dropdownItem.append(reportLink);
                 categoryDiv.append(dropdownItem);
                 dropDown.append(categoryDiv);
-                let commentText;
-                if (flagType.GetComment) {
-                    commentText = flagType.GetComment({ Reputation: post.authorReputation || 0, AuthorName: post.authorName });
-                    reportLink.attr('title', commentText || '');
-                }
-                reportLink.click(async () => {
+                let commentText = flagType.GetComment?.({ Reputation: post.authorReputation, AuthorName: post.authorName }) || null;
+                const reportTypeHuman = getHumanFromDisplayName(flagType.ReportType);
+                const reportLinkInfo = `This option will${reportTypeHuman ? ' ' : ' not'} flag the post <b>${reportTypeHuman}</b></br>`
+                    + (commentText ? `and add the following comment: ${commentText}` : '');
+                void globals.attachHtmlPopover(reportLink.parent()[0], reportLinkInfo, 'right-start')
+                    .then(() => increasePopoverWidth(reportLink));
+                reportLink.on('click', async () => {
                     if (!deleted) {
                         if (!leaveCommentBox.is(':checked') && commentText) {
                             const strippedComment = getStrippedComment(commentText);
@@ -285,12 +258,18 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         }
                         await handleFlagAndComment(post.postId, flagType, flagBox.is(':checked'), copyPastorApi, reportedIcon, shouldRaiseVlq, commentText);
                     }
-                    if (flagType.ReportType === 'NoFlag') {
-                        performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
+                    globals.hideElement(dropDown); // hide the dropdown after clicking one of the options
+                    const success = await handleFlag(flagType, reporters);
+                    if (flagType.ReportType !== 'NoFlag')
+                        return;
+                    if (success) {
+                        void globals.attachPopover(performedActionIcon[0], `Performed action: ${flagType.DisplayName}`, 'bottom-start');
                         globals.showElement(performedActionIcon);
                     }
-                    handleFlag(flagType, reporters);
-                    globals.hideElement(dropDown); // hide the dropdown after clicking one of the options
+                    else {
+                        void globals.attachPopover(failedActionIcon[0], `Failed to perform action: ${flagType.DisplayName}`, 'bottom-start');
+                        globals.showElement(failedActionIcon);
+                    }
                 });
             }
             if (categoryDiv.html())
@@ -308,35 +287,28 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         dropDown.append(flaggingRow, globals.popoverArrow.clone());
         return dropDown;
     }
-    function handleFlag(flagType, reporters) {
-        const rudeFlag = flagType.ReportType === 'PostSpam' || flagType.ReportType === 'PostOffensive';
-        const naaFlag = flagType.ReportType === 'AnswerNotAnAnswer' || flagType.ReportType === 'PostLowQuality';
-        const customFlag = flagType.ReportType === 'PostOther';
-        const noFlag = flagType.ReportType === 'NoFlag';
-        reporters.forEach(reporter => {
-            let promise = null;
-            if (rudeFlag) {
-                promise = reporter.ReportRedFlag();
+    async function handleFlag(flagType, reporters) {
+        for (const reporter of reporters) {
+            try {
+                const promise = flagType.SendFeedback(reporter);
+                // eslint-disable-next-line no-await-in-loop
+                const promiseValue = await promise;
+                if (!promiseValue)
+                    continue;
+                globals.displaySuccess(promiseValue);
             }
-            else if (naaFlag) {
-                promise = reporter.ReportNaa();
+            catch (error) {
+                globals.displayError(error.message);
+                return false;
             }
-            else if (noFlag || customFlag) {
-                promise = getPromiseFromFlagName(flagType.DisplayName, reporter);
-            }
-            if (!promise)
-                return;
-            promise.then(didReport => {
-                if (!didReport)
-                    return;
-                globals.displaySuccess(`Feedback sent to ${reporter.name}`);
-            }).catch(() => {
-                globals.displayError(`Failed to send feedback to ${reporter.name}.`);
-            });
-        });
+        }
+        return true;
     }
     let autoFlagging = false;
     function SetupPostPage() {
+        const linkDisabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationLinkDisabled);
+        if (linkDisabled)
+            return;
         sotools_1.parseQuestionsAndAnswers(post => {
             if (!post.element.length)
                 return;
@@ -351,6 +323,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             const nattyIcon = globals.nattyIcon.clone();
             const copyPastorIcon = globals.guttenbergIcon.clone();
             const smokeyIcon = globals.smokeyIcon.clone();
+            void globals.attachPopover(nattyIcon.find('a')[0], 'Reported by Natty', 'bottom-start');
+            void globals.attachPopover(copyPastorIcon.find('a')[0], 'Reported by Guttenberg', 'bottom-start');
+            void globals.attachPopover(smokeyIcon.find('a')[0], 'Reported by Smokey', 'bottom-start');
             const copyPastorApi = new CopyPastorAPI_1.CopyPastorAPI(post.postId);
             const reporters = [];
             if (post.type === 'Answer' && globals.isStackOverflow) {
@@ -360,6 +335,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             }
             reporters.push(setupMetasmokeApi(post.postId, post.type, smokeyIcon));
             const performedActionIcon = globals.performedActionIcon();
+            const failedActionIcon = globals.failedActionIcon();
             const reportedIcon = globals.reportedIcon();
             if (post.page === 'Question') {
                 // Now we setup the flagging dialog
@@ -371,60 +347,53 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     const matches = globals.getFlagsUrlRegex(post.postId).exec(xhr.responseURL);
                     if (!matches)
                         return;
-                    const flagType = {
-                        Id: 0,
-                        ReportType: matches[1],
-                        DisplayName: matches[1],
-                        Human: getHumanFromDisplayName(matches[1])
-                    };
-                    handleFlag(flagType, reporters);
-                    displaySuccessFlagged(reportedIcon, flagType.Human);
+                    const flagTypes = FlagTypes_1.flagCategories.flatMap(category => category.FlagTypes);
+                    const flagType = flagTypes.find(item => item.ReportType === matches[1]);
+                    if (!flagType)
+                        return;
+                    displaySuccessFlagged(reportedIcon, flagType.ReportType);
+                    void handleFlag(flagType, reporters);
                 });
-                iconLocation.append(performedActionIcon, reportedIcon, nattyIcon, copyPastorIcon, smokeyIcon);
-                const linkDisabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationLinkDisabled);
-                if (linkDisabled)
-                    return;
+                iconLocation.append(performedActionIcon, reportedIcon, failedActionIcon, nattyIcon, copyPastorIcon, smokeyIcon);
                 const shouldRaiseVlq = globals.qualifiesForVlq(post.score, answerTime || new Date());
-                const dropDown = BuildFlaggingDialog(post, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi, shouldRaiseVlq);
+                const dropDown = BuildFlaggingDialog(post, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi, shouldRaiseVlq, failedActionIcon);
                 advancedFlaggingLink.append(dropDown);
                 const openOnHover = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationOpenOnHover);
                 if (openOnHover) {
-                    advancedFlaggingLink.hover(event => {
+                    advancedFlaggingLink.on('mouseover', event => {
                         event.stopPropagation();
                         if (event.target === advancedFlaggingLink.get(0))
                             globals.showElement(dropDown);
-                    }).mouseleave(e => {
+                    }).on('mouseleave', e => {
                         e.stopPropagation();
-                        setTimeout(() => globals.hideElement(dropDown), 100); // avoid immediate closing of the popover
+                        setTimeout(() => globals.hideElement(dropDown), 200); // avoid immediate closing of the popover
                     });
                 }
                 else {
-                    advancedFlaggingLink.click(event => {
+                    advancedFlaggingLink.on('click', event => {
                         event.stopPropagation();
                         if (event.target === advancedFlaggingLink.get(0))
                             globals.showElement(dropDown);
                     });
-                    $(window).click(() => globals.hideElement(dropDown));
+                    $(window).on('click', () => globals.hideElement(dropDown));
                 }
             }
             else {
-                iconLocation.after(smokeyIcon, copyPastorIcon, nattyIcon, reportedIcon, performedActionIcon);
+                iconLocation.after(smokeyIcon, copyPastorIcon, nattyIcon);
             }
         });
     }
-    async function Setup() {
+    function Setup() {
         // Collect all ids
-        await Promise.all([
+        void Promise.all([
             MetaSmokeAPI_1.MetaSmokeAPI.Setup(globals.metaSmokeKey),
             MetaSmokeAPI_1.MetaSmokeAPI.QueryMetaSmokeInternal(),
             CopyPastorAPI_1.CopyPastorAPI.getAllCopyPastorIds(),
             NattyApi_1.NattyAPI.getAllNattyIds()
-        ]);
-        SetupCommentsAndFlags();
-        SetupPostPage();
+        ]).then(() => SetupPostPage());
         SetupStyles();
-        void Configuration_1.SetupConfiguration();
-        document.body.appendChild(popupWrapper.get(0));
+        void globals.waitForSvg().then(() => Configuration_1.SetupConfiguration());
+        $('body').append(popupWrapper);
         const watchedQueuesEnabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationWatchQueues);
         const postDetails = [];
         if (!watchedQueuesEnabled)
@@ -460,16 +429,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             if (!matches)
                 return;
             const postIdStr = matches[1] || matches[2];
-            const postId = parseInt(postIdStr, 10);
+            const postId = Number(postIdStr);
             const currentPostDetails = postDetails[postId];
             if (!currentPostDetails || !$('.answers-subheader').length)
                 return;
-            const flagType = {
-                Id: 0,
-                ReportType: 'AnswerNotAnAnswer',
-                DisplayName: 'AnswerNotAnAnswer'
-            };
-            handleFlag(flagType, [setupNattyApi(postId)]);
+            const flagType = FlagTypes_1.flagCategories[2].FlagTypes[1]; // the not an answer flag type
+            void handleFlag(flagType, [setupNattyApi(postId)]);
         });
     }
     $(() => {
@@ -477,19 +442,19 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         function actionWatcher() {
             if (!started) {
                 started = true;
-                void Setup();
+                Setup();
             }
             $(window).off('focus', actionWatcher);
             $(window).off('mousemove', actionWatcher);
         }
         // If the window gains focus
-        $(window).focus(actionWatcher);
+        $(window).on('focus', actionWatcher);
         // Or we have mouse movement
-        $(window).mousemove(actionWatcher);
+        $(window).on('mousemove', actionWatcher);
         // Or the document is already focused,
         // Then we execute the script.
         // This is done to prevent DOSing dashboard apis, if a bunch of links are opened at once.
-        if (document.hasFocus && document.hasFocus())
+        if (document.hasFocus?.())
             actionWatcher();
     });
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
@@ -504,7 +469,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.flagCategories = void 0;
-    const getRepLevel = (reputation, max) => reputation > max ? 'High' : 'Low';
+    const getRepLevel = (reputation, max = 50) => reputation > max ? 'High' : 'Low';
     exports.flagCategories = [
         {
             IsDangerous: true,
@@ -513,16 +478,22 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 {
                     Id: 1,
                     DisplayName: 'Spam',
-                    ReportType: 'PostSpam',
-                    Human: 'as spam',
-                    Enabled: () => true
+                    DefaultReportType: 'PostSpam',
+                    get ReportType() {
+                        return globals.getReportType(this.Id);
+                    },
+                    Enabled: () => true,
+                    SendFeedback: (reporter) => reporter.ReportRedFlag()
                 },
                 {
                     Id: 2,
                     DisplayName: 'Rude or Abusive',
-                    ReportType: 'PostOffensive',
-                    Human: 'as R/A',
-                    Enabled: () => true
+                    DefaultReportType: 'PostOffensive',
+                    get ReportType() {
+                        return globals.getReportType(this.Id);
+                    },
+                    Enabled: () => true,
+                    SendFeedback: (reporter) => reporter.ReportRedFlag()
                 }
             ]
         },
@@ -533,26 +504,57 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 {
                     Id: 3,
                     DisplayName: 'Plagiarism',
-                    ReportType: 'PostOther',
-                    Human: 'for moderator attention',
+                    DefaultReportType: 'PostOther',
+                    get ReportType() {
+                        return globals.getReportType(this.Id);
+                    },
                     Enabled: (isRepost, copypastorId) => !isRepost && Boolean(copypastorId),
-                    GetCustomFlagText: (target, postId) => globals.getFullFlag('Plagiarism', target, postId)
+                    GetCustomFlagText: (target, postId) => globals.getFullFlag(3, target, postId),
+                    DefaultFlagText: 'Possible plagiarism of another answer $TARGET$, as can be seen here $COPYPASTOR$',
+                    get FlagText() {
+                        return globals.getFlagText(this.Id);
+                    },
+                    SendFeedback: (reporter) => reporter.ReportPlagiarism()
                 },
                 {
                     Id: 4,
                     DisplayName: 'Duplicate answer',
-                    ReportType: 'PostOther',
-                    Human: 'for moderator attention',
+                    DefaultReportType: 'PostOther',
+                    get ReportType() {
+                        return globals.getReportType(this.Id);
+                    },
                     Enabled: (isRepost, copypastorId) => isRepost && Boolean(copypastorId),
-                    GetCustomFlagText: (target, postId) => globals.getFullFlag('DuplicateAnswer', target, postId)
+                    GetCustomFlagText: (target, postId) => globals.getFullFlag(4, target, postId),
+                    GetComment: (userDetails) => globals.getFullComment(4, userDetails),
+                    DefaultFlagText: 'The answer is a repost of their other answer $TARGET$, but as there are slight differences '
+                        + '(see $COPYPASTOR$), an auto flag would not be raised.',
+                    get FlagText() {
+                        return globals.getFlagText(this.Id);
+                    },
+                    DefaultComment: "Please don't add the [same answer to multiple questions](//meta.stackexchange.com/q/104227)."
+                        + ' Answer the best one and flag the rest as duplicates, once you earn enough reputation. '
+                        + 'If it is not a duplicate, [edit] the answer and tailor the post to the question.',
+                    get Comments() {
+                        return globals.getComments(this.Id);
+                    },
+                    SendFeedback: (reporter) => reporter.ReportDuplicateAnswer()
                 },
                 {
                     Id: 5,
                     DisplayName: 'Bad attribution',
-                    ReportType: 'PostOther',
-                    Human: 'for moderator attention',
+                    DefaultReportType: 'PostOther',
+                    get ReportType() {
+                        return globals.getReportType(this.Id);
+                    },
                     Enabled: (isRepost, copypastorId) => !isRepost && Boolean(copypastorId),
-                    GetCustomFlagText: (target, postId) => globals.getFullFlag('BadAttribution', target, postId)
+                    GetCustomFlagText: (target, postId) => globals.getFullFlag(5, target, postId),
+                    DefaultFlagText: 'This post is copied from [another answer]($TARGET$), as can be seen here $COPYPASTOR$. The author '
+                        + 'only added a link to the other answer, which is [not the proper way of attribution]'
+                        + '(//stackoverflow.blog/2009/06/25/attribution-required).',
+                    get FlagText() {
+                        return globals.getFlagText(this.Id);
+                    },
+                    SendFeedback: (reporter) => reporter.ReportPlagiarism()
                 }
             ]
         },
@@ -563,74 +565,170 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 {
                     Id: 6,
                     DisplayName: 'Link Only',
-                    ReportType: 'PostLowQuality',
-                    Human: 'as NAA',
+                    DefaultReportType: 'PostLowQuality',
+                    get ReportType() {
+                        return globals.getReportType(this.Id);
+                    },
                     Enabled: () => globals.isStackOverflow,
-                    GetComment: (userDetails) => globals.getFullComment('LinkOnly', userDetails.AuthorName)
+                    GetComment: (userDetails) => globals.getFullComment(6, userDetails),
+                    DefaultComment: 'A link to a solution is welcome, but please ensure your answer is useful without it: '
+                        + '[add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will '
+                        + 'have some idea what it is and why it is there, then quote the most relevant part of the page '
+                        + 'you are linking to in case the target page is unavailable. '
+                        + `[Answers that are little more than a link may be deleted.](${globals.deletedAnswers})`,
+                    get Comments() {
+                        return globals.getComments(this.Id);
+                    },
+                    SendFeedback: (reporter) => reporter.ReportNaa()
                 },
                 {
                     Id: 7,
                     DisplayName: 'Not an answer',
-                    ReportType: 'AnswerNotAnAnswer',
-                    Human: 'as NAA',
+                    DefaultReportType: 'AnswerNotAnAnswer',
+                    get ReportType() {
+                        return globals.getReportType(this.Id);
+                    },
                     Enabled: () => globals.isStackOverflow,
-                    GetComment: (userDetails) => globals.getFullComment(`NAA${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
+                    GetComment: (userDetails) => globals.getFullComment(7, userDetails, getRepLevel(userDetails.Reputation)),
+                    DefaultComment: 'This does not provide an answer to the question. You can [search for similar questions](/search), '
+                        + 'or refer to the related and linked questions on the right-hand side of the page to find an answer. '
+                        + 'If you have a related but different question, [ask a new question](/questions/ask), and include a '
+                        + 'link to this one to help provide context. See: [Ask questions, get answers, no distractions](/tour)',
+                    DefaultCommentHigh: 'This post doesn\'t look like an attempt to answer this question. Every post here is expected to '
+                        + 'be an explicit attempt to *answer* this question; if you have a critique or need a clarification '
+                        + `of the question or another answer, you can [post a comment](${globals.commentHelp}) (like this `
+                        + 'one) directly below it. Please remove this answer and create either a comment or a new question. '
+                        + 'See: [Ask questions, get answers, no distractions](/tour).',
+                    get Comments() {
+                        return globals.getComments(this.Id);
+                    },
+                    SendFeedback: (reporter) => reporter.ReportNaa()
                 },
                 {
                     Id: 8,
                     DisplayName: 'Thanks',
-                    ReportType: 'AnswerNotAnAnswer',
-                    Human: 'as NAA',
+                    DefaultReportType: 'AnswerNotAnAnswer',
+                    get ReportType() {
+                        return globals.getReportType(this.Id);
+                    },
                     Enabled: () => globals.isStackOverflow,
-                    GetComment: (userDetails) => globals.getFullComment(`Thanks${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
+                    GetComment: (userDetails) => globals.getFullComment(8, userDetails, getRepLevel(userDetails.Reputation)),
+                    DefaultComment: 'Please don\'t add _thanks_ as answers. They don\'t actually provide an answer to the question, and '
+                        + 'can be perceived as noise by its future visitors. Once you [earn](//meta.stackoverflow.com/q/146472) '
+                        + `enough [reputation](${globals.reputationHelp}), you will gain privileges to `
+                        + `[upvote answers](${globals.voteUpHelp}) you like. This way future visitors of the question `
+                        + 'will see a higher vote count on that answer, and the answerer will also be rewarded with '
+                        + `reputation points. See [Why is voting important](${globals.whyVote}).`,
+                    DefaultCommentHigh: 'Please don\'t add _thanks_ as answers. They don\'t actually provide an answer to the question, '
+                        + 'and can be perceived as noise by its future visitors. Instead, '
+                        + `[upvote answers](${globals.voteUpHelp}) you like. This way future visitors of the question `
+                        + 'will see a higher vote count on that answer, and the answerer will also be rewarded '
+                        + `with reputation points. See [Why is voting important](${globals.whyVote}).`,
+                    get Comments() {
+                        return globals.getComments(this.Id);
+                    },
+                    SendFeedback: (reporter) => reporter.ReportNaa()
                 },
                 {
                     Id: 9,
                     DisplayName: 'Me too',
-                    ReportType: 'AnswerNotAnAnswer',
-                    Human: 'as NAA',
+                    DefaultReportType: 'AnswerNotAnAnswer',
+                    get ReportType() {
+                        return globals.getReportType(this.Id);
+                    },
                     Enabled: () => globals.isStackOverflow,
-                    GetComment: (userDetails) => globals.getFullComment('MeToo', userDetails.AuthorName)
+                    GetComment: (userDetails) => globals.getFullComment(9, userDetails),
+                    DefaultComment: 'Please don\'t add *Me too* as answers. It doesn\'t actually provide an answer to the question. '
+                        + 'If you have a different but related question, then [ask](/questions/ask) it (reference this one '
+                        + 'if it will help provide context). If you are interested in this specific question, you can '
+                        + `[upvote](${globals.voteUpHelp}) it, leave a [comment](${globals.commentHelp}), or start a `
+                        + `[bounty](${globals.setBounties}) once you have enough [reputation](${globals.reputationHelp}).`,
+                    get Comments() {
+                        return globals.getComments(this.Id);
+                    },
+                    SendFeedback: (reporter) => reporter.ReportNaa()
                 },
                 {
                     Id: 10,
                     DisplayName: 'Library',
-                    ReportType: 'PostLowQuality',
-                    Human: 'as NAA',
+                    DefaultReportType: 'PostLowQuality',
+                    get ReportType() {
+                        return globals.getReportType(this.Id);
+                    },
                     Enabled: () => globals.isStackOverflow,
-                    GetComment: (userDetails) => globals.getFullComment('Library', userDetails.AuthorName)
+                    GetComment: (userDetails) => globals.getFullComment(10, userDetails),
+                    DefaultComment: 'Please don\'t just post some tool or library as an answer. At least demonstrate '
+                        + '[how it solves the problem](//meta.stackoverflow.com/a/251605) in the answer itself.',
+                    get Comments() {
+                        return globals.getComments(this.Id);
+                    },
+                    SendFeedback: (reporter) => reporter.ReportNaa()
                 },
                 {
                     Id: 11,
                     DisplayName: 'Comment',
-                    ReportType: 'AnswerNotAnAnswer',
-                    Human: 'as NAA',
+                    DefaultReportType: 'AnswerNotAnAnswer',
+                    get ReportType() {
+                        return globals.getReportType(this.Id);
+                    },
                     Enabled: () => globals.isStackOverflow,
-                    GetComment: (userDetails) => globals.getFullComment(`Comment${getRepLevel(userDetails.Reputation, 50)}Rep`, userDetails.AuthorName)
+                    GetComment: (userDetails) => globals.getFullComment(11, userDetails, getRepLevel(userDetails.Reputation)),
+                    DefaultComment: 'This does not provide an answer to the question. Once you have sufficient '
+                        + `[reputation](${globals.reputationHelp}) you will be able to [comment on any post](${globals.commentHelp}); instead, `
+                        + '[provide answers that don\'t require clarification from the asker](//meta.stackexchange.com/q/214173).',
+                    DefaultCommentHigh: 'This does not provide an answer to the question. Please write a comment instead.',
+                    get Comments() {
+                        return globals.getComments(this.Id);
+                    },
+                    SendFeedback: (reporter) => reporter.ReportNaa()
                 },
                 {
                     Id: 12,
                     DisplayName: 'Duplicate',
-                    ReportType: 'AnswerNotAnAnswer',
-                    Human: 'as NAA',
+                    DefaultReportType: 'AnswerNotAnAnswer',
+                    get ReportType() {
+                        return globals.getReportType(this.Id);
+                    },
                     Enabled: () => globals.isStackOverflow,
-                    GetComment: (userDetails) => globals.getFullComment('Duplicate', userDetails.AuthorName)
+                    GetComment: (userDetails) => globals.getFullComment(12, userDetails),
+                    DefaultComment: 'Instead of posting an answer which merely links to another answer, please instead '
+                        + `[flag the question](${globals.flagPosts}) as a duplicate.`,
+                    get Comments() {
+                        return globals.getComments(this.Id);
+                    },
+                    SendFeedback: (reporter) => reporter.ReportNaa()
                 },
                 {
                     Id: 13,
                     DisplayName: 'Non English',
-                    ReportType: 'PostLowQuality',
-                    Human: 'as NAA',
+                    DefaultReportType: 'PostLowQuality',
+                    get ReportType() {
+                        return globals.getReportType(this.Id);
+                    },
                     Enabled: () => globals.isStackOverflow,
-                    GetComment: (userDetails) => globals.getFullComment('NonEnglish', userDetails.AuthorName)
+                    GetComment: (userDetails) => globals.getFullComment(13, userDetails),
+                    DefaultComment: 'Please write your answer in English, as Stack Overflow is an '
+                        + '[English-only site](//meta.stackoverflow.com/a/297680).',
+                    get Comments() {
+                        return globals.getComments(this.Id);
+                    },
+                    SendFeedback: (reporter) => reporter.ReportNaa()
                 },
                 {
                     Id: 14,
                     DisplayName: 'Should be an edit',
-                    ReportType: 'AnswerNotAnAnswer',
-                    Human: 'as NAA',
+                    DefaultReportType: 'AnswerNotAnAnswer',
+                    get ReportType() {
+                        return globals.getReportType(this.Id);
+                    },
                     Enabled: () => globals.isStackOverflow,
-                    GetComment: (userDetails) => globals.getFullComment('ShouldBeAnEdit', userDetails.AuthorName)
+                    GetComment: (userDetails) => globals.getFullComment(14, userDetails),
+                    DefaultComment: 'Please use the edit link on your question to add additional information. '
+                        + 'The "Post Answer" button should be used only for complete answers to the question.',
+                    get Comments() {
+                        return globals.getComments(this.Id);
+                    },
+                    SendFeedback: (reporter) => reporter.ReportNaa()
                 }
             ]
         },
@@ -641,20 +739,32 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 {
                     Id: 15,
                     DisplayName: 'Looks Fine',
-                    ReportType: 'NoFlag',
-                    Enabled: () => true
+                    DefaultReportType: 'NoFlag',
+                    get ReportType() {
+                        return globals.getReportType(this.Id);
+                    },
+                    Enabled: () => true,
+                    SendFeedback: (reporter) => reporter.ReportLooksFine()
                 },
                 {
                     Id: 16,
                     DisplayName: 'Needs Editing',
-                    ReportType: 'NoFlag',
-                    Enabled: () => true
+                    DefaultReportType: 'NoFlag',
+                    get ReportType() {
+                        return globals.getReportType(this.Id);
+                    },
+                    Enabled: () => true,
+                    SendFeedback: (reporter) => reporter.ReportNeedsEditing()
                 },
                 {
                     Id: 17,
                     DisplayName: 'Vandalism',
-                    ReportType: 'NoFlag',
-                    Enabled: () => true
+                    DefaultReportType: 'NoFlag',
+                    get ReportType() {
+                        return globals.getReportType(this.Id);
+                    },
+                    Enabled: () => true,
+                    SendFeedback: (reporter) => reporter.ReportVandalism()
                 }
             ]
         }
@@ -667,10 +777,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 2 */
 /***/ ((module, exports, __webpack_require__) => {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(0), __webpack_require__(3)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, AdvancedFlagging_1, GreaseMonkeyCache_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(3), __webpack_require__(0)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, GreaseMonkeyCache_1, AdvancedFlagging_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
-    exports.parseDate = exports.qualifiesForVlq = exports.getFullFlag = exports.getFullComment = exports.getAllPostIds = exports.addXHRListener = exports.showConfirmModal = exports.Delay = exports.showMSTokenPopupAndGet = exports.editCommentsPopup = exports.inlineCheckboxesWrapper = exports.overlayModal = exports.flagsWrapper = exports.commentsWrapper = exports.editContentWrapper = exports.commentsLink = exports.commentsDiv = exports.configurationLink = exports.configurationDiv = exports.advancedFlaggingLink = exports.gridCellDiv = exports.plainDiv = exports.dropdownItem = exports.reportLink = exports.popoverArrow = exports.dropDown = exports.popupWrapper = exports.divider = exports.reportedIcon = exports.performedActionIcon = exports.getConfigHtml = exports.getOptionLabel = exports.getCategoryDiv = exports.getOptionBox = exports.getSectionWrapper = exports.getMessageDiv = exports.smokeyIcon = exports.guttenbergIcon = exports.nattyIcon = exports.getFormDataFromObject = exports.getParamsFromObject = exports.displayError = exports.displaySuccess = exports.showInlineElement = exports.hideElement = exports.showElement = exports.getFlagsUrlRegex = exports.flagsUrlRegex = exports.isDeleteVoteRegex = exports.isReviewItemRegex = exports.popupDelay = exports.displayStacksToast = exports.getAllComments = exports.getAllFlags = exports.storeFlagsInCache = exports.storeCommentInCache = exports.getFlagFromCache = exports.getCommentFromCache = exports.getFlagKey = exports.getCommentKey = exports.comments = exports.flags = exports.CommentsAddAuthorName = exports.MetaSmokeDisabledConfig = exports.MetaSmokeUserKeyConfig = exports.CacheChatApiFkey = exports.ConfigurationLinkDisabled = exports.ConfigurationEnabledFlags = exports.ConfigurationWatchQueues = exports.ConfigurationWatchFlags = exports.ConfigurationDefaultNoComment = exports.ConfigurationDefaultNoFlag = exports.ConfigurationOpenOnHover = exports.isFlagsPage = exports.isQuestionPage = exports.isNatoPage = exports.isStackOverflow = exports.settingUpBody = exports.settingUpTitle = exports.dayMillis = exports.username = exports.nattyAllReportsUrl = exports.placeholderCopypastorLink = exports.placeholderTarget = exports.genericBotKey = exports.copyPastorServer = exports.copyPastorKey = exports.metasmokeApiFilter = exports.metaSmokeKey = exports.soboticsRoomId = void 0;
+    exports.waitForSvg = exports.savePropertyToCache = exports.saveCommentsToCache = exports.getComments = exports.getFlagText = exports.getReportType = exports.getFlagTypeFromCache = exports.getSentMessage = exports.parseDate = exports.qualifiesForVlq = exports.getFullFlag = exports.getFullComment = exports.getAllPostIds = exports.addXHRListener = exports.showConfirmModal = exports.Delay = exports.showMSTokenPopupAndGet = exports.editCommentsPopup = exports.inlineCheckboxesWrapper = exports.overlayModal = exports.flagsWrapper = exports.commentsWrapper = exports.editContentWrapper = exports.commentsLink = exports.commentsDiv = exports.configurationLink = exports.configurationDiv = exports.advancedFlaggingLink = exports.dropdownItem = exports.reportLink = exports.popoverArrow = exports.dropDown = exports.popupWrapper = exports.divider = exports.reportedIcon = exports.failedActionIcon = exports.performedActionIcon = exports.getTextarea = exports.getConfigHtml = exports.getOptionLabel = exports.getCategoryDiv = exports.getOptionBox = exports.getSectionWrapper = exports.getMessageDiv = exports.smokeyIcon = exports.guttenbergIcon = exports.nattyIcon = exports.getFormDataFromObject = exports.getParamsFromObject = exports.displayError = exports.displaySuccess = exports.showInlineElement = exports.hideElement = exports.showElement = exports.getFlagsUrlRegex = exports.flagsUrlRegex = exports.isDeleteVoteRegex = exports.isReviewItemRegex = exports.attachHtmlPopover = exports.attachPopover = exports.displayStacksToast = exports.FlagTypesKey = exports.MetaSmokeDisabledConfig = exports.MetaSmokeUserKeyConfig = exports.CacheChatApiFkey = exports.ConfigurationAddAuthorName = exports.ConfigurationLinkDisabled = exports.ConfigurationEnabledFlags = exports.ConfigurationWatchQueues = exports.ConfigurationWatchFlags = exports.ConfigurationDefaultNoComment = exports.ConfigurationDefaultNoFlag = exports.ConfigurationOpenOnHover = exports.flagPosts = exports.setBounties = exports.whyVote = exports.voteUpHelp = exports.reputationHelp = exports.commentHelp = exports.deletedAnswers = exports.gridCellDiv = exports.plainDiv = exports.isFlagsPage = exports.isQuestionPage = exports.isNatoPage = exports.isStackOverflow = exports.chatFailureMessage = exports.metasmokeFailureMessage = exports.metasmokeReportedMessage = exports.genericBotFailure = exports.settingUpBody = exports.settingUpTitle = exports.popupDelay = exports.dayMillis = exports.username = exports.nattyAllReportsUrl = exports.placeholderCopypastorLink = exports.placeholderTarget = exports.genericBotKey = exports.copyPastorServer = exports.copyPastorKey = exports.metasmokeApiFilter = exports.metaSmokeKey = exports.soboticsRoomId = void 0;
     // Constants
     exports.soboticsRoomId = 111347;
     exports.metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
@@ -683,9 +793,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.nattyAllReportsUrl = 'https://logs.sobotics.org/napi/api/stored/all';
     exports.username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
     exports.dayMillis = 1000 * 60 * 60 * 24;
+    exports.popupDelay = 4000;
     exports.settingUpTitle = 'Setting up MetaSmoke';
     exports.settingUpBody = 'If you do not wish to connect, press cancel and this popup won\'t show up again. '
         + 'To reset configuration, see the footer of Stack Overflow.';
+    exports.genericBotFailure = 'Server refused to track the post';
+    exports.metasmokeReportedMessage = 'Post reported to Smokey';
+    exports.metasmokeFailureMessage = 'Failed to report post to Smokey';
+    exports.chatFailureMessage = 'Failed to send message to chat';
     const nattyImage = 'https://i.stack.imgur.com/aMUMt.jpg?s=32&g=1';
     const guttenbergImage = 'https://i.stack.imgur.com/tzKAI.png?s=32&g=1';
     const smokeyImage = 'https://i.stack.imgur.com/7cmCt.png?s=32&g=1';
@@ -693,6 +808,16 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.isNatoPage = Boolean(/\/tools\/new-answers-old-questions/.exec(window.location.href));
     exports.isQuestionPage = Boolean(/\/questions\/\d+.*/.exec(window.location.href));
     exports.isFlagsPage = Boolean(/\/users\/flag-summary\//.exec(window.location.href));
+    exports.plainDiv = $('<div>');
+    exports.gridCellDiv = $('<div>').addClass('grid--cell');
+    // Help center links used in FlagTypes for comments/flags
+    exports.deletedAnswers = '/help/deleted-answers';
+    exports.commentHelp = '/help/privileges/comment';
+    exports.reputationHelp = '/help/whats-reputation';
+    exports.voteUpHelp = '/help/privileges/vote-up';
+    exports.whyVote = '/help/why-vote';
+    exports.setBounties = '/help/privileges/set-bounties';
+    exports.flagPosts = '/help/privileges/flag-posts';
     // Cache keys
     exports.ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
     exports.ConfigurationDefaultNoFlag = 'AdvancedFlagging.Configuration.DefaultNoFlag';
@@ -701,84 +826,29 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
     exports.ConfigurationEnabledFlags = 'AdvancedFlagging.Configuration.EnabledFlags';
     exports.ConfigurationLinkDisabled = 'AdvancedFlagging.Configuration.LinkDisabled';
+    exports.ConfigurationAddAuthorName = 'AdvancedFlagging.Comments.AddAuthorName';
     exports.CacheChatApiFkey = 'StackExchange.ChatApi.FKey';
     exports.MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
     exports.MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
-    exports.CommentsAddAuthorName = 'AdvancedFlagging.Comments.AddAuthorName';
-    // Text for mod flags
-    exports.flags = {
-        Plagiarism: 'Possible plagiarism of another answer $TARGET$, as can be seen here $COPYPASTOR$',
-        DuplicateAnswer: 'The answer is a repost of their other answer $TARGET$, but as there are slight differences '
-            + '(see $COPYPASTOR$), an auto flag would not be raised.',
-        BadAttribution: 'This post is copied from [another answer]($TARGET$), as can be seen here $COPYPASTOR$. The author only added a link'
-            + ' to the other answer, which is [not the proper way of attribution](//stackoverflow.blog/2009/06/25/attribution-required).'
-    };
-    // Auto comments
-    exports.comments = {
-        DuplicateAnswer: "Please don't add the [same answer to multiple questions](//meta.stackexchange.com/q/104227). Answer the best one "
-            + 'and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer '
-            + 'and tailor the post to the question.',
-        LinkOnly: 'A link to a solution is welcome, but please ensure your answer is useful without it: '
-            + '[add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will '
-            + 'have some idea what it is and why it is there, then quote the most relevant part of the page you are linking to '
-            + 'in case the target page is unavailable. [Answers that are little more than a link may be deleted.](/help/deleted-answers)',
-        NAALowRep: 'This does not provide an answer to the question. You can [search for similar questions](/search), '
-            + 'or refer to the related and linked questions on the right-hand side of the page to find an answer. '
-            + 'If you have a related but different question, [ask a new question](/questions/ask), '
-            + 'and include a link to this one to help provide context. See: [Ask questions, get answers, no distractions](/tour)',
-        NAAHighRep: 'This post doesn\'t look like an attempt to answer this question. Every post here is expected to be '
-            + 'an explicit attempt to *answer* this question; if you have a critique or need a clarification of '
-            + 'the question or another answer, you can [post a comment](/help/privileges/comment) '
-            + '(like this one) directly below it. Please remove this answer and create either a comment or a new question. '
-            + 'See: [Ask questions, get answers, no distractions](/tour).',
-        ThanksLowRep: 'Please don\'t add _thanks_ as answers. They don\'t actually provide an answer to the question, '
-            + 'and can be perceived as noise by its future visitors. Once you [earn](//meta.stackoverflow.com/q/146472) '
-            + 'enough [reputation](/help/whats-reputation), you will gain privileges to '
-            + '[upvote answers](/help/privileges/vote-up) you like. This way future visitors of the question '
-            + 'will see a higher vote count on that answer, and the answerer will also be rewarded with reputation points. '
-            + 'See [Why is voting important](/help/why-vote).',
-        ThanksHighRep: 'Please don\'t add _thanks_ as answers. They don\'t actually provide an answer to the question, '
-            + 'and can be perceived as noise by its future visitors. Instead, [upvote answers](/help/privileges/vote-up) '
-            + 'you like. This way future visitors of the question will see a higher vote count on that answer, '
-            + 'and the answerer will also be rewarded with reputation points. See [Why is voting important](/help/why-vote).',
-        MeToo: 'Please don\'t add *Me too* as answers. It doesn\'t actually provide an answer to the question. '
-            + 'If you have a different but related question, then [ask](/questions/ask) it '
-            + '(reference this one if it will help provide context). If you are interested in this specific question, '
-            + 'you can [upvote](/help/privileges/vote-up) it, leave a [comment](/help/privileges/comment), '
-            + 'or start a [bounty](/help/privileges/set-bounties) once you have enough [reputation](/help/whats-reputation).',
-        Library: 'Please don\'t just post some tool or library as an answer. At least demonstrate '
-            + '[how it solves the problem](//meta.stackoverflow.com/a/251605) in the answer itself.',
-        CommentLowRep: 'This does not provide an answer to the question. Once you have sufficient [reputation](/help/whats-reputation) '
-            + 'you will be able to [comment on any post](/help/privileges/comment); instead, '
-            + '[provide answers that don\'t require clarification from the asker](//meta.stackexchange.com/q/214173).',
-        CommentHighRep: 'This does not provide an answer to the question. Please write a comment instead.',
-        Duplicate: 'Instead of posting an answer which merely links to another answer, please instead '
-            + '[flag the question](/help/privileges/flag-posts) as a duplicate.',
-        NonEnglish: 'Please write your answer in English, as Stack Overflow is an [English-only site](//meta.stackoverflow.com/a/297680).',
-        ShouldBeAnEdit: 'Please use the edit link on your question to add additional information. '
-            + 'The "Post Answer" button should be used only for complete answers to the question.'
-    };
-    // helper functions for retrieving flags & comments from cache
-    const getCommentKey = (name) => 'AdvancedFlagging.Configuration.Comments.' + name;
-    exports.getCommentKey = getCommentKey;
-    const getFlagKey = (name) => 'AdvancedFlagging.Configuration.Flags.' + name;
-    exports.getFlagKey = getFlagKey;
-    const getCommentFromCache = (name) => GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.getCommentKey(name));
-    exports.getCommentFromCache = getCommentFromCache;
-    const getFlagFromCache = (name) => GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.getFlagKey(name));
-    exports.getFlagFromCache = getFlagFromCache;
-    const storeCommentInCache = (array) => GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(exports.getCommentKey(array[0]), array[1]);
-    exports.storeCommentInCache = storeCommentInCache;
-    const storeFlagsInCache = (array) => GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(exports.getFlagKey(array[0]), array[1]);
-    exports.storeFlagsInCache = storeFlagsInCache;
-    const getAllFlags = () => Object.keys(exports.flags).map(item => ({ flagName: item, content: exports.getFlagFromCache(item) }));
-    exports.getAllFlags = getAllFlags;
-    const getAllComments = () => Object.keys(exports.comments).map(item => ({ commentName: item, content: exports.getCommentFromCache(item) }));
-    exports.getAllComments = getAllComments;
-    const displayStacksToast = (message, type) => StackExchange.helpers.showToast(message, { type: type });
+    exports.FlagTypesKey = 'FlagTypes';
+    const displayStacksToast = (message, type) => StackExchange.helpers.showToast(message, {
+        type: type,
+        transientTimeout: exports.popupDelay
+    });
     exports.displayStacksToast = displayStacksToast;
+    const attachPopover = async (element, text, position) => {
+        await Stacks.setTooltipText(element, text, {
+            placement: position
+        });
+    };
+    exports.attachPopover = attachPopover;
+    const attachHtmlPopover = async (element, text, position) => {
+        await Stacks.setTooltipHtml(element, text, {
+            placement: position
+        });
+    };
+    exports.attachHtmlPopover = attachHtmlPopover;
     // regexes
-    exports.popupDelay = 4000;
     exports.isReviewItemRegex = /\/review\/(next-task|task-reviewed\/)/;
     exports.isDeleteVoteRegex = /(\d+)\/vote\/10|(\d+)\/recommend-delete/;
     exports.flagsUrlRegex = /flags\/posts\/\d+\/add\/[a-zA-Z]+/;
@@ -807,35 +877,41 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.getFormDataFromObject = getFormDataFromObject;
     const getCopypastorLink = (postId) => `https://copypastor.sobotics.org/posts/${postId}`;
     // jQuery icon elements
-    const sampleIcon = $('<a>').attr('class', 's-avatar s-avatar__16 s-user-card--avatar d-none')
-        .addClass(/\/users\/flag-summary/.exec(window.location.href) ? 'mx4 my2' : 'm4')
-        .append($('<img>').addClass('s-avatar--image'));
-    exports.nattyIcon = sampleIcon.clone().attr('title', 'Reported by Natty').find('img').attr('src', nattyImage).parent();
-    exports.guttenbergIcon = sampleIcon.clone().attr('title', 'Reported by Guttenberg').find('img').attr('src', guttenbergImage).parent();
-    exports.smokeyIcon = sampleIcon.clone().attr('title', 'Reported by Smokey').find('img').attr('src', smokeyImage).parent();
+    const sampleIcon = exports.gridCellDiv.clone().addClass(`d-none ${exports.isFlagsPage ? ' ml8' : ''}`)
+        .append($('<a>').addClass('s-avatar s-avatar__16 s-user-card--avatar').append($('<img>').addClass('s-avatar--image')));
+    exports.nattyIcon = sampleIcon.clone().find('img').attr('src', nattyImage).parent().parent();
+    exports.guttenbergIcon = sampleIcon.clone().find('img').attr('src', guttenbergImage).parent().parent();
+    exports.smokeyIcon = sampleIcon.clone().find('img').attr('src', smokeyImage).parent().parent();
     // dynamically generated jQuery elements based on the parameters passed
     const getMessageDiv = (message, state) => $('<div>').attr('class', 'p12 bg-' + state).text(message);
     exports.getMessageDiv = getMessageDiv;
-    const getSectionWrapper = (name) => $('<fieldset>').attr('class', `grid gs8 gsy fd-column af-section-${name.toLowerCase()}`)
-        .html(`<h2 class="grid--cell">${name}</h2>`);
+    const getSectionWrapper = (name) => $('<fieldset>').html(`<h2 class="grid--cell">${name}</h2>`)
+        .addClass(`grid gs8 gsy fd-column af-section-${name.toLowerCase()}`);
     exports.getSectionWrapper = getSectionWrapper;
     const getOptionBox = (name) => $('<input>').attr('type', 'checkbox').attr('name', name).attr('id', name).attr('class', 's-checkbox');
     exports.getOptionBox = getOptionBox;
     const getCategoryDiv = (red) => $('<div>').attr('class', `advanced-flagging-category bar-md${red ? ' bg-red-200' : ''}`);
     exports.getCategoryDiv = getCategoryDiv;
-    const getOptionLabel = (text, name) => $('<label>').text(text).attr('for', name).attr('class', 's-label ml4 va-middle fs-body1 fw-normal');
+    const getOptionLabel = (text, name) => $('<label>').text(text).attr('for', name)
+        .addClass('s-label ml4 va-middle fs-body1 fw-normal');
     exports.getOptionLabel = getOptionLabel;
     const getConfigHtml = (optionId, text) => $(`
 <div>
   <div class="grid gs4">
     <div class="grid--cell"><input class="s-checkbox" type="checkbox" id="${optionId}"/></div>
-    <label class="grid--cell s-label fw-normal" for="${optionId}">${text}</label>
+    <label class="grid--cell s-label fw-normal pt2" for="${optionId}">${text}</label>
   </div>
 </div>`);
     exports.getConfigHtml = getConfigHtml;
-    const performedActionIcon = () => $('<div>').attr('class', 'p2 d-none').append(Svg.CheckmarkSm().addClass('fc-green-500'));
+    const getTextarea = (content, className) => $('<textarea>').html(content || '').attr('rows', 4)
+        .addClass('grid--cell s-textarea fs-body2 ' + className);
+    exports.getTextarea = getTextarea;
+    const iconWrapper = $('<div>').attr('class', 'grid--cell d-none');
+    const performedActionIcon = () => iconWrapper.clone().append(Svg.Checkmark().addClass('fc-green-500'));
     exports.performedActionIcon = performedActionIcon;
-    const reportedIcon = () => $('<div>').attr('class', 'p2 d-none').append(Svg.Flag().addClass('fc-red-500'));
+    const failedActionIcon = () => iconWrapper.clone().append(Svg.Clear().addClass('fc-red-500'));
+    exports.failedActionIcon = failedActionIcon;
+    const reportedIcon = () => iconWrapper.clone().append(Svg.Flag().addClass('fc-red-500'));
     exports.reportedIcon = reportedIcon;
     exports.divider = $('<hr>').attr('class', 'my8');
     exports.popupWrapper = $('<div>').attr('id', 'snackbar')
@@ -844,21 +920,19 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.popoverArrow = $('<div>').attr('class', 's-popover--arrow s-popover--arrow__tc');
     exports.reportLink = $('<a>').attr('class', 'd-inline-block my4');
     exports.dropdownItem = $('<div>').attr('class', 'advanced-flagging-dropdown-item px4');
-    exports.plainDiv = $('<div>');
-    exports.gridCellDiv = $('<div>').attr('class', 'grid--cell');
     exports.advancedFlaggingLink = $('<button>').attr('type', 'button').attr('class', 's-btn s-btn__link').text('Advanced Flagging');
     exports.configurationDiv = $('<div>').attr('class', 'advanced-flagging-configuration-div ta-left pt6');
     exports.configurationLink = $('<a>').attr('id', 'af-modal-button').text('AdvancedFlagging configuration');
     exports.commentsDiv = exports.configurationDiv.clone().removeClass('advanced-flagging-configuration-div').addClass('af-comments-div');
     exports.commentsLink = exports.configurationLink.clone().attr('id', 'af-comments-button').text('AdvancedFlagging: edit comments and flags');
     exports.editContentWrapper = $('<div>').attr('class', 'grid grid__fl1 md:fd-column gs16');
-    const commentsHeader = $('<h2>').attr('class', 'ta-center mb8').text('Comments');
-    const flagsHeader = $('<h2>').attr('class', 'ta-center mb8').text('Flags');
-    exports.commentsWrapper = $('<div>').attr('class', 'af-comments-content grid--cell').append(commentsHeader);
-    exports.flagsWrapper = $('<div>').attr('class', 'af-flags-content grid--cell').append(flagsHeader);
+    const commentsHeader = $('<h2>').attr('class', 'ta-center mb8 fs-title').text('Comments');
+    const flagsHeader = $('<h2>').attr('class', 'ta-center mb8 fs-title').text('Flags');
+    exports.commentsWrapper = $('<div>').attr('class', 'af-comments-content grid--cell w60 md:w100 sm:w100').append(commentsHeader);
+    exports.flagsWrapper = $('<div>').attr('class', 'af-flags-content grid--cell w40 md:w100 sm:w100').append(flagsHeader);
     exports.overlayModal = $(`
 <aside class="s-modal" id="af-config" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
-  <div class="s-modal--dialog s-modal__full w60 sm:w100" role="document">
+  <div class="s-modal--dialog s-modal__full w60 sm:w100 md:w75 lg:w75" role="document">
     <h1 class="s-modal--header fw-body c-movey" id="af-modal-title">AdvancedFlagging configuration</h1>
     <div class="s-modal--body fs-body2" id="af-modal-description"></div>
     <div class="grid gs8 gsx s-modal--footer">
@@ -961,21 +1035,23 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 postId = Number(el.attr('data-questionid') || el.attr('data-answerid'));
             }
             return urlForm ? `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'questions'}/${postId}` : postId;
-        }).filter(postId => postId); // remove null/empty values
+        }).filter(String); // remove null/empty values
     }
     exports.getAllPostIds = getAllPostIds;
     // For GetComment() on FlagTypes. Adds the author name before the comment if the option is enabled
-    function getFullComment(name, authorName) {
-        const shouldAddAuthorName = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.CommentsAddAuthorName);
-        const comment = exports.getCommentFromCache(name);
-        return comment && shouldAddAuthorName ? `${authorName}, ${comment[0].toLowerCase()}${comment.slice(1)}` : comment;
+    function getFullComment(flagId, { AuthorName }, level) {
+        const shouldAddAuthorName = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationAddAuthorName);
+        const flagType = getFlagTypeFromCache(flagId);
+        const comment = flagType?.Comments[level || 'Low'];
+        return (comment && shouldAddAuthorName ? `${AuthorName}, ${comment[0].toLowerCase()}${comment.slice(1)}` : comment) || '';
     }
     exports.getFullComment = getFullComment;
     // For GetCustomFlagText() on FlagTypes. Replaces the placeholders with actual values
-    function getFullFlag(name, target, postId) {
-        const flagContent = exports.getFlagFromCache(name);
+    function getFullFlag(flagId, target, postId) {
+        const flagType = getFlagTypeFromCache(flagId);
+        const flagContent = flagType?.FlagText;
         if (!flagContent)
-            return;
+            return '';
         return flagContent.replace(exports.placeholderTarget, target).replace(exports.placeholderCopypastorLink, getCopypastorLink(postId));
     }
     exports.getFullFlag = getFullFlag;
@@ -988,6 +1064,54 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         return dateStr ? new Date(dateStr.replace(' ', 'T')) : null;
     }
     exports.parseDate = parseDate;
+    function getSentMessage(success, feedback, bot) {
+        return success ? `Feedback ${feedback} sent to ${bot}` : `Failed to send feedback ${feedback} to ${bot}`;
+    }
+    exports.getSentMessage = getSentMessage;
+    function getFlagTypeFromCache(flagId) {
+        return GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.FlagTypesKey)?.find(flagType => flagType.Id === flagId) || null;
+    }
+    exports.getFlagTypeFromCache = getFlagTypeFromCache;
+    function getReportType(flagId) {
+        const flagTypes = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.FlagTypesKey);
+        return flagTypes?.find(flagType => flagType.Id === flagId)?.ReportType || '';
+    }
+    exports.getReportType = getReportType;
+    function getFlagText(flagId) {
+        const flagTypes = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.FlagTypesKey);
+        return flagTypes?.find(flagType => flagType.Id === flagId)?.FlagText || '';
+    }
+    exports.getFlagText = getFlagText;
+    function getComments(flagId) {
+        const flagTypes = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.FlagTypesKey);
+        return flagTypes?.find(flagType => flagType.Id === flagId)?.Comments || '';
+    }
+    exports.getComments = getComments;
+    function saveCommentsToCache(flagId, value) {
+        const currentFlagTypes = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.FlagTypesKey);
+        const flagType = currentFlagTypes?.find(flag => flag.Id === flagId);
+        if (!currentFlagTypes || !flagType)
+            return;
+        flagType.Comments = value;
+        GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(exports.FlagTypesKey, currentFlagTypes);
+    }
+    exports.saveCommentsToCache = saveCommentsToCache;
+    function savePropertyToCache(flagId, property, value) {
+        const currentFlagTypes = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.FlagTypesKey);
+        const flagType = currentFlagTypes?.find(flag => flag.Id === flagId);
+        if (!currentFlagTypes || !flagType)
+            return;
+        flagType[property] = value;
+        GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(exports.FlagTypesKey, currentFlagTypes);
+    }
+    exports.savePropertyToCache = savePropertyToCache;
+    async function waitForSvg() {
+        while (typeof Svg === 'undefined') {
+            // eslint-disable-next-line no-await-in-loop
+            await Delay(1000);
+        }
+    }
+    exports.waitForSvg = waitForSvg;
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
@@ -1035,7 +1159,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 4 */
 /***/ ((module, exports, __webpack_require__) => {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, globals) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, GlobalVars_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.parseQuestionsAndAnswers = void 0;
@@ -1087,7 +1211,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         const postDetails = getPostDetails(aNode);
         if (!postDetails.creationDate)
             return;
-        aNode.find('.answercell').bind('destroyed', () => {
+        aNode.find('.answercell').on('destroyed', () => {
             setTimeout(() => {
                 const updatedAnswerNode = $(`#answer-${answerId}`);
                 parseAnswerDetails(updatedAnswerNode, callback, questionTime);
@@ -1115,7 +1239,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             const postDetails = getPostDetails(qNode);
             if (!postDetails.creationDate)
                 return;
-            qNode.find('.postcell').bind('destroyed', () => {
+            qNode.find('.postcell').on('destroyed', () => {
                 setTimeout(() => {
                     const updatedQuestionNode = $(`[data-questionid="${postId}"]`);
                     parseQuestionDetails(updatedQuestionNode);
@@ -1160,13 +1284,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         });
     }
     function parseQuestionsAndAnswers(callback) {
-        if (globals.isNatoPage) {
+        if (GlobalVars_1.isNatoPage) {
             parseNatoPage(callback);
         }
-        else if (globals.isQuestionPage) {
+        else if (GlobalVars_1.isQuestionPage) {
             parseQuestionPage(callback);
         }
-        else if (globals.isFlagsPage) {
+        else if (GlobalVars_1.isFlagsPage) {
             parseFlagsPage(callback);
         }
     }
@@ -1183,12 +1307,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         return Number(reputationText);
     }
     function parseAuthorDetails(authorDiv) {
-        const userLink = authorDiv.find('a');
-        const authorName = userLink.text();
-        return authorName;
+        return authorDiv.find('a').text();
     }
     function parseActionDate(actionDiv) {
-        return globals.parseDate((actionDiv.hasClass('relativetime') ? actionDiv : actionDiv.find('.relativeTime')).attr('title'));
+        return GlobalVars_1.parseDate((actionDiv.hasClass('relativetime') ? actionDiv : actionDiv.find('.relativeTime')).attr('title'));
     }
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
@@ -1198,7 +1320,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 5 */
 /***/ ((module, exports, __webpack_require__) => {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(6), __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, ChatApi_1, globals) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(6), __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, ChatApi_1, GlobalVars_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.NattyAPI = void 0;
@@ -1214,23 +1336,21 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         static getAllNattyIds() {
             return new Promise((resolve, reject) => {
-                if (!globals.isStackOverflow)
+                if (!GlobalVars_1.isStackOverflow)
                     resolve();
                 GM_xmlhttpRequest({
                     method: 'GET',
-                    url: `${globals.nattyAllReportsUrl}`,
+                    url: `${GlobalVars_1.nattyAllReportsUrl}`,
                     onload: (response) => {
                         if (response.status !== 200)
                             reject();
                         const result = JSON.parse(response.responseText);
-                        const allStoredIds = result.items.map((item) => Number(item.name));
-                        const answerIds = globals.getAllPostIds(false, false);
+                        const allStoredIds = result.items.map(item => Number(item.name));
+                        const answerIds = GlobalVars_1.getAllPostIds(false, false);
                         this.nattyIds = answerIds.filter(id => allStoredIds.includes(id));
                         resolve();
                     },
-                    onerror: () => {
-                        reject();
-                    },
+                    onerror: () => reject()
                 });
             });
         }
@@ -1239,49 +1359,41 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         async ReportNaa() {
             if (this.answerDate < this.questionDate)
-                return false;
+                return '';
             if (this.WasReported()) {
-                await this.chat.SendMessage(`${this.feedbackMessage} tp`);
-                return true;
+                return await this.chat.SendMessage(`${this.feedbackMessage} tp`, this.name);
             }
             else {
                 const answerAge = this.DaysBetween(this.answerDate, new Date());
                 const daysPostedAfterQuestion = this.DaysBetween(this.questionDate, this.answerDate);
                 if (isNaN(answerAge) || isNaN(daysPostedAfterQuestion) || answerAge > 30 || daysPostedAfterQuestion < 30)
-                    return false;
-                await this.chat.SendMessage(this.reportMessage);
-                return true;
+                    return '';
+                return isNaN(answerAge + daysPostedAfterQuestion) ? await this.chat.SendMessage(this.reportMessage, this.name) : '';
             }
         }
         async ReportRedFlag() {
-            if (!this.WasReported())
-                return false;
-            await this.chat.SendMessage(`${this.feedbackMessage} tp`);
-            return true;
+            return await this.SendFeedback(`${this.feedbackMessage} tp`);
         }
         async ReportLooksFine() {
-            if (!this.WasReported())
-                return false;
-            await this.chat.SendMessage(`${this.feedbackMessage} fp`);
-            return true;
+            return await this.SendFeedback(`${this.feedbackMessage} fp`);
         }
         async ReportNeedsEditing() {
-            if (!this.WasReported())
-                return false;
-            await this.chat.SendMessage(`${this.feedbackMessage} ne`);
-            return true;
+            return await this.SendFeedback(`${this.feedbackMessage} ne`);
         }
         ReportVandalism() {
-            return Promise.resolve(false);
+            return Promise.resolve('');
         }
         ReportDuplicateAnswer() {
-            return Promise.resolve(false);
+            return Promise.resolve('');
         }
         ReportPlagiarism() {
-            return Promise.resolve(false);
+            return Promise.resolve('');
         }
         DaysBetween(first, second) {
-            return (second.valueOf() - first.valueOf()) / globals.dayMillis;
+            return (second.valueOf() - first.valueOf()) / GlobalVars_1.dayMillis;
+        }
+        async SendFeedback(message) {
+            return this.WasReported() ? await this.chat.SendMessage(message, this.name) : '';
         }
     }
     exports.NattyAPI = NattyAPI;
@@ -1294,7 +1406,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 6 */
 /***/ ((module, exports, __webpack_require__) => {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(3), __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, GreaseMonkeyCache_1, globals) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(3), __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, GreaseMonkeyCache_1, GlobalVars_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.ChatApi = void 0;
@@ -1309,48 +1421,54 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         GetChannelFKey(roomId) {
             const expiryDate = ChatApi.GetExpiryDate();
-            return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(globals.CacheChatApiFkey, () => new Promise((resolve, reject) => {
-                this.GetChannelPage(roomId).then(channelPage => {
+            return GreaseMonkeyCache_1.GreaseMonkeyCache.GetAndCache(GlobalVars_1.CacheChatApiFkey, async () => {
+                try {
+                    const channelPage = await this.GetChannelPage(roomId);
                     const fkeyElement = $(channelPage).filter('#fkey');
                     const fkey = fkeyElement.val();
-                    if (!fkey)
-                        return;
-                    resolve(fkey.toString());
-                }).catch(() => reject());
-            }), expiryDate);
+                    return fkey?.toString() || '';
+                }
+                catch (error) {
+                    console.error(error);
+                    throw new Error('Failed to get chat fkey');
+                }
+            }, expiryDate);
         }
         GetChatUserId() {
             return StackExchange.options.user.userId;
         }
-        SendMessage(message, roomId = globals.soboticsRoomId) {
-            return new Promise((resolve, reject) => {
-                const requestFunc = async () => {
-                    const fkey = await this.GetChannelFKey(roomId);
-                    GM_xmlhttpRequest({
-                        method: 'POST',
-                        url: `${this.chatRoomUrl}/chats/${roomId}/messages/new`,
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        data: 'text=' + encodeURIComponent(message) + '&fkey=' + fkey,
-                        onload: (chatResponse) => {
-                            chatResponse.status === 200 ? resolve() : onFailure();
-                        },
-                        onerror: () => {
-                            onFailure();
-                        },
-                    });
-                };
-                let numTries = 0;
-                const onFailure = () => {
-                    numTries++;
-                    if (numTries < 3) {
-                        GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(globals.CacheChatApiFkey);
-                        void requestFunc();
-                    }
-                    else {
-                        reject();
-                    }
-                };
-                void requestFunc();
+        async SendMessage(message, bot, roomId = GlobalVars_1.soboticsRoomId) {
+            const makeRequest = async () => await this.SendRequestToChat(message, roomId);
+            let numTries = 0;
+            const onFailure = async () => {
+                numTries++;
+                if (numTries < 3) {
+                    GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(GlobalVars_1.CacheChatApiFkey);
+                    if (!await makeRequest())
+                        return onFailure();
+                }
+                else {
+                    throw new Error(GlobalVars_1.chatFailureMessage); // retry limit exceeded
+                }
+                return GlobalVars_1.getSentMessage(true, message.split(' ').pop() || '', bot);
+            };
+            if (!await makeRequest())
+                return onFailure();
+            return GlobalVars_1.getSentMessage(true, message.split(' ').pop() || '', bot);
+        }
+        async SendRequestToChat(message, roomId) {
+            const fkey = await this.GetChannelFKey(roomId);
+            return new Promise(resolve => {
+                GM_xmlhttpRequest({
+                    method: 'POST',
+                    url: `${this.chatRoomUrl}/chats/${roomId}/messages/new`,
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    data: 'text=' + encodeURIComponent(message) + '&fkey=' + fkey,
+                    onload: (chatResponse) => {
+                        resolve(chatResponse.status === 200);
+                    },
+                    onerror: () => resolve(false),
+                });
             });
         }
         GetChannelPage(roomId) {
@@ -1375,7 +1493,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 7 */
 /***/ ((module, exports, __webpack_require__) => {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, globals) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, GlobalVars_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.GenericBotAPI = void 0;
@@ -1391,19 +1509,19 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             return await this.makeTrackRequest();
         }
         ReportLooksFine() {
-            return Promise.resolve(false);
+            return Promise.resolve('');
         }
         ReportNeedsEditing() {
-            return Promise.resolve(false);
+            return Promise.resolve('');
         }
         ReportVandalism() {
-            return Promise.resolve(false);
+            return Promise.resolve('');
         }
         ReportDuplicateAnswer() {
-            return Promise.resolve(false);
+            return Promise.resolve('');
         }
         ReportPlagiarism() {
-            return Promise.resolve(false);
+            return Promise.resolve('');
         }
         computeContentHash(postContent) {
             if (!postContent)
@@ -1417,25 +1535,23 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         makeTrackRequest() {
             return new Promise((resolve, reject) => {
-                if (!globals.isStackOverflow)
-                    resolve(false);
-                const flaggerName = encodeURIComponent(globals.username || '');
-                if (!flaggerName)
-                    resolve(false);
+                const flaggerName = encodeURIComponent(GlobalVars_1.username || '');
+                if (!GlobalVars_1.isStackOverflow || !flaggerName)
+                    resolve('');
                 const contentHash = this.computeContentHash($(`#answer-${this.answerId} .js-post-body`).html().trim());
                 GM_xmlhttpRequest({
                     method: 'POST',
                     url: 'https://so.floern.com/api/trackpost.php',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    data: `key=${globals.genericBotKey}&postId=${this.answerId}&contentHash=${contentHash}&flagger=${flaggerName}`,
+                    data: `key=${GlobalVars_1.genericBotKey}&postId=${this.answerId}&contentHash=${contentHash}&flagger=${flaggerName}`,
                     onload: (response) => {
-                        if (response.status !== 200)
-                            reject(false);
-                        resolve(true);
+                        if (response.status !== 200) {
+                            console.error('Failed to send track request.', response);
+                            reject(GlobalVars_1.genericBotFailure);
+                        }
+                        resolve(GlobalVars_1.getSentMessage(true, '', this.name));
                     },
-                    onerror: () => {
-                        reject(false);
-                    }
+                    onerror: () => reject(GlobalVars_1.genericBotFailure)
                 });
             });
         }
@@ -1463,12 +1579,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(globals.MetaSmokeDisabledConfig);
             GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(globals.MetaSmokeUserKeyConfig);
         }
-        static IsDisabled() {
-            const cachedDisabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.MetaSmokeDisabledConfig);
-            if (!cachedDisabled)
-                return false;
-            return cachedDisabled;
-        }
         static async Setup(appKey) {
             MetaSmokeAPI.appKey = appKey;
             MetaSmokeAPI.accessToken = await MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
@@ -1476,8 +1586,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         static async QueryMetaSmokeInternal() {
             const urls = globals.getAllPostIds(true, true);
             const urlString = urls.join(',');
-            const isDisabled = MetaSmokeAPI.IsDisabled();
-            if (isDisabled)
+            if (MetaSmokeAPI.isDisabled)
                 return;
             const parameters = globals.getParamsFromObject({
                 urls: urlString,
@@ -1519,76 +1628,65 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
         }
         static getSmokeyId(postId) {
-            const metasmokeObject = MetaSmokeAPI.metasmokeIds.find(item => item.sitePostId === postId);
-            return metasmokeObject ? metasmokeObject.metasmokeId : 0;
+            return MetaSmokeAPI.metasmokeIds.find(item => item.sitePostId === postId)?.metasmokeId || 0;
         }
         async ReportNaa() {
-            const smokeyid = MetaSmokeAPI.getSmokeyId(this.postId);
-            if (!smokeyid)
-                return false;
-            await this.SendFeedback(smokeyid, 'naa-');
-            return true;
+            return await this.SendFeedback('naa-');
         }
         async ReportRedFlag() {
-            const smokeyid = MetaSmokeAPI.getSmokeyId(this.postId);
-            if (smokeyid) {
-                await this.SendFeedback(smokeyid, 'tpu-');
-                return true;
-            }
+            const smokeyId = MetaSmokeAPI.getSmokeyId(this.postId);
+            if (smokeyId)
+                return await this.SendFeedback('tpu-');
             const urlString = MetaSmokeAPI.GetQueryUrl(this.postId, this.postType);
             if (!MetaSmokeAPI.accessToken)
-                return false;
-            try {
-                await fetch('https://metasmoke.erwaysoftware.com/api/w/post/report', {
-                    method: 'POST',
-                    body: globals.getFormDataFromObject({ post_link: urlString, key: MetaSmokeAPI.appKey, token: MetaSmokeAPI.accessToken })
-                });
-                return true;
+                return '';
+            const reportRequest = await fetch('https://metasmoke.erwaysoftware.com/api/w/post/report', {
+                method: 'POST',
+                body: globals.getFormDataFromObject({ post_link: urlString, key: MetaSmokeAPI.appKey, token: MetaSmokeAPI.accessToken })
+            });
+            const requestResponse = await reportRequest.text();
+            if (!reportRequest.ok || requestResponse !== 'OK') { // if the post is successfully reported, the response is a plain OK
+                console.error(`Failed to report post to Smokey (postId: ${smokeyId})`, requestResponse);
+                throw new Error(globals.metasmokeFailureMessage);
             }
-            catch (error) {
-                return false;
-            }
+            return globals.metasmokeReportedMessage;
         }
         async ReportLooksFine() {
-            const smokeyid = MetaSmokeAPI.getSmokeyId(this.postId);
-            if (!smokeyid)
-                return false;
-            await this.SendFeedback(smokeyid, 'fp-');
-            return true;
+            return await this.SendFeedback('fp-');
         }
         async ReportNeedsEditing() {
-            const smokeyid = MetaSmokeAPI.getSmokeyId(this.postId);
-            if (!smokeyid)
-                return false;
-            await this.SendFeedback(smokeyid, 'fp-');
-            return true;
+            return await this.SendFeedback('fp-');
         }
         async ReportVandalism() {
-            const smokeyid = MetaSmokeAPI.getSmokeyId(this.postId);
-            if (!smokeyid)
-                return false;
-            await this.SendFeedback(smokeyid, 'tp-');
-            return true;
+            return await this.SendFeedback('tp-');
         }
         ReportDuplicateAnswer() {
-            return Promise.resolve(false);
+            return Promise.resolve('');
         }
         ReportPlagiarism() {
-            return Promise.resolve(false);
+            return Promise.resolve('');
         }
-        async SendFeedback(metaSmokeId, feedbackType) {
-            if (!MetaSmokeAPI.accessToken)
-                return;
-            await fetch(`https://metasmoke.erwaysoftware.com/api/w/post/${metaSmokeId}/feedback`, {
+        async SendFeedback(feedbackType) {
+            const smokeyId = MetaSmokeAPI.getSmokeyId(this.postId);
+            if (!MetaSmokeAPI.accessToken || !smokeyId)
+                return '';
+            const feedbackRequest = await fetch(`https://metasmoke.erwaysoftware.com/api/w/post/${smokeyId}/feedback`, {
                 method: 'POST',
                 body: globals.getFormDataFromObject({ type: feedbackType, key: MetaSmokeAPI.appKey, token: MetaSmokeAPI.accessToken })
             });
+            const feedbackResponse = await feedbackRequest.json();
+            if (!feedbackRequest.ok) {
+                console.error(`Failed to send feedback to Smokey (postId: ${smokeyId})`, feedbackResponse);
+                throw new Error(globals.getSentMessage(false, feedbackType, this.name));
+            }
+            return globals.getSentMessage(true, feedbackType, this.name);
         }
     }
     exports.MetaSmokeAPI = MetaSmokeAPI;
     MetaSmokeAPI.metasmokeIds = [];
+    MetaSmokeAPI.isDisabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.MetaSmokeDisabledConfig) || false;
     MetaSmokeAPI.codeGetter = async (metaSmokeOAuthUrl) => {
-        if (MetaSmokeAPI.IsDisabled())
+        if (MetaSmokeAPI.isDisabled)
             return;
         const userDisableMetasmoke = await globals.showConfirmModal(globals.settingUpTitle, globals.settingUpBody);
         if (!userDisableMetasmoke) {
@@ -1607,7 +1705,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /* 9 */
 /***/ ((module, exports, __webpack_require__) => {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(6), __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, ChatApi_1, globals) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(6), __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, ChatApi_1, GlobalVars_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.CopyPastorAPI = void 0;
@@ -1617,14 +1715,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             this.answerId = id;
         }
         static async getAllCopyPastorIds() {
-            if (!globals.isStackOverflow)
+            if (!GlobalVars_1.isStackOverflow)
                 return;
-            const postUrls = globals.getAllPostIds(false, true);
+            const postUrls = GlobalVars_1.getAllPostIds(false, true);
             await this.storeReportedPosts(postUrls);
         }
         static storeReportedPosts(postUrls) {
+            const url = `${GlobalVars_1.copyPastorServer}/posts/findTarget?url=${postUrls.join(',')}`;
             return new Promise((resolve, reject) => {
-                const url = `${globals.copyPastorServer}/posts/findTarget?url=${postUrls.join(',')}`;
                 GM_xmlhttpRequest({
                     method: 'GET',
                     url,
@@ -1642,16 +1740,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             });
         }
         getCopyPastorId() {
-            const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
-            return idsObject ? idsObject.postId : 0;
+            return CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId)?.postId || 0;
         }
         getIsRepost() {
-            const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
-            return idsObject ? idsObject.repost : false;
+            return CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId)?.repost || false;
         }
         getTargetUrl() {
-            const idsObject = CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId);
-            return idsObject ? idsObject.target_url : '';
+            return CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId)?.target_url || '';
         }
         async ReportTruePositive() {
             return await this.SendFeedback('tp');
@@ -1663,7 +1758,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             return await this.ReportFalsePositive();
         }
         ReportRedFlag() {
-            return Promise.resolve(false);
+            return Promise.resolve('');
         }
         async ReportLooksFine() {
             return await this.ReportFalsePositive();
@@ -1681,30 +1776,29 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             return await this.ReportTruePositive();
         }
         SendFeedback(type) {
-            const username = globals.username;
             const chatId = new ChatApi_1.ChatApi().GetChatUserId();
             const copyPastorId = this.getCopyPastorId();
             if (!copyPastorId)
-                return Promise.resolve(false);
+                return Promise.resolve('');
+            const successMessage = GlobalVars_1.getSentMessage(true, type, this.name);
+            const failureMessage = GlobalVars_1.getSentMessage(false, type, this.name);
             const payload = {
                 post_id: copyPastorId,
                 feedback_type: type,
-                username,
+                username: GlobalVars_1.username,
                 link: `https://chat.stackoverflow.com/users/${chatId}`,
-                key: globals.copyPastorKey,
+                key: GlobalVars_1.copyPastorKey,
             };
             return new Promise((resolve, reject) => {
                 GM_xmlhttpRequest({
                     method: 'POST',
-                    url: `${globals.copyPastorServer}/feedback/create`,
+                    url: `${GlobalVars_1.copyPastorServer}/feedback/create`,
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     data: Object.entries(payload).map(item => item.join('=')).join('&'),
                     onload: (response) => {
-                        response.status === 200 ? resolve(true) : reject(false);
+                        response.status === 200 ? resolve(successMessage) : reject(failureMessage);
                     },
-                    onerror: () => {
-                        reject(false);
-                    },
+                    onerror: () => reject(failureMessage)
                 });
             });
         }
@@ -1723,46 +1817,65 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.SetupConfiguration = void 0;
-    const configurationEnabledFlags = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationEnabledFlags);
-    async function SetupConfiguration() {
-        while (typeof Svg === 'undefined') {
-            // eslint-disable-next-line no-await-in-loop
-            await globals.Delay(1000);
-        }
+    const enabledFlags = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationEnabledFlags);
+    const flagTypes = FlagTypes_1.flagCategories.flatMap(category => category.FlagTypes);
+    const flagNames = [...new Set(flagTypes.map(flagType => flagType.DefaultReportType))];
+    const optionTypes = flagNames.filter(item => !/Post(?:Other|Offensive|Spam)/.exec(item));
+    const cacheFlags = () => GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(globals.FlagTypesKey, flagTypes.map(flagType => {
+        return {
+            Id: flagType.Id,
+            FlagText: flagType.DefaultFlagText || '',
+            Comments: {
+                Low: flagType.DefaultComment || '',
+                High: flagType.DefaultCommentHigh || ''
+            },
+            ReportType: flagType.DefaultReportType
+        };
+    }));
+    const getOption = (flag, name) => `<option${flag === name ? ' selected' : ''}>${flag}</option>`;
+    const getFlagOptions = (name) => optionTypes.map(flag => getOption(flag, name)).join('');
+    function SetupConfiguration() {
+        SetupDefaults(); // stores default values if they haven't already been
+        BuildConfigurationOverlay(); // the configuration modal
+        SetupCommentsAndFlagsModal(); // the comments & flags modal
         const bottomBox = $('.site-footer--copyright').children('.-list');
-        const configurationDiv = globals.configurationDiv.clone();
-        const commentsDiv = globals.commentsDiv.clone();
-        SetupDefaults();
-        BuildConfigurationOverlay();
-        SetupCommentsAndFlagsModal();
-        const configurationLink = globals.configurationLink.clone();
-        const commentsLink = globals.commentsLink.clone();
-        $(document).on('click', '#af-modal-button', () => Stacks.showModal(document.querySelector('#af-config')));
-        $(document).on('click', '#af-comments-button', () => Stacks.showModal(document.querySelector('#af-comments')));
-        configurationDiv.append(configurationLink);
-        commentsDiv.append(commentsLink);
-        configurationDiv.insertAfter(bottomBox);
-        commentsDiv.insertAfter(bottomBox);
+        const configurationDiv = globals.configurationDiv.clone(), commentsDiv = globals.commentsDiv.clone();
+        const configurationLink = globals.configurationLink.clone(), commentsLink = globals.commentsLink.clone();
+        $(document).on('click', '#af-modal-button', () => StackExchange.helpers.showModal(document.querySelector('#af-config')));
+        $(document).on('click', '#af-comments-button', () => StackExchange.helpers.showModal(document.querySelector('#af-comments')));
+        commentsDiv.append(commentsLink).insertAfter(bottomBox);
+        configurationDiv.append(configurationLink).insertAfter(bottomBox);
     }
     exports.SetupConfiguration = SetupConfiguration;
-    function getFlagTypes() {
-        const flagTypes = [];
-        FlagTypes_1.flagCategories.forEach(flagCategory => {
-            flagCategory.FlagTypes.forEach(flagType => {
-                flagTypes.push({
-                    Id: flagType.Id,
-                    DisplayName: flagType.DisplayName
-                });
-            });
-        });
-        return flagTypes;
-    }
     function SetupDefaults() {
-        if (!configurationEnabledFlags) {
-            const flagTypeIds = getFlagTypes().map(f => f.Id);
+        // store all flags if they don't exist
+        if (!enabledFlags) {
+            const flagTypeIds = flagTypes.map(flag => flag.Id);
             GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagTypeIds);
         }
+        const cachedFlagTypes = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.FlagTypesKey);
+        // in case we add a new flag type, make sure it will be automatically be saved (compare types)
+        if (cachedFlagTypes?.length !== flagTypes.length)
+            cacheFlags();
     }
+    /* The configuration modal has three sections:
+       - General (uses cache): general options. They are properties of the main Configuration object and accept Boolean values
+         All options are disabled by default
+       - Flags (uses cache): the flag Ids are stored in an array. All are enabled by default
+       - Admin doesn't use cache, but it interacts with it (deletes values)
+       Sample cache:
+       AdvancedFlagging.Configuration: {
+           OpenOnHover: true,
+           AnotherOption: false,
+           DoFooBar: true,
+           Flags: [1, 2, 4, 5, 6, 10, 14, 15]
+       }
+    
+       Notes:
+       - In General, the checkboxes and the corresponding labels are wrapped in a div that has a data-option-id attribute.
+         This is the property of the option that will be used in cache.
+       - In Flags, each checkbox has a flag-type-<FLAG_ID> id. This is used to determine the flag id
+    */
     function BuildConfigurationOverlay() {
         const overlayModal = globals.overlayModal.clone();
         overlayModal.find('.s-modal--close').append(Svg.ClearSm());
@@ -1771,6 +1884,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 SectionName: 'General',
                 Items: GetGeneralConfigItems(),
                 onSave: () => {
+                    // find the option id (it's the data-option-id attribute) and store whether the box is checked or not
                     $('.af-section-general').find('input').each((_index, el) => {
                         GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache($(el).parents().eq(2).data('option-id'), $(el).prop('checked'));
                     });
@@ -1780,16 +1894,18 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 SectionName: 'Flags',
                 Items: GetFlagSettings(),
                 onSave: () => {
+                    // collect all flag ids (flag-type-ID) and store them
                     const flagOptions = $('.af-section-flags').find('input').get()
                         .filter(el => $(el).prop('checked'))
                         .map(el => {
                         const postId = $(el).attr('id');
                         return postId ? Number(/\d+/.exec(postId)) : 0;
-                    }).sort((a, b) => a - b);
+                    }).sort((a, b) => a - b); // sort the ids before storing them
                     GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagOptions);
                 }
             },
             {
+                // nothing to do onSave here because there's nothing to save :)
                 SectionName: 'Admin',
                 Items: GetAdminConfigItems()
             }
@@ -1803,26 +1919,22 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             overlayModal.find('#af-modal-description').append(sectionWrapper);
             section.Items.forEach((element) => sectionWrapper.append(element));
         });
-        const okayButton = overlayModal.find('.s-btn__primary');
-        okayButton.click(event => {
+        overlayModal.find('.s-btn__primary').on('click', event => {
             event.preventDefault();
-            sections.forEach(section => {
-                if (section.onSave)
-                    section.onSave();
-            });
+            sections.forEach(section => section.onSave?.());
             globals.displayStacksToast('Configuration saved', 'success');
             setTimeout(() => window.location.reload(), 500);
         });
         $('body').append(overlayModal);
-        $('label[for="flag-type-16"]').parent().removeClass('w25').css('width', '20.8%'); // because without it, the CSS breaks
         const flagOptions = $('.af-section-flags').children('div');
         for (let i = 0; i < flagOptions.length; i += 5) {
             flagOptions.slice(i, i + 5).wrapAll(globals.inlineCheckboxesWrapper.clone());
         }
+        // dynamically generate the width
+        $('label[for="flag-type-16"]').parent().css('width', $('label[for="flag-type-11"]').parent().css('width')).removeClass('w25 lg:w25');
     }
     function GetGeneralConfigItems() {
-        const checkboxArray = [];
-        const options = [
+        return [
             {
                 text: 'Open dropdown on hover',
                 configValue: globals.ConfigurationOpenOnHover
@@ -1840,38 +1952,40 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 configValue: globals.ConfigurationLinkDisabled
             },
             {
-                text: 'Uncheck \'Comment\' by default',
+                text: 'Uncheck \'Leave comment\' by default',
                 configValue: globals.ConfigurationDefaultNoComment
             },
             {
-                text: 'Uncheck \'flag\' by default',
+                text: 'Uncheck \'Flag\' by default',
                 configValue: globals.ConfigurationDefaultNoFlag
             },
-        ];
-        options.forEach(el => {
-            const storedValue = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(el.configValue);
-            checkboxArray.push(createCheckbox(el.text, storedValue).attr('data-option-id', el.configValue));
+            {
+                text: 'Add author\'s name before comments',
+                configValue: globals.ConfigurationAddAuthorName
+            }
+        ].map(item => {
+            const storedValue = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(item.configValue);
+            return createCheckbox(item.text, storedValue).attr('data-option-id', item.configValue);
         });
-        return checkboxArray;
     }
     function GetFlagSettings() {
         const checkboxes = [];
-        if (!configurationEnabledFlags)
+        if (!enabledFlags)
             return checkboxes;
-        getFlagTypes().forEach(f => {
-            const storedValue = configurationEnabledFlags.indexOf(f.Id) > -1;
-            const checkbox = createCheckbox(f.DisplayName, storedValue, `flag-type-${f.Id}`).children().eq(0);
-            checkboxes.push(checkbox.addClass('w25 lg:w25 md:w100 sm:w100'));
+        flagTypes.forEach(flag => {
+            const storedValue = enabledFlags.indexOf(flag.Id) > -1;
+            const checkbox = createCheckbox(flag.DisplayName, storedValue, `flag-type-${flag.Id}`).children().eq(0);
+            checkboxes.push(checkbox.addClass('w25 lg:w25 md:w100 sm:w100')); // responsiveness
         });
         return checkboxes;
     }
     function GetAdminConfigItems() {
         return [
-            $('<a>').text('Clear Metasmoke Configuration').click(() => {
+            $('<a>').text('Clear Metasmoke Configuration').on('click', () => {
                 MetaSmokeAPI_1.MetaSmokeAPI.Reset();
                 globals.displayStacksToast('Successfully cleared MS configuration.', 'success');
             }),
-            $('<a>').text('Clear chat fkey').click(() => {
+            $('<a>').text('Clear chat fkey').on('click', () => {
                 GreaseMonkeyCache_1.GreaseMonkeyCache.Unset(globals.CacheChatApiFkey);
                 globals.displayStacksToast('Successfully cleared chat fkey.', 'success');
             })
@@ -1884,58 +1998,104 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             input.prop('checked', true);
         return configHTML;
     }
-    function createEditTextarea(type, displayName, cacheKey, content) {
+    function createFlagTypeDiv(type, displayName, flagId, reportType) {
+        const displayStyle = reportType ? 'd-block' : 'd-none';
+        const expandableId = `${type}-${displayName}`.toLowerCase().replace(/\s/g, '');
         return $(`
-<div class="s-sidebarwidget">
+<div class="s-sidebarwidget" data-flag-id=${flagId}>
   <button class="s-sidebarwidget--action s-btn t4 r4 af-expandable-trigger"
-          data-controller="s-expandable-control" aria-controls="${type}-${displayName}">Edit</button>
+          data-controller="s-expandable-control" aria-controls="${expandableId}">Edit</button>
   <button class="s-sidebarwidget--action s-btn s-btn__primary t4 r6 af-submit-content d-none">Save</button>
-  <div class="s-sidebarwidget--content d-block p12 fs-body2">${displayName}</div>
-  <div class="s-expandable" id="${type}-${displayName}">
-    <div class="s-expandable--content">
-      <textarea class="grid--cell s-textarea ml8 mb8 fs-body2" rows="4" data-cache-key=${cacheKey}>${content || ''}</textarea>
+  <div class="s-sidebarwidget--content d-block p12 fs-body3">${displayName}</div>
+  <div class="s-expandable" id="${expandableId}">
+    <div class="s-expandable--content px8">
+      <div class="advanced-flagging-flag-option py8 mln6 ${displayStyle}">
+        <label class="fw-bold ps-relative d-inline-block z-selected l16">Flag as:</label>'
+        <div class="s-select d-inline-block r48"><select class="pl64">${getFlagOptions(reportType || '')}</select></div>
+      </div>
     </div>
   </div>
 </div>`);
     }
+    /* In this case, we are caching a FlagType, but removing unnecessary properties.
+       Only the Id, FlagText, and Comments (both LowRep and HighRep) are cached if they exist.
+       Sample cache (undefined values are empty strings):
+           AdvancedFlagging.FlagTypes: [{
+               Id: 1,
+               FlagText: 'This is some text',
+               Comments: {
+                   Low: 'This is a LowRep comment',
+                   High: ''
+               },
+               ReportType: 'PostOther'
+           }, {
+               Id: 2,
+               FlagText: '',
+               Comments: {
+                   Low: 'This is a LowRep comment',
+                   High: 'This is a HighRep comment'
+               },
+               ReportType: 'AnswerNotAnAnswer'
+           }]
+    
+        Notes:
+        - The Spam, Rude or Abusive and the - by default - NoFlag FlagTypes won't be displayed.
+        - The ReportType can't be changed to/from PostOther.
+        - The Human field is retrieved when the flag is raised based on ReportType.
+        - Each div has a data-flag-id attribute based on which we can store the information on cache again
+    */
     function SetupCommentsAndFlagsModal() {
         const editCommentsPopup = globals.editCommentsPopup.clone();
         editCommentsPopup.find('.s-modal--close').append(Svg.ClearSm());
         const commentsWrapper = globals.commentsWrapper.clone();
         const flagsWrapper = globals.flagsWrapper.clone();
-        const shouldAddAuthorName = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.CommentsAddAuthorName);
-        editCommentsPopup.find('.s-modal--body')
-            .append(globals.editContentWrapper.clone().append(commentsWrapper).append(flagsWrapper))
-            .append(createCheckbox('Add OP\'s name before comments', Boolean(shouldAddAuthorName)).attr('class', 'af-author-name mt8'));
-        const allFlags = globals.getAllFlags();
-        const allComments = globals.getAllComments();
-        allFlags.forEach(flag => {
-            const textarea = createEditTextarea('flag', flag.flagName, globals.getFlagKey(flag.flagName), flag.content);
-            flagsWrapper.append(textarea);
+        editCommentsPopup.find('.s-modal--body').append(globals.editContentWrapper.clone().append(commentsWrapper, flagsWrapper));
+        flagTypes.filter(item => item.DefaultComment || item.DefaultFlagText).forEach(flagType => {
+            const comments = flagType.Comments;
+            const flagText = flagType.FlagText;
+            if (flagText) {
+                const mainWrapper = createFlagTypeDiv('flag', flagType.DisplayName, flagType.Id);
+                mainWrapper.find('.s-expandable--content').prepend(globals.getTextarea(flagText, 'af-flag-content'));
+                flagsWrapper.append(mainWrapper);
+            }
+            if (!comments?.Low)
+                return;
+            const mainWrapper = createFlagTypeDiv('comment', flagType.DisplayName, flagType.Id, flagType.ReportType);
+            const expandable = mainWrapper.find('.s-expandable--content');
+            const labelDisplay = comments.High ? 'd-block' : 'd-none';
+            const getLabel = (type) => $('<label>').addClass(`grid--cell s-label ${labelDisplay}`).html(`${type} comment`);
+            if (comments.High)
+                expandable.prepend(getLabel('HighRep').addClass('pt4'), globals.getTextarea(comments.High, 'af-highrep'));
+            expandable.prepend(getLabel('LowRep'), globals.getTextarea(comments.Low, 'af-lowrep'));
+            commentsWrapper.append(mainWrapper);
         });
-        allComments.forEach(comment => {
-            const textarea = createEditTextarea('comment', comment.commentName, globals.getCommentKey(comment.commentName), comment.content);
-            commentsWrapper.append(textarea);
-        });
-        $(document).on('change', '.af-author-name', event => {
-            GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(globals.CommentsAddAuthorName, $(event.target).is(':checked'));
-            globals.displayStacksToast('Preference updated', 'success');
-        }).on('click', '.af-expandable-trigger', event => {
-            const button = $(event.target);
+        $(document).on('click', '.af-expandable-trigger', event => {
+            const button = $(event.target), saveButton = button.next();
             button.text(button.text() === 'Edit' ? 'Hide' : 'Edit');
-            const element = button.next();
-            element.hasClass('d-none') ? globals.showElement(element) : globals.hideElement(element);
+            saveButton.hasClass('d-none') ? globals.showElement(saveButton) : globals.hideElement(saveButton);
+        }).on('change', '.advanced-flagging-flag-option select', event => {
+            const element = $(event.target);
+            const newReportType = element.val();
+            const flagId = Number(element.parents('.s-sidebarwidget').attr('data-flag-id'));
+            globals.savePropertyToCache(flagId, 'ReportType', newReportType);
+            globals.displayStacksToast('Successfully changed the report flag type.', 'success');
         }).on('click', '.af-submit-content', event => {
             const element = $(event.target);
-            const contentTextarea = element.next().next().find('textarea');
-            const newContent = contentTextarea.val();
-            const cacheKey = contentTextarea.attr('data-cache-key');
-            if (!cacheKey)
+            const expandable = element.next().next();
+            const flagId = Number(element.parents('.s-sidebarwidget').attr('data-flag-id'));
+            if (!flagId) {
+                globals.displayStacksToast('Failed to save options', 'danger');
                 return;
-            const displayName = element.next().text();
-            GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(cacheKey, newContent);
-            globals.displayStacksToast(displayName + ': content saved successfully', 'success');
-            element.prev().click(); // hide the textarea
+            }
+            const flagContent = expandable.find('.af-flag-content').val() || '';
+            const commentLowRep = expandable.find('.af-lowrep').val() || '';
+            const commentHighRep = expandable.find('.af-highrep').val() || '';
+            if (flagContent)
+                globals.savePropertyToCache(flagId, 'FlagText', flagContent);
+            else
+                globals.saveCommentsToCache(flagId, { Low: commentLowRep, High: commentHighRep });
+            globals.displayStacksToast('Content saved successfully', 'success');
+            element.prev().trigger('click'); // hide the textarea
         });
         $('body').append(editCommentsPopup);
     }
@@ -1952,8 +2112,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /******/ 	// The require function
 /******/ 	function __webpack_require__(moduleId) {
 /******/ 		// Check if module is in cache
-/******/ 		if(__webpack_module_cache__[moduleId]) {
-/******/ 			return __webpack_module_cache__[moduleId].exports;
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
 /******/ 		}
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = __webpack_module_cache__[moduleId] = {

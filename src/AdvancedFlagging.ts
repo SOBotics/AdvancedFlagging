@@ -9,6 +9,7 @@ import { GreaseMonkeyCache } from '@userscriptTools/GreaseMonkeyCache';
 import * as globals from './GlobalVars';
 
 declare const StackExchange: globals.StackExchange;
+
 function SetupStyles(): void {
     GM_addStyle(`
 #snackbar {
@@ -108,7 +109,7 @@ export function displayToaster(message: string, state: string): void {
 function displaySuccessFlagged(reportedIcon: JQuery, reportType?: Flags): void {
     if (!reportType) return;
     const flaggedMessage = `Flagged ${getHumanFromDisplayName(reportType)}`;
-    reportedIcon.attr('title', flaggedMessage);
+    void globals.attachPopover(reportedIcon[0], flaggedMessage, 'bottom-start');
     globals.showInlineElement(reportedIcon);
     globals.displaySuccess(flaggedMessage);
 }
@@ -204,6 +205,11 @@ function getHumanFromDisplayName(displayName: Flags): string {
     }
 }
 
+function increasePopoverWidth(reportLink: JQuery): void {
+    const popoverId = reportLink.parent().attr('aria-describedby') || '';
+    $(`#${popoverId}`).addClass('sm:wmn-initial md:wmn-initial wmn4');
+}
+
 export type Reporter = CopyPastorAPI | MetaSmokeAPI | NattyAPI | GenericBotAPI;
 
 interface StackExchangeFlagResponse {
@@ -263,11 +269,12 @@ function BuildFlaggingDialog(
 
             dropDown.append(categoryDiv);
 
-            let commentText: string | null;
-            if (flagType.GetComment) {
-                commentText = flagType.GetComment({ Reputation: post.authorReputation || 0, AuthorName: post.authorName });
-                reportLink.attr('title', commentText || '');
-            }
+            let commentText = flagType.GetComment?.({ Reputation: post.authorReputation, AuthorName: post.authorName }) || null;
+            const reportTypeHuman = getHumanFromDisplayName(flagType.ReportType);
+            const reportLinkInfo = `This option will${reportTypeHuman ? ' ' : ' not'} flag the post <b>${reportTypeHuman}</b></br>`
+                                 + (commentText ? `and add the following comment: ${commentText}` : '');
+            void globals.attachHtmlPopover(reportLink.parent()[0], reportLinkInfo, 'right-start')
+                .then(() => increasePopoverWidth(reportLink));
 
             reportLink.on('click', async () => {
                 if (!deleted) {
@@ -287,10 +294,10 @@ function BuildFlaggingDialog(
                 if (flagType.ReportType !== 'NoFlag') return;
 
                 if (success) {
-                    performedActionIcon.attr('title', `Performed action: ${flagType.DisplayName}`);
+                    void globals.attachPopover(performedActionIcon[0], `Performed action: ${flagType.DisplayName}`, 'bottom-start');
                     globals.showElement(performedActionIcon);
                 } else {
-                    failedActionIcon.attr('title', `Failed to perform action: ${flagType.DisplayName}`);
+                    void globals.attachPopover(failedActionIcon[0], `Failed to perform action: ${flagType.DisplayName}`, 'bottom-start');
                     globals.showElement(failedActionIcon);
                 }
             });
@@ -347,6 +354,9 @@ function SetupPostPage(): void {
         const nattyIcon = globals.nattyIcon.clone();
         const copyPastorIcon = globals.guttenbergIcon.clone();
         const smokeyIcon = globals.smokeyIcon.clone();
+        void globals.attachPopover(nattyIcon.find('a')[0], 'Reported by Natty', 'bottom-start');
+        void globals.attachPopover(copyPastorIcon.find('a')[0], 'Reported by Guttenberg', 'bottom-start');
+        void globals.attachPopover(smokeyIcon.find('a')[0], 'Reported by Smokey', 'bottom-start');
         const copyPastorApi = new CopyPastorAPI(post.postId);
 
         const reporters: Reporter[] = [];
@@ -406,7 +416,7 @@ function SetupPostPage(): void {
                 $(window).on('click', () => globals.hideElement(dropDown));
             }
         } else {
-            iconLocation.after(smokeyIcon, copyPastorIcon, nattyIcon, reportedIcon, failedActionIcon, performedActionIcon);
+            iconLocation.after(smokeyIcon, copyPastorIcon, nattyIcon);
         }
     });
 }
@@ -420,7 +430,7 @@ function Setup(): void {
         NattyAPI.getAllNattyIds()
     ]).then(() => SetupPostPage());
     SetupStyles();
-    void SetupConfiguration();
+    void globals.waitForSvg().then(() => SetupConfiguration());
     $('body').append(popupWrapper);
 
     const watchedQueuesEnabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationWatchQueues);

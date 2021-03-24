@@ -10,7 +10,7 @@ interface QuestionQuestion { // the question on a question page
     postId: number;
     creationDate: Date;
     score: number;
-    authorReputation?: number;
+    authorReputation: number;
     authorName: string;
 }
 
@@ -22,7 +22,7 @@ interface QuestionAnswer { // an answer on a question page
     questionTime: Date;
     creationDate: Date;
     score: number;
-    authorReputation?: number;
+    authorReputation: number;
     authorName: string;
 }
 
@@ -33,7 +33,7 @@ interface NatoAnswer {
     postId: number;
     creationDate: Date;
     questionTime: Date;
-    authorReputation?: number;
+    authorReputation: number;
     authorName: string;
 }
 
@@ -49,7 +49,7 @@ interface FlagPageInfo {
 
 interface PostDetails {
     score: number;
-    authorReputation?: number;
+    authorReputation: number;
     authorName: string;
     authorId?: number;
     creationDate: Date | null;

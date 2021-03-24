@@ -25,5 +25,4 @@
 // @grant        GM_setValue
 // @grant        GM_deleteValue
 // @grant        GM_addStyle
-// @run-at       document-body
 // ==/UserScript==

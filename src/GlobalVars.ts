@@ -5,6 +5,7 @@ import { displayToaster } from './AdvancedFlagging';
 
 declare const StackExchange: StackExchange;
 declare const Svg: Svg;
+declare const Stacks: Stacks;
 
 type CacheKeys = 'FlagText' | 'ReportType';
 export interface CachedFlag {
@@ -19,18 +20,20 @@ export interface CachedFlag {
 
 // StackExchange objects
 export interface Svg {
-    CheckmarkSm(): JQuery;
+    Checkmark(): JQuery;
+    Clear(): JQuery;
     ClearSm(): JQuery;
     Flag(): JQuery;
 }
 
-export interface Stacks {
-    showModal(modal: HTMLElement | null): void;
+interface Stacks {
+    setTooltipText(element: Element | null, title: string, options: { placement: string }): Promise<void>;
+    setTooltipHtml(element: Element | null, title: string, options: { placement: string }): Promise<void>;
 }
 
 export interface StackExchange {
     helpers: {
-        showModal(popup: JQuery): void;
+        showModal(popup: JQuery | Element | null): void;
         showConfirmModal(modal: ModalType): Promise<boolean>;
         showToast(message: string, info: { type: string, transientTimeout: number }): void;
     };
@@ -82,6 +85,8 @@ export const isStackOverflow = Boolean(/^https:\/\/stackoverflow.com/.exec(windo
 export const isNatoPage = Boolean(/\/tools\/new-answers-old-questions/.exec(window.location.href));
 export const isQuestionPage = Boolean(/\/questions\/\d+.*/.exec(window.location.href));
 export const isFlagsPage = Boolean(/\/users\/flag-summary\//.exec(window.location.href));
+export const plainDiv = $('<div>');
+export const gridCellDiv = $('<div>').addClass('grid--cell');
 
 // Help center links used in FlagTypes for comments/flags
 export const deletedAnswers = '/help/deleted-answers';
@@ -110,6 +115,16 @@ export const displayStacksToast = (message: string, type: 'success' | 'danger'):
     type: type,
     transientTimeout: popupDelay
 });
+export const attachPopover = async (element: Element, text: string, position: string): Promise<void> => {
+    await Stacks.setTooltipText(element, text, {
+        placement: position
+    });
+};
+export const attachHtmlPopover = async (element: Element, text: string, position: string): Promise<void> => {
+    await Stacks.setTooltipHtml(element, text, {
+        placement: position
+    });
+};
 
 // regexes
 export const isReviewItemRegex = /\/review\/(next-task|task-reviewed\/)/;
@@ -134,12 +149,11 @@ export const getFormDataFromObject = (object: any): FormData => Object.keys(obje
 const getCopypastorLink = (postId: number): string => `https://copypastor.sobotics.org/posts/${postId}`;
 
 // jQuery icon elements
-const sampleIcon = $('<a>').attr('class', 's-avatar s-avatar__16 s-user-card--avatar d-none')
-    .addClass(/\/users\/flag-summary/.exec(window.location.href) ? 'mx4 my2' : 'm4')
-    .append($('<img>').addClass('s-avatar--image'));
-export const nattyIcon = sampleIcon.clone().attr('title', 'Reported by Natty').find('img').attr('src', nattyImage).parent();
-export const guttenbergIcon = sampleIcon.clone().attr('title', 'Reported by Guttenberg').find('img').attr('src', guttenbergImage).parent();
-export const smokeyIcon = sampleIcon.clone().attr('title', 'Reported by Smokey').find('img').attr('src', smokeyImage).parent();
+const sampleIcon = gridCellDiv.clone().addClass(`d-none ${isFlagsPage ? ' ml8' : ''}`)
+    .append($('<a>').addClass('s-avatar s-avatar__16 s-user-card--avatar').append($('<img>').addClass('s-avatar--image')));
+export const nattyIcon = sampleIcon.clone().find('img').attr('src', nattyImage).parent().parent();
+export const guttenbergIcon = sampleIcon.clone().find('img').attr('src', guttenbergImage).parent().parent();
+export const smokeyIcon = sampleIcon.clone().find('img').attr('src', smokeyImage).parent().parent();
 
 // dynamically generated jQuery elements based on the parameters passed
 export const getMessageDiv = (message: string, state: string): JQuery => $('<div>').attr('class', 'p12 bg-' + state).text(message);
@@ -159,9 +173,10 @@ export const getConfigHtml = (optionId: string, text: string): JQuery => $(`
 export const getTextarea = (content: string, className: string): JQuery => $('<textarea>').html(content || '').attr('rows', 4)
     .addClass('grid--cell s-textarea fs-body2 ' + className);
 
-export const performedActionIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.CheckmarkSm().addClass('fc-green-500'));
-export const failedActionIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.ClearSm().addClass('fc-red-500'));
-export const reportedIcon = (): JQuery => $('<div>').attr('class', 'p2 d-none').append(Svg.Flag().addClass('fc-red-500'));
+const iconWrapper = $('<div>').attr('class', 'grid--cell d-none');
+export const performedActionIcon = (): JQuery => iconWrapper.clone().append(Svg.Checkmark().addClass('fc-green-500'));
+export const failedActionIcon = (): JQuery => iconWrapper.clone().append(Svg.Clear().addClass('fc-red-500'));
+export const reportedIcon = (): JQuery => iconWrapper.clone().append(Svg.Flag().addClass('fc-red-500'));
 export const divider = $('<hr>').attr('class', 'my8');
 export const popupWrapper = $('<div>').attr('id', 'snackbar')
     .attr('class', 'hide fc-white p16 fs-body3 ps-fixed ta-center z-popover l50 t32 wmn2');
@@ -169,8 +184,6 @@ export const dropDown = $('<div>').attr('class', 'advanced-flagging-dialog s-pop
 export const popoverArrow = $('<div>').attr('class', 's-popover--arrow s-popover--arrow__tc');
 export const reportLink = $('<a>').attr('class', 'd-inline-block my4');
 export const dropdownItem = $('<div>').attr('class', 'advanced-flagging-dropdown-item px4');
-export const plainDiv = $('<div>');
-export const gridCellDiv = $('<div>').attr('class', 'grid--cell');
 export const advancedFlaggingLink = $('<button>').attr('type', 'button').attr('class', 's-btn s-btn__link').text('Advanced Flagging');
 export const configurationDiv = $('<div>').attr('class', 'advanced-flagging-configuration-div ta-left pt6');
 export const configurationLink = $('<a>').attr('id', 'af-modal-button').text('AdvancedFlagging configuration');
@@ -350,4 +363,11 @@ export function savePropertyToCache(flagId: number, property: CacheKeys, value: 
 
     flagType[property] = value;
     GreaseMonkeyCache.StoreInCache(FlagTypesKey, currentFlagTypes);
+}
+
+export async function waitForSvg(): Promise<void> {
+    while (typeof Svg === 'undefined') {
+        // eslint-disable-next-line no-await-in-loop
+        await Delay(1000);
+    }
 }

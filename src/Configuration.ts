@@ -4,7 +4,7 @@ import { GreaseMonkeyCache } from '@userscriptTools/GreaseMonkeyCache';
 import * as globals from './GlobalVars';
 
 declare const Svg: globals.Svg;
-declare const Stacks: globals.Stacks;
+declare const StackExchange: globals.StackExchange;
 
 const enabledFlags = GreaseMonkeyCache.GetFromCache<number[]>(globals.ConfigurationEnabledFlags);
 const flagTypes = flagCategories.flatMap(category => category.FlagTypes);
@@ -24,11 +24,7 @@ const cacheFlags = (): void => GreaseMonkeyCache.StoreInCache(globals.FlagTypesK
 const getOption = (flag: Flags, name: string): string => `<option${flag === name ? ' selected' : ''}>${flag}</option>`;
 const getFlagOptions = (name: string): string => optionTypes.map(flag => getOption(flag, name)).join('');
 
-export async function SetupConfiguration(): Promise<void> {
-    while (typeof Svg === 'undefined') {
-        // eslint-disable-next-line no-await-in-loop
-        await globals.Delay(1000);
-    }
+export function SetupConfiguration(): void {
     SetupDefaults(); // stores default values if they haven't already been
     BuildConfigurationOverlay(); // the configuration modal
     SetupCommentsAndFlagsModal(); // the comments & flags modal
@@ -36,8 +32,8 @@ export async function SetupConfiguration(): Promise<void> {
     const bottomBox = $('.site-footer--copyright').children('.-list');
     const configurationDiv = globals.configurationDiv.clone(), commentsDiv = globals.commentsDiv.clone();
     const configurationLink = globals.configurationLink.clone(), commentsLink = globals.commentsLink.clone();
-    $(document).on('click', '#af-modal-button', () => Stacks.showModal(document.querySelector('#af-config')));
-    $(document).on('click', '#af-comments-button', () => Stacks.showModal(document.querySelector('#af-comments')));
+    $(document).on('click', '#af-modal-button', () => StackExchange.helpers.showModal(document.querySelector('#af-config')));
+    $(document).on('click', '#af-comments-button', () => StackExchange.helpers.showModal(document.querySelector('#af-comments')));
 
     commentsDiv.append(commentsLink).insertAfter(bottomBox);
     configurationDiv.append(configurationLink).insertAfter(bottomBox);

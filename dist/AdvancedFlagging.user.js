@@ -25,7 +25,10 @@
 // @grant        GM_setValue
 // @grant        GM_deleteValue
 // @grant        GM_addStyle
+// @downloadURL  https://github.com/SOBotics/AdvancedFlagging/raw/master/dist/AdvancedFlagging.user.js
+// @updateURL    https://github.com/SOBotics/AdvancedFlagging/raw/master/dist/AdvancedFlagging.user.js
 // ==/UserScript==
+/* globals StackExchange, Stacks, $ */
 
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ([

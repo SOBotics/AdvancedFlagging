@@ -159,6 +159,10 @@ function GetGeneralConfigItems(): JQuery[] {
             configValue: globals.ConfigurationDefaultNoFlag
         },
         {
+            text: 'Uncheck \'Downvote\' by default',
+            configValue: globals.ConfigurationDefaultNoDownvote
+        },
+        {
             text: 'Add author\'s name before comments',
             configValue: globals.ConfigurationAddAuthorName
         }

@@ -101,6 +101,7 @@ export const flagPosts = '/help/privileges/flag-posts';
 export const ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
 export const ConfigurationDefaultNoFlag = 'AdvancedFlagging.Configuration.DefaultNoFlag';
 export const ConfigurationDefaultNoComment = 'AdvancedFlagging.Configuration.DefaultNoComment';
+export const ConfigurationDefaultNoDownvote = 'AdvancedFlagging.Configuration.DefaultNoDownvote';
 export const ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlags';
 export const ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
 export const ConfigurationEnabledFlags = 'AdvancedFlagging.Configuration.EnabledFlags';
@@ -159,7 +160,7 @@ export const smokeyIcon = sampleIcon.clone().find('img').attr('src', smokeyImage
 export const getMessageDiv = (message: string, state: string): JQuery => $('<div>').attr('class', 'p12 bg-' + state).text(message);
 export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').html(`<h2 class="grid--cell">${name}</h2>`)
     .addClass(`grid gs8 gsy fd-column af-section-${name.toLowerCase()}`);
-export const getOptionBox = (name: string): JQuery => $('<input>').attr('type', 'checkbox').attr('name', name).attr('id', name).attr('class', 's-checkbox');
+export const getOptionBox = (name: string): JQuery => $('<input>').attr('type', 'checkbox').attr('name', name).attr('id', name).addClass('s-checkbox');
 export const getCategoryDiv = (red: boolean): JQuery => $('<div>').attr('class', `advanced-flagging-category bar-md${red ? ' bg-red-200' : ''}`);
 export const getOptionLabel = (text: string, name: string): JQuery => $('<label>').text(text).attr('for', name)
     .addClass('s-label ml4 va-middle fs-body1 fw-normal');

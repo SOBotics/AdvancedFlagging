@@ -43,9 +43,10 @@ function SetupStyles(): void {
 
 const userFkey = StackExchange.options.user.fkey;
 async function handleFlagAndComment(
-    postId: number,
+    post: QuestionPageInfo,
     flag: FlagType,
     flagRequired: boolean,
+    downvoteRequired: boolean,
     copypastorApi: CopyPastorAPI,
     reportedIcon: JQuery,
     qualifiesForVlq: boolean,
@@ -53,12 +54,12 @@ async function handleFlagAndComment(
 ): Promise<void> {
     if (commentText) {
         try {
-            const postComment = await fetch(`/posts/${postId}/comments`, {
+            const postComment = await fetch(`/posts/${post.postId}/comments`, {
                 method: 'POST',
                 body: globals.getFormDataFromObject({ fkey: userFkey, comment: commentText })
             });
             const commentResult = await postComment.text();
-            showComments(postId, commentResult);
+            showComments(post.postId, commentResult);
         } catch (error) {
             globals.displayError('Failed to comment on post');
             console.error(error);
@@ -76,7 +77,7 @@ async function handleFlagAndComment(
         const flagName: Flags = flag.ReportType === 'PostLowQuality' ?
             (qualifiesForVlq ? 'PostLowQuality' : 'AnswerNotAnAnswer') : flag.ReportType;
         try {
-            const flagPost = await fetch(`//${window.location.hostname}/flags/posts/${postId}/add/${flagName}`, {
+            const flagPost = await fetch(`//${window.location.hostname}/flags/posts/${post.postId}/add/${flagName}`, {
                 method: 'POST',
                 body: globals.getFormDataFromObject({ fkey: userFkey, otherText: flag.ReportType === 'PostOther' ? flagText : '' })
             });
@@ -92,6 +93,9 @@ async function handleFlagAndComment(
             displayErrorFlagged('Failed to flag post', error);
         }
     }
+
+    // The user probably doesn't want to auto-downvote posts after selecting Looks Fine, NE, etc.
+    if (downvoteRequired && flag.DefaultReportType !== 'NoFlag') post.element.find('.js-vote-down-btn').trigger('click');
 }
 
 const popupWrapper = globals.popupWrapper;
@@ -238,16 +242,20 @@ function BuildFlaggingDialog(
     const enabledFlagIds = GreaseMonkeyCache.GetFromCache<number[]>(globals.ConfigurationEnabledFlags);
     const defaultNoComment = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoComment);
     const defaultNoFlag = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoFlag);
+    const defaultNoDownvote = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoDownvote);
     const comments = post.element.find('.comment-body');
-
     const dropDown = globals.dropDown.clone();
+
     const checkboxNameComment = `comment_checkbox_${post.postId}`;
     const checkboxNameFlag = `flag_checkbox_${post.postId}`;
+    const checkboxNameDownvote = `downvote_checkbox_${post.postId}`;
     const leaveCommentBox = globals.getOptionBox(checkboxNameComment);
     const flagBox = globals.getOptionBox(checkboxNameFlag);
+    const downvoteBox = globals.getOptionBox(checkboxNameDownvote);
 
-    flagBox.prop('checked', !defaultNoFlag);
     leaveCommentBox.prop('checked', !defaultNoComment && !comments.length && globals.isStackOverflow);
+    flagBox.prop('checked', !defaultNoFlag);
+    downvoteBox.prop('checked', !defaultNoDownvote);
 
     const newCategories = flagCategories.filter(item => item.AppliesTo.includes(post.type)
                                                      && item.FlagTypes.some(flag => enabledFlagIds && enabledFlagIds.includes(flag.Id)));
@@ -285,7 +293,8 @@ function BuildFlaggingDialog(
                     }
 
                     await handleFlagAndComment(
-                        post.postId, flagType, flagBox.is(':checked'), copyPastorApi, reportedIcon, shouldRaiseVlq, commentText
+                        post, flagType, flagBox.is(':checked'), downvoteBox.is(':checked'),
+                        copyPastorApi, reportedIcon, shouldRaiseVlq, commentText
                     );
                 }
 
@@ -307,15 +316,20 @@ function BuildFlaggingDialog(
 
     if (globals.isStackOverflow) {
         const commentBoxLabel = globals.getOptionLabel('Leave comment', checkboxNameComment);
-        const commentingRow = globals.plainDiv.clone();
-        commentingRow.append(leaveCommentBox, commentBoxLabel);
-        dropDown.append(commentingRow);
+        const commentRow = globals.plainDiv.clone();
+        commentRow.append(leaveCommentBox, commentBoxLabel);
+        dropDown.append(commentRow);
     }
 
     const flagBoxLabel = globals.getOptionLabel('Flag', checkboxNameFlag);
-    const flaggingRow = globals.plainDiv.clone();
-    flaggingRow.append(flagBox, flagBoxLabel);
-    dropDown.append(flaggingRow, globals.popoverArrow.clone());
+    const flagRow = globals.plainDiv.clone();
+    flagRow.append(flagBox, flagBoxLabel);
+
+    const downvoteBoxLabel = globals.getOptionLabel('Downvote', checkboxNameDownvote);
+    const downvoteRow = globals.plainDiv.clone();
+    downvoteRow.append(downvoteBox, downvoteBoxLabel);
+
+    dropDown.append(flagRow, downvoteRow, globals.popoverArrow.clone());
 
     return dropDown;
 }
@@ -323,9 +337,8 @@ function BuildFlaggingDialog(
 async function handleFlag(flagType: FlagType, reporters: Reporter[]): Promise<boolean> {
     for (const reporter of reporters) {
         try {
-            const promise = flagType.SendFeedback(reporter);
             // eslint-disable-next-line no-await-in-loop
-            const promiseValue = await promise;
+            const promiseValue = await flagType.SendFeedback(reporter);
             if (!promiseValue) continue;
             globals.displaySuccess(promiseValue);
         } catch (error) {

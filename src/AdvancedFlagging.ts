@@ -5,7 +5,6 @@ import { GenericBotAPI } from '@userscriptTools/GenericBotAPI';
 import { MetaSmokeAPI } from '@userscriptTools/MetaSmokeAPI';
 import { CopyPastorAPI } from '@userscriptTools/CopyPastorAPI';
 import { SetupConfiguration } from 'Configuration';
-import { GreaseMonkeyCache } from '@userscriptTools/GreaseMonkeyCache';
 import * as globals from './GlobalVars';
 
 declare const StackExchange: globals.StackExchange;
@@ -239,10 +238,10 @@ function BuildFlaggingDialog(
     shouldRaiseVlq: boolean,
     failedActionIcon: JQuery
 ): JQuery {
-    const enabledFlagIds = GreaseMonkeyCache.GetFromCache<number[]>(globals.ConfigurationEnabledFlags);
-    const defaultNoComment = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoComment);
-    const defaultNoFlag = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoFlag);
-    const defaultNoDownvote = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationDefaultNoDownvote);
+    const enabledFlagIds = globals.cachedConfigurationInfo?.[globals.ConfigurationEnabledFlags];
+    const defaultNoComment = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoDownvote];
+    const defaultNoFlag = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoFlag];
+    const defaultNoDownvote = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoDownvote];
     const comments = post.element.find('.comment-body');
     const dropDown = globals.dropDown.clone();
 
@@ -351,7 +350,7 @@ async function handleFlag(flagType: FlagType, reporters: Reporter[]): Promise<bo
 
 let autoFlagging = false;
 function SetupPostPage(): void {
-    const linkDisabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationLinkDisabled);
+    const linkDisabled = globals.cachedConfigurationInfo?.[globals.ConfigurationLinkDisabled];
     if (linkDisabled) return;
     parseQuestionsAndAnswers(post => {
         if (!post.element.length) return;
@@ -388,9 +387,9 @@ function SetupPostPage(): void {
             // Now we setup the flagging dialog
             const deleted = post.element.hasClass('deleted-answer');
 
-            const isEnabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationWatchFlags);
+            const shouldWatchFlags = globals.cachedConfigurationInfo?.[globals.ConfigurationWatchFlags];
             globals.addXHRListener(xhr => {
-                if (!isEnabled || autoFlagging || xhr.status !== 200 || !globals.flagsUrlRegex.exec(xhr.responseURL)) return;
+                if (!shouldWatchFlags || autoFlagging || xhr.status !== 200 || !globals.flagsUrlRegex.exec(xhr.responseURL)) return;
 
                 const matches = globals.getFlagsUrlRegex(post.postId).exec(xhr.responseURL);
                 if (!matches) return;
@@ -412,7 +411,7 @@ function SetupPostPage(): void {
 
             advancedFlaggingLink.append(dropDown);
 
-            const openOnHover = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationOpenOnHover);
+            const openOnHover = globals.cachedConfigurationInfo?.[globals.ConfigurationOpenOnHover];
             if (openOnHover) {
                 advancedFlaggingLink.on('mouseover', event => {
                     event.stopPropagation();
@@ -440,13 +439,16 @@ function Setup(): void {
         MetaSmokeAPI.Setup(globals.metaSmokeKey),
         MetaSmokeAPI.QueryMetaSmokeInternal(),
         CopyPastorAPI.getAllCopyPastorIds(),
-        NattyAPI.getAllNattyIds()
-    ]).then(() => SetupPostPage());
-    SetupStyles();
-    void globals.waitForSvg().then(() => SetupConfiguration());
+        NattyAPI.getAllNattyIds(),
+        globals.waitForSvg()
+    ]).then(() => {
+        SetupPostPage();
+        SetupStyles();
+        SetupConfiguration();
+    });
     $('body').append(popupWrapper);
 
-    const watchedQueuesEnabled = GreaseMonkeyCache.GetFromCache<boolean>(globals.ConfigurationWatchQueues);
+    const watchedQueuesEnabled = globals.cachedConfigurationInfo?.[globals.ConfigurationWatchQueues];
     const postDetails: { questionTime: Date, answerTime: Date }[] = [];
     if (!watchedQueuesEnabled) return;
 

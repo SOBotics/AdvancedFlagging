@@ -8,6 +8,7 @@ declare const Svg: Svg;
 declare const Stacks: Stacks;
 
 type CacheKeys = 'FlagText' | 'ReportType';
+type StacksToastState = 'success' | 'danger' | 'info';
 export interface CachedFlag {
     Id: number;
     FlagText: string;
@@ -18,6 +19,18 @@ export interface CachedFlag {
     ReportType: string;
 }
 
+export interface CachedConfiguration {
+    OpenOnHover: boolean;
+    DefaultNoFlag: boolean;
+    DefaultNoComment: boolean;
+    DefaultNoDownvote: boolean;
+    WatchFlags: boolean;
+    WatchQueues: boolean;
+    LinkDisabled: boolean;
+    AddAuthorName: boolean
+    EnabledFlags: number[];
+}
+
 // StackExchange objects
 export interface Svg {
     Checkmark(): JQuery;
@@ -26,15 +39,16 @@ export interface Svg {
     Flag(): JQuery;
 }
 
-interface Stacks {
+export interface Stacks {
     setTooltipText(element: Element | null, title: string, options: { placement: string }): Promise<void>;
     setTooltipHtml(element: Element | null, title: string, options: { placement: string }): Promise<void>;
+    showModal(popup: Element | null): void;
 }
 
 export interface StackExchange {
     helpers: {
-        showModal(popup: JQuery | Element | null): void;
         showConfirmModal(modal: ModalType): Promise<boolean>;
+        showModal(popup: JQuery | Element | null): void;
         showToast(message: string, info: { type: string, transientTimeout: number }): void;
     };
     options: {
@@ -98,21 +112,22 @@ export const setBounties = '/help/privileges/set-bounties';
 export const flagPosts = '/help/privileges/flag-posts';
 
 // Cache keys
-export const ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
-export const ConfigurationDefaultNoFlag = 'AdvancedFlagging.Configuration.DefaultNoFlag';
-export const ConfigurationDefaultNoComment = 'AdvancedFlagging.Configuration.DefaultNoComment';
-export const ConfigurationDefaultNoDownvote = 'AdvancedFlagging.Configuration.DefaultNoDownvote';
-export const ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlags';
-export const ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
-export const ConfigurationEnabledFlags = 'AdvancedFlagging.Configuration.EnabledFlags';
-export const ConfigurationLinkDisabled = 'AdvancedFlagging.Configuration.LinkDisabled';
-export const ConfigurationAddAuthorName = 'AdvancedFlagging.Comments.AddAuthorName';
-export const CacheChatApiFkey = 'StackExchange.ChatApi.FKey';
+export const ConfigurationCacheKey = 'Configuration';
+export const ConfigurationOpenOnHover = 'OpenOnHover';
+export const ConfigurationDefaultNoFlag = 'DefaultNoFlag';
+export const ConfigurationDefaultNoComment = 'DefaultNoComment';
+export const ConfigurationDefaultNoDownvote = 'DefaultNoDownvote';
+export const ConfigurationWatchFlags = 'WatchFlags';
+export const ConfigurationWatchQueues = 'WatchQueues';
+export const ConfigurationEnabledFlags = 'EnabledFlags';
+export const ConfigurationLinkDisabled = 'LinkDisabled';
+export const ConfigurationAddAuthorName = 'AddAuthorName';
+export const CacheChatApiFkey = 'fkey';
 export const MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
 export const MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
 export const FlagTypesKey = 'FlagTypes';
 
-export const displayStacksToast = (message: string, type: 'success' | 'danger'): void => StackExchange.helpers.showToast(message, {
+export const displayStacksToast = (message: string, type: StacksToastState): void => StackExchange.helpers.showToast(message, {
     type: type,
     transientTimeout: popupDelay
 });
@@ -148,6 +163,18 @@ export const getFormDataFromObject = (object: any): FormData => Object.keys(obje
     return formData;
 }, new FormData());
 const getCopypastorLink = (postId: number): string => `https://copypastor.sobotics.org/posts/${postId}`;
+export function qualifiesForVlq(postScore: number, creationDate: Date): boolean {
+    return postScore <= 0 && (new Date().valueOf() - creationDate.valueOf()) < dayMillis;
+}
+
+export function parseDate(dateStr?: string): Date | null {
+    // Fix for safari
+    return dateStr ? new Date(dateStr.replace(' ', 'T')) : null;
+}
+
+export function getSentMessage(success: boolean, feedback: string, bot: string): string {
+    return success ? `Feedback ${feedback} sent to ${bot}` : `Failed to send feedback ${feedback} to ${bot}`;
+}
 
 // jQuery icon elements
 const sampleIcon = gridCellDiv.clone().addClass(`d-none ${isFlagsPage ? ' ml8' : ''}`)
@@ -300,9 +327,13 @@ export function getAllPostIds(includeQuestion: boolean, urlForm: boolean): (numb
     }).filter(String); // remove null/empty values
 }
 
+// cache-related helpers
+export const cachedConfigurationInfo = GreaseMonkeyCache.GetFromCache<CachedConfiguration>(ConfigurationCacheKey) || {} as CachedConfiguration;
+export const updateConfiguration = (): void => GreaseMonkeyCache.StoreInCache(ConfigurationCacheKey, cachedConfigurationInfo);
+
 // For GetComment() on FlagTypes. Adds the author name before the comment if the option is enabled
 export function getFullComment(flagId: number, { AuthorName }: UserDetails, level?: 'Low' | 'High'): string {
-    const shouldAddAuthorName = GreaseMonkeyCache.GetFromCache(ConfigurationAddAuthorName);
+    const shouldAddAuthorName = cachedConfigurationInfo?.AddAuthorName;
     const flagType = getFlagTypeFromCache(flagId);
     const comment = flagType?.Comments[level || 'Low'];
     return (comment && shouldAddAuthorName ? `${AuthorName}, ${comment[0].toLowerCase()}${comment.slice(1)}` : comment) || '';
@@ -314,19 +345,6 @@ export function getFullFlag(flagId: number, target: string, postId: number): str
     const flagContent = flagType?.FlagText;
     if (!flagContent) return '';
     return flagContent.replace(placeholderTarget, target).replace(placeholderCopypastorLink, getCopypastorLink(postId));
-}
-
-export function qualifiesForVlq(postScore: number, creationDate: Date): boolean {
-    return postScore <= 0 && (new Date().valueOf() - creationDate.valueOf()) < dayMillis;
-}
-
-export function parseDate(dateStr?: string): Date | null {
-    // Fix for safari
-    return dateStr ? new Date(dateStr.replace(' ', 'T')) : null;
-}
-
-export function getSentMessage(success: boolean, feedback: string, bot: string): string {
-    return success ? `Feedback ${feedback} sent to ${bot}` : `Failed to send feedback ${feedback} to ${bot}`;
 }
 
 export function getFlagTypeFromCache(flagId: number): CachedFlag | null {

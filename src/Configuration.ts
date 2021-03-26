@@ -5,8 +5,10 @@ import * as globals from './GlobalVars';
 
 declare const Svg: globals.Svg;
 declare const StackExchange: globals.StackExchange;
+declare const Stacks: globals.Stacks;
+type GeneralItems = Exclude<keyof globals.CachedConfiguration, 'EnabledFlags'>;
 
-const enabledFlags = GreaseMonkeyCache.GetFromCache<number[]>(globals.ConfigurationEnabledFlags);
+const getEnabledFlags = (): number[] => globals.cachedConfigurationInfo?.EnabledFlags;
 const flagTypes = flagCategories.flatMap(category => category.FlagTypes);
 const flagNames = [...new Set(flagTypes.map(flagType => flagType.DefaultReportType))];
 const optionTypes = flagNames.filter(item => !/Post(?:Other|Offensive|Spam)/.exec(item));
@@ -32,18 +34,23 @@ export function SetupConfiguration(): void {
     const bottomBox = $('.site-footer--copyright').children('.-list');
     const configurationDiv = globals.configurationDiv.clone(), commentsDiv = globals.commentsDiv.clone();
     const configurationLink = globals.configurationLink.clone(), commentsLink = globals.commentsLink.clone();
-    $(document).on('click', '#af-modal-button', () => StackExchange.helpers.showModal(document.querySelector('#af-config')));
-    $(document).on('click', '#af-comments-button', () => StackExchange.helpers.showModal(document.querySelector('#af-comments')));
+    $(document).on('click', '#af-modal-button', () => Stacks.showModal(document.querySelector('#af-config')));
+    $(document).on('click', '#af-comments-button', () => Stacks.showModal(document.querySelector('#af-comments')));
 
     commentsDiv.append(commentsLink).insertAfter(bottomBox);
     configurationDiv.append(configurationLink).insertAfter(bottomBox);
+    if (!Object.prototype.hasOwnProperty.call(globals.cachedConfigurationInfo, globals.ConfigurationAddAuthorName)) {
+        globals.displayStacksToast('Please set up AdvancedFlagging before continuing.', 'info');
+        StackExchange.helpers.showModal(document.querySelector('#af-config'));
+    }
 }
 
 function SetupDefaults(): void {
     // store all flags if they don't exist
-    if (!enabledFlags) {
+    if (!getEnabledFlags()) {
         const flagTypeIds = flagTypes.map(flag => flag.Id);
-        GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagTypeIds);
+        globals.cachedConfigurationInfo[globals.ConfigurationEnabledFlags] = flagTypeIds;
+        globals.updateConfiguration();
     }
 
     const cachedFlagTypes = GreaseMonkeyCache.GetFromCache<globals.CachedFlag[]>(globals.FlagTypesKey);
@@ -80,7 +87,8 @@ function BuildConfigurationOverlay(): void {
             onSave: (): void => {
                 // find the option id (it's the data-option-id attribute) and store whether the box is checked or not
                 $('.af-section-general').find('input').each((_index, el) => {
-                    GreaseMonkeyCache.StoreInCache($(el).parents().eq(2).data('option-id'), $(el).prop('checked'));
+                    const optionId = $(el).parents().eq(2).data('option-id') as GeneralItems;
+                    globals.cachedConfigurationInfo[optionId] = Boolean($(el).prop('checked'));
                 });
             }
         },
@@ -90,12 +98,9 @@ function BuildConfigurationOverlay(): void {
             onSave: (): void => {
                 // collect all flag ids (flag-type-ID) and store them
                 const flagOptions = $('.af-section-flags').find('input').get()
-                    .filter(el => $(el).prop('checked'))
-                    .map(el => {
-                        const postId = $(el).attr('id');
-                        return postId ? Number(/\d+/.exec(postId)) : 0;
-                    }).sort((a, b) => a - b); // sort the ids before storing them
-                GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagOptions);
+                    .filter(el => $(el).prop('checked')).map(el => Number(/\d+/.exec(el.id || '')) || 0)
+                    .sort((a, b) => a - b); // sort the ids before storing them
+                globals.cachedConfigurationInfo[globals.ConfigurationEnabledFlags] = flagOptions;
             }
         },
         {
@@ -116,9 +121,11 @@ function BuildConfigurationOverlay(): void {
         section.Items.forEach((element: JQuery) => sectionWrapper.append(element));
     });
 
+    // event listener for "Save changes" button click
     overlayModal.find('.s-btn__primary').on('click', event => {
         event.preventDefault();
         sections.forEach(section => section.onSave?.());
+        globals.updateConfiguration();
         globals.displayStacksToast('Configuration saved', 'success');
         setTimeout(() => window.location.reload(), 500);
     });
@@ -167,13 +174,14 @@ function GetGeneralConfigItems(): JQuery[] {
             configValue: globals.ConfigurationAddAuthorName
         }
     ].map(item => {
-        const storedValue: boolean | null = GreaseMonkeyCache.GetFromCache<boolean>(item.configValue);
-        return createCheckbox(item.text, storedValue).attr('data-option-id', item.configValue);
+        const storedValue = globals.cachedConfigurationInfo?.[item.configValue as GeneralItems];
+        return createCheckbox(item.text, Boolean(storedValue)).attr('data-option-id', item.configValue);
     });
 }
 
 function GetFlagSettings(): JQuery[] {
     const checkboxes: JQuery[] = [];
+    const enabledFlags = getEnabledFlags();
     if (!enabledFlags) return checkboxes;
 
     flagTypes.forEach(flag => {

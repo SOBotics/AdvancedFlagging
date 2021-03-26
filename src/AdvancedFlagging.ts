@@ -239,7 +239,7 @@ function BuildFlaggingDialog(
     failedActionIcon: JQuery
 ): JQuery {
     const enabledFlagIds = globals.cachedConfigurationInfo?.[globals.ConfigurationEnabledFlags];
-    const defaultNoComment = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoDownvote];
+    const defaultNoComment = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoComment];
     const defaultNoFlag = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoFlag];
     const defaultNoDownvote = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoDownvote];
     const comments = post.element.find('.comment-body');

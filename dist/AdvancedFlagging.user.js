@@ -35,7 +35,7 @@
 /* 0 */
 /***/ ((module, exports, __webpack_require__) => {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1), __webpack_require__(4), __webpack_require__(5), __webpack_require__(7), __webpack_require__(8), __webpack_require__(9), __webpack_require__(10), __webpack_require__(3), __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, FlagTypes_1, sotools_1, NattyApi_1, GenericBotAPI_1, MetaSmokeAPI_1, CopyPastorAPI_1, Configuration_1, GreaseMonkeyCache_1, globals) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1), __webpack_require__(4), __webpack_require__(5), __webpack_require__(7), __webpack_require__(8), __webpack_require__(9), __webpack_require__(10), __webpack_require__(2)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, FlagTypes_1, sotools_1, NattyApi_1, GenericBotAPI_1, MetaSmokeAPI_1, CopyPastorAPI_1, Configuration_1, globals) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.displayToaster = void 0;
@@ -70,15 +70,15 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 }`);
     }
     const userFkey = StackExchange.options.user.fkey;
-    async function handleFlagAndComment(postId, flag, flagRequired, copypastorApi, reportedIcon, qualifiesForVlq, commentText) {
+    async function handleFlagAndComment(post, flag, flagRequired, downvoteRequired, copypastorApi, reportedIcon, qualifiesForVlq, commentText) {
         if (commentText) {
             try {
-                const postComment = await fetch(`/posts/${postId}/comments`, {
+                const postComment = await fetch(`/posts/${post.postId}/comments`, {
                     method: 'POST',
                     body: globals.getFormDataFromObject({ fkey: userFkey, comment: commentText })
                 });
                 const commentResult = await postComment.text();
-                showComments(postId, commentResult);
+                showComments(post.postId, commentResult);
             }
             catch (error) {
                 globals.displayError('Failed to comment on post');
@@ -95,7 +95,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             const flagName = flag.ReportType === 'PostLowQuality' ?
                 (qualifiesForVlq ? 'PostLowQuality' : 'AnswerNotAnAnswer') : flag.ReportType;
             try {
-                const flagPost = await fetch(`//${window.location.hostname}/flags/posts/${postId}/add/${flagName}`, {
+                const flagPost = await fetch(`//${window.location.hostname}/flags/posts/${post.postId}/add/${flagName}`, {
                     method: 'POST',
                     body: globals.getFormDataFromObject({ fkey: userFkey, otherText: flag.ReportType === 'PostOther' ? flagText : '' })
                 });
@@ -113,6 +113,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 displayErrorFlagged('Failed to flag post', error);
             }
         }
+        // The user probably doesn't want to auto-downvote posts after selecting Looks Fine, NE, etc.
+        if (downvoteRequired && flag.DefaultReportType !== 'NoFlag')
+            post.element.find('.js-vote-down-btn').trigger('click');
     }
     const popupWrapper = globals.popupWrapper;
     function displayToaster(message, state) {
@@ -218,17 +221,21 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         $(`#${popoverId}`).addClass('sm:wmn-initial md:wmn-initial wmn4');
     }
     function BuildFlaggingDialog(post, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi, shouldRaiseVlq, failedActionIcon) {
-        const enabledFlagIds = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationEnabledFlags);
-        const defaultNoComment = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationDefaultNoComment);
-        const defaultNoFlag = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationDefaultNoFlag);
+        const enabledFlagIds = globals.cachedConfigurationInfo?.[globals.ConfigurationEnabledFlags];
+        const defaultNoComment = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoComment];
+        const defaultNoFlag = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoFlag];
+        const defaultNoDownvote = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoDownvote];
         const comments = post.element.find('.comment-body');
         const dropDown = globals.dropDown.clone();
         const checkboxNameComment = `comment_checkbox_${post.postId}`;
         const checkboxNameFlag = `flag_checkbox_${post.postId}`;
+        const checkboxNameDownvote = `downvote_checkbox_${post.postId}`;
         const leaveCommentBox = globals.getOptionBox(checkboxNameComment);
         const flagBox = globals.getOptionBox(checkboxNameFlag);
-        flagBox.prop('checked', !defaultNoFlag);
+        const downvoteBox = globals.getOptionBox(checkboxNameDownvote);
         leaveCommentBox.prop('checked', !defaultNoComment && !comments.length && globals.isStackOverflow);
+        flagBox.prop('checked', !defaultNoFlag);
+        downvoteBox.prop('checked', !defaultNoDownvote);
         const newCategories = FlagTypes_1.flagCategories.filter(item => item.AppliesTo.includes(post.type)
             && item.FlagTypes.some(flag => enabledFlagIds && enabledFlagIds.includes(flag.Id)));
         for (const flagCategory of newCategories) {
@@ -259,7 +266,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                             upvoteSameComments(post.element, strippedComment);
                             commentText = null;
                         }
-                        await handleFlagAndComment(post.postId, flagType, flagBox.is(':checked'), copyPastorApi, reportedIcon, shouldRaiseVlq, commentText);
+                        await handleFlagAndComment(post, flagType, flagBox.is(':checked'), downvoteBox.is(':checked'), copyPastorApi, reportedIcon, shouldRaiseVlq, commentText);
                     }
                     globals.hideElement(dropDown); // hide the dropdown after clicking one of the options
                     const success = await handleFlag(flagType, reporters);
@@ -280,22 +287,24 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         if (globals.isStackOverflow) {
             const commentBoxLabel = globals.getOptionLabel('Leave comment', checkboxNameComment);
-            const commentingRow = globals.plainDiv.clone();
-            commentingRow.append(leaveCommentBox, commentBoxLabel);
-            dropDown.append(commentingRow);
+            const commentRow = globals.plainDiv.clone();
+            commentRow.append(leaveCommentBox, commentBoxLabel);
+            dropDown.append(commentRow);
         }
         const flagBoxLabel = globals.getOptionLabel('Flag', checkboxNameFlag);
-        const flaggingRow = globals.plainDiv.clone();
-        flaggingRow.append(flagBox, flagBoxLabel);
-        dropDown.append(flaggingRow, globals.popoverArrow.clone());
+        const flagRow = globals.plainDiv.clone();
+        flagRow.append(flagBox, flagBoxLabel);
+        const downvoteBoxLabel = globals.getOptionLabel('Downvote', checkboxNameDownvote);
+        const downvoteRow = globals.plainDiv.clone();
+        downvoteRow.append(downvoteBox, downvoteBoxLabel);
+        dropDown.append(flagRow, downvoteRow, globals.popoverArrow.clone());
         return dropDown;
     }
     async function handleFlag(flagType, reporters) {
         for (const reporter of reporters) {
             try {
-                const promise = flagType.SendFeedback(reporter);
                 // eslint-disable-next-line no-await-in-loop
-                const promiseValue = await promise;
+                const promiseValue = await flagType.SendFeedback(reporter);
                 if (!promiseValue)
                     continue;
                 globals.displaySuccess(promiseValue);
@@ -309,7 +318,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }
     let autoFlagging = false;
     function SetupPostPage() {
-        const linkDisabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationLinkDisabled);
+        const linkDisabled = globals.cachedConfigurationInfo?.[globals.ConfigurationLinkDisabled];
         if (linkDisabled)
             return;
         sotools_1.parseQuestionsAndAnswers(post => {
@@ -343,9 +352,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             if (post.page === 'Question') {
                 // Now we setup the flagging dialog
                 const deleted = post.element.hasClass('deleted-answer');
-                const isEnabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationWatchFlags);
+                const shouldWatchFlags = globals.cachedConfigurationInfo?.[globals.ConfigurationWatchFlags];
                 globals.addXHRListener(xhr => {
-                    if (!isEnabled || autoFlagging || xhr.status !== 200 || !globals.flagsUrlRegex.exec(xhr.responseURL))
+                    if (!shouldWatchFlags || autoFlagging || xhr.status !== 200 || !globals.flagsUrlRegex.exec(xhr.responseURL))
                         return;
                     const matches = globals.getFlagsUrlRegex(post.postId).exec(xhr.responseURL);
                     if (!matches)
@@ -361,7 +370,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 const shouldRaiseVlq = globals.qualifiesForVlq(post.score, answerTime || new Date());
                 const dropDown = BuildFlaggingDialog(post, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi, shouldRaiseVlq, failedActionIcon);
                 advancedFlaggingLink.append(dropDown);
-                const openOnHover = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationOpenOnHover);
+                const openOnHover = globals.cachedConfigurationInfo?.[globals.ConfigurationOpenOnHover];
                 if (openOnHover) {
                     advancedFlaggingLink.on('mouseover', event => {
                         event.stopPropagation();
@@ -392,12 +401,15 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             MetaSmokeAPI_1.MetaSmokeAPI.Setup(globals.metaSmokeKey),
             MetaSmokeAPI_1.MetaSmokeAPI.QueryMetaSmokeInternal(),
             CopyPastorAPI_1.CopyPastorAPI.getAllCopyPastorIds(),
-            NattyApi_1.NattyAPI.getAllNattyIds()
-        ]).then(() => SetupPostPage());
-        SetupStyles();
-        void globals.waitForSvg().then(() => Configuration_1.SetupConfiguration());
+            NattyApi_1.NattyAPI.getAllNattyIds(),
+            globals.waitForSvg()
+        ]).then(() => {
+            SetupPostPage();
+            SetupStyles();
+            Configuration_1.SetupConfiguration();
+        });
         $('body').append(popupWrapper);
-        const watchedQueuesEnabled = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationWatchQueues);
+        const watchedQueuesEnabled = globals.cachedConfigurationInfo?.[globals.ConfigurationWatchQueues];
         const postDetails = [];
         if (!watchedQueuesEnabled)
             return;
@@ -783,7 +795,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(3), __webpack_require__(0)], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, GreaseMonkeyCache_1, AdvancedFlagging_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
-    exports.waitForSvg = exports.savePropertyToCache = exports.saveCommentsToCache = exports.getComments = exports.getFlagText = exports.getReportType = exports.getFlagTypeFromCache = exports.getSentMessage = exports.parseDate = exports.qualifiesForVlq = exports.getFullFlag = exports.getFullComment = exports.getAllPostIds = exports.addXHRListener = exports.showConfirmModal = exports.Delay = exports.showMSTokenPopupAndGet = exports.editCommentsPopup = exports.inlineCheckboxesWrapper = exports.overlayModal = exports.flagsWrapper = exports.commentsWrapper = exports.editContentWrapper = exports.commentsLink = exports.commentsDiv = exports.configurationLink = exports.configurationDiv = exports.advancedFlaggingLink = exports.dropdownItem = exports.reportLink = exports.popoverArrow = exports.dropDown = exports.popupWrapper = exports.divider = exports.reportedIcon = exports.failedActionIcon = exports.performedActionIcon = exports.getTextarea = exports.getConfigHtml = exports.getOptionLabel = exports.getCategoryDiv = exports.getOptionBox = exports.getSectionWrapper = exports.getMessageDiv = exports.smokeyIcon = exports.guttenbergIcon = exports.nattyIcon = exports.getFormDataFromObject = exports.getParamsFromObject = exports.displayError = exports.displaySuccess = exports.showInlineElement = exports.hideElement = exports.showElement = exports.getFlagsUrlRegex = exports.flagsUrlRegex = exports.isDeleteVoteRegex = exports.isReviewItemRegex = exports.attachHtmlPopover = exports.attachPopover = exports.displayStacksToast = exports.FlagTypesKey = exports.MetaSmokeDisabledConfig = exports.MetaSmokeUserKeyConfig = exports.CacheChatApiFkey = exports.ConfigurationAddAuthorName = exports.ConfigurationLinkDisabled = exports.ConfigurationEnabledFlags = exports.ConfigurationWatchQueues = exports.ConfigurationWatchFlags = exports.ConfigurationDefaultNoComment = exports.ConfigurationDefaultNoFlag = exports.ConfigurationOpenOnHover = exports.flagPosts = exports.setBounties = exports.whyVote = exports.voteUpHelp = exports.reputationHelp = exports.commentHelp = exports.deletedAnswers = exports.gridCellDiv = exports.plainDiv = exports.isFlagsPage = exports.isQuestionPage = exports.isNatoPage = exports.isStackOverflow = exports.chatFailureMessage = exports.metasmokeFailureMessage = exports.metasmokeReportedMessage = exports.genericBotFailure = exports.settingUpBody = exports.settingUpTitle = exports.popupDelay = exports.dayMillis = exports.username = exports.nattyAllReportsUrl = exports.placeholderCopypastorLink = exports.placeholderTarget = exports.genericBotKey = exports.copyPastorServer = exports.copyPastorKey = exports.metasmokeApiFilter = exports.metaSmokeKey = exports.soboticsRoomId = void 0;
+    exports.waitForSvg = exports.savePropertyToCache = exports.saveCommentsToCache = exports.getComments = exports.getFlagText = exports.getReportType = exports.getFlagTypeFromCache = exports.getFullFlag = exports.getFullComment = exports.updateConfiguration = exports.cachedConfigurationInfo = exports.getAllPostIds = exports.addXHRListener = exports.showConfirmModal = exports.Delay = exports.showMSTokenPopupAndGet = exports.editCommentsPopup = exports.inlineCheckboxesWrapper = exports.overlayModal = exports.flagsWrapper = exports.commentsWrapper = exports.editContentWrapper = exports.commentsLink = exports.commentsDiv = exports.configurationLink = exports.configurationDiv = exports.advancedFlaggingLink = exports.dropdownItem = exports.reportLink = exports.popoverArrow = exports.dropDown = exports.popupWrapper = exports.divider = exports.reportedIcon = exports.failedActionIcon = exports.performedActionIcon = exports.getTextarea = exports.getConfigHtml = exports.getOptionLabel = exports.getCategoryDiv = exports.getOptionBox = exports.getSectionWrapper = exports.getMessageDiv = exports.smokeyIcon = exports.guttenbergIcon = exports.nattyIcon = exports.getSentMessage = exports.parseDate = exports.qualifiesForVlq = exports.getFormDataFromObject = exports.getParamsFromObject = exports.displayError = exports.displaySuccess = exports.showInlineElement = exports.hideElement = exports.showElement = exports.getFlagsUrlRegex = exports.flagsUrlRegex = exports.isDeleteVoteRegex = exports.isReviewItemRegex = exports.attachHtmlPopover = exports.attachPopover = exports.displayStacksToast = exports.FlagTypesKey = exports.MetaSmokeDisabledConfig = exports.MetaSmokeUserKeyConfig = exports.CacheChatApiFkey = exports.ConfigurationAddAuthorName = exports.ConfigurationLinkDisabled = exports.ConfigurationEnabledFlags = exports.ConfigurationWatchQueues = exports.ConfigurationWatchFlags = exports.ConfigurationDefaultNoDownvote = exports.ConfigurationDefaultNoComment = exports.ConfigurationDefaultNoFlag = exports.ConfigurationOpenOnHover = exports.ConfigurationCacheKey = exports.flagPosts = exports.setBounties = exports.whyVote = exports.voteUpHelp = exports.reputationHelp = exports.commentHelp = exports.deletedAnswers = exports.gridCellDiv = exports.plainDiv = exports.isFlagsPage = exports.isQuestionPage = exports.isNatoPage = exports.isStackOverflow = exports.chatFailureMessage = exports.metasmokeFailureMessage = exports.metasmokeReportedMessage = exports.genericBotFailure = exports.settingUpBody = exports.settingUpTitle = exports.popupDelay = exports.dayMillis = exports.username = exports.nattyAllReportsUrl = exports.placeholderCopypastorLink = exports.placeholderTarget = exports.genericBotKey = exports.copyPastorServer = exports.copyPastorKey = exports.metasmokeApiFilter = exports.metaSmokeKey = exports.soboticsRoomId = void 0;
     // Constants
     exports.soboticsRoomId = 111347;
     exports.metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
@@ -822,15 +834,17 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     exports.setBounties = '/help/privileges/set-bounties';
     exports.flagPosts = '/help/privileges/flag-posts';
     // Cache keys
-    exports.ConfigurationOpenOnHover = 'AdvancedFlagging.Configuration.OpenOnHover';
-    exports.ConfigurationDefaultNoFlag = 'AdvancedFlagging.Configuration.DefaultNoFlag';
-    exports.ConfigurationDefaultNoComment = 'AdvancedFlagging.Configuration.DefaultNoComment';
-    exports.ConfigurationWatchFlags = 'AdvancedFlagging.Configuration.WatchFlags';
-    exports.ConfigurationWatchQueues = 'AdvancedFlagging.Configuration.WatchQueues';
-    exports.ConfigurationEnabledFlags = 'AdvancedFlagging.Configuration.EnabledFlags';
-    exports.ConfigurationLinkDisabled = 'AdvancedFlagging.Configuration.LinkDisabled';
-    exports.ConfigurationAddAuthorName = 'AdvancedFlagging.Comments.AddAuthorName';
-    exports.CacheChatApiFkey = 'StackExchange.ChatApi.FKey';
+    exports.ConfigurationCacheKey = 'Configuration';
+    exports.ConfigurationOpenOnHover = 'OpenOnHover';
+    exports.ConfigurationDefaultNoFlag = 'DefaultNoFlag';
+    exports.ConfigurationDefaultNoComment = 'DefaultNoComment';
+    exports.ConfigurationDefaultNoDownvote = 'DefaultNoDownvote';
+    exports.ConfigurationWatchFlags = 'WatchFlags';
+    exports.ConfigurationWatchQueues = 'WatchQueues';
+    exports.ConfigurationEnabledFlags = 'EnabledFlags';
+    exports.ConfigurationLinkDisabled = 'LinkDisabled';
+    exports.ConfigurationAddAuthorName = 'AddAuthorName';
+    exports.CacheChatApiFkey = 'fkey';
     exports.MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
     exports.MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
     exports.FlagTypesKey = 'FlagTypes';
@@ -879,6 +893,19 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     }, new FormData());
     exports.getFormDataFromObject = getFormDataFromObject;
     const getCopypastorLink = (postId) => `https://copypastor.sobotics.org/posts/${postId}`;
+    function qualifiesForVlq(postScore, creationDate) {
+        return postScore <= 0 && (new Date().valueOf() - creationDate.valueOf()) < exports.dayMillis;
+    }
+    exports.qualifiesForVlq = qualifiesForVlq;
+    function parseDate(dateStr) {
+        // Fix for safari
+        return dateStr ? new Date(dateStr.replace(' ', 'T')) : null;
+    }
+    exports.parseDate = parseDate;
+    function getSentMessage(success, feedback, bot) {
+        return success ? `Feedback ${feedback} sent to ${bot}` : `Failed to send feedback ${feedback} to ${bot}`;
+    }
+    exports.getSentMessage = getSentMessage;
     // jQuery icon elements
     const sampleIcon = exports.gridCellDiv.clone().addClass(`d-none ${exports.isFlagsPage ? ' ml8' : ''}`)
         .append($('<a>').addClass('s-avatar s-avatar__16 s-user-card--avatar').append($('<img>').addClass('s-avatar--image')));
@@ -891,7 +918,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     const getSectionWrapper = (name) => $('<fieldset>').html(`<h2 class="grid--cell">${name}</h2>`)
         .addClass(`grid gs8 gsy fd-column af-section-${name.toLowerCase()}`);
     exports.getSectionWrapper = getSectionWrapper;
-    const getOptionBox = (name) => $('<input>').attr('type', 'checkbox').attr('name', name).attr('id', name).attr('class', 's-checkbox');
+    const getOptionBox = (name) => $('<input>').attr('type', 'checkbox').attr('name', name).attr('id', name).addClass('s-checkbox');
     exports.getOptionBox = getOptionBox;
     const getCategoryDiv = (red) => $('<div>').attr('class', `advanced-flagging-category bar-md${red ? ' bg-red-200' : ''}`);
     exports.getCategoryDiv = getCategoryDiv;
@@ -1041,9 +1068,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }).filter(String); // remove null/empty values
     }
     exports.getAllPostIds = getAllPostIds;
+    // cache-related helpers
+    exports.cachedConfigurationInfo = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationCacheKey) || {};
+    const updateConfiguration = () => GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(exports.ConfigurationCacheKey, exports.cachedConfigurationInfo);
+    exports.updateConfiguration = updateConfiguration;
     // For GetComment() on FlagTypes. Adds the author name before the comment if the option is enabled
     function getFullComment(flagId, { AuthorName }, level) {
-        const shouldAddAuthorName = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.ConfigurationAddAuthorName);
+        const shouldAddAuthorName = exports.cachedConfigurationInfo?.AddAuthorName;
         const flagType = getFlagTypeFromCache(flagId);
         const comment = flagType?.Comments[level || 'Low'];
         return (comment && shouldAddAuthorName ? `${AuthorName}, ${comment[0].toLowerCase()}${comment.slice(1)}` : comment) || '';
@@ -1058,19 +1089,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         return flagContent.replace(exports.placeholderTarget, target).replace(exports.placeholderCopypastorLink, getCopypastorLink(postId));
     }
     exports.getFullFlag = getFullFlag;
-    function qualifiesForVlq(postScore, creationDate) {
-        return postScore <= 0 && (new Date().valueOf() - creationDate.valueOf()) < exports.dayMillis;
-    }
-    exports.qualifiesForVlq = qualifiesForVlq;
-    function parseDate(dateStr) {
-        // Fix for safari
-        return dateStr ? new Date(dateStr.replace(' ', 'T')) : null;
-    }
-    exports.parseDate = parseDate;
-    function getSentMessage(success, feedback, bot) {
-        return success ? `Feedback ${feedback} sent to ${bot}` : `Failed to send feedback ${feedback} to ${bot}`;
-    }
-    exports.getSentMessage = getSentMessage;
     function getFlagTypeFromCache(flagId) {
         return GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(exports.FlagTypesKey)?.find(flagType => flagType.Id === flagId) || null;
     }
@@ -1820,7 +1838,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     "use strict";
     Object.defineProperty(exports, "__esModule", ({ value: true }));
     exports.SetupConfiguration = void 0;
-    const enabledFlags = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.ConfigurationEnabledFlags);
+    const getEnabledFlags = () => globals.cachedConfigurationInfo?.EnabledFlags;
     const flagTypes = FlagTypes_1.flagCategories.flatMap(category => category.FlagTypes);
     const flagNames = [...new Set(flagTypes.map(flagType => flagType.DefaultReportType))];
     const optionTypes = flagNames.filter(item => !/Post(?:Other|Offensive|Spam)/.exec(item));
@@ -1844,17 +1862,22 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         const bottomBox = $('.site-footer--copyright').children('.-list');
         const configurationDiv = globals.configurationDiv.clone(), commentsDiv = globals.commentsDiv.clone();
         const configurationLink = globals.configurationLink.clone(), commentsLink = globals.commentsLink.clone();
-        $(document).on('click', '#af-modal-button', () => StackExchange.helpers.showModal(document.querySelector('#af-config')));
-        $(document).on('click', '#af-comments-button', () => StackExchange.helpers.showModal(document.querySelector('#af-comments')));
+        $(document).on('click', '#af-modal-button', () => Stacks.showModal(document.querySelector('#af-config')));
+        $(document).on('click', '#af-comments-button', () => Stacks.showModal(document.querySelector('#af-comments')));
         commentsDiv.append(commentsLink).insertAfter(bottomBox);
         configurationDiv.append(configurationLink).insertAfter(bottomBox);
+        if (!Object.prototype.hasOwnProperty.call(globals.cachedConfigurationInfo, globals.ConfigurationAddAuthorName)) {
+            globals.displayStacksToast('Please set up AdvancedFlagging before continuing.', 'info');
+            StackExchange.helpers.showModal(document.querySelector('#af-config'));
+        }
     }
     exports.SetupConfiguration = SetupConfiguration;
     function SetupDefaults() {
         // store all flags if they don't exist
-        if (!enabledFlags) {
+        if (!getEnabledFlags()) {
             const flagTypeIds = flagTypes.map(flag => flag.Id);
-            GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagTypeIds);
+            globals.cachedConfigurationInfo[globals.ConfigurationEnabledFlags] = flagTypeIds;
+            globals.updateConfiguration();
         }
         const cachedFlagTypes = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(globals.FlagTypesKey);
         // in case we add a new flag type, make sure it will be automatically be saved (compare types)
@@ -1889,7 +1912,8 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 onSave: () => {
                     // find the option id (it's the data-option-id attribute) and store whether the box is checked or not
                     $('.af-section-general').find('input').each((_index, el) => {
-                        GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache($(el).parents().eq(2).data('option-id'), $(el).prop('checked'));
+                        const optionId = $(el).parents().eq(2).data('option-id');
+                        globals.cachedConfigurationInfo[optionId] = Boolean($(el).prop('checked'));
                     });
                 }
             },
@@ -1899,12 +1923,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 onSave: () => {
                     // collect all flag ids (flag-type-ID) and store them
                     const flagOptions = $('.af-section-flags').find('input').get()
-                        .filter(el => $(el).prop('checked'))
-                        .map(el => {
-                        const postId = $(el).attr('id');
-                        return postId ? Number(/\d+/.exec(postId)) : 0;
-                    }).sort((a, b) => a - b); // sort the ids before storing them
-                    GreaseMonkeyCache_1.GreaseMonkeyCache.StoreInCache(globals.ConfigurationEnabledFlags, flagOptions);
+                        .filter(el => $(el).prop('checked')).map(el => Number(/\d+/.exec(el.id || '')) || 0)
+                        .sort((a, b) => a - b); // sort the ids before storing them
+                    globals.cachedConfigurationInfo[globals.ConfigurationEnabledFlags] = flagOptions;
                 }
             },
             {
@@ -1922,9 +1943,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             overlayModal.find('#af-modal-description').append(sectionWrapper);
             section.Items.forEach((element) => sectionWrapper.append(element));
         });
+        // event listener for "Save changes" button click
         overlayModal.find('.s-btn__primary').on('click', event => {
             event.preventDefault();
             sections.forEach(section => section.onSave?.());
+            globals.updateConfiguration();
             globals.displayStacksToast('Configuration saved', 'success');
             setTimeout(() => window.location.reload(), 500);
         });
@@ -1963,16 +1986,21 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 configValue: globals.ConfigurationDefaultNoFlag
             },
             {
+                text: 'Uncheck \'Downvote\' by default',
+                configValue: globals.ConfigurationDefaultNoDownvote
+            },
+            {
                 text: 'Add author\'s name before comments',
                 configValue: globals.ConfigurationAddAuthorName
             }
         ].map(item => {
-            const storedValue = GreaseMonkeyCache_1.GreaseMonkeyCache.GetFromCache(item.configValue);
-            return createCheckbox(item.text, storedValue).attr('data-option-id', item.configValue);
+            const storedValue = globals.cachedConfigurationInfo?.[item.configValue];
+            return createCheckbox(item.text, Boolean(storedValue)).attr('data-option-id', item.configValue);
         });
     }
     function GetFlagSettings() {
         const checkboxes = [];
+        const enabledFlags = getEnabledFlags();
         if (!enabledFlags)
             return checkboxes;
         flagTypes.forEach(flag => {

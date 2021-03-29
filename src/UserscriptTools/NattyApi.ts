@@ -61,9 +61,9 @@ export class NattyAPI {
         } else {
             const answerAge = this.DaysBetween(this.answerDate, new Date());
             const daysPostedAfterQuestion = this.DaysBetween(this.questionDate, this.answerDate);
-            if (isNaN(answerAge) || isNaN(daysPostedAfterQuestion) || answerAge > 30 || daysPostedAfterQuestion < 30) return '';
+            if (answerAge > 30 || daysPostedAfterQuestion < 30) return '';
 
-            return isNaN(answerAge + daysPostedAfterQuestion) ? await this.chat.SendMessage(this.reportMessage, this.name) : '';
+            return await this.chat.SendMessage(this.reportMessage, this.name);
         }
     }
 

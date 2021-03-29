@@ -182,7 +182,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         const isReported = nattyApi.WasReported();
         if (nattyIcon && isReported) {
             globals.showInlineElement(nattyIcon);
-            nattyIcon.attr('href', `//sentinel.erwaysoftware.com/posts/aid/${postId}`).attr('target', '_blank');
+            nattyIcon.find('a').attr('href', `//sentinel.erwaysoftware.com/posts/aid/${postId}`).attr('target', '_blank');
         }
         return nattyApi;
     }
@@ -192,7 +192,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     function setupMetasmokeApi(postId, postType, smokeyIcon) {
         const smokeyId = MetaSmokeAPI_1.MetaSmokeAPI.getSmokeyId(postId);
         if (smokeyId) {
-            smokeyIcon.attr('href', `https://metasmoke.erwaysoftware.com/post/${smokeyId}`).attr('target', '_blank');
+            smokeyIcon.find('a').attr('href', `https://metasmoke.erwaysoftware.com/post/${smokeyId}`).attr('target', '_blank');
             globals.showInlineElement(smokeyIcon);
         }
         return new MetaSmokeAPI_1.MetaSmokeAPI(postId, postType);
@@ -201,7 +201,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         const copypastorId = copyPastorApi.getCopyPastorId();
         if (copypastorId) {
             globals.showInlineElement(copyPastorIcon);
-            copyPastorIcon.attr('href', `https://copypastor.sobotics.org/posts/${copypastorId}`).attr('target', '_blank');
+            copyPastorIcon.find('a').attr('href', `https://copypastor.sobotics.org/posts/${copypastorId}`).attr('target', '_blank');
         }
         return copyPastorApi;
     }

@@ -166,7 +166,7 @@ function setupNattyApi(postId: number, questionTime?: Date | null, answerTime?: 
     const isReported = nattyApi.WasReported();
     if (nattyIcon && isReported) {
         globals.showInlineElement(nattyIcon);
-        nattyIcon.attr('href', `//sentinel.erwaysoftware.com/posts/aid/${postId}`).attr('target', '_blank');
+        nattyIcon.find('a').attr('href', `//sentinel.erwaysoftware.com/posts/aid/${postId}`).attr('target', '_blank');
     }
 
     return nattyApi;
@@ -179,7 +179,7 @@ function setupGenericBotApi(postId: number): GenericBotAPI {
 function setupMetasmokeApi(postId: number, postType: 'Answer' | 'Question', smokeyIcon: JQuery): MetaSmokeAPI {
     const smokeyId = MetaSmokeAPI.getSmokeyId(postId);
     if (smokeyId) {
-        smokeyIcon.attr('href', `https://metasmoke.erwaysoftware.com/post/${smokeyId}`).attr('target', '_blank');
+        smokeyIcon.find('a').attr('href', `https://metasmoke.erwaysoftware.com/post/${smokeyId}`).attr('target', '_blank');
         globals.showInlineElement(smokeyIcon);
     }
 
@@ -190,7 +190,7 @@ function setupGuttenbergApi(copyPastorApi: CopyPastorAPI, copyPastorIcon: JQuery
     const copypastorId = copyPastorApi.getCopyPastorId();
     if (copypastorId) {
         globals.showInlineElement(copyPastorIcon);
-        copyPastorIcon.attr('href', `https://copypastor.sobotics.org/posts/${copypastorId}`).attr('target', '_blank');
+        copyPastorIcon.find('a').attr('href', `https://copypastor.sobotics.org/posts/${copypastorId}`).attr('target', '_blank');
     }
 
     return copyPastorApi;

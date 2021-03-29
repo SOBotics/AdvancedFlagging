@@ -1,5 +1,5 @@
-import { GreaseMonkeyCache } from '@userscriptTools/GreaseMonkeyCache';
-import { StackExchange, CacheChatApiFkey, soboticsRoomId, getSentMessage, chatFailureMessage } from 'GlobalVars';
+import { GreaseMonkeyCache } from './GreaseMonkeyCache';
+import { StackExchange, CacheChatApiFkey, soboticsRoomId, getSentMessage, chatFailureMessage } from '../GlobalVars';
 
 declare const StackExchange: StackExchange;
 

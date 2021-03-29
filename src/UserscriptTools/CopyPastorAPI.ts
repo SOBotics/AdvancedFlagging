@@ -1,5 +1,5 @@
-import { ChatApi } from '@userscriptTools/ChatApi';
-import { isStackOverflow, getAllPostIds, copyPastorServer, username, copyPastorKey, getSentMessage } from 'GlobalVars';
+import { ChatApi } from './ChatApi';
+import { isStackOverflow, getAllPostIds, copyPastorServer, username, copyPastorKey, getSentMessage } from '../GlobalVars';
 
 export interface CopyPastorFindTargetResponseItem {
     post_id: string;

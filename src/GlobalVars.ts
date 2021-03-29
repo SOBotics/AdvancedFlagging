@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { GreaseMonkeyCache } from '@userscriptTools/GreaseMonkeyCache';
-import { UserDetails, Flags } from 'FlagTypes';
+import { GreaseMonkeyCache } from './UserscriptTools/GreaseMonkeyCache';
+import { UserDetails, Flags } from './FlagTypes';
 import { displayToaster } from './AdvancedFlagging';
 
 declare const StackExchange: StackExchange;

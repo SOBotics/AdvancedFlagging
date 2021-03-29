@@ -1,4 +1,4 @@
-import { isFlagsPage, isQuestionPage, isNatoPage, parseDate } from 'GlobalVars';
+import { isFlagsPage, isQuestionPage, isNatoPage, parseDate } from '../GlobalVars';
 
 export type QuestionPageInfo = QuestionQuestion | QuestionAnswer;
 type PostInfo = NatoAnswer | QuestionPageInfo | FlagPageInfo;

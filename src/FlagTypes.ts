@@ -1,5 +1,5 @@
-import * as globals from 'GlobalVars';
-import { Reporter } from 'AdvancedFlagging';
+import * as globals from './GlobalVars';
+import { Reporter } from './AdvancedFlagging';
 
 export type Flags = 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther' | 'PostLowQuality';
 

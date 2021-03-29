@@ -1,4 +1,3 @@
-const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const path = require('path');
 const webpack = require('webpack'); // for the banner plugin
 const userscriptInfo = require('./package.json');
@@ -12,8 +11,7 @@ module.exports = {
     },
     resolve: {
         // Add '.ts' and '.tsx' as a resolvable extension.
-        extensions: ['.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
-        plugins: [ new TsconfigPathsPlugin() ]
+        extensions: ['.webpack.js', '.web.js', '.ts', '.tsx', '.js']
     },
     plugins: [
         new webpack.BannerPlugin({

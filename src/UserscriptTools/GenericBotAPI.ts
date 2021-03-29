@@ -1,4 +1,4 @@
-import { isStackOverflow, username, genericBotKey, getSentMessage, genericBotFailure } from 'GlobalVars';
+import { isStackOverflow, username, genericBotKey, getSentMessage, genericBotFailure } from '../GlobalVars';
 
 export class GenericBotAPI {
     private answerId: number;

@@ -1,5 +1,5 @@
-import { ChatApi } from '@userscriptTools/ChatApi';
-import { isStackOverflow, nattyAllReportsUrl, getAllPostIds, dayMillis } from 'GlobalVars';
+import { ChatApi } from './ChatApi';
+import { isStackOverflow, nattyAllReportsUrl, getAllPostIds, dayMillis } from '../GlobalVars';
 
 interface NattyFeedback {
     items: NattyFeedbackItem[];

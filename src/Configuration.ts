@@ -1,6 +1,6 @@
-import { MetaSmokeAPI} from '@userscriptTools/MetaSmokeAPI';
-import { flagCategories, Flags } from 'FlagTypes';
-import { GreaseMonkeyCache } from '@userscriptTools/GreaseMonkeyCache';
+import { MetaSmokeAPI} from './UserscriptTools/MetaSmokeAPI';
+import { flagCategories, Flags } from './FlagTypes';
+import { GreaseMonkeyCache } from './UserscriptTools/GreaseMonkeyCache';
 import * as globals from './GlobalVars';
 
 declare const Svg: globals.Svg;

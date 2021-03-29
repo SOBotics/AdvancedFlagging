@@ -18,9 +18,6 @@
       "es2020",
       "DOM"
     ],
-    "baseUrl": "src",
-    "paths": {
-      "@userscriptTools/*": ["Libs/UserScriptTools/*"]
-    }
+    "baseUrl": "src"
   }
 }

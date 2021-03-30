@@ -2,15 +2,14 @@
 
 ![build](https://github.com/SOBotics/AdvancedFlagging/workflows/build/badge.svg?branch=master)
 
-AdvancedFlagging started as a set of modular typescript tools to aid with StackExchange UserScripts. It has support for:
+AdvancedFlagging started as a set of modular TypeScript tools to aid with StackExchange Userscripts. It has support for:
 
-- Smokey / MetaSmoke
-- Natty / Sentinel
+- SmokeDetector/MetaSmoke
+- Natty/Sentinel
 - GenericBot
-- Guttenberg / CopyPastor
+- Guttenberg/CopyPastor
 - Chat
 - Stack Exchange API
-- Cross domain caching
 
 # Credits
 
@@ -18,16 +17,11 @@ This code uses different bits and pieces from the following sources:
 
 - [Natty Reporter](https://github.com/SOBotics/Userscripts/blob/master/Natty/NattyReporter.user.js)
 - [Flag Dialog Smokey Controls](https://github.com/Charcoal-SE/userscripts/blob/master/fdsc/fdsc.user.js)
-- [Generic Bot (Userscript)](https://stackapps.com/questions/7337/generic-bot-a-moderation-chatbot)
+- [Generic Bot (Userscript)](https://stackapps.com/questions/7337)
 
 # Installation
 
-Click one of the following links to install it via your favourite userscript tool:  
-
-- [Minified](https://raw.githubusercontent.com/SOBotics/AdvancedFlagging/master/dist/AdvancedFlagging.min.user.js)  
-- [Original](https://raw.githubusercontent.com/SOBotics/AdvancedFlagging/master/dist/AdvancedFlagging.user.js)
-
-Currently, only TamperMonkey is officially supported
+Click [this](https://raw.githubusercontent.com/SOBotics/AdvancedFlagging/master/dist/AdvancedFlagging.user.js) link to install the userscript via your favourite userscript manager. Currently, only TamperMonkey is officially supported
 
 # What does it do?
 
@@ -35,25 +29,29 @@ AdvancedFlagging adds icons from Smokey, Natty and Guttenberg to posts which hav
 
 # Interface
 
-The interface looks like this:  
-![Picture of the interface](https://i.stack.imgur.com/Vb86O.png)
+![Picture of the interface](https://i.stack.imgur.com/4x1eQ.png)
 
-'Leave Comment' is ticked by default if there are no comments beneath the post to avoid comment spam. This is only available on Stack Overflow.
+- 'Leave Comment' is ticked by default if there are no comments beneath the post to avoid comment spam or if you have chosen otherwise. This is only available on Stack Overflow.
 
-'Flag' is always ticked by default. Unticking this box will *not* flag the post. Feedback to all sources will, however, still be sent.
+- 'Flag' is always ticked by default unless you choose otherwise. Unticking this box will *not* flag the post. Feedback to all sources will, however, still be sent.
 
-'Looks Fine' reports a false positive to both Smokey, Natty and Guttenberg if they reported the post. 'Needs editing' reports to Natty if it was reported, and false positive to Smokey.
+- 'Downvote' is always ticked by default unless you choose otherwise. It downvotes a post if you've also selected an option that by default flags the post
 
-These options add an additional icon to the post:
+For every feedback that is sent to a bot a banner informs the user if it was sent successfully or if there was an error. A tick, check or flag is appended to the post menu, too. For example:
 
-![Picture of green tick](https://i.stack.imgur.com/atJZd.png)
+[![Post flagged](https://i.stack.imgur.com/Pk2QJ.png)](https://i.stack.imgur.com/Pk2QJ.png)
 
-To indicate that the feedback was sent. All feedback sent provides a banner notification (see above) to confirm it was successfully sent.
+[![Feedback sent, but post not flagged](https://i.stack.imgur.com/FdFmc.png)](https://i.stack.imgur.com/FdFmc.png)
 
-## Report icons
-Posts reported by each source will have an icon appended to the post. For example, here, Natty reported a post, and we've flagged it.  
+[![Oops, failed to send feedback](https://i.stack.imgur.com/5lIVS.png)](https://i.stack.imgur.com/5lIVS.png)
 
-![Natty reported and flagged](https://i.stack.imgur.com/oVSWZ.png)
+There's also support for the flags summary page:
+
+[![AdvancedFlagging in flags summary](https://i.stack.imgur.com/9AioH.png)](https://i.stack.imgur.com/9AioH.png)
+
+The userscript is (should) be dark mode compatible and fully responsive.
+
+## Bot icons
 
 ### Smokey
 ![Smokey Icon](https://i.stack.imgur.com/7cmCt.png?s=128&g=1)
@@ -70,7 +68,7 @@ Posts reported by each source will have an icon appended to the post. For exampl
 
 ### Guttenberg reports
 
-When Guttenberg has detected a post, two additional options appear in the dropdown:
+When Guttenberg has detected a post, two of the three additional options below appear in the dropdown:
 
 ![Dropdown with Guttenberg](https://i.stack.imgur.com/I4953.png)
 
@@ -78,9 +76,9 @@ These links will raise the following custom flags:
 
 - Plagiarism 
 
-  > Possible plagiarism of another answer [first linked question], as can be seen here [first Guttenberg report]
+  > Possible plagiarism of another answer [first linked question], as can be seen here [link to CopyPastor report]
 
-  No comment will be left for the OP
+  No comment will be left.
 
 - Duplicate answer
 
@@ -88,54 +86,77 @@ These links will raise the following custom flags:
 
   The following comment will also be left:
 
-  > Please don't add the [same answer to multiple questions](http://meta.stackexchange.com/questions/104227/is-it-acceptable-to-add-a-duplicate-answer-to-several-questions). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.
+  > Please don't add the [same answer to multiple questions](//meta.stackexchange.com/q/104227). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.
+
+- Bad attribution
+
+  > This post is copied from [another answer](link_to_other_answer), as can be seen here [link to CopyPastor]. The author only added a link to the other answer, which is [not the proper way of attribution](//stackoverflow.blog/2009/06/25/attribution-required).
+
+  No comment will be left.
 
 'Looks fine', 'Needs editing', 'Vandalism' and any NAA response will register as a false positive to Guttenberg.
 
-# Configuration
+# Changing AdvancedFlagging defaults
 
-AdvancedFlagging has a link to its configuration panel found at the bottom of StackExchange pages:
+AdvancedFlagging allows you to both edit any comments you choose to leave or flags you choose to raise and configure it so that it's more convenient to use.
+
+## Configuration
+
+The link to configure AdvancedFlagging is at the footer of each StackExchange site.
 
 ![Picture of link to configuration](https://i.stack.imgur.com/kTim6.png)
 
 Clicking it opens the following modal box:
 
-![Picture of configuration box](https://i.stack.imgur.com/i6N6L.png)
+[![Picture of configuration box](https://i.stack.imgur.com/i6N6L.png)](https://i.stack.imgur.com/0ns5M.png)
 
-## General
+### General
 
-### Watch for manual flags
+- Open dropdown on hover: open the dropdown when you hover over the 'AdvancedFlagging' link.
+- Watch for manual flags: send feedback to bots when you manually flag the post.
+- Watch for queue responses: send feedback to bots when you choose the 'Recommend Deletion' option in the Low Quality Posts Queue.
+- Disable AdvancedFlagging link: stops displaying the AdvancedFlagging button in the post menu.
+- Uncheck Leave comment/Flag/Downvote by default: don't check the respective checkbox by default
 
-Manual flags will be watched, and feedback will be sent (where applicable).
+### Flags
 
-### Watch for queue responses
+Choose which options should appear in the AdvancedFlagging dropdown.
 
-Responses in the Low Quality Posts queue will be watched, and feedback will be sent (where applicable)
+### Admin
 
-## Flags
+- Clear Metasmoke configuration: removes your metasmoke's access token from AdvancedFlagging
+- Clear chat fkey: removes the chat fkey. It will be re-retrieved the next time you send feedback to Natty.
 
-Here, you can choose which flag options are present in the dropdown. This allows us to create far more options for flagging, without cluttering up the page for users who aren't interested in using them.
+## Comments and flags
 
-## Admin
+The link to change the content of the comments and flags is in the footer of each StackExchange site as well:
 
-### Clear MetaSmoke Configuration
+[![Picture of the comments and flags link](https://i.stack.imgur.com/i1xpO.png)](https://i.stack.imgur.com/i1xpO.png)
 
-Resets all MetaSmoke configuration, including tokens
+It opens the following modal:
 
-### Clear chat FKey
+[![](https://i.stack.imgur.com/5sdgM.png)](https://i.stack.imgur.com/5sdgM.png)
 
-Removes the chat fkey token from cache. It will be regenerated next time feedback is sent in chat.
+Click 'Edit' to start editing a flag type, 'Hide' if you did not make any changes or 'Save' when you're done.
+
+- The textarea is the content of the comment/flag.
+- The `<select>` right below is the type of flag that should be raised when this comment is left (if you've ticked the 'Flag' checkbox).
+  - `PostLowQuality` is the VLQ flag.
+  - `AnswerNotAnAnswer` is the NAA flag.
+  - `NoFlag` doesn't raise a flag.
 
 # Building
 
-## Prerequisites
+Install the dependencies with:
 
-    npm install -g concat-cli
-    npm install -g typescript
-    
-## Building
+    npm install
+
+Then compile the code with:
 
     npm run build
     
-The distributable file is found under `/dist/AdvancedFlagging.user.js` or `/dist/AdvancedFlagging.min.user.js` and can be pasted directly into tamper monkey.
+The distributable file is found under `/dist/AdvancedFlagging.user.js` and can be pasted directly into the userscript manager.
 
+# Bugs/Feature requests
+
+For bugs or feature requests, please open [an issue on GitHub](https://github.com/SOBotics/AdvancedFlagging/issues/new).

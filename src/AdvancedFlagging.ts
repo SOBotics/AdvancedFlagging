@@ -161,7 +161,7 @@ function showComments(postId: number, data: string): void {
     $(document).trigger('comment', postId);
 }
 
-function setupNattyApi(postId: number, questionTime?: Date | null, answerTime?: Date | null, nattyIcon?: JQuery): NattyAPI {
+function setupNattyApi(postId: number, questionTime: Date | null, answerTime: Date | null, nattyIcon?: JQuery): NattyAPI {
     const nattyApi = new NattyAPI(postId, questionTime || new Date(), answerTime || new Date());
     const isReported = nattyApi.WasReported();
     if (nattyIcon && isReported) {
@@ -355,8 +355,8 @@ function SetupPostPage(): void {
     parseQuestionsAndAnswers(post => {
         if (!post.element.length) return;
 
-        const questionTime: Date | null = post.type === 'Answer' ? post.questionTime : post.creationDate;
-        const answerTime: Date | null = post.type === 'Answer' ? post.creationDate : null;
+        const questionTime = post.type === 'Answer' ? post.questionTime : post.creationDate;
+        const answerTime = post.type === 'Answer' ? post.creationDate : null;
         const iconLocation: JQuery = post.page === 'Question'
             ? post.element.find('.js-post-menu').children().first()
             : post.element.find(`a.${post.type === 'Question' ? 'question' : 'answer'}-hyperlink`);
@@ -483,36 +483,17 @@ function Setup(): void {
         }
 
         const matches = globals.isDeleteVoteRegex.exec(xhr.responseURL);
-        if (!matches) return;
+        if (!matches || !$('#answer').length) return;
 
         const postIdStr = matches[1] || matches[2];
         const postId = Number(postIdStr);
         const currentPostDetails = postDetails[postId];
-        if (!currentPostDetails || !$('.answers-subheader').length) return;
+        if (!currentPostDetails) return;
 
         const flagType = flagCategories[2].FlagTypes[1]; // the not an answer flag type
-        void handleFlag(flagType, [setupNattyApi(postId)]);
+        const reportersArray = [setupNattyApi(postId, currentPostDetails.questionTime, currentPostDetails.answerTime)];
+        void handleFlag(flagType, reportersArray);
     });
 }
 
-$(() => {
-    let started = false;
-    function actionWatcher(): void {
-        if (!started) {
-            started = true;
-            Setup();
-        }
-        $(window).off('focus', actionWatcher);
-        $(window).off('mousemove', actionWatcher);
-    }
-
-    // If the window gains focus
-    $(window).on('focus', actionWatcher);
-    // Or we have mouse movement
-    $(window).on('mousemove', actionWatcher);
-
-    // Or the document is already focused,
-    // Then we execute the script.
-    // This is done to prevent DOSing dashboard apis, if a bunch of links are opened at once.
-    if (document.hasFocus?.()) actionWatcher();
-});
+Setup();

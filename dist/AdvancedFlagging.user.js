@@ -441,37 +441,19 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return;
             }
             const matches = globals.isDeleteVoteRegex.exec(xhr.responseURL);
-            if (!matches)
+            if (!matches || !$('#answer').length)
                 return;
             const postIdStr = matches[1] || matches[2];
             const postId = Number(postIdStr);
             const currentPostDetails = postDetails[postId];
-            if (!currentPostDetails || !$('.answers-subheader').length)
+            if (!currentPostDetails)
                 return;
             const flagType = FlagTypes_1.flagCategories[2].FlagTypes[1]; // the not an answer flag type
-            void handleFlag(flagType, [setupNattyApi(postId)]);
+            const reportersArray = [setupNattyApi(postId, currentPostDetails.questionTime, currentPostDetails.answerTime)];
+            void handleFlag(flagType, reportersArray);
         });
     }
-    $(() => {
-        let started = false;
-        function actionWatcher() {
-            if (!started) {
-                started = true;
-                Setup();
-            }
-            $(window).off('focus', actionWatcher);
-            $(window).off('mousemove', actionWatcher);
-        }
-        // If the window gains focus
-        $(window).on('focus', actionWatcher);
-        // Or we have mouse movement
-        $(window).on('mousemove', actionWatcher);
-        // Or the document is already focused,
-        // Then we execute the script.
-        // This is done to prevent DOSing dashboard apis, if a bunch of links are opened at once.
-        if (document.hasFocus?.())
-            actionWatcher();
-    });
+    Setup();
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
@@ -1366,9 +1348,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         if (response.status !== 200)
                             reject();
                         const result = JSON.parse(response.responseText);
-                        const allStoredIds = result.items.map(item => Number(item.name));
-                        const answerIds = GlobalVars_1.getAllPostIds(false, false);
-                        this.nattyIds = answerIds.filter(id => allStoredIds.includes(id));
+                        this.nattyIds = result.items.map(item => Number(item.name));
                         resolve();
                     },
                     onerror: () => reject()
@@ -1387,9 +1367,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             else {
                 const answerAge = this.DaysBetween(this.answerDate, new Date());
                 const daysPostedAfterQuestion = this.DaysBetween(this.questionDate, this.answerDate);
-                if (isNaN(answerAge) || isNaN(daysPostedAfterQuestion) || answerAge > 30 || daysPostedAfterQuestion < 30)
+                if (answerAge > 30 || daysPostedAfterQuestion < 30)
                     return '';
-                return isNaN(answerAge + daysPostedAfterQuestion) ? await this.chat.SendMessage(this.reportMessage, this.name) : '';
+                await this.chat.SendMessage(this.reportMessage, this.name);
+                return 'Post reported to Natty';
             }
         }
         async ReportRedFlag() {

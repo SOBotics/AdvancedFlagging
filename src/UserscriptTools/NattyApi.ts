@@ -1,5 +1,5 @@
 import { ChatApi } from './ChatApi';
-import { isStackOverflow, nattyAllReportsUrl, getAllPostIds, dayMillis } from '../GlobalVars';
+import { isStackOverflow, nattyAllReportsUrl, dayMillis } from '../GlobalVars';
 
 interface NattyFeedback {
     items: NattyFeedbackItem[];
@@ -39,9 +39,7 @@ export class NattyAPI {
                     if (response.status !== 200) reject();
 
                     const result = JSON.parse(response.responseText) as NattyFeedback;
-                    const allStoredIds = result.items.map(item => Number(item.name));
-                    const answerIds = getAllPostIds(false, false) as number[];
-                    this.nattyIds = answerIds.filter(id => allStoredIds.includes(id));
+                    this.nattyIds = result.items.map(item => Number(item.name));
                     resolve();
                 },
                 onerror: () => reject()
@@ -63,7 +61,8 @@ export class NattyAPI {
             const daysPostedAfterQuestion = this.DaysBetween(this.questionDate, this.answerDate);
             if (answerAge > 30 || daysPostedAfterQuestion < 30) return '';
 
-            return await this.chat.SendMessage(this.reportMessage, this.name);
+            await this.chat.SendMessage(this.reportMessage, this.name);
+            return 'Post reported to Natty';
         }
     }
 

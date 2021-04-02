@@ -302,8 +302,15 @@ function SetupCommentsAndFlagsModal(): void {
         const element = $(event.target);
         const newReportType = element.val() as string;
         const flagId = Number(element.parents('.s-sidebarwidget').attr('data-flag-id'));
-        globals.savePropertyToCache(flagId, 'ReportType', newReportType);
-        globals.displayStacksToast('Successfully changed the report flag type.', 'success');
+        const currentFlagType = globals.getFlagTypeFromCache(flagId);
+        if (!currentFlagType) {
+            globals.displayStacksToast('Failed to change the report flag type', 'danger');
+            return;
+        }
+
+        currentFlagType.ReportType = newReportType;
+        globals.updateFlagTypes();
+        globals.displayStacksToast('Successfully changed the report flag type', 'success');
     }).on('click', '.af-submit-content', event => {
         const element = $(event.target);
         const expandable = element.next().next();
@@ -313,12 +320,18 @@ function SetupCommentsAndFlagsModal(): void {
             return;
         }
 
+        const currentFlagType = globals.getFlagTypeFromCache(flagId);
         const flagContent = expandable.find('.af-flag-content').val() as string || '';
         const commentLowRep = expandable.find('.af-lowrep').val() as string || '';
         const commentHighRep = expandable.find('.af-highrep').val() as string || '';
+        if (!currentFlagType) {
+            globals.displayStacksToast('Failed to save options', 'danger');
+            return;
+        }
 
-        if (flagContent) globals.savePropertyToCache(flagId, 'FlagText', flagContent);
-        else globals.saveCommentsToCache(flagId, { Low: commentLowRep, High: commentHighRep });
+        if (flagContent) currentFlagType.FlagText = flagContent;
+        else currentFlagType.Comments = { Low: commentLowRep, High: commentHighRep };
+        globals.updateFlagTypes();
 
         globals.displayStacksToast('Content saved successfully', 'success');
         element.prev().trigger('click'); // hide the textarea

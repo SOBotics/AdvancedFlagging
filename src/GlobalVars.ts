@@ -7,7 +7,6 @@ declare const StackExchange: StackExchange;
 declare const Svg: Svg;
 declare const Stacks: Stacks;
 
-type CacheKeys = 'FlagText' | 'ReportType';
 type StacksToastState = 'success' | 'danger' | 'info';
 export interface CachedFlag {
     Id: number;
@@ -330,6 +329,8 @@ export function getAllPostIds(includeQuestion: boolean, urlForm: boolean): (numb
 // cache-related helpers
 export const cachedConfigurationInfo = GreaseMonkeyCache.GetFromCache<CachedConfiguration>(ConfigurationCacheKey) || {} as CachedConfiguration;
 export const updateConfiguration = (): void => GreaseMonkeyCache.StoreInCache(ConfigurationCacheKey, cachedConfigurationInfo);
+export const cachedFlagTypes = GreaseMonkeyCache.GetFromCache<CachedFlag[]>(FlagTypesKey) || [];
+export const updateFlagTypes = (): void => GreaseMonkeyCache.StoreInCache(FlagTypesKey, cachedFlagTypes);
 
 // For GetComment() on FlagTypes. Adds the author name before the comment if the option is enabled
 export function getFullComment(flagId: number, { AuthorName }: UserDetails, level?: 'Low' | 'High'): string {
@@ -348,40 +349,19 @@ export function getFullFlag(flagId: number, target: string, postId: number): str
 }
 
 export function getFlagTypeFromCache(flagId: number): CachedFlag | null {
-    return GreaseMonkeyCache.GetFromCache<CachedFlag[]>(FlagTypesKey)?.find(flagType => flagType.Id === flagId) || null;
+    return cachedFlagTypes?.find(flagType => flagType.Id === flagId) || null;
 }
 
 export function getReportType(flagId: number): Flags {
-    const flagTypes = GreaseMonkeyCache.GetFromCache<CachedFlag[]>(FlagTypesKey);
-    return flagTypes?.find(flagType => flagType.Id === flagId)?.ReportType as Flags || '';
+    return cachedFlagTypes?.find(flagType => flagType.Id === flagId)?.ReportType as Flags || '';
 }
 
 export function getFlagText(flagId: number): string {
-    const flagTypes = GreaseMonkeyCache.GetFromCache<CachedFlag[]>(FlagTypesKey);
-    return flagTypes?.find(flagType => flagType.Id === flagId)?.FlagText || '';
+    return cachedFlagTypes?.find(flagType => flagType.Id === flagId)?.FlagText || '';
 }
 
 export function getComments(flagId: number): CachedFlag['Comments'] {
-    const flagTypes = GreaseMonkeyCache.GetFromCache<CachedFlag[]>(FlagTypesKey);
-    return flagTypes?.find(flagType => flagType.Id === flagId)?.Comments as CachedFlag['Comments'] || '';
-}
-
-export function saveCommentsToCache(flagId: number, value: CachedFlag['Comments']): void {
-    const currentFlagTypes = GreaseMonkeyCache.GetFromCache<CachedFlag[]>(FlagTypesKey);
-    const flagType = currentFlagTypes?.find(flag => flag.Id === flagId);
-    if (!currentFlagTypes || !flagType) return;
-
-    flagType.Comments = value;
-    GreaseMonkeyCache.StoreInCache(FlagTypesKey, currentFlagTypes);
-}
-
-export function savePropertyToCache(flagId: number, property: CacheKeys, value: string): void {
-    const currentFlagTypes = GreaseMonkeyCache.GetFromCache<CachedFlag[]>(FlagTypesKey);
-    const flagType = currentFlagTypes?.find(flag => flag.Id === flagId);
-    if (!currentFlagTypes || !flagType) return;
-
-    flagType[property] = value;
-    GreaseMonkeyCache.StoreInCache(FlagTypesKey, currentFlagTypes);
+    return cachedFlagTypes?.find(flagType => flagType.Id === flagId)?.Comments as CachedFlag['Comments'] || '';
 }
 
 export async function waitForSvg(): Promise<void> {

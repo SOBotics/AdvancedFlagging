@@ -10,6 +10,7 @@ declare const Stacks: Stacks;
 type StacksToastState = 'success' | 'danger' | 'info';
 export interface CachedFlag {
     Id: number;
+    DisplayName: string;
     FlagText: string;
     Comments: {
         Low: string;

@@ -15,6 +15,7 @@ const optionTypes = flagNames.filter(item => !/Post(?:Other|Offensive|Spam)/.exe
 const cacheFlags = (): void => GreaseMonkeyCache.StoreInCache(globals.FlagTypesKey, flagTypes.map(flagType => {
     return {
         Id: flagType.Id,
+        DisplayName: flagType.DisplayName,
         FlagText: flagType.DefaultFlagText || '',
         Comments: {
             Low: flagType.DefaultComment || '',
@@ -54,8 +55,7 @@ function SetupDefaults(): void {
     }
 
     const cachedFlagTypes = GreaseMonkeyCache.GetFromCache<globals.CachedFlag[]>(globals.FlagTypesKey);
-    // in case we add a new flag type, make sure it will be automatically be saved (compare types)
-    if (cachedFlagTypes?.length !== flagTypes.length) cacheFlags();
+    if (!cachedFlagTypes || !cachedFlagTypes[0].DisplayName) cacheFlags();
 }
 
 /* The configuration modal has three sections:
@@ -137,12 +137,14 @@ function BuildConfigurationOverlay(): void {
     });
 
     $('body').append(overlayModal);
-    const flagOptions = $('.af-section-flags').children('div');
+    // keep the checkboxes aligned by filling flagOptions with invisible ones
+    let flagOptions = $('.af-section-flags').children('div');
+    const itemsToAdd = Math.ceil(flagOptions.length / 5) * 5 - flagOptions.length;
+    const checkboxClone = flagOptions.first().clone().addClass('v-hidden md:d-none sm:d-none');
+    [...Array(itemsToAdd).keys()].forEach(() => flagOptions = flagOptions.add(checkboxClone.clone()));
     for (let i = 0; i < flagOptions.length; i += 5) {
         flagOptions.slice(i, i + 5).wrapAll(globals.inlineCheckboxesWrapper.clone());
     }
-    // dynamically generate the width
-    $('label[for="flag-type-16"]').parent().css('width', $('label[for="flag-type-11"]').parent().css('width')).removeClass('w25 lg:w25');
 }
 
 function GetGeneralConfigItems(): JQuery[] {
@@ -190,7 +192,7 @@ function GetFlagSettings(): JQuery[] {
     const enabledFlags = getEnabledFlags();
     if (!enabledFlags) return checkboxes;
 
-    flagTypes.forEach(flag => {
+    globals.cachedFlagTypes.forEach(flag => {
         const storedValue = enabledFlags.indexOf(flag.Id) > -1;
         const checkbox = createCheckbox(flag.DisplayName, storedValue, `flag-type-${flag.Id}`).children().eq(0);
         checkboxes.push(checkbox.addClass('w25 lg:w25 md:w100 sm:w100')); // responsiveness

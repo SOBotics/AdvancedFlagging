@@ -258,7 +258,7 @@ const metasmokeTokenPopup = $(`
 </aside>`);
 export const editCommentsPopup = $(`
 <aside class="s-modal" id="af-comments" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
-  <div class="s-modal--dialog s-modal__full lg:w75 md:w75 sm:w100 w75" role="document">
+  <div class="s-modal--dialog s-modal__full md:w100 sm:w100 w90" role="document">
     <h1 class="s-modal--header fw-body c-movey" id="af-comments-title">AdvancedFlagging: edit comments and flags</h1>
     <div class="s-modal--body fs-body2" id="af-comments-description"></div>
     <div class="grid gs8 gsx s-modal--footer">
@@ -335,20 +335,20 @@ export const updateFlagTypes = (): void => GreaseMonkeyCache.StoreInCache(FlagTy
 // For GetComment() on FlagTypes. Adds the author name before the comment if the option is enabled
 export function getFullComment(flagId: number, { AuthorName }: UserDetails, level?: 'Low' | 'High'): string {
     const shouldAddAuthorName = cachedConfigurationInfo?.AddAuthorName;
-    const flagType = getFlagTypeFromCache(flagId);
+    const flagType = getFlagTypeFromFlagId(flagId);
     const comment = flagType?.Comments[level || 'Low'];
     return (comment && shouldAddAuthorName ? `${AuthorName}, ${comment[0].toLowerCase()}${comment.slice(1)}` : comment) || '';
 }
 
 // For GetCustomFlagText() on FlagTypes. Replaces the placeholders with actual values
 export function getFullFlag(flagId: number, target: string, postId: number): string {
-    const flagType = getFlagTypeFromCache(flagId);
+    const flagType = getFlagTypeFromFlagId(flagId);
     const flagContent = flagType?.FlagText;
     if (!flagContent) return '';
     return flagContent.replace(placeholderTarget, target).replace(placeholderCopypastorLink, getCopypastorLink(postId));
 }
 
-export function getFlagTypeFromCache(flagId: number): CachedFlag | null {
+export function getFlagTypeFromFlagId(flagId: number): CachedFlag | null {
     return cachedFlagTypes?.find(flagType => flagType.Id === flagId) || null;
 }
 

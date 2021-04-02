@@ -224,6 +224,7 @@ function createFlagTypeDiv(type: 'flag' | 'comment', displayName: string, flagId
     const expandableId = `${type}-${displayName}`.toLowerCase().replace(/\s/g, '');
     return $(`
 <div class="s-sidebarwidget" data-flag-id=${flagId}>
+  <button class="s-sidebarwidget--action s-btn s-btn__danger t4 r6 af-remove-expandable">Remove</button>
   <button class="s-sidebarwidget--action s-btn t4 r4 af-expandable-trigger"
           data-controller="s-expandable-control" aria-controls="${expandableId}">Edit</button>
   <button class="s-sidebarwidget--action s-btn s-btn__primary t4 r6 af-submit-content d-none">Save</button>
@@ -294,33 +295,19 @@ function SetupCommentsAndFlagsModal(): void {
         commentsWrapper.append(mainWrapper);
     });
 
-    $(document).on('click', '.af-expandable-trigger', event => {
+    $(document).on('click', '.af-expandable-trigger', event => { // trigger the expandable
         const button = $(event.target), saveButton = button.next();
         button.text(button.text() === 'Edit' ? 'Hide' : 'Edit');
         saveButton.hasClass('d-none') ? globals.showElement(saveButton) : globals.hideElement(saveButton);
-    }).on('change', '.advanced-flagging-flag-option select', event => {
-        const element = $(event.target);
-        const newReportType = element.val() as string;
-        const flagId = Number(element.parents('.s-sidebarwidget').attr('data-flag-id'));
-        const currentFlagType = globals.getFlagTypeFromCache(flagId);
-        if (!currentFlagType) {
-            globals.displayStacksToast('Failed to change the report flag type', 'danger');
-            return;
-        }
-
-        currentFlagType.ReportType = newReportType;
-        globals.updateFlagTypes();
-        globals.displayStacksToast('Successfully changed the report flag type', 'success');
-    }).on('click', '.af-submit-content', event => {
-        const element = $(event.target);
-        const expandable = element.next().next();
+    }).on('click', '.af-submit-content', event => { // save changes
+        const element = $(event.target), expandable = element.next().next();
         const flagId = Number(element.parents('.s-sidebarwidget').attr('data-flag-id'));
         if (!flagId) {
             globals.displayStacksToast('Failed to save options', 'danger');
             return;
         }
 
-        const currentFlagType = globals.getFlagTypeFromCache(flagId);
+        const currentFlagType = globals.getFlagTypeFromFlagId(flagId);
         const flagContent = expandable.find('.af-flag-content').val() as string || '';
         const commentLowRep = expandable.find('.af-lowrep').val() as string || '';
         const commentHighRep = expandable.find('.af-highrep').val() as string || '';
@@ -335,6 +322,25 @@ function SetupCommentsAndFlagsModal(): void {
 
         globals.displayStacksToast('Content saved successfully', 'success');
         element.prev().trigger('click'); // hide the textarea
+    }).on('click', '.af-remove-expandable', event => {
+        const removeButton = $(event.target), flagId = Number(removeButton.parent().attr('data-flag-id'));
+        const flagTypeIndex = globals.cachedFlagTypes.findIndex(item => item.Id === flagId);
+        globals.cachedFlagTypes.splice(flagTypeIndex, 1);
+        globals.updateFlagTypes();
+        removeButton.parent().remove();
+        globals.displayStacksToast('Successfully removed this flag type', 'success');
+    }).on('change', '.advanced-flagging-flag-option select', event => { // save a new report type
+        const selectElement = $(event.target), newReportType = selectElement.val() as string;
+        const flagId = Number(selectElement.parents('.s-sidebarwidget').attr('data-flag-id'));
+        const currentFlagType = globals.getFlagTypeFromFlagId(flagId);
+        if (!currentFlagType) {
+            globals.displayStacksToast('Failed to change the report flag type', 'danger');
+            return;
+        }
+
+        currentFlagType.ReportType = newReportType;
+        globals.updateFlagTypes();
+        globals.displayStacksToast('Successfully changed the report flag type', 'success');
     });
     $('body').append(editCommentsPopup);
 }

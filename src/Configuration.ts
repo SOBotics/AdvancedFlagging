@@ -129,6 +129,12 @@ function BuildConfigurationOverlay(): void {
         globals.displayStacksToast('Configuration saved', 'success');
         setTimeout(() => window.location.reload(), 500);
     });
+    // reset configuration to defaults
+    overlayModal.find('.af-configuration-reset').on('click', () => {
+        GreaseMonkeyCache.Unset(globals.ConfigurationCacheKey);
+        globals.displayStacksToast('Configuration settings have been reset to defaults', 'success');
+        setTimeout(() => window.location.reload(), 500);
+    });
 
     $('body').append(overlayModal);
     const flagOptions = $('.af-section-flags').children('div');
@@ -329,6 +335,11 @@ function SetupCommentsAndFlagsModal(): void {
         globals.updateFlagTypes();
         removeButton.parent().remove();
         globals.displayStacksToast('Successfully removed this flag type', 'success');
+    }).on('click', '.af-comments-reset', () => {
+        GreaseMonkeyCache.Unset(globals.FlagTypesKey);
+        cacheFlags();
+        globals.displayStacksToast('Comments and flags have been reset to defaults', 'success');
+        setTimeout(() => window.location.reload(), 500);
     }).on('change', '.advanced-flagging-flag-option select', event => { // save a new report type
         const selectElement = $(event.target), newReportType = selectElement.val() as string;
         const flagId = Number(selectElement.parents('.s-sidebarwidget').attr('data-flag-id'));

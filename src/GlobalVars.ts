@@ -229,6 +229,7 @@ export const overlayModal = $(`
     <div class="grid gs8 gsx s-modal--footer">
       <button class="grid--cell s-btn s-btn__primary" type="button">Save changes</button>
       <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
+      <button class="grid--cell s-btn s-btn__danger af-configuration-reset" type="button">Reset</button>
     </div>
     <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
   </div>
@@ -264,6 +265,7 @@ export const editCommentsPopup = $(`
     <div class="grid gs8 gsx s-modal--footer">
       <button class="grid--cell s-btn s-btn__primary" type="button" data-action="s-modal#hide">I'm done!</button>
       <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
+      <button class="grid--cell s-btn s-btn__danger af-comments-reset" type="button">Reset</button>
     </div>
     <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
   </div>

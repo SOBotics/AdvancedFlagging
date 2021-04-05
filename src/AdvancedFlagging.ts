@@ -507,7 +507,7 @@ function Setup(): void {
         if (xhr.status !== 200 || !globals.isDeleteVoteRegex.test(xhr.responseURL) || !$('#answer').length) return;
 
         const postId = globals.getPostIdFromReview();
-        const reviewCachedInfo = reviewPostsInformation[postId];
+        const reviewCachedInfo = reviewPostsInformation.find(item => item.postId === postId);
         if (!reviewCachedInfo || reviewCachedInfo.post.type !== 'Answer') return; // something went wrong
 
         const flagType = flagCategories[2].FlagTypes[1]; // the not an answer flag type

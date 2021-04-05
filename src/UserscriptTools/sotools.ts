@@ -1,7 +1,7 @@
-import { isFlagsPage, isQuestionPage, isNatoPage, parseDate } from '../GlobalVars';
+import { isFlagsPage, isQuestionPage, isNatoPage, parseDate, isLqpReviewPage } from '../GlobalVars';
 
 export type QuestionPageInfo = QuestionQuestion | QuestionAnswer;
-type PostInfo = NatoAnswer | QuestionPageInfo | FlagPageInfo;
+export type PostInfo = NatoAnswer | QuestionPageInfo | FlagPageInfo;
 
 interface QuestionQuestion { // the question on a question page
     type: 'Question';
@@ -14,7 +14,7 @@ interface QuestionQuestion { // the question on a question page
     authorName: string;
 }
 
-interface QuestionAnswer { // an answer on a question page
+interface QuestionAnswer { // an answer on a question page or in review
     type: 'Answer';
     element: JQuery;
     page: 'Question';
@@ -101,9 +101,9 @@ function getPostDetails(node: JQuery): PostDetails {
     return { score, authorReputation, authorName, creationDate };
 }
 
-function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) => void, questionTime: Date): void {
+function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) => void, questionTime: Date | null): void {
     const answerIdString = aNode.attr('data-answerid');
-    if (!answerIdString) return;
+    if (!answerIdString || !questionTime) return;
 
     const answerId = Number(answerIdString);
     const postDetails = getPostDetails(aNode);
@@ -194,20 +194,19 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): vo
         parseQuestionPage(callback);
     } else if (isFlagsPage) {
         parseFlagsPage(callback);
+    } else if (isLqpReviewPage) {
+        parseAnswerDetails($('.answer'), callback, parseDate($('.post-signature.owner .user-action-time span').attr('title')));
     }
 }
 
 function parseReputation(reputationDiv: JQuery): number {
-    let reputationText = reputationDiv.text();
-    const reputationDivTitle = reputationDiv.attr('title');
-    if (!reputationDivTitle) return 0;
+    let reputationText = reputationDiv.text()?.replace(/,/g, '');
+    if (!reputationText) return 0;
 
-    if (reputationText.indexOf('k') !== -1) {
-        reputationText = reputationDivTitle.substr('reputation score '.length);
-    }
-    reputationText = reputationText.replace(',', '');
-
-    return Number(reputationText);
+    if (reputationText.includes('k')) {
+        reputationText = reputationText.replace(/\./g, '').replace(/k/, '');
+        return Number(reputationText) * 1000;
+    } else return Number(reputationText);
 }
 
 function parseAuthorDetails(authorDiv: JQuery): string {

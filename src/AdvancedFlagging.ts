@@ -1,5 +1,5 @@
 import { FlagType, flagCategories, Flags } from './FlagTypes';
-import { parseQuestionsAndAnswers, QuestionPageInfo } from './UserscriptTools/sotools';
+import { parseQuestionsAndAnswers, QuestionPageInfo, PostInfo } from './UserscriptTools/sotools';
 import { NattyAPI } from './UserscriptTools/NattyApi';
 import { GenericBotAPI } from './UserscriptTools/GenericBotAPI';
 import { MetaSmokeAPI } from './UserscriptTools/MetaSmokeAPI';
@@ -40,7 +40,8 @@ function SetupStyles(): void {
 }`);
 }
 
-const userFkey = StackExchange.options.user.fkey;
+const reviewPostsInformation: ReviewQueuePostInfo[] = [];
+
 async function handleFlagAndComment(
     post: QuestionPageInfo,
     flag: FlagType,
@@ -51,6 +52,7 @@ async function handleFlagAndComment(
     qualifiesForVlq: boolean,
     commentText?: string | null
 ): Promise<void> {
+    const userFkey = StackExchange.options.user.fkey;
     if (commentText) {
         try {
             const postComment = await fetch(`/posts/${post.postId}/comments`, {
@@ -213,6 +215,32 @@ function increasePopoverWidth(reportLink: JQuery): void {
     $(`#${popoverId}`).addClass('sm:wmn-initial md:wmn-initial wmn4');
 }
 
+function getAllBotIcons(): JQuery[] {
+    const nattyIcon = globals.nattyIcon.clone();
+    const copyPastorIcon = globals.guttenbergIcon.clone();
+    const smokeyIcon = globals.smokeyIcon.clone();
+    void globals.attachPopover(nattyIcon.find('a')[0], 'Reported by Natty', 'bottom-start');
+    void globals.attachPopover(copyPastorIcon.find('a')[0], 'Reported by Guttenberg', 'bottom-start');
+    void globals.attachPopover(smokeyIcon.find('a')[0], 'Reported by Smokey', 'bottom-start');
+    return [nattyIcon, copyPastorIcon, smokeyIcon];
+}
+
+function addBotIconsToReview(post: PostInfo, botIcons?: JQuery[]): void {
+    if (post.type !== 'Answer') return;
+
+    const botIconsToAppend = botIcons || getAllBotIcons(), [nattyIcon, copyPastorIcon, smokeyIcon] = botIconsToAppend;
+    const iconLocation = post.element.find('.js-post-menu').children().first();
+    iconLocation.append(...botIconsToAppend);
+    if (botIcons) return;
+
+    const reporters: Reporter[] = [], copyPastorApi = new CopyPastorAPI(post.postId);
+    reporters.push(setupNattyApi(post.postId, post.questionTime, post.creationDate, nattyIcon));
+    setupMetasmokeApi(post.postId, post.type, smokeyIcon);
+    setupGuttenbergApi(copyPastorApi, copyPastorIcon); // no need to send feedback to Guttenberg; just show the icon
+
+    reviewPostsInformation.push({ postId: post.postId, post, reporters });
+}
+
 export type Reporter = CopyPastorAPI | MetaSmokeAPI | NattyAPI | GenericBotAPI;
 
 interface StackExchangeFlagResponse {
@@ -223,9 +251,16 @@ interface StackExchangeFlagResponse {
     Success: boolean;
 }
 
-interface ReviewResponse {
+interface ReviewQueuePostInfo {
     postId: number;
-    content: string;
+    post: PostInfo;
+    reporters: Reporter[];
+}
+
+interface ReviewQueueResponse {
+    postId: number;
+    postTypeId: number;
+    isAudit: boolean;
 }
 
 function BuildFlaggingDialog(
@@ -351,24 +386,19 @@ async function handleFlag(flagType: FlagType, reporters: Reporter[]): Promise<bo
 let autoFlagging = false;
 function SetupPostPage(): void {
     const linkDisabled = globals.cachedConfigurationInfo?.[globals.ConfigurationLinkDisabled];
-    if (linkDisabled) return;
+    if (linkDisabled || globals.isLqpReviewPage) return; // do not add the buttons on review
     parseQuestionsAndAnswers(post => {
         if (!post.element.length) return;
 
         const questionTime = post.type === 'Answer' ? post.questionTime : post.creationDate;
         const answerTime = post.type === 'Answer' ? post.creationDate : null;
-        const iconLocation: JQuery = post.page === 'Question'
+        const iconLocation = post.page === 'Question'
             ? post.element.find('.js-post-menu').children().first()
             : post.element.find(`a.${post.type === 'Question' ? 'question' : 'answer'}-hyperlink`);
         const advancedFlaggingLink: JQuery = globals.advancedFlaggingLink.clone();
         if (post.page === 'Question') iconLocation.append(globals.gridCellDiv.clone().append(advancedFlaggingLink));
 
-        const nattyIcon = globals.nattyIcon.clone();
-        const copyPastorIcon = globals.guttenbergIcon.clone();
-        const smokeyIcon = globals.smokeyIcon.clone();
-        void globals.attachPopover(nattyIcon.find('a')[0], 'Reported by Natty', 'bottom-start');
-        void globals.attachPopover(copyPastorIcon.find('a')[0], 'Reported by Guttenberg', 'bottom-start');
-        void globals.attachPopover(smokeyIcon.find('a')[0], 'Reported by Smokey', 'bottom-start');
+        const [nattyIcon, copyPastorIcon, smokeyIcon] = getAllBotIcons();
         const copyPastorApi = new CopyPastorAPI(post.postId);
 
         const reporters: Reporter[] = [];
@@ -449,49 +479,39 @@ function Setup(): void {
     $('body').append(popupWrapper);
 
     const watchedQueuesEnabled = globals.cachedConfigurationInfo?.[globals.ConfigurationWatchQueues];
-    const postDetails: { questionTime: Date, answerTime: Date }[] = [];
     if (!watchedQueuesEnabled) return;
 
     globals.addXHRListener(xhr => {
-        if (xhr.status !== 200) return;
+        if (xhr.status !== 200 || !globals.isReviewItemRegex.test(xhr.responseURL) || !$('#answer').length) return;
 
-        const parseReviewDetails = (review: string): void => {
-            const reviewJson = JSON.parse(review) as ReviewResponse;
-            const postId = reviewJson.postId;
-            const content = $(reviewJson.content);
+        const reviewResponse = JSON.parse(xhr.responseText) as ReviewQueueResponse;
+        if (reviewResponse.isAudit || reviewResponse.postTypeId !== 2) return; // shouldn't be an audit and should be an answer
 
-            const questionTime = globals.parseDate($('.post-signature.owner .user-action-time span', content).attr('title'));
-            const answerTime = globals.parseDate($('.user-info .user-action-time span', content).attr('title'));
-            if (!questionTime || !answerTime) return;
-            postDetails[postId] = {
-                questionTime: questionTime,
-                answerTime: answerTime
-            };
-        };
+        const reviewCachedInfo = reviewPostsInformation.find(item => item.postId === reviewResponse.postId);
+        const cachedPost = reviewCachedInfo?.post;
+        cachedPost ? addBotIconsToReview(cachedPost) : parseQuestionsAndAnswers(addBotIconsToReview);
+    });
 
-        // We can't just parse the page after a recommend/delete request, as the page will have sometimes already updated
-        // This means we're actually grabbing the information for the following review
+    $(document).on('click', '.js-review-submit', () => {
+        if (!$('#review-action-LooksGood').is(':checked')) return; // must have selected 'Looks OK' and clicked submit
 
-        // So, we watch the next-task requests and remember which post we were looking at for when a delete/recommend-delete vote comes through.
-        // next-task is invoked when visiting the review queue
-        // task-reviewed is invoked when making a response
-        const isReviewItem = globals.isReviewItemRegex.exec(xhr.responseURL);
-        if (isReviewItem) {
-            const review = xhr.responseText;
-            parseReviewDetails(review);
-            return;
-        }
+        const postId = globals.getPostIdFromReview();
+        const reviewCachedInfo = reviewPostsInformation.find(item => item.postId === postId);
+        if (!reviewCachedInfo) return; // something went wrong
 
-        const matches = globals.isDeleteVoteRegex.exec(xhr.responseURL);
-        if (!matches || !$('#answer').length) return;
+        const flagType = flagCategories[3].FlagTypes[0]; // the Looks Fine flag type
+        void handleFlag(flagType, reviewCachedInfo.reporters);
+    });
 
-        const postIdStr = matches[1] || matches[2];
-        const postId = Number(postIdStr);
-        const currentPostDetails = postDetails[postId];
-        if (!currentPostDetails) return;
+    globals.addXHRListener(xhr => {
+        if (xhr.status !== 200 || !globals.isDeleteVoteRegex.test(xhr.responseURL) || !$('#answer').length) return;
+
+        const postId = globals.getPostIdFromReview();
+        const reviewCachedInfo = reviewPostsInformation[postId];
+        if (!reviewCachedInfo || reviewCachedInfo.post.type !== 'Answer') return; // something went wrong
 
         const flagType = flagCategories[2].FlagTypes[1]; // the not an answer flag type
-        const reportersArray = [setupNattyApi(postId, currentPostDetails.questionTime, currentPostDetails.answerTime)];
+        const reportersArray = [setupNattyApi(postId, reviewCachedInfo.post.questionTime, reviewCachedInfo.post.creationDate)];
         void handleFlag(flagType, reportersArray);
     });
 }

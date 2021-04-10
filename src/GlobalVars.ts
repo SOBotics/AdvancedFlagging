@@ -39,7 +39,10 @@ export interface Svg {
     Checkmark(): JQuery;
     Clear(): JQuery;
     ClearSm(): JQuery;
+    EyeOff(): JQuery;
     Flag(): JQuery;
+    Pencil(): JQuery;
+    Trash(): JQuery;
 }
 
 export interface Stacks {

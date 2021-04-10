@@ -239,10 +239,10 @@ interface ConfigSection {
 function createFlagTypeDiv(displayName: string, flagId: number, reportType: Flags): JQuery {
     const expandableId = `${flagId}-${displayName}`.toLowerCase().replace(/\s/g, '');
     const shouldBeDisabled = reportType === 'PostOther';
-    return $(`
+    const categoryDiv = $(`
 <div class="s-sidebarwidget" data-flag-id=${flagId}>
-    <button class="s-sidebarwidget--action s-btn s-btn__danger t4 r6 af-remove-expandable">Remove</button>
-    <button class="s-sidebarwidget--action s-btn t4 r4 af-expandable-trigger"
+    <button class="s-sidebarwidget--action s-btn s-btn__danger s-btn__icon t4 r6 af-remove-expandable">Remove</button>
+    <button class="s-sidebarwidget--action s-btn s-btn__icon t4 r4 af-expandable-trigger"
             data-controller="s-expandable-control" aria-controls="${expandableId}">Edit</button>
     <button class="s-sidebarwidget--action s-btn s-btn__primary t4 r6 af-submit-content d-none">Save</button>
     <div class="s-sidebarwidget--content d-block p12 fs-body3">${displayName}</div>
@@ -257,6 +257,9 @@ function createFlagTypeDiv(displayName: string, flagId: number, reportType: Flag
         </div>
     </div>
 </div>`);
+    categoryDiv.find('.af-remove-expandable').prepend(Svg.Trash(), ' '); // add the trash icon to the remove button
+    categoryDiv.find('.af-expandable-trigger').prepend(Svg.Pencil(), ' '); // add the pencil icon to the edit button
+    return categoryDiv;
 }
 
 function createCategoryDiv(displayName: string): JQuery {
@@ -323,9 +326,10 @@ function SetupCommentsAndFlagsModal(): void {
         .filter(categoryWrapper => categoryWrapper.children().length > 1) // the header is a child so the count must be >1
         .forEach(element => editCommentsPopup.find('.s-modal--body').children().append(element));
 
+    Svg.EyeOff(); // start the GET request to fetch and cache the SVG in order to show it immediately when 'Edit' is clicked
     $(document).on('click', '.af-expandable-trigger', event => { // trigger the expandable
         const button = $(event.target), saveButton = button.next();
-        button.text(button.text() === 'Edit' ? 'Hide' : 'Edit');
+        button.html(button.text().includes('Hide') ? `${Svg.Pencil()[0].outerHTML} Edit` : `${Svg.EyeOff()[0].outerHTML} Hide`);
         saveButton.hasClass('d-none') ? globals.showElement(saveButton) : globals.hideElement(saveButton);
     }).on('click', '.af-submit-content', event => { // save changes
         const element = $(event.target), expandable = element.next().next();

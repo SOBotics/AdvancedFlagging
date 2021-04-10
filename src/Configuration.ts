@@ -11,21 +11,30 @@ type GeneralItems = Exclude<keyof globals.CachedConfiguration, 'EnabledFlags'>;
 const getEnabledFlags = (): number[] => globals.cachedConfigurationInfo?.EnabledFlags;
 const flagTypes = flagCategories.flatMap(category => category.FlagTypes);
 const flagNames = [...new Set(flagTypes.map(flagType => flagType.DefaultReportType))];
-const optionTypes = flagNames.filter(item => !/Post(?:Other|Offensive|Spam)/.exec(item));
-const cacheFlags = (): void => GreaseMonkeyCache.StoreInCache(globals.FlagTypesKey, flagTypes.map(flagType => {
-    return {
-        Id: flagType.Id,
-        DisplayName: flagType.DisplayName,
-        FlagText: flagType.DefaultFlagText || '',
-        Comments: {
-            Low: flagType.DefaultComment || '',
-            High: flagType.DefaultCommentHigh || ''
-        },
-        ReportType: flagType.DefaultReportType
-    } as globals.CachedFlag;
+const cacheFlags = (): void => GreaseMonkeyCache.StoreInCache(globals.FlagTypesKey, flagCategories.flatMap(category => {
+    return category.FlagTypes.map(flagType => {
+        return {
+            Id: flagType.Id,
+            DisplayName: flagType.DisplayName,
+            FlagText: flagType.DefaultFlagText || '',
+            Comments: {
+                Low: flagType.DefaultComment || '',
+                High: flagType.DefaultCommentHigh || ''
+            },
+            ReportType: flagType.DefaultReportType,
+            BelongsTo: category.Name
+        } as globals.CachedFlag;
+    });
 }));
 const getOption = (flag: Flags, name: string): string => `<option${flag === name ? ' selected' : ''}>${flag}</option>`;
-const getFlagOptions = (name: string): string => optionTypes.map(flag => getOption(flag, name)).join('');
+const getFlagOptions = (name: string): string => flagNames.map(flag => getOption(flag, name)).join('');
+const cacheCategories = (): void => GreaseMonkeyCache.StoreInCache(globals.FlagCategoriesKey, flagCategories.map(category => (
+    {
+        IsDangerous: category.IsDangerous,
+        Name: category.Name,
+        AppliesTo: category.AppliesTo
+    } as globals.CachedCategory
+)));
 
 export function SetupConfiguration(): void {
     SetupDefaults(); // stores default values if they haven't already been
@@ -54,8 +63,8 @@ function SetupDefaults(): void {
         globals.updateConfiguration();
     }
 
-    const cachedFlagTypes = GreaseMonkeyCache.GetFromCache<globals.CachedFlag[]>(globals.FlagTypesKey);
-    if (!cachedFlagTypes || !cachedFlagTypes[0].DisplayName) cacheFlags();
+    if (!globals.cachedFlagTypes.length || !globals.cachedFlagTypes[0].DisplayName) cacheFlags(); // added .DisplayName for combatibility
+    if (!globals.cachedCategories.length) cacheCategories();
 }
 
 /* The configuration modal has three sections:
@@ -227,38 +236,46 @@ interface ConfigSection {
     onSave?(): void;
 }
 
-function createFlagTypeDiv(type: 'flag' | 'comment', displayName: string, flagId: number, reportType?: string): JQuery {
-    const displayStyle = reportType ? 'd-block' : 'd-none';
-    const expandableId = `${type}-${displayName}`.toLowerCase().replace(/\s/g, '');
+function createFlagTypeDiv(displayName: string, flagId: number, reportType: Flags): JQuery {
+    const expandableId = `${flagId}-${displayName}`.toLowerCase().replace(/\s/g, '');
+    const shouldBeDisabled = reportType === 'PostOther';
     return $(`
 <div class="s-sidebarwidget" data-flag-id=${flagId}>
-  <button class="s-sidebarwidget--action s-btn s-btn__danger t4 r6 af-remove-expandable">Remove</button>
-  <button class="s-sidebarwidget--action s-btn t4 r4 af-expandable-trigger"
-          data-controller="s-expandable-control" aria-controls="${expandableId}">Edit</button>
-  <button class="s-sidebarwidget--action s-btn s-btn__primary t4 r6 af-submit-content d-none">Save</button>
-  <div class="s-sidebarwidget--content d-block p12 fs-body3">${displayName}</div>
-  <div class="s-expandable" id="${expandableId}">
-    <div class="s-expandable--content px8">
-      <div class="advanced-flagging-flag-option py8 mln6 ${displayStyle}">
-        <label class="fw-bold ps-relative d-inline-block z-selected l16">Flag as:</label>'
-        <div class="s-select d-inline-block r48"><select class="pl64">${getFlagOptions(reportType || '')}</select></div>
-      </div>
+    <button class="s-sidebarwidget--action s-btn s-btn__danger t4 r6 af-remove-expandable">Remove</button>
+    <button class="s-sidebarwidget--action s-btn t4 r4 af-expandable-trigger"
+            data-controller="s-expandable-control" aria-controls="${expandableId}">Edit</button>
+    <button class="s-sidebarwidget--action s-btn s-btn__primary t4 r6 af-submit-content d-none">Save</button>
+    <div class="s-sidebarwidget--content d-block p12 fs-body3">${displayName}</div>
+        <div class="s-expandable" id="${expandableId}">
+            <div class="s-expandable--content px8">
+                <div class="advanced-flagging-flag-option py8 mln6">
+                <label class="fw-bold ps-relative d-inline-block z-selected l16 ${shouldBeDisabled ? 'o50' : ''}">Flag as:</label>
+                <div class="s-select d-inline-block r48">
+                    <select class="pl64" ${shouldBeDisabled ? 'disabled' : ''}>${getFlagOptions(reportType)}</select>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>`);
 }
 
+function createCategoryDiv(displayName: string): JQuery {
+    const categoryHeader = $('<h2>').addClass('ta-center mb8 fs-title').html(displayName);
+    return $('<div>').addClass(`af-${displayName.toLowerCase().replace(/\s/g, '')}-content grid--cell`).append(categoryHeader);
+}
+
 /* In this case, we are caching a FlagType, but removing unnecessary properties.
-   Only the Id, FlagText, and Comments (both LowRep and HighRep) are cached if they exist.
+   Only the Id, FlagText, and Comments (both LowRep and HighRep) and the flag's name are cached if they exist.
    Sample cache (undefined values are empty strings):
-       AdvancedFlagging.FlagTypes: [{
+       FlagTypes: [{
            Id: 1,
            FlagText: 'This is some text',
            Comments: {
                Low: 'This is a LowRep comment',
                High: ''
            },
-           ReportType: 'PostOther'
+           ReportType: 'PostOther',
+           DisplayName: 'Plagiarism'
        }, {
            Id: 2,
            FlagText: '',
@@ -266,42 +283,45 @@ function createFlagTypeDiv(type: 'flag' | 'comment', displayName: string, flagId
                Low: 'This is a LowRep comment',
                High: 'This is a HighRep comment'
            },
-           ReportType: 'AnswerNotAnAnswer'
+           ReportType: 'AnswerNotAnAnswer',
+           DisplayName: 'Not an answer'
        }]
 
     Notes:
-    - The Spam, Rude or Abusive and the - by default - NoFlag FlagTypes won't be displayed.
     - The ReportType can't be changed to/from PostOther.
-    - The Human field is retrieved when the flag is raised based on ReportType.
+    - The Human field is retrieved on runtime when the flag is raised based on ReportType.
     - Each div has a data-flag-id attribute based on which we can store the information on cache again
+    - Comments.Low is the low-rep comment ONLY if there is a high-rep comment. Otherwise it's the comment
+      that will be used regardless of the OP's reputation. This appears to be the simplest approach
 */
 function SetupCommentsAndFlagsModal(): void {
     const editCommentsPopup = globals.editCommentsPopup.clone();
     editCommentsPopup.find('.s-modal--close').append(Svg.ClearSm());
-    const commentsWrapper = globals.commentsWrapper.clone();
-    const flagsWrapper = globals.flagsWrapper.clone();
-    editCommentsPopup.find('.s-modal--body').append(globals.editContentWrapper.clone().append(commentsWrapper, flagsWrapper));
 
-    flagTypes.filter(item => item.DefaultComment || item.DefaultFlagText).forEach(flagType => {
+    const categoryElements = {} as { [key: string]: JQuery };
+    globals.cachedCategories.forEach(category => categoryElements[category.Name] = createCategoryDiv(category.Name));
+
+    globals.cachedFlagTypes.forEach(flagType => {
+        const belongsToCategory = flagType.BelongsTo;
         const comments = flagType.Comments;
         const flagText = flagType.FlagText;
 
-        if (flagText) {
-            const mainWrapper = createFlagTypeDiv('flag', flagType.DisplayName, flagType.Id);
-            mainWrapper.find('.s-expandable--content').prepend(globals.getTextarea(flagText, 'af-flag-content'));
-            flagsWrapper.append(mainWrapper);
-        }
+        const flagTypeDiv = createFlagTypeDiv(flagType.DisplayName, flagType.Id, flagType.ReportType);
+        const expandable = flagTypeDiv.find('.s-expandable--content');
+        const flagCategoryWrapper = categoryElements[belongsToCategory];
 
-        if (!comments?.Low) return;
-        const mainWrapper = createFlagTypeDiv('comment', flagType.DisplayName, flagType.Id, flagType.ReportType);
-        const expandable = mainWrapper.find('.s-expandable--content');
-        const labelDisplay = comments.High ? 'd-block' : 'd-none';
-        const getLabel = (type: string): JQuery => $('<label>').addClass(`grid--cell s-label ${labelDisplay}`).html(`${type} comment`);
-        if (comments.High) expandable.prepend(getLabel('HighRep').addClass('pt4'), globals.getTextarea(comments.High, 'af-highrep'));
-        expandable.prepend(getLabel('LowRep'), globals.getTextarea(comments.Low, 'af-lowrep'));
+        const labelDisplay = comments.High ? 'd-block' : 'd-none'; // if there are two comments we want to show a label
+        const lowRepLabel = comments.High ? 'LowRep comment' : 'Comment text'; // if there are two comments, add label for LowRep
+        if (flagText) expandable.prepend(globals.getTextarea(flagText, 'Flag text', 'flag'));
+        if (comments.High) expandable.prepend(globals.getTextarea(comments.High, 'HighRep comment', 'highrep', labelDisplay));
+        if (comments.Low) expandable.prepend(globals.getTextarea(comments.Low, lowRepLabel, 'lowrep'));
 
-        commentsWrapper.append(mainWrapper);
+        flagCategoryWrapper?.append(flagTypeDiv);
     });
+    // now append all categories to the modal
+    Object.values(categoryElements)
+        .filter(categoryWrapper => categoryWrapper.children().length > 1) // the header is a child so the count must be >1
+        .forEach(element => editCommentsPopup.find('.s-modal--body').children().append(element));
 
     $(document).on('click', '.af-expandable-trigger', event => { // trigger the expandable
         const button = $(event.target), saveButton = button.next();
@@ -310,50 +330,49 @@ function SetupCommentsAndFlagsModal(): void {
     }).on('click', '.af-submit-content', event => { // save changes
         const element = $(event.target), expandable = element.next().next();
         const flagId = Number(element.parents('.s-sidebarwidget').attr('data-flag-id'));
-        if (!flagId) {
-            globals.displayStacksToast('Failed to save options', 'danger');
-            return;
-        }
+        if (!flagId) return globals.displayStacksToast('Failed to save options', 'danger');
 
         const currentFlagType = globals.getFlagTypeFromFlagId(flagId);
+        if (!currentFlagType) return globals.displayStacksToast('Failed to save options', 'danger'); // somehow something went wrong
+
+        // use || '' to avoid null/undefined values in cache
+        // each textarea has one of those three classes: af-flag-content, af-lowrep-content and af-highrep-content
+        // for the flag text, the low-rep comment text and the high-rep comment text respectively
         const flagContent = expandable.find('.af-flag-content').val() as string || '';
-        const commentLowRep = expandable.find('.af-lowrep').val() as string || '';
-        const commentHighRep = expandable.find('.af-highrep').val() as string || '';
-        if (!currentFlagType) {
-            globals.displayStacksToast('Failed to save options', 'danger');
-            return;
-        }
+        const commentLowRep = expandable.find('.af-lowrep-content').val() as string || '';
+        const commentHighRep = expandable.find('.af-highrep-content').val() as string || '';
 
         if (flagContent) currentFlagType.FlagText = flagContent;
-        else currentFlagType.Comments = { Low: commentLowRep, High: commentHighRep };
+        if (commentLowRep) currentFlagType.Comments = { Low: commentLowRep, High: commentHighRep };
         globals.updateFlagTypes();
 
         globals.displayStacksToast('Content saved successfully', 'success');
-        element.prev().trigger('click'); // hide the textarea
+        element.prev().trigger('click'); // hide the textarea by clicking the 'Hide' button and not manually
     }).on('click', '.af-remove-expandable', event => {
         const removeButton = $(event.target), flagId = Number(removeButton.parent().attr('data-flag-id'));
         const flagTypeIndex = globals.cachedFlagTypes.findIndex(item => item.Id === flagId);
+        const categoryWrapper = removeButton.parent().parent(); // the flag category element that includes the FlagTypes
         globals.cachedFlagTypes.splice(flagTypeIndex, 1);
         globals.updateFlagTypes();
-        removeButton.parent().remove();
-        globals.displayStacksToast('Successfully removed this flag type', 'success');
+
+        removeButton.parent().remove(); // the parent element is the sidebar widget
+        if (categoryWrapper.children().length === 1) categoryWrapper.remove(); // length === 1 => only the category header remains
+        globals.displayStacksToast('Successfully removed flag type', 'success');
     }).on('click', '.af-comments-reset', () => {
         GreaseMonkeyCache.Unset(globals.FlagTypesKey);
         cacheFlags();
         globals.displayStacksToast('Comments and flags have been reset to defaults', 'success');
         setTimeout(() => window.location.reload(), 500);
     }).on('change', '.advanced-flagging-flag-option select', event => { // save a new report type
-        const selectElement = $(event.target), newReportType = selectElement.val() as string;
+        const selectElement = $(event.target), newReportType = selectElement.val() as Flags;
         const flagId = Number(selectElement.parents('.s-sidebarwidget').attr('data-flag-id'));
         const currentFlagType = globals.getFlagTypeFromFlagId(flagId);
-        if (!currentFlagType) {
-            globals.displayStacksToast('Failed to change the report flag type', 'danger');
-            return;
-        }
+        if (!currentFlagType) return globals.displayStacksToast('Failed to change the report flag type', 'danger');
+        if (newReportType === 'PostOther') return globals.displayStacksToast('Flag PostOther cannot be used with this option', 'danger');
 
         currentFlagType.ReportType = newReportType;
         globals.updateFlagTypes();
-        globals.displayStacksToast('Successfully changed the report flag type', 'success');
+        globals.displayStacksToast('Successfully changed the flag type for this option', 'success');
     });
     $('body').append(editCommentsPopup);
 }

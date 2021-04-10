@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { GreaseMonkeyCache } from './UserscriptTools/GreaseMonkeyCache';
-import { UserDetails, Flags } from './FlagTypes';
+import { UserDetails, Flags, FlagCategory } from './FlagTypes';
 import { displayToaster } from './AdvancedFlagging';
 
 declare const StackExchange: StackExchange;
@@ -16,8 +16,11 @@ export interface CachedFlag {
         Low: string;
         High: string;
     };
-    ReportType: string;
+    ReportType: Flags;
+    BelongsTo: string; // category Name where it belongs
 }
+
+export type CachedCategory = Omit<FlagCategory, 'FlagTypes'>;
 
 export interface CachedConfiguration {
     OpenOnHover: boolean;
@@ -127,6 +130,7 @@ export const CacheChatApiFkey = 'fkey';
 export const MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
 export const MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
 export const FlagTypesKey = 'FlagTypes';
+export const FlagCategoriesKey = 'FlagCategories';
 
 export const displayStacksToast = (message: string, type: StacksToastState): void => StackExchange.helpers.showToast(message, {
     type: type,
@@ -200,8 +204,14 @@ export const getConfigHtml = (optionId: string, text: string): JQuery => $(`
     <label class="grid--cell s-label fw-normal pt2" for="${optionId}">${text}</label>
   </div>
 </div>`);
-export const getTextarea = (content: string, className: string): JQuery => $('<textarea>').html(content || '').attr('rows', 4)
-    .addClass('grid--cell s-textarea fs-body2 ' + className);
+type ContentType = 'flag' | 'lowrep' | 'highrep'
+export const getTextarea = (textareaContent: string, labelText: string, contentType: ContentType, labelDisplay?: string): JQuery => $(`
+<div class="grid gs4 gsy fd-column">
+    <label class="grid--cell s-label ${labelDisplay || 'd-block'}">${labelText}</label>
+    <div class="grid ps-relative">
+        <textarea rows=4 class="grid--cell s-textarea fs-body2 af-${contentType}-content">${textareaContent}</textarea>
+    </div> 
+</div>`);
 
 const iconWrapper = $('<div>').attr('class', 'grid--cell d-none');
 export const performedActionIcon = (): JQuery => iconWrapper.clone().append(Svg.Checkmark().addClass('fc-green-500'));
@@ -219,11 +229,7 @@ export const configurationDiv = $('<div>').attr('class', 'advanced-flagging-conf
 export const configurationLink = $('<a>').attr('id', 'af-modal-button').text('AdvancedFlagging configuration');
 export const commentsDiv = configurationDiv.clone().removeClass('advanced-flagging-configuration-div').addClass('af-comments-div');
 export const commentsLink = configurationLink.clone().attr('id', 'af-comments-button').text('AdvancedFlagging: edit comments and flags');
-export const editContentWrapper = $('<div>').attr('class', 'grid grid__fl1 md:fd-column gs16');
-const commentsHeader = $('<h2>').attr('class', 'ta-center mb8 fs-title').text('Comments');
-const flagsHeader = $('<h2>').attr('class', 'ta-center mb8 fs-title').text('Flags');
-export const commentsWrapper = $('<div>').attr('class', 'af-comments-content grid--cell w60 md:w100 sm:w100').append(commentsHeader);
-export const flagsWrapper = $('<div>').attr('class', 'af-flags-content grid--cell w40 md:w100 sm:w100').append(flagsHeader);
+
 export const overlayModal = $(`
 <aside class="s-modal" id="af-config" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
   <div class="s-modal--dialog s-modal__full w60 sm:w100 md:w75 lg:w75" role="document">
@@ -262,16 +268,18 @@ const metasmokeTokenPopup = $(`
 </aside>`);
 export const editCommentsPopup = $(`
 <aside class="s-modal" id="af-comments" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
-  <div class="s-modal--dialog s-modal__full md:w100 sm:w100 w90" role="document">
-    <h1 class="s-modal--header fw-body c-movey" id="af-comments-title">AdvancedFlagging: edit comments and flags</h1>
-    <div class="s-modal--body fs-body2" id="af-comments-description"></div>
-    <div class="grid gs8 gsx s-modal--footer">
-      <button class="grid--cell s-btn s-btn__primary" type="button" data-action="s-modal#hide">I'm done!</button>
-      <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
-      <button class="grid--cell s-btn s-btn__danger af-comments-reset" type="button">Reset</button>
+    <div class="s-modal--dialog s-modal__full md:w100 sm:w100 w80" role="document">
+        <h1 class="s-modal--header fw-body c-movey" id="af-comments-title">AdvancedFlagging: edit comments and flags</h1>
+        <div class="s-modal--body fs-body2" id="af-comments-description">
+            <div class="grid grid__fl1 fd-column gs16"></div>
+        </div>
+        <div class="grid gs8 gsx s-modal--footer">
+            <button class="grid--cell s-btn s-btn__primary" type="button" data-action="s-modal#hide">I'm done!</button>
+            <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
+            <button class="grid--cell s-btn s-btn__danger af-comments-reset" type="button">Reset</button>
+        </div>
+        <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
     </div>
-    <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
-  </div>
 </aside>`);
 
 export function showMSTokenPopupAndGet(): Promise<string | undefined> {
@@ -336,6 +344,8 @@ export const cachedConfigurationInfo = GreaseMonkeyCache.GetFromCache<CachedConf
 export const updateConfiguration = (): void => GreaseMonkeyCache.StoreInCache(ConfigurationCacheKey, cachedConfigurationInfo);
 export const cachedFlagTypes = GreaseMonkeyCache.GetFromCache<CachedFlag[]>(FlagTypesKey) || [];
 export const updateFlagTypes = (): void => GreaseMonkeyCache.StoreInCache(FlagTypesKey, cachedFlagTypes);
+export const cachedCategories = GreaseMonkeyCache.GetFromCache<CachedCategory[]>(FlagCategoriesKey) || [];
+export const updateCategories = (): void => GreaseMonkeyCache.StoreInCache(FlagCategoriesKey, cachedCategories);
 
 // For GetComment() on FlagTypes. Adds the author name before the comment if the option is enabled
 export function getFullComment(flagId: number, { AuthorName }: UserDetails, level?: 'Low' | 'High'): string {

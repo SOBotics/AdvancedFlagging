@@ -26,7 +26,8 @@ export interface FlagType {
 
 export interface FlagCategory {
     IsDangerous: boolean; // whether the category should have a red-ish background
-    AppliesTo: ('Answer' | 'Question')[];
+    Name: string; // will appear on the edit comments & flags modal
+    AppliesTo: ('Answer' | 'Question')[]; // where it'll appear (question, answer or both)
     FlagTypes: FlagType[];
 }
 
@@ -34,6 +35,7 @@ const getRepLevel = (reputation: number, max = 50): 'Low' | 'High' => reputation
 export const flagCategories: FlagCategory[] = [
     {
         IsDangerous: true,
+        Name: 'Red flags',
         AppliesTo: ['Answer', 'Question'],
         FlagTypes: [
             {
@@ -60,6 +62,7 @@ export const flagCategories: FlagCategory[] = [
     },
     {
         IsDangerous: true,
+        Name: 'Guttenberg mod flags',
         AppliesTo: ['Answer'],
         FlagTypes: [
             {
@@ -121,6 +124,7 @@ export const flagCategories: FlagCategory[] = [
     },
     {
         IsDangerous: false,
+        Name: 'Answer-related',
         AppliesTo: ['Answer'],
         FlagTypes: [
             {
@@ -295,6 +299,7 @@ export const flagCategories: FlagCategory[] = [
     },
     {
         IsDangerous: false,
+        Name: 'General',
         AppliesTo: ['Answer', 'Question'],
         FlagTypes: [
             {

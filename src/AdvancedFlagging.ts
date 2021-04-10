@@ -11,33 +11,8 @@ declare const StackExchange: globals.StackExchange;
 
 function SetupStyles(): void {
     GM_addStyle(`
-#snackbar {
-    margin-left: -125px;
-}
-
-#snackbar.show {
-    opacity: 1;
-    transition: opacity 1s ease-out;
-    -ms-transition: opacity 1s ease-out;
-    -moz-transition: opacity 1s ease-out;
-    -webkit-transition: opacity 1s ease-out;
-}
-
-#snackbar.hide {
-    opacity: 0;
-    transition: opacity 1s ease-in;
-    -ms-transition: opacity 1s ease-in;
-    -moz-transition: opacity 1s ease-in;
-    -webkit-transition: opacity 1s ease-in;
-}
-
-.advanced-flagging-dialog {
-    min-width: 10rem !important;
-}
-
-#af-comments textarea {
-    resize: vertical;
-}`);
+.advanced-flagging-dialog { min-width: 10rem !important; }
+#af-comments textarea { resize: vertical; }`);
 }
 
 const reviewPostsInformation: ReviewQueuePostInfo[] = [];
@@ -102,13 +77,13 @@ async function handleFlagAndComment(
 const popupWrapper = globals.popupWrapper;
 
 export function displayToaster(message: string, state: string): void {
-    if (popupWrapper.hasClass('hide')) popupWrapper.empty(); // if the toaster is hidden, then remove any appended messages
     const messageDiv = globals.getMessageDiv(message, state);
+    popupWrapper.append(messageDiv).removeClass('o0');
 
-    popupWrapper.append(messageDiv);
-    popupWrapper.removeClass('hide').addClass('show');
-
-    window.setTimeout(() => popupWrapper.removeClass('show').addClass('hide'), globals.popupDelay);
+    window.setTimeout(() => {
+        popupWrapper.addClass('o0');
+        void globals.Delay(globals.transitionDelay).then(() => popupWrapper.empty());
+    }, globals.popupDelay);
 }
 
 function displaySuccessFlagged(reportedIcon: JQuery, reportType?: Flags): void {

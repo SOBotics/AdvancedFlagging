@@ -90,7 +90,8 @@ export const placeholderCopypastorLink = /\$COPYPASTOR\$/g;
 export const nattyAllReportsUrl = 'https://logs.sobotics.org/napi/api/stored/all';
 export const username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
 export const dayMillis = 1000 * 60 * 60 * 24;
-export const popupDelay = 4000;
+export const popupDelay = 4 * 1000;
+export const transitionDelay = 0.25 * 1000;
 export const settingUpTitle = 'Setting up MetaSmoke';
 export const settingUpBody = 'If you do not wish to connect, press cancel and this popup won\'t show up again. '
                            + 'To reset configuration, see the footer of Stack Overflow.';
@@ -221,8 +222,7 @@ export const performedActionIcon = (): JQuery => iconWrapper.clone().append(Svg.
 export const failedActionIcon = (): JQuery => iconWrapper.clone().append(Svg.Clear().addClass('fc-red-500'));
 export const reportedIcon = (): JQuery => iconWrapper.clone().append(Svg.Flag().addClass('fc-red-500'));
 export const divider = $('<hr>').attr('class', 'my8');
-export const popupWrapper = $('<div>').attr('id', 'snackbar')
-    .attr('class', 'hide fc-white p16 fs-body3 ps-fixed ta-center z-popover l50 t32 wmn2');
+export const popupWrapper = $('<div>').addClass('af-snackbar fc-white fs-body3 ps-fixed ta-center l50 mln128 t t-opacity t-slow o0');
 export const dropDown = $('<div>').attr('class', 'advanced-flagging-dialog s-popover s-anchors s-anchors__default p6 mt2 c-default d-none');
 export const popoverArrow = $('<div>').attr('class', 's-popover--arrow s-popover--arrow__tc');
 export const reportLink = $('<a>').attr('class', 'd-inline-block my4');

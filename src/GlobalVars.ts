@@ -194,11 +194,11 @@ export const guttenbergIcon = sampleIcon.clone().find('img').attr('src', guttenb
 export const smokeyIcon = sampleIcon.clone().find('img').attr('src', smokeyImage).parent().parent();
 
 // dynamically generated jQuery elements based on the parameters passed
-export const getMessageDiv = (message: string, state: string): JQuery => $('<div>').attr('class', 'p12 bg-' + state).text(message);
+export const getMessageDiv = (message: string, state: string): JQuery => $('<div>').addClass('p12 bg-' + state).text(message);
 export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').html(`<h2 class="grid--cell">${name}</h2>`)
     .addClass(`grid gs8 gsy fd-column af-section-${name.toLowerCase()}`);
 export const getOptionBox = (name: string): JQuery => $('<input>').attr('type', 'checkbox').attr('name', name).attr('id', name).addClass('s-checkbox');
-export const getCategoryDiv = (red: boolean): JQuery => $('<div>').attr('class', `advanced-flagging-category bar-md${red ? ' bg-red-200' : ''}`);
+export const getCategoryDiv = (red: boolean): JQuery => $('<div>').addClass(`advanced-flagging-category bar-md${red ? ' bg-red-200' : ''}`);
 export const getOptionLabel = (text: string, name: string): JQuery => $('<label>').text(text).attr('for', name)
     .addClass('s-label ml4 va-middle fs-body1 fw-normal');
 export const getConfigHtml = (optionId: string, text: string): JQuery => $(`
@@ -217,18 +217,18 @@ export const getTextarea = (textareaContent: string, labelText: string, contentT
     </div> 
 </div>`);
 
-const iconWrapper = $('<div>').attr('class', 'grid--cell d-none');
+const iconWrapper = $('<div>').addClass('grid--cell d-none');
 export const performedActionIcon = (): JQuery => iconWrapper.clone().append(Svg.Checkmark().addClass('fc-green-500'));
 export const failedActionIcon = (): JQuery => iconWrapper.clone().append(Svg.Clear().addClass('fc-red-500'));
 export const reportedIcon = (): JQuery => iconWrapper.clone().append(Svg.Flag().addClass('fc-red-500'));
-export const divider = $('<hr>').attr('class', 'my8');
+export const divider = $('<hr>').addClass('my8');
 export const popupWrapper = $('<div>').addClass('af-snackbar fc-white fs-body3 ps-fixed ta-center l50 mln128 t t-opacity t-slow o0');
-export const dropDown = $('<div>').attr('class', 'advanced-flagging-dialog s-popover s-anchors s-anchors__default p6 mt2 c-default d-none');
-export const popoverArrow = $('<div>').attr('class', 's-popover--arrow s-popover--arrow__tc');
-export const reportLink = $('<a>').attr('class', 'd-inline-block my4');
-export const dropdownItem = $('<div>').attr('class', 'advanced-flagging-dropdown-item px4');
-export const advancedFlaggingLink = $('<button>').attr('type', 'button').attr('class', 's-btn s-btn__link').text('Advanced Flagging');
-export const configurationDiv = $('<div>').attr('class', 'advanced-flagging-configuration-div ta-left pt6');
+export const dropDown = $('<div>').addClass('advanced-flagging-dialog s-popover s-anchors s-anchors__default p6 mt2 c-default d-none');
+export const popoverArrow = $('<div>').addClass('s-popover--arrow s-popover--arrow__tc');
+export const reportLink = $('<a>').addClass('d-inline-block my4');
+export const dropdownItem = $('<div>').addClass('advanced-flagging-dropdown-item px4');
+export const advancedFlaggingLink = $('<button>').attr('type', 'button').addClass('s-btn s-btn__link').text('Advanced Flagging');
+export const configurationDiv = $('<div>').addClass('advanced-flagging-configuration-div ta-left pt6');
 export const configurationLink = $('<a>').attr('id', 'af-modal-button').text('AdvancedFlagging configuration');
 export const commentsDiv = configurationDiv.clone().removeClass('advanced-flagging-configuration-div').addClass('af-comments-div');
 export const commentsLink = configurationLink.clone().attr('id', 'af-comments-button').text('AdvancedFlagging: edit comments and flags');
@@ -246,7 +246,7 @@ export const overlayModal = $(`
     <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
   </div>
 </aside>`);
-const grid = $('<div>').attr('class', 'grid lg:grid md:fd-column sm:fd-column');
+const grid = $('<div>').addClass('grid lg:grid md:fd-column sm:fd-column');
 export const inlineCheckboxesWrapper = gridCellDiv.clone().addClass('grid--cell lg:grid--cell md:m0 sm:m0').append(grid.clone());
 const metasmokeTokenPopup = $(`
 <aside class="s-modal" id="af-ms-token" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">

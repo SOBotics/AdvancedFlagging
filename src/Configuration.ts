@@ -107,7 +107,8 @@ function BuildConfigurationOverlay(): void {
             onSave: (): void => {
                 // collect all flag ids (flag-type-ID) and store them
                 const flagOptions = $('.af-section-flags').find('input').get()
-                    .filter(el => $(el).prop('checked')).map(el => Number(/\d+/.exec(el.id || '')) || 0)
+                    .filter(el => $(el).prop('checked') && !$(el).parent().parent().hasClass('v-hidden')) // filter out hidden checkboxes
+                    .map(el => Number(/\d+/.exec(el.id || '')) || 0)
                     .sort((a, b) => a - b); // sort the ids before storing them
                 globals.cachedConfigurationInfo[globals.ConfigurationEnabledFlags] = flagOptions;
             }
@@ -149,7 +150,7 @@ function BuildConfigurationOverlay(): void {
     // keep the checkboxes aligned by filling flagOptions with invisible ones
     let flagOptions = $('.af-section-flags').children('div');
     const itemsToAdd = Math.ceil(flagOptions.length / 5) * 5 - flagOptions.length;
-    const checkboxClone = flagOptions.first().clone().addClass('v-hidden md:d-none sm:d-none');
+    const checkboxClone = flagOptions.first().clone().addClass('v-hidden');
     [...Array(itemsToAdd).keys()].forEach(() => flagOptions = flagOptions.add(checkboxClone.clone()));
     for (let i = 0; i < flagOptions.length; i += 5) {
         flagOptions.slice(i, i + 5).wrapAll(globals.inlineCheckboxesWrapper.clone());

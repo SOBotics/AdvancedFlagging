@@ -219,7 +219,7 @@ const iconWrapper = $('<div>').addClass('grid--cell d-none'); // the element tha
 export const performedActionIcon = (): JQuery => iconWrapper.clone().append(Svg.Checkmark().addClass('fc-green-500'));
 export const failedActionIcon = (): JQuery => iconWrapper.clone().append(Svg.Clear().addClass('fc-red-500'));
 export const reportedIcon = (): JQuery => iconWrapper.clone().append(Svg.Flag().addClass('fc-red-500'));
-export const popupWrapper = $('<div>').addClass('af-snackbar fc-white fs-body3 ta-center z-modal t t-opacity t-slow o0 ps-fixed l50');
+export const popupWrapper = $('<div>').addClass('af-snackbar fc-white fs-body3 ta-center z-modal wmn2 t t-opacity t-slow o0 ps-fixed l50');
 
 export const advancedFlaggingLink = $('<button>').attr('type', 'button').addClass('s-btn s-btn__link').text('Advanced Flagging');
 export const popoverArrow = $('<div>').addClass('s-popover--arrow s-popover--arrow__tc');

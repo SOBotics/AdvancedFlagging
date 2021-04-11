@@ -53,17 +53,30 @@ async function handleFlagAndComment(
         const flagName: Flags = flag.ReportType === 'PostLowQuality' ?
             (qualifiesForVlq ? 'PostLowQuality' : 'AnswerNotAnAnswer') : flag.ReportType;
         try {
+            const failedToFlagText = 'Failed to flag: ';
             const flagPost = await fetch(`//${window.location.hostname}/flags/posts/${post.postId}/add/${flagName}`, {
                 method: 'POST',
                 body: globals.getFormDataFromObject({ fkey: userFkey, otherText: flag.ReportType === 'PostOther' ? flagText : '' })
             });
-            const responseJson = await flagPost.json() as StackExchangeFlagResponse;
+
+            // for some reason, the flag responses are inconsistent: some are in JSON, others in text
+            // for example, if a user flags posts too quickly, then they get a text response
+            // if the post has been flagged successfully, the response is in JSON format
+            const responseText = await flagPost.text();
+            if (/You may only flag a post every \d+ seconds?/.test(responseText)) {
+                const rateLimitedSeconds = /\d+/.exec(responseText)?.[0] || 0;
+                const pluralS = rateLimitedSeconds > 1 ? 's' : '';
+                displayErrorFlagged(`${failedToFlagText}rate-limited for ${rateLimitedSeconds} second${pluralS}`, responseText);
+                return;
+            }
+
+            const responseJson = JSON.parse(responseText) as StackExchangeFlagResponse;
             if (responseJson.Success) {
                 displaySuccessFlagged(reportedIcon, flag.ReportType);
             } else { // sometimes, although the status is 200, the post isn't flagged.
                 const fullMessage = `Failed to flag the post with outcome ${responseJson.Outcome}: ${responseJson.Message}.`;
                 const message = getErrorMessage(responseJson);
-                displayErrorFlagged(message, fullMessage);
+                displayErrorFlagged(failedToFlagText + message, fullMessage);
             }
         } catch (error) {
             displayErrorFlagged('Failed to flag post', error);
@@ -118,17 +131,13 @@ function upvoteSameComments(element: JQuery, strippedCommentText: string): void 
 }
 
 function getErrorMessage(responseJson: StackExchangeFlagResponse): string {
-    let message = 'Failed to flag: ';
     if (/already flagged/.exec(responseJson.Message)) {
-        message += 'post already flagged';
+        return 'post already flagged';
     } else if (/limit reached/.exec(responseJson.Message)) {
-        message += 'post flag limit reached';
-    } else if (/You may only flag a post every \d+ seconds?/.exec(JSON.stringify(responseJson))) {
-        message += 'rate-limited';
+        return 'post flag limit reached';
     } else {
-        message += responseJson.Message;
+        return responseJson.Message;
     }
-    return message;
 }
 
 function showComments(postId: number, data: string): void {

@@ -12,7 +12,8 @@ declare const StackExchange: globals.StackExchange;
 function SetupStyles(): void {
     GM_addStyle(`
 .advanced-flagging-dialog { min-width: 10rem !important; }
-#af-comments textarea { resize: vertical; }`);
+#af-comments textarea { resize: vertical; }
+.af-snackbar { transform: translate(-50%, 0); }`);
 }
 
 const reviewPostsInformation: ReviewQueuePostInfo[] = [];

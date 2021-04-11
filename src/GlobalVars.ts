@@ -222,7 +222,7 @@ export const performedActionIcon = (): JQuery => iconWrapper.clone().append(Svg.
 export const failedActionIcon = (): JQuery => iconWrapper.clone().append(Svg.Clear().addClass('fc-red-500'));
 export const reportedIcon = (): JQuery => iconWrapper.clone().append(Svg.Flag().addClass('fc-red-500'));
 export const divider = $('<hr>').addClass('my8');
-export const popupWrapper = $('<div>').addClass('af-snackbar fc-white fs-body3 ps-fixed ta-center l50 mln128 t t-opacity t-slow o0');
+export const popupWrapper = $('<div>').addClass('af-snackbar fc-white fs-body3 ta-center z-modal t t-opacity t-slow o0 ps-fixed l50');
 export const dropDown = $('<div>').addClass('advanced-flagging-dialog s-popover s-anchors s-anchors__default p6 mt2 c-default d-none');
 export const popoverArrow = $('<div>').addClass('s-popover--arrow s-popover--arrow__tc');
 export const reportLink = $('<a>').addClass('d-inline-block my4');

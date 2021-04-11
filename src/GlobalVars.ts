@@ -107,7 +107,6 @@ export const isNatoPage = /\/tools\/new-answers-old-questions/.test(window.locat
 export const isQuestionPage = /\/questions\/\d+.*/.test(window.location.href);
 export const isFlagsPage = /\/users\/flag-summary\//.test(window.location.href);
 export const isLqpReviewPage = /\/review\/low-quality-posts\/\d+/.test(window.location.href);
-export const plainDiv = $('<div>');
 export const gridCellDiv = $('<div>').addClass('grid--cell');
 
 // Help center links used in FlagTypes for comments/flags
@@ -198,7 +197,6 @@ export const getMessageDiv = (message: string, state: string): JQuery => $('<div
 export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').html(`<h2 class="grid--cell">${name}</h2>`)
     .addClass(`grid gs8 gsy fd-column af-section-${name.toLowerCase()}`);
 export const getOptionBox = (name: string): JQuery => $('<input>').attr('type', 'checkbox').attr('name', name).attr('id', name).addClass('s-checkbox');
-export const getCategoryDiv = (red: boolean): JQuery => $('<div>').addClass(`advanced-flagging-category bar-md${red ? ' bg-red-200' : ''}`);
 export const getOptionLabel = (text: string, name: string): JQuery => $('<label>').text(text).attr('for', name)
     .addClass('s-label ml4 va-middle fs-body1 fw-normal');
 export const getConfigHtml = (optionId: string, text: string): JQuery => $(`
@@ -217,17 +215,20 @@ export const getTextarea = (textareaContent: string, labelText: string, contentT
     </div> 
 </div>`);
 
-const iconWrapper = $('<div>').addClass('grid--cell d-none');
+const iconWrapper = $('<div>').addClass('grid--cell d-none'); // the element that will contain the bot icons
 export const performedActionIcon = (): JQuery => iconWrapper.clone().append(Svg.Checkmark().addClass('fc-green-500'));
 export const failedActionIcon = (): JQuery => iconWrapper.clone().append(Svg.Clear().addClass('fc-red-500'));
 export const reportedIcon = (): JQuery => iconWrapper.clone().append(Svg.Flag().addClass('fc-red-500'));
-export const divider = $('<hr>').addClass('my8');
 export const popupWrapper = $('<div>').addClass('af-snackbar fc-white fs-body3 ta-center z-modal t t-opacity t-slow o0 ps-fixed l50');
-export const dropDown = $('<div>').addClass('advanced-flagging-dialog s-popover s-anchors s-anchors__default p6 mt2 c-default d-none');
-export const popoverArrow = $('<div>').addClass('s-popover--arrow s-popover--arrow__tc');
-export const reportLink = $('<a>').addClass('d-inline-block my4');
-export const dropdownItem = $('<div>').addClass('advanced-flagging-dropdown-item px4');
+
 export const advancedFlaggingLink = $('<button>').attr('type', 'button').addClass('s-btn s-btn__link').text('Advanced Flagging');
+export const popoverArrow = $('<div>').addClass('s-popover--arrow s-popover--arrow__tc');
+export const dropdown = $('<div>').addClass('advanced-flagging-dialog s-popover s-anchors s-anchors__default mt2 c-default d-none');
+export const actionsMenu = $('<ul>').addClass('s-menu mxn12 myn8').attr('role', 'menu');
+export const dropdownItem = $('<li>').attr('role', 'menuitem');
+export const reportLink = $('<a>').addClass('s-block-link py4');
+export const categoryDivider = $('<li>').addClass('s-menu--divider').attr('role', 'separator');
+
 export const configurationDiv = $('<div>').addClass('advanced-flagging-configuration-div ta-left pt6');
 export const configurationLink = $('<a>').attr('id', 'af-modal-button').text('AdvancedFlagging configuration');
 export const commentsDiv = configurationDiv.clone().removeClass('advanced-flagging-configuration-div').addClass('af-comments-div');

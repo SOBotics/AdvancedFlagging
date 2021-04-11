@@ -263,7 +263,9 @@ function BuildFlaggingDialog(
     const defaultNoFlag = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoFlag];
     const defaultNoDownvote = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoDownvote];
     const comments = post.element.find('.comment-body');
-    const dropDown = globals.dropDown.clone();
+    const dropdown = globals.dropdown.clone();
+    const actionsMenu = globals.actionsMenu.clone();
+    dropdown.append(actionsMenu);
 
     const checkboxNameComment = `comment_checkbox_${post.postId}`;
     const checkboxNameFlag = `flag_checkbox_${post.postId}`;
@@ -278,28 +280,27 @@ function BuildFlaggingDialog(
 
     const newCategories = flagCategories.filter(item => item.AppliesTo.includes(post.type)
                                                      && item.FlagTypes.some(flag => enabledFlagIds && enabledFlagIds.includes(flag.Id)));
-    for (const flagCategory of newCategories) {
-        const categoryDiv = globals.getCategoryDiv(flagCategory.IsDangerous);
-        for (const flagType of flagCategory.FlagTypes.filter(flag => enabledFlagIds && enabledFlagIds.includes(flag.Id))) {
-            const reportLink = globals.reportLink.clone();
-            const dropdownItem = globals.dropdownItem.clone();
-
+    newCategories.forEach(flagCategory => {
+        const flagTypes = flagCategory.FlagTypes.filter(flagType => {
             // https://github.com/SOBotics/AdvancedFlagging/issues/16
             const copypastorIsRepost = copyPastorApi.getIsRepost();
             const copypastorId = copyPastorApi.getCopyPastorId();
-            if (!flagType.Enabled(copypastorIsRepost, copypastorId)) continue;
+            return flagType.Enabled(copypastorIsRepost, copypastorId);
+        });
+        if (!flagTypes.length) return;
 
-            globals.showElement(reportLink);
-            reportLink.text(flagType.DisplayName);
+        flagTypes.forEach(flagType => {
+            const reportLink = globals.reportLink.clone().addClass(flagCategory.IsDangerous ? 'fc-red-500' : '');
+            const dropdownItem = globals.dropdownItem.clone();
+
+            globals.showElement(reportLink.text(flagType.DisplayName));
             dropdownItem.append(reportLink);
-            categoryDiv.append(dropdownItem);
-
-            dropDown.append(categoryDiv);
+            actionsMenu.append(dropdownItem);
 
             let commentText = flagType.GetComment?.({ Reputation: post.authorReputation, AuthorName: post.authorName }) || null;
             const reportTypeHuman = getHumanFromDisplayName(flagType.ReportType);
             const reportLinkInfo = `This option will${reportTypeHuman ? ' ' : ' not'} flag the post <b>${reportTypeHuman}</b></br>`
-                                 + (commentText ? `and add the following comment: ${commentText}` : '');
+                + (commentText ? `and add the following comment: ${commentText}` : '');
             void globals.attachHtmlPopover(reportLink.parent()[0], reportLinkInfo, 'right-start')
                 .then(() => increasePopoverWidth(reportLink));
 
@@ -317,7 +318,7 @@ function BuildFlaggingDialog(
                     );
                 }
 
-                globals.hideElement(dropDown); // hide the dropdown after clicking one of the options
+                globals.hideElement(dropdown); // hide the dropdown after clicking one of the options
                 const success = await handleFlag(flagType, reporters);
                 if (flagType.ReportType !== 'NoFlag') return;
 
@@ -329,28 +330,28 @@ function BuildFlaggingDialog(
                     globals.showElement(failedActionIcon);
                 }
             });
-        }
-        if (categoryDiv.html()) dropDown.append(globals.divider.clone()); // at least one option exists for the category
-    }
+        });
+        actionsMenu.append(globals.categoryDivider.clone());
+    });
 
     if (globals.isStackOverflow) {
         const commentBoxLabel = globals.getOptionLabel('Leave comment', checkboxNameComment);
-        const commentRow = globals.plainDiv.clone();
+        const commentRow = globals.dropdownItem.clone().addClass('pl6');
         commentRow.append(leaveCommentBox, commentBoxLabel);
-        dropDown.append(commentRow);
+        actionsMenu.append(commentRow);
     }
 
     const flagBoxLabel = globals.getOptionLabel('Flag', checkboxNameFlag);
-    const flagRow = globals.plainDiv.clone();
+    const flagRow = globals.dropdownItem.clone().addClass('pl6');
     flagRow.append(flagBox, flagBoxLabel);
 
     const downvoteBoxLabel = globals.getOptionLabel('Downvote', checkboxNameDownvote);
-    const downvoteRow = globals.plainDiv.clone();
+    const downvoteRow = globals.dropdownItem.clone().addClass('pl6');
     downvoteRow.append(downvoteBox, downvoteBoxLabel);
 
-    dropDown.append(flagRow, downvoteRow, globals.popoverArrow.clone());
+    actionsMenu.append(flagRow, downvoteRow, globals.popoverArrow.clone());
 
-    return dropDown;
+    return dropdown;
 }
 
 async function handleFlag(flagType: FlagType, reporters: Reporter[]): Promise<boolean> {

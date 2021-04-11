@@ -25,7 +25,7 @@ export interface FlagType {
 }
 
 export interface FlagCategory {
-    IsDangerous: boolean; // whether the category should have a red-ish background
+    IsDangerous: boolean; // whether each FlagType of the category should have a red colour
     Name: string; // will appear on the edit comments & flags modal
     AppliesTo: ('Answer' | 'Question')[]; // where it'll appear (question, answer or both)
     FlagTypes: FlagType[];

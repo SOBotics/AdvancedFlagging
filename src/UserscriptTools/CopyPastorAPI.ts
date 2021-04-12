@@ -1,14 +1,14 @@
 import { ChatApi } from './ChatApi';
 import { isStackOverflow, getAllPostIds, copyPastorServer, username, copyPastorKey, getSentMessage } from '../GlobalVars';
 
-export interface CopyPastorFindTargetResponseItem {
+interface CopyPastorFindTargetResponseItem {
     post_id: string;
     target_url: string;
     repost: boolean;
     original_url: string;
 }
 
-export type CopyPastorFindTargetResponse = {
+type CopyPastorFindTargetResponse = {
     status: 'success';
     posts: CopyPastorFindTargetResponseItem[];
 } | {

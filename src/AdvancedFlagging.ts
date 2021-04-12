@@ -259,24 +259,19 @@ function BuildFlaggingDialog(
     failedActionIcon: JQuery
 ): JQuery {
     const enabledFlagIds = globals.cachedConfigurationInfo?.[globals.ConfigurationEnabledFlags];
-    const defaultNoComment = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoComment];
-    const defaultNoFlag = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoFlag];
-    const defaultNoDownvote = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoDownvote];
     const comments = post.element.find('.comment-body');
     const dropdown = globals.dropdown.clone();
     const actionsMenu = globals.actionsMenu.clone();
     dropdown.append(actionsMenu);
 
-    const checkboxNameComment = `af-comment-checkbox-${post.postId}`;
-    const checkboxNameFlag = `af-flag-checkbox-${post.postId}`;
-    const checkboxNameDownvote = `af-downvote-checkbox-${post.postId}`;
-    const leaveCommentBox = globals.getOptionBox(checkboxNameComment);
-    const flagBox = globals.getOptionBox(checkboxNameFlag);
-    const downvoteBox = globals.getOptionBox(checkboxNameDownvote);
+    const defaultNoComment = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoComment];
+    const defaultNoFlag = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoFlag];
+    const defaultNoDownvote = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoDownvote];
 
-    leaveCommentBox.prop('checked', !defaultNoComment && !comments.length && globals.isStackOverflow);
-    flagBox.prop('checked', !defaultNoFlag);
-    downvoteBox.prop('checked', !defaultNoDownvote);
+    const checkComment = !defaultNoComment && !comments.length;
+    const commentRow = globals.getPopoverOption(`af-comment-checkbox-${post.postId}`, checkComment, 'Leave comment');
+    const flagRow = globals.getPopoverOption(`af-flag-checkbox-${post.postId}`, !defaultNoFlag, 'Flag');
+    const downvoteRow = globals.getPopoverOption(`af-downvote-checkbox-${post.postId}`, !defaultNoDownvote, 'Downvote');
 
     const newCategories = flagCategories.filter(item => item.AppliesTo.includes(post.type)
                                                      && item.FlagTypes.some(flag => enabledFlagIds && enabledFlagIds.includes(flag.Id)));
@@ -306,14 +301,14 @@ function BuildFlaggingDialog(
 
             reportLink.on('click', async () => {
                 if (!deleted) {
-                    if (!leaveCommentBox.is(':checked') && commentText) {
+                    if (!commentRow.find('.s-checkbox').is(':checked') && commentText) {
                         const strippedComment = getStrippedComment(commentText);
                         upvoteSameComments(post.element, strippedComment);
                         commentText = null;
                     }
 
                     await handleFlagAndComment(
-                        post, flagType, flagBox.is(':checked'), downvoteBox.is(':checked'),
+                        post, flagType, flagRow.find('.s-checkbox').is(':checked'), downvoteRow.find('.s-checkbox').is(':checked'),
                         copyPastorApi, reportedIcon, shouldRaiseVlq, commentText
                     );
                 }
@@ -334,22 +329,9 @@ function BuildFlaggingDialog(
         actionsMenu.append(globals.categoryDivider.clone());
     });
 
-    if (globals.isStackOverflow) {
-        const commentBoxLabel = globals.getOptionLabel('Leave comment', checkboxNameComment);
-        const commentRow = globals.dropdownItem.clone().addClass('pl6');
-        commentRow.append(leaveCommentBox, commentBoxLabel);
-        actionsMenu.append(commentRow);
-    }
-
-    const flagBoxLabel = globals.getOptionLabel('Flag', checkboxNameFlag);
-    const flagRow = globals.dropdownItem.clone().addClass('pl6');
-    flagRow.append(flagBox, flagBoxLabel);
-
-    const downvoteBoxLabel = globals.getOptionLabel('Downvote', checkboxNameDownvote);
-    const downvoteRow = globals.dropdownItem.clone().addClass('pl6');
-    downvoteRow.append(downvoteBox, downvoteBoxLabel);
-
-    actionsMenu.append(flagRow, downvoteRow, globals.popoverArrow.clone());
+    actionsMenu.append(globals.popoverArrow.clone());
+    if (globals.isStackOverflow) actionsMenu.append(commentRow);
+    actionsMenu.append(flagRow, downvoteRow);
 
     return dropdown;
 }

@@ -187,9 +187,6 @@ export const smokeyIcon = sampleIcon.clone().find('img').attr('src', smokeyImage
 export const getMessageDiv = (message: string, state: string): JQuery => $('<div>').addClass('p12 bg-' + state).text(message);
 export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').html(`<h2 class="grid--cell">${name}</h2>`)
     .addClass(`grid gs8 gsy fd-column af-section-${name.toLowerCase()}`);
-export const getOptionBox = (name: string): JQuery => $('<input>').attr('type', 'checkbox').attr('name', name).attr('id', name).addClass('s-checkbox');
-export const getOptionLabel = (text: string, name: string): JQuery => $('<label>').text(text).attr('for', name)
-    .addClass('s-label ml4 va-middle fs-body1 fw-normal');
 export const getConfigHtml = (optionId: string, text: string): JQuery => $(`
 <div>
   <div class="grid gs4">
@@ -219,6 +216,10 @@ export const actionsMenu = $('<ul>').addClass('s-menu mxn12 myn8').attr('role', 
 export const dropdownItem = $('<li>').attr('role', 'menuitem');
 export const reportLink = $('<a>').addClass('s-block-link py4');
 export const categoryDivider = $('<li>').addClass('s-menu--divider').attr('role', 'separator');
+const getOptionCheckbox = (elId: string): JQuery => $(`<input type="checkbox" name="${elId}" id="${elId}" class="s-checkbox">`);
+const getOptionLabel = (elId: string, text: string): JQuery => $(`<label for="${elId}" class="ml6 va-middle c-pointer">${text}</label>`);
+export const getPopoverOption = (itemId: string, checked: boolean, text: string): JQuery => dropdownItem.clone().addClass('pl6')
+    .append(getOptionCheckbox(itemId).prop('checked', checked), getOptionLabel(itemId, text));
 
 export const configurationDiv = $('<div>').addClass('advanced-flagging-configuration-div ta-left pt6');
 export const configurationLink = $('<a>').attr('id', 'af-modal-button').text('AdvancedFlagging configuration');

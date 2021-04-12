@@ -267,9 +267,9 @@ function BuildFlaggingDialog(
     const actionsMenu = globals.actionsMenu.clone();
     dropdown.append(actionsMenu);
 
-    const checkboxNameComment = `comment_checkbox_${post.postId}`;
-    const checkboxNameFlag = `flag_checkbox_${post.postId}`;
-    const checkboxNameDownvote = `downvote_checkbox_${post.postId}`;
+    const checkboxNameComment = `af-comment-checkbox-${post.postId}`;
+    const checkboxNameFlag = `af-flag-checkbox-${post.postId}`;
+    const checkboxNameDownvote = `af-downvote-checkbox-${post.postId}`;
     const leaveCommentBox = globals.getOptionBox(checkboxNameComment);
     const flagBox = globals.getOptionBox(checkboxNameFlag);
     const downvoteBox = globals.getOptionBox(checkboxNameDownvote);

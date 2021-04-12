@@ -237,7 +237,7 @@ interface ConfigSection {
 }
 
 function createFlagTypeDiv(displayName: string, flagId: number, reportType: Flags): JQuery {
-    const expandableId = `${flagId}-${displayName}`.toLowerCase().replace(/\s/g, '');
+    const expandableId = `advanced-flagging-${flagId}-${displayName}`.toLowerCase().replace(/\s/g, '');
     const shouldBeDisabled = reportType === 'PostOther';
     const categoryDiv = $(`
 <div class="s-sidebarwidget" data-flag-id=${flagId}>

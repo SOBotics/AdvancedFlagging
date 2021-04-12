@@ -455,8 +455,7 @@ function Setup(): void {
         MetaSmokeAPI.Setup(globals.metaSmokeKey),
         MetaSmokeAPI.QueryMetaSmokeInternal(),
         CopyPastorAPI.getAllCopyPastorIds(),
-        NattyAPI.getAllNattyIds(),
-        globals.waitForSvg()
+        NattyAPI.getAllNattyIds()
     ]).then(() => {
         SetupPostPage();
         SetupStyles();

@@ -2,6 +2,9 @@ const path = require('path');
 const webpack = require('webpack'); // for the banner plugin
 const userscriptInfo = require('./package.json');
 
+const svgsNeeded = ['Checkmark', 'Clear', 'EyeOff', 'Flag', 'Pencil', 'Trash'];
+const svgsUrls = svgsNeeded.map(svgName => `// @resource     ${svgName} https://cdn.sstatic.net/Img/stacks-icons/${svgName}.svg`);
+
 module.exports = {
     entry: './src/AdvancedFlagging.ts',
     mode: 'none',
@@ -37,12 +40,14 @@ module.exports = {
                      // @exclude      *://stackoverflow.com/c/*
                      // @exclude      *://winterbash*.stackexchange.com/*
                      // @exclude      *://api.stackexchange.com/*
+                     ${svgsUrls.join('\n')}
                      // @grant        GM_xmlhttpRequest
                      // @grant        GM_listValues
                      // @grant        GM_getValue
                      // @grant        GM_setValue
                      // @grant        GM_deleteValue
                      // @grant        GM_addStyle
+                     // @grant        GM_getResourceText
                      // @downloadURL  https://github.com/SOBotics/AdvancedFlagging/raw/master/dist/AdvancedFlagging.user.js
                      // @updateURL    https://github.com/SOBotics/AdvancedFlagging/raw/master/dist/AdvancedFlagging.user.js
                      // ==/UserScript==

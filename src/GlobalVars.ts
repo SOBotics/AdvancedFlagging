@@ -4,7 +4,6 @@ import { UserDetails, Flags, FlagCategory } from './FlagTypes';
 import { displayToaster } from './AdvancedFlagging';
 
 declare const StackExchange: StackExchange;
-declare const Svg: Svg;
 declare const Stacks: Stacks;
 
 type StacksToastState = 'success' | 'danger' | 'info';
@@ -35,16 +34,6 @@ export interface CachedConfiguration {
 }
 
 // StackExchange objects
-export interface Svg {
-    Checkmark(): JQuery;
-    Clear(): JQuery;
-    ClearSm(): JQuery;
-    EyeOff(): JQuery;
-    Flag(): JQuery;
-    Pencil(): JQuery;
-    Trash(): JQuery;
-}
-
 export interface Stacks {
     setTooltipText(element: Element | null, title: string, options: { placement: string }): Promise<void>;
     setTooltipHtml(element: Element | null, title: string, options: { placement: string }): Promise<void>;
@@ -135,6 +124,8 @@ export const MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
 export const FlagTypesKey = 'FlagTypes';
 export const FlagCategoriesKey = 'FlagCategories';
 
+export const getStacksSvg = (svgName: string): JQuery => $(GM_getResourceText(svgName));
+
 export const displayStacksToast = (message: string, type: StacksToastState): void => StackExchange.helpers.showToast(message, {
     type: type,
     transientTimeout: popupDelay
@@ -216,9 +207,9 @@ export const getTextarea = (textareaContent: string, labelText: string, contentT
 </div>`);
 
 const iconWrapper = $('<div>').addClass('grid--cell d-none'); // the element that will contain the bot icons
-export const performedActionIcon = (): JQuery => iconWrapper.clone().append(Svg.Checkmark().addClass('fc-green-500'));
-export const failedActionIcon = (): JQuery => iconWrapper.clone().append(Svg.Clear().addClass('fc-red-500'));
-export const reportedIcon = (): JQuery => iconWrapper.clone().append(Svg.Flag().addClass('fc-red-500'));
+export const performedActionIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Checkmark').addClass('fc-green-500'));
+export const failedActionIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Clear').addClass('fc-red-500'));
+export const reportedIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Flag').addClass('fc-red-500'));
 export const popupWrapper = $('<div>').addClass('af-snackbar fc-white fs-body3 ta-center z-modal wmn2 t t-opacity t-slow o0 ps-fixed l50');
 
 export const advancedFlaggingLink = $('<button>').attr('type', 'button').addClass('s-btn s-btn__link').text('Advanced Flagging');
@@ -381,11 +372,4 @@ export function getFlagText(flagId: number): string {
 
 export function getComments(flagId: number): CachedFlag['Comments'] {
     return cachedFlagTypes?.find(flagType => flagType.Id === flagId)?.Comments as CachedFlag['Comments'] || '';
-}
-
-export async function waitForSvg(): Promise<void> {
-    while (typeof Svg === 'undefined') {
-        // eslint-disable-next-line no-await-in-loop
-        await Delay(1000);
-    }
 }

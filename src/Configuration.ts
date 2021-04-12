@@ -3,7 +3,6 @@ import { flagCategories, Flags } from './FlagTypes';
 import { GreaseMonkeyCache } from './UserscriptTools/GreaseMonkeyCache';
 import * as globals from './GlobalVars';
 
-declare const Svg: globals.Svg;
 declare const StackExchange: globals.StackExchange;
 declare const Stacks: globals.Stacks;
 type GeneralItems = Exclude<keyof globals.CachedConfiguration, 'EnabledFlags'>;
@@ -87,7 +86,7 @@ function SetupDefaults(): void {
 */
 function BuildConfigurationOverlay(): void {
     const overlayModal = globals.overlayModal.clone();
-    overlayModal.find('.s-modal--close').append(Svg.ClearSm());
+    overlayModal.find('.s-modal--close').append(globals.getStacksSvg('Clear'));
 
     const sections: ConfigSection[] = [
         {
@@ -258,8 +257,8 @@ function createFlagTypeDiv(displayName: string, flagId: number, reportType: Flag
         </div>
     </div>
 </div>`);
-    categoryDiv.find('.af-remove-expandable').prepend(Svg.Trash(), ' '); // add the trash icon to the remove button
-    categoryDiv.find('.af-expandable-trigger').prepend(Svg.Pencil(), ' '); // add the pencil icon to the edit button
+    categoryDiv.find('.af-remove-expandable').prepend(globals.getStacksSvg('Trash'), ' '); // add the trash icon to the remove button
+    categoryDiv.find('.af-expandable-trigger').prepend(globals.getStacksSvg('Pencil'), ' '); // add the pencil icon to the edit button
     return categoryDiv;
 }
 
@@ -300,7 +299,7 @@ function createCategoryDiv(displayName: string): JQuery {
 */
 function SetupCommentsAndFlagsModal(): void {
     const editCommentsPopup = globals.editCommentsPopup.clone();
-    editCommentsPopup.find('.s-modal--close').append(Svg.ClearSm());
+    editCommentsPopup.find('.s-modal--close').append(globals.getStacksSvg('Clear'));
 
     const categoryElements = {} as { [key: string]: JQuery };
     globals.cachedCategories.forEach(category => categoryElements[category.Name] = createCategoryDiv(category.Name));
@@ -327,10 +326,11 @@ function SetupCommentsAndFlagsModal(): void {
         .filter(categoryWrapper => categoryWrapper.children().length > 1) // the header is a child so the count must be >1
         .forEach(element => editCommentsPopup.find('.s-modal--body').children().append(element));
 
-    Svg.EyeOff(); // start the GET request to fetch and cache the SVG in order to show it immediately when 'Edit' is clicked
     $(document).on('click', '.af-expandable-trigger', event => { // trigger the expandable
         const button = $(event.target), saveButton = button.next();
-        button.html(button.text().includes('Hide') ? `${Svg.Pencil()[0].outerHTML} Edit` : `${Svg.EyeOff()[0].outerHTML} Hide`);
+        const pencilSvgHtml = globals.getStacksSvg('Pencil')[0].outerHTML;
+        const eyeOffSvgHtml = globals.getStacksSvg('EyeOff')[0].outerHTML;
+        button.html(button.text().includes('Hide') ? `${pencilSvgHtml} Edit` : `${eyeOffSvgHtml} Hide`);
         saveButton.hasClass('d-none') ? globals.showElement(saveButton) : globals.hideElement(saveButton);
     }).on('click', '.af-submit-content', event => { // save changes
         const element = $(event.target), expandable = element.next().next();

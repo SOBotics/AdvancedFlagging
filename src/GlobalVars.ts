@@ -344,11 +344,11 @@ export const cachedCategories = GreaseMonkeyCache.GetFromCache<CachedCategory[]>
 export const updateCategories = (): void => GreaseMonkeyCache.StoreInCache(FlagCategoriesKey, cachedCategories);
 
 // For GetComment() on FlagTypes. Adds the author name before the comment if the option is enabled
-export function getFullComment(flagId: number, { AuthorName }: UserDetails, level?: 'Low' | 'High'): string {
+export function getFullComment(flagId: number, { AuthorName }: UserDetails, level?: 'Low' | 'High'): string | null {
     const shouldAddAuthorName = cachedConfigurationInfo?.AddAuthorName;
     const flagType = getFlagTypeFromFlagId(flagId);
     const comment = flagType?.Comments[level || 'Low'];
-    return (comment && shouldAddAuthorName ? `${AuthorName}, ${comment[0].toLowerCase()}${comment.slice(1)}` : comment) || '';
+    return (comment && shouldAddAuthorName ? `${AuthorName}, ${comment[0].toLowerCase()}${comment.slice(1)}` : comment) || null;
 }
 
 // For GetCustomFlagText() on FlagTypes. Replaces the placeholders with actual values

@@ -20,7 +20,7 @@ const reviewPostsInformation: ReviewQueuePostInfo[] = [];
 
 async function handleFlagAndComment(
     post: QuestionPageInfo,
-    flag: FlagType,
+    flag: globals.CachedFlag,
     flagRequired: boolean,
     downvoteRequired: boolean,
     copypastorApi: CopyPastorAPI,
@@ -46,9 +46,7 @@ async function handleFlagAndComment(
     if (flagRequired && flag.ReportType !== 'NoFlag') {
         const copypastorId = copypastorApi.getCopyPastorId();
         const targetUrl = copypastorApi.getTargetUrl();
-        const flagText = flag.GetCustomFlagText && copypastorId && targetUrl
-            ? flag.GetCustomFlagText(targetUrl, copypastorId)
-            : null;
+        const flagText = copypastorId && targetUrl ? globals.getFullFlag(flag.Id, targetUrl, copypastorId) : null;
 
         autoFlagging = true;
         const flagName: Flags = flag.ReportType === 'PostLowQuality' ?
@@ -85,7 +83,7 @@ async function handleFlagAndComment(
     }
 
     // The user probably doesn't want to auto-downvote posts after selecting Looks Fine, NE, etc.
-    if (downvoteRequired && flag.DefaultReportType !== 'NoFlag') post.element.find('.js-vote-down-btn').trigger('click');
+    if (downvoteRequired && flag.ReportType !== 'NoFlag') post.element.find('.js-vote-down-btn').trigger('click');
 }
 
 const popupWrapper = globals.popupWrapper;
@@ -273,26 +271,29 @@ function BuildFlaggingDialog(
     const flagRow = globals.getPopoverOption(`af-flag-checkbox-${post.postId}`, !defaultNoFlag, 'Flag');
     const downvoteRow = globals.getPopoverOption(`af-downvote-checkbox-${post.postId}`, !defaultNoDownvote, 'Downvote');
 
-    const newCategories = flagCategories.filter(item => item.AppliesTo.includes(post.type)
-                                                     && item.FlagTypes.some(flag => enabledFlagIds && enabledFlagIds.includes(flag.Id)));
-    newCategories.forEach(flagCategory => {
-        const flagTypes = flagCategory.FlagTypes.filter(flagType => {
-            // https://github.com/SOBotics/AdvancedFlagging/issues/16
-            const copypastorIsRepost = copyPastorApi.getIsRepost();
-            const copypastorId = copyPastorApi.getCopyPastorId();
-            return flagType.Enabled(copypastorIsRepost, copypastorId);
-        });
-        if (!flagTypes.length) return;
+    const newCategories = globals.cachedCategories.filter(item => item.AppliesTo.includes(post.type))
+        .map(item => ({ ...item, FlagTypes: [] as globals.CachedFlag[] }));
+    globals.cachedFlagTypes.filter(flagType => {
+        const copypastorId = copyPastorApi.getCopyPastorId();
+        const isRepost = copyPastorApi.getIsRepost();
+        const isGuttenbergItem = flagType.ReportType === 'PostOther'; // only Guttenberg reports (can) have the PostOther ReportType
+        // a CopyPastor id must exist and the requirements from issue https://github.com/SOBotics/AdvancedFlagging/issues/16 must be met
+        const showGutReport = Boolean(copypastorId) && (flagType.DisplayName === 'Duplicate Answer' ? isRepost : !isRepost);
+        // show the red flags and general items on every site, restrict the others on StackOverflow
+        const showOnMainSite = ['Red flags', 'General'].includes(flagType.BelongsTo) ? true : globals.isStackOverflow;
+        return enabledFlagIds?.includes(flagType.Id) && (isGuttenbergItem ? showGutReport : showOnMainSite);
+    }).forEach(flagType => newCategories.find(category => flagType.BelongsTo === category.Name)?.FlagTypes.push(flagType));
 
-        flagTypes.forEach(flagType => {
-            const reportLink = globals.reportLink.clone().addClass(flagCategory.IsDangerous ? 'fc-red-500' : '');
+    newCategories.filter(category => category.FlagTypes.length).forEach(category => {
+        category.FlagTypes.forEach(flagType => {
+            const reportLink = globals.reportLink.clone().addClass(category.IsDangerous ? 'fc-red-500' : '');
             const dropdownItem = globals.dropdownItem.clone();
 
             globals.showElement(reportLink.text(flagType.DisplayName));
             dropdownItem.append(reportLink);
             actionsMenu.append(dropdownItem);
 
-            let commentText = flagType.GetComment?.({ Reputation: post.authorReputation, AuthorName: post.authorName }) || null;
+            let commentText = globals.getFullComment(flagType.Id, { Reputation: post.authorReputation, AuthorName: post.authorName });
             const reportTypeHuman = getHumanFromDisplayName(flagType.ReportType);
             const reportLinkInfo = `This option will${reportTypeHuman ? ' ' : ' not'} flag the post <b>${reportTypeHuman}</b></br>`
                 + (commentText ? `and add the following comment: ${commentText}` : '');
@@ -314,9 +315,10 @@ function BuildFlaggingDialog(
                 }
 
                 globals.hideElement(dropdown); // hide the dropdown after clicking one of the options
-                const success = await handleFlag(flagType, reporters);
-                if (flagType.ReportType !== 'NoFlag') return;
+                const notCachedFlagType = flagCategories.flatMap(item => item.FlagTypes).find(flag => flag.Id === flagType.Id);
+                if (!notCachedFlagType) return;
 
+                const success = await handleFlag(notCachedFlagType, reporters);
                 if (success) {
                     void globals.attachPopover(performedActionIcon[0], `Performed action: ${flagType.DisplayName}`, 'bottom-start');
                     globals.showElement(performedActionIcon);
@@ -393,10 +395,10 @@ function SetupPostPage(): void {
                 if (!matches) return;
 
                 const flagTypes = flagCategories.flatMap(category => category.FlagTypes);
-                const flagType = flagTypes.find(item => item.ReportType === (matches[1] as Flags));
+                const flagType = flagTypes.find(item => item.DefaultReportType === (matches[1] as Flags));
                 if (!flagType) return;
 
-                displaySuccessFlagged(reportedIcon, flagType.ReportType);
+                displaySuccessFlagged(reportedIcon, flagType.DefaultReportType);
                 void handleFlag(flagType, reporters);
             });
 

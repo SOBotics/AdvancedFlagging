@@ -319,6 +319,8 @@ function BuildFlaggingDialog(
                 if (!notCachedFlagType) return;
 
                 const success = await handleFlag(notCachedFlagType, reporters);
+                if (flagType.ReportType !== 'NoFlag') return; // don't show performed/failed action icons if post has been flagged
+
                 if (success) {
                     void globals.attachPopover(performedActionIcon[0], `Performed action: ${flagType.DisplayName}`, 'bottom-start');
                     globals.showElement(performedActionIcon);

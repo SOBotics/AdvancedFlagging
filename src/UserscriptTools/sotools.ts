@@ -12,6 +12,7 @@ interface QuestionQuestion { // the question on a question page
     score: number;
     authorReputation: number;
     authorName: string;
+    addListener: boolean; // in case a post is destroyed, then we don't want to add a click listener twice
 }
 
 interface QuestionAnswer { // an answer on a question page or in review
@@ -24,6 +25,7 @@ interface QuestionAnswer { // an answer on a question page or in review
     score: number;
     authorReputation: number;
     authorName: string;
+    addListener: boolean;
 }
 
 interface NatoAnswer {
@@ -101,7 +103,7 @@ function getPostDetails(node: JQuery): PostDetails {
     return { score, authorReputation, authorName, creationDate };
 }
 
-function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) => void, questionTime: Date | null): void {
+function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) => void, questionTime: Date | null, addListener: boolean): void {
     const answerIdString = aNode.attr('data-answerid');
     if (!answerIdString || !questionTime) return;
 
@@ -110,10 +112,7 @@ function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) =>
     if (!postDetails.creationDate) return;
 
     aNode.find('.answercell').on('destroyed', () => {
-        setTimeout(() => {
-            const updatedAnswerNode = $(`#answer-${answerId}`);
-            parseAnswerDetails(updatedAnswerNode, callback, questionTime);
-        });
+        setTimeout(() => parseAnswerDetails($(`#answer-${answerId}`), callback, questionTime, false));
     });
 
     callback({
@@ -125,13 +124,14 @@ function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) =>
         creationDate: postDetails.creationDate,
         score: postDetails.score,
         authorReputation: postDetails.authorReputation,
-        authorName: postDetails.authorName
+        authorName: postDetails.authorName,
+        addListener
     });
 }
 
 function parseQuestionPage(callback: (post: QuestionPageInfo) => void): void {
     let question: QuestionQuestion;
-    const parseQuestionDetails = (qNode: JQuery): void => {
+    const parseQuestionDetails = (qNode: JQuery, addListener: boolean): void => {
         const questionIdString = qNode.attr('data-questionid');
         if (!questionIdString) return;
 
@@ -140,10 +140,7 @@ function parseQuestionPage(callback: (post: QuestionPageInfo) => void): void {
         if (!postDetails.creationDate) return;
 
         qNode.find('.postcell').on('destroyed', () => {
-            setTimeout(() => {
-                const updatedQuestionNode = $(`[data-questionid="${postId}"]`);
-                parseQuestionDetails(updatedQuestionNode);
-            });
+            setTimeout(() => parseQuestionDetails($(`[data-questionid="${postId}"]`), false));
         });
 
         callback(question = {
@@ -154,13 +151,14 @@ function parseQuestionPage(callback: (post: QuestionPageInfo) => void): void {
             creationDate: postDetails.creationDate,
             score: postDetails.score,
             authorReputation: postDetails.authorReputation,
-            authorName: postDetails.authorName
+            authorName: postDetails.authorName,
+            addListener
         });
     };
     const questionNode = $('.question');
-    parseQuestionDetails(questionNode);
+    parseQuestionDetails(questionNode, true);
 
-    $('.answer').each((_index, element) => parseAnswerDetails($(element), callback, question.creationDate));
+    $('.answer').each((_index, element) => parseAnswerDetails($(element), callback, question.creationDate, true));
 }
 
 function parseFlagsPage(callback: (post: FlagPageInfo) => void): void {
@@ -195,7 +193,7 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): vo
     } else if (isFlagsPage) {
         parseFlagsPage(callback);
     } else if (isLqpReviewPage) {
-        parseAnswerDetails($('.answer'), callback, parseDate($('.post-signature.owner .user-action-time span').attr('title')));
+        parseAnswerDetails($('.answer'), callback, parseDate($('.post-signature.owner .user-action-time span').attr('title')), true);
     }
 }
 

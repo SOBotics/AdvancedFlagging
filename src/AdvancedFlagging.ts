@@ -254,7 +254,8 @@ function BuildFlaggingDialog(
     reporters: Reporter[],
     copyPastorApi: CopyPastorAPI,
     shouldRaiseVlq: boolean,
-    failedActionIcon: JQuery
+    failedActionIcon: JQuery,
+    addListener: boolean
 ): JQuery {
     const enabledFlagIds = globals.cachedConfigurationInfo?.[globals.ConfigurationEnabledFlags];
     const comments = post.element.find('.comment-body');
@@ -300,6 +301,7 @@ function BuildFlaggingDialog(
             void globals.attachHtmlPopover(reportLink.parent()[0], reportLinkInfo, 'right-start')
                 .then(() => increasePopoverWidth(reportLink));
 
+            if (!addListener) return;
             reportLink.on('click', async () => {
                 if (!deleted) {
                     if (!commentRow.find('.s-checkbox').is(':checked') && commentText) {
@@ -406,7 +408,7 @@ function SetupPostPage(): void {
 
             const shouldRaiseVlq = globals.qualifiesForVlq(post.score, answerTime || new Date());
             const dropDown = BuildFlaggingDialog(
-                post, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi, shouldRaiseVlq, failedActionIcon
+                post, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi, shouldRaiseVlq, failedActionIcon, post.addListener
             );
 
             advancedFlaggingLink.append(dropDown);

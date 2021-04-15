@@ -71,7 +71,7 @@ async function handleFlagAndComment(
 
             const responseJson = JSON.parse(responseText) as StackExchangeFlagResponse;
             if (responseJson.Success) {
-                displaySuccessFlagged(reportedIcon, flag.ReportType);
+                displaySuccessFlagged(reportedIcon, flagName);
             } else { // sometimes, although the status is 200, the post isn't flagged.
                 const fullMessage = `Failed to flag the post with outcome ${responseJson.Outcome}: ${responseJson.Message}.`;
                 const message = getErrorMessage(responseJson);

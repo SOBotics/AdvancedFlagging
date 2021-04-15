@@ -130,9 +130,9 @@ function upvoteSameComments(element: JQuery, strippedCommentText: string): void 
 }
 
 function getErrorMessage(responseJson: StackExchangeFlagResponse): string {
-    if (/already flagged/.exec(responseJson.Message)) {
+    if (/already flagged/.test(responseJson.Message)) {
         return 'post already flagged';
-    } else if (/limit reached/.exec(responseJson.Message)) {
+    } else if (/limit reached/.test(responseJson.Message)) {
         return 'post flag limit reached';
     } else {
         return responseJson.Message;
@@ -391,13 +391,11 @@ function SetupPostPage(): void {
 
             const shouldWatchFlags = globals.cachedConfigurationInfo?.[globals.ConfigurationWatchFlags];
             globals.addXHRListener(xhr => {
-                if (!shouldWatchFlags || autoFlagging || xhr.status !== 200 || !globals.flagsUrlRegex.exec(xhr.responseURL)) return;
+                if (!shouldWatchFlags || autoFlagging || xhr.status !== 200 || !globals.flagsUrlRegex.test(xhr.responseURL)) return;
 
                 const matches = globals.getFlagsUrlRegex(post.postId).exec(xhr.responseURL);
-                if (!matches) return;
-
                 const flagTypes = flagCategories.flatMap(category => category.FlagTypes);
-                const flagType = flagTypes.find(item => item.DefaultReportType === (matches[1] as Flags));
+                const flagType = flagTypes.find(item => item.DefaultReportType === (matches?.[1] as Flags));
                 if (!flagType) return;
 
                 displaySuccessFlagged(reportedIcon, flagType.DefaultReportType);

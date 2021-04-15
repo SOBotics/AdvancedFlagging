@@ -323,7 +323,7 @@ export function getAllPostIds(includeQuestion: boolean, urlForm: boolean): (numb
     return $(isQuestionPage ? '.question, .answer' : '.flagged-post').get().map(item => {
         const el = $(item);
         const postType = (isQuestionPage ? el.attr('data-questionid') : el.find('.question-hyperlink').length) ? 'Question' : 'Answer';
-        if (!includeQuestion && postType === 'Question') return 0;
+        if (!includeQuestion && postType === 'Question') return '';
         const elementHref = el.find(`.${postType.toLowerCase()}-hyperlink`).attr('href');
         let postId: number;
         if (elementHref) { // We're on flags page. We have to fetch the post id from the post URL

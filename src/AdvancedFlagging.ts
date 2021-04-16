@@ -90,11 +90,12 @@ const popupWrapper = globals.popupWrapper;
 
 export function displayToaster(message: string, state: string): void {
     const messageDiv = globals.getMessageDiv(message, state);
-    popupWrapper.append(messageDiv).removeClass('o0');
+    popupWrapper.append(messageDiv);
+    setTimeout(() => messageDiv.removeClass('o0'), 10);
 
     window.setTimeout(() => {
-        popupWrapper.addClass('o0');
-        void globals.Delay(globals.transitionDelay).then(() => popupWrapper.empty());
+        messageDiv.addClass('o0');
+        void globals.Delay(globals.transitionDelay).then(() => messageDiv.remove()); // remove after the transition has finished
     }, globals.popupDelay);
 }
 

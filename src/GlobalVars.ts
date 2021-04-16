@@ -184,7 +184,7 @@ export const guttenbergIcon = sampleIcon.clone().find('img').attr('src', guttenb
 export const smokeyIcon = sampleIcon.clone().find('img').attr('src', smokeyImage).parent().parent();
 
 // dynamically generated jQuery elements based on the parameters passed
-export const getMessageDiv = (message: string, state: string): JQuery => $('<div>').addClass('p12 bg-' + state).text(message);
+export const getMessageDiv = (text: string, state: string): JQuery => $('<div>').addClass(`p12 bg-${state} t t-opacity t-slow o0`).text(text);
 export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').html(`<h2 class="grid--cell">${name}</h2>`)
     .addClass(`grid gs8 gsy fd-column af-section-${name.toLowerCase()}`);
 export const getConfigHtml = (optionId: string, text: string): JQuery => $(`
@@ -207,7 +207,7 @@ const iconWrapper = $('<div>').addClass('grid--cell d-none'); // the element tha
 export const performedActionIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Checkmark').addClass('fc-green-500'));
 export const failedActionIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Clear').addClass('fc-red-500'));
 export const reportedIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Flag').addClass('fc-red-500'));
-export const popupWrapper = $('<div>').addClass('af-snackbar fc-white fs-body3 ta-center z-modal wmn2 t t-opacity t-slow o0 ps-fixed l50');
+export const popupWrapper = $('<div>').addClass('af-snackbar fc-white fs-body3 ta-center z-modal wmn2 ps-fixed l50');
 
 export const advancedFlaggingLink = $('<button>').attr('type', 'button').addClass('s-btn s-btn__link').text('Advanced Flagging');
 export const popoverArrow = $('<div>').addClass('s-popover--arrow s-popover--arrow__tc');

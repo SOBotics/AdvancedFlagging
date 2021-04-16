@@ -42,7 +42,6 @@ module.exports = {
                      // @exclude      *://api.stackexchange.com/*
                      ${svgsUrls.join('\n')}
                      // @grant        GM_xmlhttpRequest
-                     // @grant        GM_listValues
                      // @grant        GM_getValue
                      // @grant        GM_setValue
                      // @grant        GM_deleteValue

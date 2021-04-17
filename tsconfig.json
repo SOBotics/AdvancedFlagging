@@ -10,14 +10,11 @@
     "declaration": false,
     "moduleResolution": "node",
     "strict": true,
-    "strictBindCallApply": false, // RequestWatcher.ts L29
+    "strictBindCallApply": false,
     "outDir": "./dist",
-    "module": "amd",
-    "target": "esnext",
-    "lib": [
-      "es2020",
-      "DOM"
-    ],
-    "baseUrl": "src"
+    "module": "commonjs",
+    "target": "es2019",
+    "lib": [ "es2020", "DOM" ],
+    "baseUrl": "src",
   }
 }

@@ -1,20 +1,11 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "importHelpers": true,
     "isolatedModules": true,
-    "sourceMap": false,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "declaration": false,
-    "moduleResolution": "node",
     "strict": true,
     "strictBindCallApply": false,
-    "outDir": "./dist",
     "module": "commonjs",
     "target": "es2019",
-    "lib": [ "es2020", "DOM" ],
-    "baseUrl": "src",
+    "lib": [ "es2020", "DOM" ]
   }
 }

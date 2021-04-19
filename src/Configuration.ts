@@ -342,8 +342,9 @@ function SetupCommentsAndFlagsModal(): void {
         const button = $(event.target), saveButton = button.next();
         const pencilSvgHtml = globals.getStacksSvg('Pencil')[0].outerHTML;
         const eyeOffSvgHtml = globals.getStacksSvg('EyeOff')[0].outerHTML;
-        button.html(button.text().includes('Hide') ? `${pencilSvgHtml} Edit` : `${eyeOffSvgHtml} Hide`);
-        saveButton.hasClass('d-none') ? globals.showElement(saveButton) : globals.hideElement(saveButton);
+        const isExpanded = button.parent().find('.s-expandable').hasClass('is-expanded');
+        button.html(isExpanded ? `${eyeOffSvgHtml} Hide` : `${pencilSvgHtml} Edit`);
+        isExpanded ? globals.showElement(saveButton) : globals.hideElement(saveButton);
     }).on('click', '.af-submit-content', event => { // save changes
         const element = $(event.target), expandable = element.next().next();
         const flagId = Number(element.parents('.s-sidebarwidget').attr('data-flag-id'));

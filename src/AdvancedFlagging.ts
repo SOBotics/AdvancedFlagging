@@ -342,12 +342,10 @@ function BuildFlaggingDialog(
 }
 
 async function handleFlag(flagType: globals.CachedFlag, reporters: Reporter[]): Promise<boolean> {
-    const flagTypeFeedbacks = JSON.parse(flagType.Feedbacks) as globals.FlagTypeFeedbacks;
-    for (const reporter of reporters.filter(item => flagTypeFeedbacks[item.name])) {
-        const reporterName = reporter.name;
+    for (const reporter of reporters.filter(item => flagType.Feedbacks[item.name])) {
         try {
             // eslint-disable-next-line no-await-in-loop
-            const promiseValue = await reporter.SendFeedback(flagTypeFeedbacks[reporterName]);
+            const promiseValue = await reporter.SendFeedback(flagType.Feedbacks[reporter.name]);
             if (!promiseValue) continue;
             globals.displaySuccess(promiseValue);
         } catch (error) {

@@ -1,6 +1,6 @@
 interface ExpiryingCacheItem<T> {
     Data: T;
-    Expires?: Date;
+    Expires: Date;
 }
 
 export class GreaseMonkeyCache {
@@ -14,18 +14,16 @@ export class GreaseMonkeyCache {
     }
 
     public static GetFromCache<T>(cacheKey: string): T | null {
-        const jsonItem = GM_getValue(cacheKey, null);
-        if (!jsonItem) return null;
+        const cachedItem = GM_getValue<T | ExpiryingCacheItem<T>>(cacheKey);
+        const isItemExpired = typeof cachedItem === 'object' && 'Data' in cachedItem && new Date(cachedItem.Expires) < new Date();
+        if (!cachedItem || isItemExpired) return null;
 
-        const dataItem = JSON.parse(jsonItem) as ExpiryingCacheItem<T>;
-        if (dataItem.Expires && new Date(dataItem.Expires) < new Date()) return null;
-
-        return dataItem.Data;
+        return typeof cachedItem === 'object' && 'Data' in cachedItem ? cachedItem.Data : cachedItem;
     }
 
     public static StoreInCache<T>(cacheKey: string, item: T, expiresAt?: Date): void {
-        const jsonStr = JSON.stringify({ Expires: expiresAt, Data: item });
-        GM_setValue(cacheKey, jsonStr);
+        const jsonObject = expiresAt ? { Expires: expiresAt, Data: item } : item;
+        GM_setValue(cacheKey, jsonObject);
     }
 
     public static Unset(cacheKey: string): void {

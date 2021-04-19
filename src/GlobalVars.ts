@@ -18,7 +18,7 @@ export interface CachedFlag {
         High: string;
     };
     ReportType: Flags;
-    Feedbacks: string;
+    Feedbacks: FlagTypeFeedbacks;
     BelongsTo: string; // category Name where it belongs
 }
 

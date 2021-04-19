@@ -21,7 +21,7 @@ const cacheFlags = (): void => GreaseMonkeyCache.StoreInCache(globals.FlagTypesK
                 High: flagType.DefaultCommentHigh || ''
             },
             ReportType: flagType.DefaultReportType,
-            Feedbacks: JSON.stringify(flagType.DefaultFeedbacks),
+            Feedbacks: flagType.DefaultFeedbacks,
             BelongsTo: category.Name
         } as globals.CachedFlag;
     });

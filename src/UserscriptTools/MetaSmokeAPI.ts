@@ -87,7 +87,7 @@ export class MetaSmokeAPI {
             await globals.Delay(100);
         }
 
-        return await GreaseMonkeyCache.GetAndCache(globals.MetaSmokeUserKeyConfig, async (): Promise<string> => {
+        return await GreaseMonkeyCache.GetAndCache<string>(globals.MetaSmokeUserKeyConfig, async (): Promise<string> => {
             const keyUrl = `https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeAPI.appKey}`;
             const code = await MetaSmokeAPI.codeGetter(keyUrl);
             if (!code) return '';

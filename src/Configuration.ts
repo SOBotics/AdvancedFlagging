@@ -158,9 +158,10 @@ function BuildConfigurationOverlay(): void {
 
     $('body').append(overlayModal);
     // keep the checkboxes aligned by filling flagOptions with invisible ones
+    // on large screens, we should use visibility: hidden, on smaller, display: none
     let flagOptions = $('.af-section-flags').children('div');
     const itemsToAdd = Math.ceil(flagOptions.length / 5) * 5 - flagOptions.length;
-    const checkboxClone = flagOptions.first().clone().addClass('v-hidden');
+    const checkboxClone = flagOptions.first().clone().addClass('v-hidden md:d-none sm:d-none');
     [...Array(itemsToAdd).keys()].forEach(() => flagOptions = flagOptions.add(checkboxClone.clone()));
     for (let i = 0; i < flagOptions.length; i += 5) {
         flagOptions.slice(i, i + 5).wrapAll(globals.inlineCheckboxesWrapper.clone());

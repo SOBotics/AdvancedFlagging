@@ -10,31 +10,41 @@ type GeneralItems = Exclude<keyof globals.CachedConfiguration, 'EnabledFlags'>;
 const getEnabledFlags = (): number[] => globals.cachedConfigurationInfo?.EnabledFlags;
 const flagTypes = flagCategories.flatMap(category => category.FlagTypes);
 const flagNames = [...new Set(flagTypes.map(flagType => flagType.DefaultReportType))];
-const cacheFlags = (): void => GreaseMonkeyCache.StoreInCache(globals.FlagTypesKey, flagCategories.flatMap(category => {
-    return category.FlagTypes.map(flagType => {
-        return {
-            Id: flagType.Id,
-            DisplayName: flagType.DisplayName,
-            FlagText: flagType.DefaultFlagText || '',
-            Comments: {
-                Low: flagType.DefaultComment || '',
-                High: flagType.DefaultCommentHigh || ''
-            },
-            ReportType: flagType.DefaultReportType,
-            Feedbacks: flagType.DefaultFeedbacks,
-            BelongsTo: category.Name
-        } as globals.CachedFlag;
-    });
-}));
 const getOption = (flag: Flags, name: string): string => `<option${flag === name ? ' selected' : ''}>${flag}</option>`;
 const getFlagOptions = (name: string): string => flagNames.map(flag => getOption(flag, name)).join('');
-const cacheCategories = (): void => GreaseMonkeyCache.StoreInCache(globals.FlagCategoriesKey, flagCategories.map(category => (
-    {
-        IsDangerous: category.IsDangerous,
-        Name: category.Name,
-        AppliesTo: category.AppliesTo
-    } as globals.CachedCategory
-)));
+
+function cacheFlags(): void {
+    const flagTypesToCache = flagCategories.flatMap(category => {
+        return category.FlagTypes.map(flagType => {
+            return {
+                Id: flagType.Id,
+                DisplayName: flagType.DisplayName,
+                FlagText: flagType.DefaultFlagText || '',
+                Comments: {
+                    Low: flagType.DefaultComment || '',
+                    High: flagType.DefaultCommentHigh || ''
+                },
+                ReportType: flagType.DefaultReportType,
+                Feedbacks: flagType.DefaultFeedbacks,
+                BelongsTo: category.Name
+            } as globals.CachedFlag;
+        });
+    });
+    GreaseMonkeyCache.StoreInCache<globals.CachedFlag[]>(globals.FlagTypesKey, flagTypesToCache);
+    globals.cachedFlagTypes.push(...flagTypesToCache); // also update the variable to prevent breaking config modal
+}
+
+function cacheCategories(): void {
+    const categoriesInfoToCache = flagCategories.map(category => (
+        {
+            IsDangerous: category.IsDangerous,
+            Name: category.Name,
+            AppliesTo: category.AppliesTo
+        } as globals.CachedCategory
+    ));
+    GreaseMonkeyCache.StoreInCache<globals.CachedCategory[]>(globals.FlagCategoriesKey, categoriesInfoToCache);
+    globals.cachedCategories.push(...categoriesInfoToCache);
+}
 
 export function SetupConfiguration(): void {
     SetupDefaults(); // stores default values if they haven't already been
@@ -203,7 +213,7 @@ function GetFlagSettings(): JQuery[] {
     if (!enabledFlags) return checkboxes;
 
     globals.cachedFlagTypes.forEach(flag => {
-        const storedValue = enabledFlags.indexOf(flag.Id) > -1;
+        const storedValue = enabledFlags.includes(flag.Id);
         const checkbox = createCheckbox(flag.DisplayName, storedValue, `flag-type-${flag.Id}`).children().eq(0);
         checkboxes.push(checkbox.addClass('w25 lg:w25 md:w100 sm:w100')); // responsiveness
     });

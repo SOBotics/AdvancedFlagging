@@ -256,7 +256,7 @@ function createFlagTypeDiv(displayName: string, flagId: number, reportType: Flag
     <button class="s-sidebarwidget--action s-btn s-btn__danger s-btn__icon t4 r6 af-remove-expandable">Remove</button>
     <button class="s-sidebarwidget--action s-btn s-btn__icon t4 r4 af-expandable-trigger"
             data-controller="s-expandable-control" aria-controls="${expandableId}">Edit</button>
-    <button class="s-sidebarwidget--action s-btn s-btn__primary t4 r6 af-submit-content d-none">Save</button>
+    <button class="s-sidebarwidget--action s-btn s-btn__primary t4 r6 af-submit-content" style="display: none">Save</button>
     <div class="s-sidebarwidget--content d-block p12 fs-body3">${displayName}</div>
         <div class="s-expandable" id="${expandableId}">
             <div class="s-expandable--content px8">
@@ -356,7 +356,7 @@ function SetupCommentsAndFlagsModal(): void {
         const eyeOffSvgHtml = globals.getStacksSvg('EyeOff')[0].outerHTML;
         const isExpanded = button.parent().find('.s-expandable').hasClass('is-expanded');
         button.html(isExpanded ? `${eyeOffSvgHtml} Hide` : `${pencilSvgHtml} Edit`);
-        isExpanded ? globals.showElement(saveButton) : globals.hideElement(saveButton);
+        isExpanded ? saveButton.fadeIn('fast') : saveButton.fadeOut('fast');
     }).on('click', '.af-submit-content', event => { // save changes
         const element = $(event.target), expandable = element.next().next();
         const flagId = Number(element.parents('.s-sidebarwidget').attr('data-flag-id'));
@@ -385,8 +385,11 @@ function SetupCommentsAndFlagsModal(): void {
         globals.cachedFlagTypes.splice(flagTypeIndex, 1);
         globals.updateFlagTypes();
 
-        removeButton.parent().remove(); // the parent element is the sidebar widget
-        if (categoryWrapper.children().length === 1) categoryWrapper.remove(); // length === 1 => only the category header remains
+        removeButton.parent().fadeOut('fast', () => { // the parent element is the sidebar widget
+            removeButton.parent().remove();
+            // if length is 1, then only the category header remains, which should be removed
+            if (categoryWrapper.children().length === 1) categoryWrapper.fadeOut('fast', () => categoryWrapper.remove());
+        });
         globals.displayStacksToast('Successfully removed flag type', 'success');
     }).on('click', '.af-comments-reset', () => {
         GreaseMonkeyCache.Unset(globals.FlagTypesKey);

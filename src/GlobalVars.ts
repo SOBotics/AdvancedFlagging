@@ -161,7 +161,6 @@ export const getFlagsUrlRegex = (postId: number): RegExp => new RegExp(`/flags/p
 
 // helper functions
 export const showElement = (element: JQuery): JQuery => element.addClass('d-block').removeClass('d-none');
-export const hideElement = (element: JQuery): JQuery => element.addClass('d-none').removeClass('d-block');
 export const showInlineElement = (element: JQuery): JQuery => element.addClass('d-inline-block').removeClass('d-none');
 export const displaySuccess = (message: string): void => displayToaster(message, 'success');
 export const displayError = (message: string): void => displayToaster(message, 'danger');
@@ -196,7 +195,7 @@ export const guttenbergIcon = sampleIcon.clone().find('img').attr('src', guttenb
 export const smokeyIcon = sampleIcon.clone().find('img').attr('src', smokeyImage).parent().parent();
 
 // dynamically generated jQuery elements based on the parameters passed
-export const getMessageDiv = (text: string, state: string): JQuery => $('<div>').addClass(`p12 bg-${state} t t-opacity t-slow o0`).text(text);
+export const getMessageDiv = (text: string, state: string): JQuery => $('<div>').addClass(`p12 bg-${state}`).text(text).hide();
 export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').html(`<h2 class="grid--cell">${name}</h2>`)
     .addClass(`grid gs8 gsy fd-column af-section-${name.toLowerCase()}`);
 export const getConfigHtml = (optionId: string, text: string): JQuery => $(`
@@ -215,7 +214,7 @@ export const getTextarea = (textareaContent: string, labelText: string, contentT
     </div> 
 </div>`);
 
-const iconWrapper = $('<div>').addClass('grid--cell d-none'); // the element that will contain the bot icons
+const iconWrapper = $('<div>').addClass('grid--cell').css('display', 'none'); // the element that will contain the bot icons
 export const performedActionIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Checkmark').addClass('fc-green-500'));
 export const failedActionIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Clear').addClass('fc-red-500'));
 export const reportedIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Flag').addClass('fc-red-500'));
@@ -223,7 +222,7 @@ export const popupWrapper = $('<div>').addClass('af-snackbar fc-white fs-body3 t
 
 export const advancedFlaggingLink = $('<button>').attr('type', 'button').addClass('s-btn s-btn__link').text('Advanced Flagging');
 export const popoverArrow = $('<div>').addClass('s-popover--arrow s-popover--arrow__tc');
-export const dropdown = $('<div>').addClass('advanced-flagging-dialog s-popover s-anchors s-anchors__default mt2 c-default d-none');
+export const dropdown = $('<div>').addClass('advanced-flagging-dialog s-popover s-anchors s-anchors__default mt2 c-default');
 export const actionsMenu = $('<ul>').addClass('s-menu mxn12 myn8').attr('role', 'menu');
 export const dropdownItem = $('<li>').attr('role', 'menuitem');
 export const reportLink = $('<a>').addClass('s-block-link py4');

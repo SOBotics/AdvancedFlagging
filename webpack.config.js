@@ -41,6 +41,7 @@ module.exports = {
                      // @exclude      *://winterbash*.stackexchange.com/*
                      // @exclude      *://api.stackexchange.com/*
                      ${svgsUrls.join('\n')}
+                     // @require      https://code.jquery.com/jquery-3.6.0.min.js
                      // @grant        GM_xmlhttpRequest
                      // @grant        GM_getValue
                      // @grant        GM_setValue

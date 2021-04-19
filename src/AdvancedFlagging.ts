@@ -86,20 +86,15 @@ const popupWrapper = globals.popupWrapper;
 
 export function displayToaster(message: string, state: string): void {
     const messageDiv = globals.getMessageDiv(message, state);
-    popupWrapper.append(messageDiv);
-    setTimeout(() => messageDiv.removeClass('o0'), 10);
-
-    window.setTimeout(() => {
-        messageDiv.addClass('o0');
-        void globals.Delay(globals.transitionDelay).then(() => messageDiv.remove()); // remove after the transition has finished
-    }, globals.popupDelay);
+    popupWrapper.append(messageDiv.fadeIn());
+    window.setTimeout(() => messageDiv.fadeOut('slow', () => messageDiv.remove()), globals.popupDelay);
 }
 
 function displaySuccessFlagged(reportedIcon: JQuery, reportType?: Flags): void {
     if (!reportType) return;
     const flaggedMessage = `Flagged ${getHumanFromDisplayName(reportType)}`;
     void globals.attachPopover(reportedIcon[0], flaggedMessage, 'bottom-start');
-    globals.showInlineElement(reportedIcon);
+    reportedIcon.fadeIn();
     globals.displaySuccess(flaggedMessage);
 }
 
@@ -341,6 +336,9 @@ function BuildFlaggingDialog(
 
             if (!addListener) return;
             reportLink.on('click', async () => {
+                // hide the dropdown immediately after clicking one of the options
+                dropdown.fadeOut('fast');
+
                 if (!deleted) {
                     if (!commentRow.find('.s-checkbox').is(':checked') && commentText) {
                         const strippedComment = getStrippedComment(commentText);
@@ -355,17 +353,15 @@ function BuildFlaggingDialog(
                     );
                 }
 
-                globals.hideElement(dropdown); // hide the dropdown after clicking one of the options
-
                 const success = await handleFlag(flagType, reporters);
                 if (flagType.ReportType !== 'NoFlag') return; // don't show performed/failed action icons if post has been flagged
 
                 if (success) {
                     void globals.attachPopover(performedActionIcon[0], `Performed action: ${flagType.DisplayName}`, 'bottom-start');
-                    globals.showElement(performedActionIcon);
+                    performedActionIcon.fadeIn();
                 } else {
                     void globals.attachPopover(failedActionIcon[0], `Failed to perform action: ${flagType.DisplayName}`, 'bottom-start');
-                    globals.showElement(failedActionIcon);
+                    failedActionIcon.fadeIn();
                 }
             });
         });
@@ -454,17 +450,17 @@ function SetupPostPage(): void {
             if (openOnHover) {
                 advancedFlaggingLink.on('mouseover', event => {
                     event.stopPropagation();
-                    if (event.target === advancedFlaggingLink.get(0)) globals.showElement(dropDown);
+                    if (event.target === advancedFlaggingLink.get(0)) dropDown.fadeIn('fast');
                 }).on('mouseleave', e => {
                     e.stopPropagation();
-                    setTimeout(() => globals.hideElement(dropDown), 200); // avoid immediate closing of the popover
+                    setTimeout(() => dropDown.fadeOut('fast'), 200); // avoid immediate closing of the popover
                 });
             } else {
                 advancedFlaggingLink.on('click', event => {
                     event.stopPropagation();
-                    if (event.target === advancedFlaggingLink.get(0)) globals.showElement(dropDown);
+                    if (event.target === advancedFlaggingLink.get(0)) dropDown.fadeIn('fast');
                 });
-                $(window).on('click', () => globals.hideElement(dropDown));
+                $(window).on('click', () => dropDown.fadeOut('fast'));
             }
         } else {
             iconLocation.after(smokeyIcon, copyPastorIcon, nattyIcon);

@@ -16,6 +16,7 @@ export interface CachedFlag {
         High: string;
     };
     ReportType: Flags;
+    Feedbacks: string;
     BelongsTo: string; // category Name where it belongs
 }
 
@@ -31,6 +32,13 @@ export interface CachedConfiguration {
     LinkDisabled: boolean;
     AddAuthorName: boolean
     EnabledFlags: number[];
+}
+
+export interface FlagTypeFeedbacks {
+    Smokey: 'tpu-' | 'tp-' | 'fp-' | 'naa-' | '';
+    Natty: 'tp' | 'fp' | 'ne' | '';
+    Guttenberg: 'tp' | 'fp' | '';
+    'Generic Bot': 'track' | ''; // 'track' => track the post, '' => don't
 }
 
 // StackExchange objects

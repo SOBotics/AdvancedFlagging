@@ -1,5 +1,5 @@
 import { ChatApi } from './ChatApi';
-import { isStackOverflow, nattyAllReportsUrl, dayMillis } from '../GlobalVars';
+import { isStackOverflow, nattyAllReportsUrl, dayMillis, FlagTypeFeedbacks } from '../GlobalVars';
 
 interface NattyFeedback {
     items: NattyFeedbackItem[];
@@ -19,7 +19,7 @@ export class NattyAPI {
     private reportMessage: string;
     private questionDate: Date;
     private answerDate: Date;
-    public name = 'Natty';
+    public name: keyof FlagTypeFeedbacks = 'Natty';
 
     constructor(answerId: number, questionDate: Date, answerDate: Date) {
         this.answerId = answerId;
@@ -51,50 +51,24 @@ export class NattyAPI {
         return NattyAPI.nattyIds.includes(this.answerId);
     }
 
-    public async ReportNaa(): Promise<string> {
-        if (this.answerDate < this.questionDate) return '';
+    private async ReportNaa(feedback: string): Promise<string> {
+        if (this.answerDate < this.questionDate || feedback !== 'tp') return '';
 
-        if (this.WasReported()) {
-            return await this.chat.SendMessage(`${this.feedbackMessage} tp`, this.name);
-        } else {
-            const answerAge = this.DaysBetween(this.answerDate, new Date());
-            const daysPostedAfterQuestion = this.DaysBetween(this.questionDate, this.answerDate);
-            if (answerAge > 30 || daysPostedAfterQuestion < 30) return '';
+        const answerAge = this.DaysBetween(this.answerDate, new Date());
+        const daysPostedAfterQuestion = this.DaysBetween(this.questionDate, this.answerDate);
+        if (answerAge > 30 || daysPostedAfterQuestion < 30) return '';
 
-            await this.chat.SendMessage(this.reportMessage, this.name);
-            return 'Post reported to Natty';
-        }
-    }
-
-    public async ReportRedFlag(): Promise<string> {
-        return await this.SendFeedback(`${this.feedbackMessage} tp`);
-    }
-
-    public async ReportLooksFine(): Promise<string> {
-        return await this.SendFeedback(`${this.feedbackMessage} fp`);
-    }
-
-    public async ReportNeedsEditing(): Promise<string> {
-        return await this.SendFeedback(`${this.feedbackMessage} ne`);
-    }
-
-    public ReportVandalism(): Promise<string> {
-        return Promise.resolve('');
-    }
-
-    public ReportDuplicateAnswer(): Promise<string> {
-        return Promise.resolve('');
-    }
-
-    public ReportPlagiarism(): Promise<string> {
-        return Promise.resolve('');
+        await this.chat.SendMessage(this.reportMessage, this.name);
+        return 'Post reported to Natty';
     }
 
     private DaysBetween(first: Date, second: Date): number {
         return (second.valueOf() - first.valueOf()) / dayMillis;
     }
 
-    private async SendFeedback(message: string): Promise<string> {
-        return this.WasReported() ? await this.chat.SendMessage(message, this.name) : '';
+    public async SendFeedback(feedback: string): Promise<string> {
+        return this.WasReported()
+            ? await this.chat.SendMessage(`${this.feedbackMessage} ${feedback}`, this.name)
+            : await this.ReportNaa(feedback);
     }
 }

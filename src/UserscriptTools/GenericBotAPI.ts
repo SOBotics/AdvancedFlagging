@@ -1,39 +1,11 @@
-import { isStackOverflow, username, genericBotKey, getSentMessage, genericBotFailure } from '../GlobalVars';
+import { isStackOverflow, username, genericBotKey, getSentMessage, genericBotFailure, FlagTypeFeedbacks } from '../GlobalVars';
 
 export class GenericBotAPI {
     private answerId: number;
-    public name = 'Generic Bot';
+    public name: keyof FlagTypeFeedbacks = 'Generic Bot';
 
     constructor(answerId: number) {
         this.answerId = answerId;
-    }
-
-    public async ReportNaa(): Promise<string> {
-        return await this.makeTrackRequest();
-    }
-
-    public async ReportRedFlag(): Promise<string> {
-        return await this.makeTrackRequest();
-    }
-
-    public ReportLooksFine(): Promise<string> {
-        return Promise.resolve('');
-    }
-
-    public ReportNeedsEditing(): Promise<string> {
-        return Promise.resolve('');
-    }
-
-    public ReportVandalism(): Promise<string> {
-        return Promise.resolve('');
-    }
-
-    public ReportDuplicateAnswer(): Promise<string> {
-        return Promise.resolve('');
-    }
-
-    public ReportPlagiarism(): Promise<string> {
-        return Promise.resolve('');
     }
 
     private computeContentHash(postContent: string): number {
@@ -48,8 +20,10 @@ export class GenericBotAPI {
         return hash;
     }
 
-    private makeTrackRequest(): Promise<string> {
+    public SendFeedback(trackPost: string): Promise<string> {
         return new Promise<string>((resolve, reject) => {
+            if (!trackPost) resolve('');
+
             const flaggerName = encodeURIComponent(username || '');
             if (!isStackOverflow || !flaggerName) resolve('');
 

@@ -21,6 +21,7 @@ const cacheFlags = (): void => GreaseMonkeyCache.StoreInCache(globals.FlagTypesK
                 High: flagType.DefaultCommentHigh || ''
             },
             ReportType: flagType.DefaultReportType,
+            Feedbacks: JSON.stringify(flagType.DefaultFeedbacks),
             BelongsTo: category.Name
         } as globals.CachedFlag;
     });
@@ -62,7 +63,7 @@ function SetupDefaults(): void {
         globals.updateConfiguration();
     }
 
-    if (!globals.cachedFlagTypes.length || !globals.cachedFlagTypes[0].DisplayName) cacheFlags(); // added .DisplayName for combatibility
+    if (!globals.cachedFlagTypes.length || !globals.cachedFlagTypes[0].Feedbacks) cacheFlags();
     if (!globals.cachedCategories.length) cacheCategories();
 }
 

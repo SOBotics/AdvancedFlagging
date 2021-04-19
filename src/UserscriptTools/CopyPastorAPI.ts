@@ -1,5 +1,5 @@
 import { ChatApi } from './ChatApi';
-import { isStackOverflow, getAllPostIds, copyPastorServer, username, copyPastorKey, getSentMessage } from '../GlobalVars';
+import { isStackOverflow, getAllPostIds, copyPastorServer, username, copyPastorKey, getSentMessage, FlagTypeFeedbacks } from '../GlobalVars';
 
 interface CopyPastorFindTargetResponseItem {
     post_id: string;
@@ -19,7 +19,7 @@ type CopyPastorFindTargetResponse = {
 export class CopyPastorAPI {
     private static copyPastorIds: { postId: number, repost: boolean, target_url: string }[] = [];
     private answerId?: number;
-    public name = 'Guttenberg';
+    public name: keyof FlagTypeFeedbacks = 'Guttenberg';
 
     constructor(id: number) {
         this.answerId = id;
@@ -63,52 +63,16 @@ export class CopyPastorAPI {
         return CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId)?.target_url || '';
     }
 
-    private async ReportTruePositive(): Promise<string> {
-        return await this.SendFeedback('tp');
-    }
-
-    private async ReportFalsePositive(): Promise<string> {
-        return await this.SendFeedback('fp');
-    }
-
-    public async ReportNaa(): Promise<string> {
-        return await this.ReportFalsePositive();
-    }
-
-    public ReportRedFlag(): Promise<string> {
-        return Promise.resolve('');
-    }
-
-    public async ReportLooksFine(): Promise<string> {
-        return await this.ReportFalsePositive();
-    }
-
-    public async ReportNeedsEditing(): Promise<string> {
-        return await this.ReportFalsePositive();
-    }
-
-    public async ReportVandalism(): Promise<string> {
-        return await this.ReportFalsePositive();
-    }
-
-    public async ReportDuplicateAnswer(): Promise<string> {
-        return await this.ReportTruePositive();
-    }
-
-    public async ReportPlagiarism(): Promise<string> {
-        return await this.ReportTruePositive();
-    }
-
-    private SendFeedback(type: 'tp' | 'fp'): Promise<string> {
+    public SendFeedback(feedback: string): Promise<string> {
         const chatId = new ChatApi().GetChatUserId();
         const copyPastorId = this.getCopyPastorId();
         if (!copyPastorId) return Promise.resolve('');
 
-        const successMessage = getSentMessage(true, type, this.name);
-        const failureMessage = getSentMessage(false, type, this.name);
+        const successMessage = getSentMessage(true, feedback, this.name);
+        const failureMessage = getSentMessage(false, feedback, this.name);
         const payload = {
             post_id: copyPastorId,
-            feedback_type: type,
+            feedback_type: feedback,
             username,
             link: `https://chat.stackoverflow.com/users/${chatId}`,
             key: copyPastorKey,

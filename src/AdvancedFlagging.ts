@@ -1,4 +1,4 @@
-import { FlagType, flagCategories, Flags } from './FlagTypes';
+import { Flags } from './FlagTypes';
 import { parseQuestionsAndAnswers, QuestionPageInfo, PostInfo } from './UserscriptTools/sotools';
 import { NattyAPI } from './UserscriptTools/NattyApi';
 import { GenericBotAPI } from './UserscriptTools/GenericBotAPI';
@@ -318,10 +318,8 @@ function BuildFlaggingDialog(
                 }
 
                 globals.hideElement(dropdown); // hide the dropdown after clicking one of the options
-                const notCachedFlagType = flagCategories.flatMap(item => item.FlagTypes).find(flag => flag.Id === flagType.Id);
-                if (!notCachedFlagType) return;
 
-                const success = await handleFlag(notCachedFlagType, reporters);
+                const success = await handleFlag(flagType, reporters);
                 if (flagType.ReportType !== 'NoFlag') return; // don't show performed/failed action icons if post has been flagged
 
                 if (success) {
@@ -343,11 +341,13 @@ function BuildFlaggingDialog(
     return dropdown;
 }
 
-async function handleFlag(flagType: FlagType, reporters: Reporter[]): Promise<boolean> {
-    for (const reporter of reporters) {
+async function handleFlag(flagType: globals.CachedFlag, reporters: Reporter[]): Promise<boolean> {
+    const flagTypeFeedbacks = JSON.parse(flagType.Feedbacks) as globals.FlagTypeFeedbacks;
+    for (const reporter of reporters.filter(item => flagTypeFeedbacks[item.name])) {
+        const reporterName = reporter.name;
         try {
             // eslint-disable-next-line no-await-in-loop
-            const promiseValue = await flagType.SendFeedback(reporter);
+            const promiseValue = await reporter.SendFeedback(flagTypeFeedbacks[reporterName]);
             if (!promiseValue) continue;
             globals.displaySuccess(promiseValue);
         } catch (error) {
@@ -397,11 +397,10 @@ function SetupPostPage(): void {
                 if (!shouldWatchFlags || autoFlagging || xhr.status !== 200 || !globals.flagsUrlRegex.test(xhr.responseURL)) return;
 
                 const matches = globals.getFlagsUrlRegex(post.postId).exec(xhr.responseURL);
-                const flagTypes = flagCategories.flatMap(category => category.FlagTypes);
-                const flagType = flagTypes.find(item => item.DefaultReportType === (matches?.[1] as Flags));
+                const flagType = globals.cachedFlagTypes.find(item => item.ReportType === (matches?.[1] as Flags));
                 if (!flagType) return;
 
-                displaySuccessFlagged(reportedIcon, flagType.DefaultReportType);
+                displaySuccessFlagged(reportedIcon, flagType.ReportType);
                 void handleFlag(flagType, reporters);
             });
 
@@ -469,9 +468,9 @@ function Setup(): void {
 
         const postId = globals.getPostIdFromReview();
         const reviewCachedInfo = reviewPostsInformation.find(item => item.postId === postId);
-        if (!reviewCachedInfo) return; // something went wrong
+        const flagType = globals.cachedFlagTypes.find(item => item.DisplayName === 'Looks Fine'); // the Looks Fine cached flag type
+        if (!reviewCachedInfo || !flagType) return; // something went wrong
 
-        const flagType = flagCategories[3].FlagTypes[0]; // the Looks Fine flag type
         void handleFlag(flagType, reviewCachedInfo.reporters);
     });
 
@@ -482,8 +481,10 @@ function Setup(): void {
         const reviewCachedInfo = reviewPostsInformation.find(item => item.postId === postId);
         if (!reviewCachedInfo || reviewCachedInfo.post.type !== 'Answer') return; // something went wrong
 
-        const flagType = flagCategories[2].FlagTypes[1]; // the not an answer flag type
         const reportersArray = [setupNattyApi(postId, reviewCachedInfo.post.questionTime, reviewCachedInfo.post.creationDate)];
+        const flagType = globals.cachedFlagTypes.find(item => item.DisplayName === 'Not an answer'); // the NAA cached flag type
+        if (!flagType) return; // something went wrong
+
         void handleFlag(flagType, reportersArray);
     });
 }

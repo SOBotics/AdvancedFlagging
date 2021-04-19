@@ -1,5 +1,4 @@
 import * as globals from './GlobalVars';
-import { Reporter } from './AdvancedFlagging';
 
 export type Flags = 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther' | 'PostLowQuality';
 
@@ -15,7 +14,7 @@ export interface FlagType {
     DefaultFlagText?: string;
     DefaultComment?: string; // if a type has two comments, then this one is for LowRep
     DefaultCommentHigh?: string; // this is for HighRep instead
-    SendFeedback(reporter: Reporter): Promise<string>;
+    DefaultFeedbacks: globals.FlagTypeFeedbacks
 }
 
 export interface FlagCategory {
@@ -35,13 +34,13 @@ export const flagCategories: FlagCategory[] = [
                 Id: 1,
                 DisplayName: 'Spam',
                 DefaultReportType: 'PostSpam',
-                SendFeedback: (reporter: Reporter): Promise<string> => reporter.ReportRedFlag()
+                DefaultFeedbacks: { Smokey: 'tpu-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' }
             },
             {
                 Id: 2,
                 DisplayName: 'Rude or Abusive',
                 DefaultReportType: 'PostOffensive',
-                SendFeedback: (reporter: Reporter): Promise<string> => reporter.ReportRedFlag()
+                DefaultFeedbacks: { Smokey: 'tpu-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' }
             }
         ]
     },
@@ -55,7 +54,8 @@ export const flagCategories: FlagCategory[] = [
                 DisplayName: 'Plagiarism',
                 DefaultReportType: 'PostOther',
                 DefaultFlagText: 'Possible plagiarism of another answer $TARGET$, as can be seen here $COPYPASTOR$',
-                SendFeedback: (reporter: Reporter): Promise<string> => reporter.ReportPlagiarism()
+                // don't send feedback to Smokey despite https://charcoal-se.org/smokey/Feedback-Guidance.html#plagiarism
+                DefaultFeedbacks: { Smokey: '', Natty: '', Guttenberg: 'tp', 'Generic Bot': '' }
             },
             {
                 Id: 4,
@@ -66,7 +66,7 @@ export const flagCategories: FlagCategory[] = [
                 DefaultComment: "Please don't add the [same answer to multiple questions](//meta.stackexchange.com/q/104227)."
                               + ' Answer the best one and flag the rest as duplicates, once you earn enough reputation. '
                               + 'If it is not a duplicate, [edit] the answer and tailor the post to the question.',
-                SendFeedback: (reporter: Reporter): Promise<string> => reporter.ReportDuplicateAnswer()
+                DefaultFeedbacks: { Smokey: '', Natty: '', Guttenberg: 'tp', 'Generic Bot': '' }
             },
             {
                 Id: 5,
@@ -75,7 +75,7 @@ export const flagCategories: FlagCategory[] = [
                 DefaultFlagText: 'This post is copied from [another answer]($TARGET$), as can be seen here $COPYPASTOR$. The author '
                                + 'only added a link to the other answer, which is [not the proper way of attribution]'
                                + '(//stackoverflow.blog/2009/06/25/attribution-required).',
-                SendFeedback: (reporter: Reporter): Promise<string> => reporter.ReportPlagiarism()
+                DefaultFeedbacks: { Smokey: '', Natty: '', Guttenberg: 'tp', 'Generic Bot': '' }
             }
         ]
     },
@@ -93,7 +93,7 @@ export const flagCategories: FlagCategory[] = [
                               + 'have some idea what it is and why it is there, then quote the most relevant part of the page '
                               + 'you are linking to in case the target page is unavailable. '
                               + `[Answers that are little more than a link may be deleted.](${globals.deletedAnswers})`,
-                SendFeedback: (reporter: Reporter): Promise<string> => reporter.ReportNaa()
+                DefaultFeedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' }
             },
             {
                 Id: 7,
@@ -108,7 +108,7 @@ export const flagCategories: FlagCategory[] = [
                                   + `of the question or another answer, you can [post a comment](${globals.commentHelp}) (like this `
                                   + 'one) directly below it. Please remove this answer and create either a comment or a new question. '
                                   + 'See: [Ask questions, get answers, no distractions](/tour).',
-                SendFeedback: (reporter: Reporter): Promise<string> => reporter.ReportNaa()
+                DefaultFeedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' }
             },
             {
                 Id: 8,
@@ -125,7 +125,7 @@ export const flagCategories: FlagCategory[] = [
                                   + `[upvote answers](${globals.voteUpHelp}) you like. This way future visitors of the question `
                                   + 'will see a higher vote count on that answer, and the answerer will also be rewarded '
                                   + `with reputation points. See [Why is voting important](${globals.whyVote}).`,
-                SendFeedback: (reporter: Reporter): Promise<string> => reporter.ReportNaa()
+                DefaultFeedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' }
             },
             {
                 Id: 9,
@@ -136,7 +136,7 @@ export const flagCategories: FlagCategory[] = [
                               + 'if it will help provide context). If you are interested in this specific question, you can '
                               + `[upvote](${globals.voteUpHelp}) it, leave a [comment](${globals.commentHelp}), or start a `
                               + `[bounty](${globals.setBounties}) once you have enough [reputation](${globals.reputationHelp}).`,
-                SendFeedback: (reporter: Reporter): Promise<string> => reporter.ReportNaa()
+                DefaultFeedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' }
             },
             {
                 Id: 10,
@@ -144,7 +144,7 @@ export const flagCategories: FlagCategory[] = [
                 DefaultReportType: 'PostLowQuality',
                 DefaultComment: 'Please don\'t just post some tool or library as an answer. At least demonstrate '
                               + '[how it solves the problem](//meta.stackoverflow.com/a/251605) in the answer itself.',
-                SendFeedback: (reporter: Reporter): Promise<string> => reporter.ReportNaa()
+                DefaultFeedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' }
             },
             {
                 Id: 11,
@@ -154,7 +154,7 @@ export const flagCategories: FlagCategory[] = [
                               + `[reputation](${globals.reputationHelp}) you will be able to [comment on any post](${globals.commentHelp}); instead, `
                               + '[provide answers that don\'t require clarification from the asker](//meta.stackexchange.com/q/214173).',
                 DefaultCommentHigh: 'This does not provide an answer to the question. Please write a comment instead.',
-                SendFeedback: (reporter: Reporter): Promise<string> => reporter.ReportNaa()
+                DefaultFeedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' }
             },
             {
                 Id: 12,
@@ -162,7 +162,7 @@ export const flagCategories: FlagCategory[] = [
                 DefaultReportType: 'AnswerNotAnAnswer',
                 DefaultComment: 'Instead of posting an answer which merely links to another answer, please instead '
                               + `[flag the question](${globals.flagPosts}) as a duplicate.`,
-                SendFeedback: (reporter: Reporter): Promise<string> => reporter.ReportNaa()
+                DefaultFeedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' }
             },
             {
                 Id: 13,
@@ -170,7 +170,7 @@ export const flagCategories: FlagCategory[] = [
                 DefaultReportType: 'PostLowQuality',
                 DefaultComment: 'Please write your answer in English, as Stack Overflow is an '
                               + '[English-only site](//meta.stackoverflow.com/a/297680).',
-                SendFeedback: (reporter: Reporter): Promise<string> => reporter.ReportNaa()
+                DefaultFeedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' }
             },
             {
                 Id: 14,
@@ -178,7 +178,7 @@ export const flagCategories: FlagCategory[] = [
                 DefaultReportType: 'AnswerNotAnAnswer',
                 DefaultComment: 'Please use the edit link on your question to add additional information. '
                               + 'The "Post Answer" button should be used only for complete answers to the question.',
-                SendFeedback: (reporter: Reporter): Promise<string> => reporter.ReportNaa()
+                DefaultFeedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' }
             }
         ]
     },
@@ -191,19 +191,19 @@ export const flagCategories: FlagCategory[] = [
                 Id: 15,
                 DisplayName: 'Looks Fine',
                 DefaultReportType: 'NoFlag',
-                SendFeedback: (reporter: Reporter): Promise<string> => reporter.ReportLooksFine()
+                DefaultFeedbacks: { Smokey: 'fp-', Natty: 'fp', Guttenberg: 'fp', 'Generic Bot': '' }
             },
             {
                 Id: 16,
                 DisplayName: 'Needs Editing',
                 DefaultReportType: 'NoFlag',
-                SendFeedback: (reporter: Reporter): Promise<string> => reporter.ReportNeedsEditing()
+                DefaultFeedbacks: { Smokey: 'fp-', Natty: 'ne', Guttenberg: 'fp', 'Generic Bot': '' }
             },
             {
                 Id: 17,
                 DisplayName: 'Vandalism',
                 DefaultReportType: 'NoFlag',
-                SendFeedback: (reporter: Reporter): Promise<string> => reporter.ReportVandalism()
+                DefaultFeedbacks: { Smokey: 'tp-', Natty: '', Guttenberg: 'fp', 'Generic Bot': '' }
             }
         ]
     }

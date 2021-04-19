@@ -19,7 +19,7 @@ export class MetaSmokeAPI {
     public static isDisabled: boolean = GreaseMonkeyCache.GetFromCache<boolean>(globals.MetaSmokeDisabledConfig) || false;
     private postId: number;
     private postType: 'Question' | 'Answer';
-    public name = 'Smokey';
+    public name: keyof globals.FlagTypeFeedbacks = 'Smokey';
 
     constructor(postId: number, postType: 'Question' | 'Answer') {
         this.postId = postId;
@@ -102,10 +102,6 @@ export class MetaSmokeAPI {
         return MetaSmokeAPI.metasmokeIds.find(item => item.sitePostId === postId)?.metasmokeId || 0;
     }
 
-    public async ReportNaa(): Promise<string> {
-        return await this.SendFeedback('naa-');
-    }
-
     public async ReportRedFlag(): Promise<string> {
         const smokeyId = MetaSmokeAPI.getSmokeyId(this.postId);
         if (smokeyId) return await this.SendFeedback('tpu-');
@@ -125,38 +121,20 @@ export class MetaSmokeAPI {
         return globals.metasmokeReportedMessage;
     }
 
-    public async ReportLooksFine(): Promise<string> {
-        return await this.SendFeedback('fp-');
-    }
-
-    public async ReportNeedsEditing(): Promise<string> {
-        return await this.SendFeedback('fp-');
-    }
-
-    public async ReportVandalism(): Promise<string> {
-        return await this.SendFeedback('tp-');
-    }
-
-    public ReportDuplicateAnswer(): Promise<string> {
-        return Promise.resolve('');
-    }
-
-    public ReportPlagiarism(): Promise<string> {
-        return Promise.resolve('');
-    }
-
-    private async SendFeedback(feedbackType: 'fp-' | 'tp-' | 'tpu-' | 'naa-'): Promise<string> {
+    public async SendFeedback(feedback: string): Promise<string> {
         const smokeyId = MetaSmokeAPI.getSmokeyId(this.postId);
-        if (!MetaSmokeAPI.accessToken || !smokeyId) return '';
+        if (!smokeyId && feedback === 'tpu-') return await this.ReportRedFlag(); // not reported and feedback is tpu => report it!
+        else if (!MetaSmokeAPI.accessToken || !smokeyId) return '';
+
         const feedbackRequest = await fetch(`https://metasmoke.erwaysoftware.com/api/w/post/${smokeyId}/feedback`, {
             method: 'POST',
-            body: globals.getFormDataFromObject({ type: feedbackType, key: MetaSmokeAPI.appKey, token: MetaSmokeAPI.accessToken })
+            body: globals.getFormDataFromObject({ type: feedback, key: MetaSmokeAPI.appKey, token: MetaSmokeAPI.accessToken })
         });
         const feedbackResponse = await feedbackRequest.json() as unknown;
         if (!feedbackRequest.ok) {
             console.error(`Failed to send feedback to Smokey (postId: ${smokeyId})`, feedbackResponse);
-            throw new Error(globals.getSentMessage(false, feedbackType, this.name));
+            throw new Error(globals.getSentMessage(false, feedback, this.name));
         }
-        return globals.getSentMessage(true, feedbackType, this.name);
+        return globals.getSentMessage(true, feedback, this.name);
     }
 }

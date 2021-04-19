@@ -350,7 +350,7 @@ function SetupCommentsAndFlagsModal(): void {
         .filter(categoryWrapper => categoryWrapper.children().length > 1) // the header is a child so the count must be >1
         .forEach(element => editCommentsPopup.find('.s-modal--body').children().append(element));
 
-    $(document).on('click', '.af-expandable-trigger', event => { // trigger the expandable
+    $(document).on('s-expandable-control:hide s-expandable-control:show', event => { // the expandable is triggered
         const button = $(event.target), saveButton = button.next();
         const pencilSvgHtml = globals.getStacksSvg('Pencil')[0].outerHTML;
         const eyeOffSvgHtml = globals.getStacksSvg('EyeOff')[0].outerHTML;
@@ -359,6 +359,7 @@ function SetupCommentsAndFlagsModal(): void {
         isExpanded ? saveButton.fadeIn('fast') : saveButton.fadeOut('fast');
     }).on('click', '.af-submit-content', event => { // save changes
         const element = $(event.target), expandable = element.next().next();
+        element.prev().trigger('click'); // hide the textarea by clicking the 'Hide' button and not manually
         const flagId = Number(element.parents('.s-sidebarwidget').attr('data-flag-id'));
         if (!flagId) return globals.displayStacksToast('Failed to save options', 'danger');
 
@@ -377,7 +378,6 @@ function SetupCommentsAndFlagsModal(): void {
         globals.updateFlagTypes();
 
         globals.displayStacksToast('Content saved successfully', 'success');
-        element.prev().trigger('click'); // hide the textarea by clicking the 'Hide' button and not manually
     }).on('click', '.af-remove-expandable', event => {
         const removeButton = $(event.target), flagId = Number(removeButton.parent().attr('data-flag-id'));
         const flagTypeIndex = globals.cachedFlagTypes.findIndex(item => item.Id === flagId);

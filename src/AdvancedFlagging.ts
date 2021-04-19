@@ -23,10 +23,10 @@ async function handleFlagAndComment(
     flag: globals.CachedFlag,
     flagRequired: boolean,
     downvoteRequired: boolean,
-    copypastorApi: CopyPastorAPI,
     reportedIcon: JQuery,
     qualifiesForVlq: boolean,
-    commentText?: string | null
+    flagText: string | null,
+    commentText?: string | null,
 ): Promise<void> {
     const userFkey = StackExchange.options.user.fkey;
     if (commentText) {
@@ -44,10 +44,6 @@ async function handleFlagAndComment(
     }
 
     if (flagRequired && flag.ReportType !== 'NoFlag') {
-        const copypastorId = copypastorApi.getCopyPastorId();
-        const targetUrl = copypastorApi.getTargetUrl();
-        const flagText = copypastorId && targetUrl ? globals.getFullFlag(flag.Id, targetUrl, copypastorId) : null;
-
         autoFlagging = true;
         const flagName: Flags = flag.ReportType === 'PostLowQuality' ?
             (qualifiesForVlq ? 'PostLowQuality' : 'AnswerNotAnAnswer') : flag.ReportType;
@@ -55,7 +51,7 @@ async function handleFlagAndComment(
             const failedToFlagText = 'Failed to flag: ';
             const flagPost = await fetch(`//${window.location.hostname}/flags/posts/${post.postId}/add/${flagName}`, {
                 method: 'POST',
-                body: globals.getFormDataFromObject({ fkey: userFkey, otherText: flag.ReportType === 'PostOther' ? flagText : '' })
+                body: globals.getFormDataFromObject({ fkey: userFkey, otherText: flagText || '' })
             });
 
             // for some reason, the flag responses are inconsistent: some are in JSON, others in text
@@ -196,7 +192,7 @@ function getHumanFromDisplayName(displayName: Flags): string {
 
 function increasePopoverWidth(reportLink: JQuery): void {
     const popoverId = reportLink.parent().attr('aria-describedby') || '';
-    $(`#${popoverId}`).addClass('sm:wmn-initial md:wmn-initial wmn4');
+    $(`#${popoverId}`).addClass('sm:wmn-initial md:wmn-initial wmn5');
 }
 
 function getAllBotIcons(): JQuery[] {
@@ -223,6 +219,34 @@ function addBotIconsToReview(post: PostInfo, botIcons?: JQuery[]): void {
     setupGuttenbergApi(copyPastorApi, copyPastorIcon); // no need to send feedback to Guttenberg; just show the icon
 
     reviewPostsInformation.push({ postId: post.postId, post, reporters });
+}
+
+function getFeedbackSpans(
+    flagType: globals.CachedFlag,
+    nattyReported: boolean,
+    nattyCanReport: boolean,
+    smokeyReported: boolean,
+    guttenbergReported: boolean
+): string {
+    return (Object.entries(flagType.Feedbacks) as [keyof globals.FlagTypeFeedbacks, globals.AllFeedbacks][])
+        .filter(item => item[1])
+        .map(feedbackEntry => {
+            const [botName, feedback] = feedbackEntry;
+            if (feedback === 'track') return '<span><b>track </b>with Generic Bot</span>'; // different string for Generic Bot
+            // if the post hasn't been reporter and can't be reported, don't include the feedback
+            if ((botName === 'Natty' && !nattyReported && (/fp|ne/.test(feedback) || !nattyCanReport))
+                || (botName === 'Smokey' && !smokeyReported && /naa|fp|tp-/.test(feedback))
+                || (botName === 'Guttenberg' && !guttenbergReported)) return '';
+
+            const isGreen = feedback.includes('tp'), isRed = feedback.includes('fp'), isYellow = /naa|ne/.test(feedback);
+            let className: globals.StacksToastState | '' = '';
+            if (isGreen) className = 'success';
+            else if (isRed) className = 'danger';
+            else if (isYellow) className = 'warning';
+
+            const shouldReport = (botName === 'Smokey' && !smokeyReported) || (botName === 'Natty' && !nattyReported);
+            return `<span class="fc-${className}"><b>${shouldReport ? 'report' : feedback}</b></span> to ${botName}`;
+        }).filter(String).join(', ') || globals.noneString;
 }
 
 export type Reporter = CopyPastorAPI | MetaSmokeAPI | NattyAPI | GenericBotAPI;
@@ -253,10 +277,12 @@ function BuildFlaggingDialog(
     reportedIcon: JQuery,
     performedActionIcon: JQuery,
     reporters: Reporter[],
-    copyPastorApi: CopyPastorAPI,
+    copypastorApi: CopyPastorAPI,
     shouldRaiseVlq: boolean,
     failedActionIcon: JQuery,
-    addListener: boolean
+    addListener: boolean,
+    questionTime: Date | null,
+    answerTime: Date | null
 ): JQuery {
     const enabledFlagIds = globals.cachedConfigurationInfo?.[globals.ConfigurationEnabledFlags];
     const comments = post.element.find('.comment-body');
@@ -273,11 +299,15 @@ function BuildFlaggingDialog(
     const flagRow = globals.getPopoverOption(`af-flag-checkbox-${post.postId}`, !defaultNoFlag, 'Flag');
     const downvoteRow = globals.getPopoverOption(`af-downvote-checkbox-${post.postId}`, !defaultNoDownvote, 'Downvote');
 
+    const copypastorId = copypastorApi.getCopyPastorId();
+    const isRepost = copypastorApi.getIsRepost();
+    const targetUrl = copypastorApi.getTargetUrl();
+    const nattyApi = new NattyAPI(post.postId, questionTime || new Date(), answerTime || new Date());
+    const smokeyId = MetaSmokeAPI.getSmokeyId(post.postId);
+
     const newCategories = globals.cachedCategories.filter(item => item.AppliesTo.includes(post.type))
         .map(item => ({ ...item, FlagTypes: [] as globals.CachedFlag[] }));
     globals.cachedFlagTypes.filter(flagType => {
-        const copypastorId = copyPastorApi.getCopyPastorId();
-        const isRepost = copyPastorApi.getIsRepost();
         const isGuttenbergItem = flagType.ReportType === 'PostOther'; // only Guttenberg reports (can) have the PostOther ReportType
         // a CopyPastor id must exist and the requirements from issue https://github.com/SOBotics/AdvancedFlagging/issues/16 must be met
         const showGutReport = Boolean(copypastorId) && (flagType.DisplayName === 'Duplicate Answer' ? isRepost : !isRepost);
@@ -297,8 +327,15 @@ function BuildFlaggingDialog(
 
             let commentText = globals.getFullComment(flagType.Id, { Reputation: post.authorReputation, AuthorName: post.authorName });
             const reportTypeHuman = getHumanFromDisplayName(flagType.ReportType);
-            const reportLinkInfo = `This option will${reportTypeHuman ? ' ' : ' not'} flag the post <b>${reportTypeHuman}</b></br>`
-                + (commentText ? `and add the following comment: ${commentText}` : '');
+            const flagText = copypastorId && targetUrl ? globals.getFullFlag(flagType.Id, targetUrl, copypastorId) : null;
+
+            const feedbacksString = getFeedbackSpans(
+                flagType, nattyApi.WasReported(), nattyApi.canBeReported(), Boolean(smokeyId), Boolean(copypastorId)
+            );
+            const reportLinkInfo = `<div><b>Flag: </b>${reportTypeHuman || globals.noneString}</div>`
+                                 + `<div><b>Comment: </b>${commentText || globals.noneString}</div>`
+                                 + (flagText ? `<div><b>Flag text: </b>${flagText}</div>` : '')
+                                 + `<div><b>Feedbacks: </b> ${feedbacksString}</div>`;
             void globals.attachHtmlPopover(reportLink.parent()[0], reportLinkInfo, 'right-start')
                 .then(() => increasePopoverWidth(reportLink));
 
@@ -311,9 +348,10 @@ function BuildFlaggingDialog(
                         commentText = null;
                     }
 
+                    const flagPost = flagRow.find('.s-checkbox').is(':checked');
+                    const downvotePost = downvoteRow.find('.s-checkbox').is(':checked');
                     await handleFlagAndComment(
-                        post, flagType, flagRow.find('.s-checkbox').is(':checked'), downvoteRow.find('.s-checkbox').is(':checked'),
-                        copyPastorApi, reportedIcon, shouldRaiseVlq, commentText
+                        post, flagType, flagPost, downvotePost, reportedIcon, shouldRaiseVlq, flagText, commentText
                     );
                 }
 
@@ -406,7 +444,8 @@ function SetupPostPage(): void {
 
             const shouldRaiseVlq = globals.qualifiesForVlq(post.score, answerTime || new Date());
             const dropDown = BuildFlaggingDialog(
-                post, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi, shouldRaiseVlq, failedActionIcon, post.addListener
+                post, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi,
+                shouldRaiseVlq, failedActionIcon, post.addListener, questionTime, answerTime
             );
 
             advancedFlaggingLink.append(dropDown);

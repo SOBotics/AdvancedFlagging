@@ -51,12 +51,14 @@ export class NattyAPI {
         return NattyAPI.nattyIds.includes(this.answerId);
     }
 
-    private async ReportNaa(feedback: string): Promise<string> {
-        if (this.answerDate < this.questionDate || feedback !== 'tp') return '';
-
+    public canBeReported(): boolean {
         const answerAge = this.DaysBetween(this.answerDate, new Date());
         const daysPostedAfterQuestion = this.DaysBetween(this.questionDate, this.answerDate);
-        if (answerAge > 30 || daysPostedAfterQuestion < 30) return '';
+        return this.answerDate > this.questionDate && answerAge < 30 && daysPostedAfterQuestion > 30;
+    }
+
+    private async ReportNaa(feedback: string): Promise<string> {
+        if (!this.canBeReported() || feedback !== 'tp') return '';
 
         await this.chat.SendMessage(this.reportMessage, this.name);
         return 'Post reported to Natty';

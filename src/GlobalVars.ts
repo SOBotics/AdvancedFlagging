@@ -6,7 +6,7 @@ import { displayToaster } from './AdvancedFlagging';
 declare const StackExchange: StackExchange;
 declare const Stacks: Stacks;
 
-type StacksToastState = 'success' | 'danger' | 'info';
+export type StacksToastState = 'success' | 'danger' | 'info' | 'warning';
 export type PostType = 'Question' | 'Answer';
 
 export interface CachedFlag {
@@ -42,6 +42,7 @@ export interface FlagTypeFeedbacks {
     Guttenberg: 'tp' | 'fp' | '';
     'Generic Bot': 'track' | ''; // 'track' => track the post, '' => don't
 }
+export type AllFeedbacks = FlagTypeFeedbacks[keyof FlagTypeFeedbacks];
 
 // StackExchange objects
 export interface Stacks {
@@ -107,6 +108,7 @@ export const isQuestionPage = /\/questions\/\d+.*/.test(window.location.href);
 export const isFlagsPage = /\/users\/flag-summary\//.test(window.location.href);
 export const isLqpReviewPage = /\/review\/low-quality-posts\/\d+/.test(window.location.href);
 export const gridCellDiv = $('<div>').addClass('grid--cell');
+export const noneString = '<span class="o50">(none)</span>';
 
 // Help center links used in FlagTypes for comments/flags
 export const deletedAnswers = '/help/deleted-answers';

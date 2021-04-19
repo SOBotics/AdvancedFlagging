@@ -290,7 +290,13 @@ function createCategoryDiv(displayName: string): JQuery {
                High: ''
            },
            ReportType: 'PostOther',
-           DisplayName: 'Plagiarism'
+           DisplayName: 'Plagiarism',
+           Feedbacks: {
+               Smokey: 'tp-',
+               Natty: 'tp',
+               Guttenberg: 'tp'
+               'Generic Bot': 'track'
+           }
        }, {
            Id: 2,
            FlagText: '',
@@ -300,6 +306,12 @@ function createCategoryDiv(displayName: string): JQuery {
            },
            ReportType: 'AnswerNotAnAnswer',
            DisplayName: 'Not an answer'
+           Feedbacks: {
+               Smokey: 'fp-',
+               Natty: 'ne',
+               Guttenberg: 'fp'
+               'Generic Bot': ''
+           }
        }]
 
     Notes:

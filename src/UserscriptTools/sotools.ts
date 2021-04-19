@@ -1,4 +1,4 @@
-import { isFlagsPage, isQuestionPage, isNatoPage, parseDate, isLqpReviewPage } from '../GlobalVars';
+import { isFlagsPage, isQuestionPage, isNatoPage, parseDate, isLqpReviewPage, PostType } from '../GlobalVars';
 
 export type QuestionPageInfo = QuestionQuestion | QuestionAnswer;
 export type PostInfo = NatoAnswer | QuestionPageInfo | FlagPageInfo;
@@ -40,7 +40,7 @@ interface NatoAnswer {
 }
 
 interface FlagPageInfo {
-    type: 'Answer' | 'Question';
+    type: PostType;
     element: JQuery;
     page: 'Flags';
     postId: number;
@@ -164,7 +164,7 @@ function parseQuestionPage(callback: (post: QuestionPageInfo) => void): void {
 function parseFlagsPage(callback: (post: FlagPageInfo) => void): void {
     $('.flagged-post').each((_index, nodeEl) => {
         const node = $(nodeEl);
-        const type = node.find('.answer-hyperlink').length ? 'Answer' : 'Question';
+        const type: PostType = node.find('.answer-hyperlink').length ? 'Answer' : 'Question';
         const elementHref = node.find(`.${type.toLowerCase()}-hyperlink`).attr('href');
         if (!elementHref) return;
 

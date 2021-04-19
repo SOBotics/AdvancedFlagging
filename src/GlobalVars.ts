@@ -7,6 +7,8 @@ declare const StackExchange: StackExchange;
 declare const Stacks: Stacks;
 
 type StacksToastState = 'success' | 'danger' | 'info';
+export type PostType = 'Question' | 'Answer';
+
 export interface CachedFlag {
     Id: number;
     DisplayName: string;
@@ -330,7 +332,8 @@ export function addXHRListener(callback: (request: XMLHttpRequest) => void): voi
 export function getAllPostIds(includeQuestion: boolean, urlForm: boolean): (number | string)[] {
     return $(isQuestionPage ? '.question, .answer' : '.flagged-post').get().map(item => {
         const el = $(item);
-        const postType = (isQuestionPage ? el.attr('data-questionid') : el.find('.question-hyperlink').length) ? 'Question' : 'Answer';
+        const isQuestionType = isQuestionPage ? el.attr('data-questionid') : el.find('.question-hyperlink').length;
+        const postType: PostType = isQuestionType ? 'Question' : 'Answer';
         if (!includeQuestion && postType === 'Question') return '';
         const elementHref = el.find(`.${postType.toLowerCase()}-hyperlink`).attr('href');
         let postId: number;

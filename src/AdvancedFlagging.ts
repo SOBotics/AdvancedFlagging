@@ -162,7 +162,7 @@ function setupGenericBotApi(postId: number): GenericBotAPI {
     return new GenericBotAPI(postId);
 }
 
-function setupMetasmokeApi(postId: number, postType: 'Answer' | 'Question', smokeyIcon: JQuery): MetaSmokeAPI {
+function setupMetasmokeApi(postId: number, postType: globals.PostType, smokeyIcon: JQuery): MetaSmokeAPI {
     const smokeyId = MetaSmokeAPI.getSmokeyId(postId);
     if (smokeyId) {
         smokeyIcon.find('a').attr('href', `https://metasmoke.erwaysoftware.com/post/${smokeyId}`).attr('target', '_blank');

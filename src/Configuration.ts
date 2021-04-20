@@ -30,7 +30,7 @@ function cacheFlags(): void {
             } as globals.CachedFlag;
         });
     });
-    GreaseMonkeyCache.StoreInCache<globals.CachedFlag[]>(globals.FlagTypesKey, flagTypesToCache);
+    GreaseMonkeyCache.storeInCache<globals.CachedFlag[]>(globals.FlagTypesKey, flagTypesToCache);
     globals.cachedFlagTypes.push(...flagTypesToCache); // also update the variable to prevent breaking config modal
 }
 
@@ -42,13 +42,13 @@ function cacheCategories(): void {
             AppliesTo: category.AppliesTo
         } as globals.CachedCategory
     ));
-    GreaseMonkeyCache.StoreInCache<globals.CachedCategory[]>(globals.FlagCategoriesKey, categoriesInfoToCache);
+    GreaseMonkeyCache.storeInCache<globals.CachedCategory[]>(globals.FlagCategoriesKey, categoriesInfoToCache);
     globals.cachedCategories.push(...categoriesInfoToCache);
 }
 
-export function SetupConfiguration(): void {
-    SetupDefaults(); // stores default values if they haven't already been
-    BuildConfigurationOverlay(); // the configuration modal
+export function setupConfiguration(): void {
+    setupDefaults(); // stores default values if they haven't already been
+    buildConfigurationOverlay(); // the configuration modal
     SetupCommentsAndFlagsModal(); // the comments & flags modal
 
     const bottomBox = $('.site-footer--copyright').children('.-list');
@@ -65,7 +65,7 @@ export function SetupConfiguration(): void {
     }
 }
 
-function SetupDefaults(): void {
+function setupDefaults(): void {
     // store all flags if they don't exist
     if (!getEnabledFlags()) {
         const flagTypeIds = flagTypes.map(flag => flag.Id);
@@ -95,14 +95,14 @@ function SetupDefaults(): void {
      This is the property of the option that will be used in cache.
    - In Flags, each checkbox has a flag-type-<FLAG_ID> id. This is used to determine the flag id
 */
-function BuildConfigurationOverlay(): void {
+function buildConfigurationOverlay(): void {
     const overlayModal = globals.overlayModal.clone();
     overlayModal.find('.s-modal--close').append(globals.getStacksSvg('Clear'));
 
     const sections: ConfigSection[] = [
         {
             SectionName: 'General',
-            Items: GetGeneralConfigItems(),
+            Items: getGeneralConfigItems(),
             onSave: (): void => {
                 // find the option id (it's the data-option-id attribute) and store whether the box is checked or not
                 $('.af-section-general').find('input').each((_index, el) => {
@@ -151,7 +151,7 @@ function BuildConfigurationOverlay(): void {
     });
     // reset configuration to defaults
     overlayModal.find('.af-configuration-reset').on('click', () => {
-        GreaseMonkeyCache.Unset(globals.ConfigurationCacheKey);
+        GreaseMonkeyCache.unset(globals.ConfigurationCacheKey);
         globals.displayStacksToast('Configuration settings have been reset to defaults', 'success');
         setTimeout(() => window.location.reload(), 500);
     });
@@ -168,37 +168,30 @@ function BuildConfigurationOverlay(): void {
     }
 }
 
-function GetGeneralConfigItems(): JQuery[] {
+function getGeneralConfigItems(): JQuery[] {
     return [
         {
             text: 'Open dropdown on hover',
             configValue: globals.ConfigurationOpenOnHover
-        },
-        {
+        }, {
             text: 'Watch for manual flags',
             configValue: globals.ConfigurationWatchFlags
-        },
-        {
+        }, {
             text: 'Watch for queue responses',
             configValue: globals.ConfigurationWatchQueues
-        },
-        {
+        }, {
             text: 'Disable AdvancedFlagging link',
             configValue: globals.ConfigurationLinkDisabled
-        },
-        {
+        }, {
             text: 'Uncheck \'Leave comment\' by default',
             configValue: globals.ConfigurationDefaultNoComment
-        },
-        {
+        }, {
             text: 'Uncheck \'Flag\' by default',
             configValue: globals.ConfigurationDefaultNoFlag
-        },
-        {
+        }, {
             text: 'Uncheck \'Downvote\' by default',
             configValue: globals.ConfigurationDefaultNoDownvote
-        },
-        {
+        }, {
             text: 'Add author\'s name before comments',
             configValue: globals.ConfigurationAddAuthorName
         }
@@ -224,11 +217,11 @@ function GetFlagSettings(): JQuery[] {
 function GetAdminConfigItems(): JQuery[] {
     return [
         $('<a>').text('Clear Metasmoke Configuration').on('click', () => {
-            MetaSmokeAPI.Reset();
+            MetaSmokeAPI.reset();
             globals.displayStacksToast('Successfully cleared MS configuration.', 'success');
         }),
         $('<a>').text('Clear chat fkey').on('click', () => {
-            GreaseMonkeyCache.Unset(globals.CacheChatApiFkey);
+            GreaseMonkeyCache.unset(globals.CacheChatApiFkey);
             globals.displayStacksToast('Successfully cleared chat fkey.', 'success');
         })
     ].map(item => item.wrap(globals.gridCellDiv.clone()).parent());
@@ -435,7 +428,7 @@ function SetupCommentsAndFlagsModal(): void {
         });
         globals.displayStacksToast('Successfully removed flag type', 'success');
     }).on('click', '.af-comments-reset', () => {
-        GreaseMonkeyCache.Unset(globals.FlagTypesKey);
+        GreaseMonkeyCache.unset(globals.FlagTypesKey);
         cacheFlags();
         globals.displayStacksToast('Comments and flags have been reset to defaults', 'success');
         setTimeout(() => window.location.reload(), 500);

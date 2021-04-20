@@ -47,30 +47,30 @@ export class NattyAPI {
         });
     }
 
-    public WasReported(): boolean {
+    public wasReported(): boolean {
         return NattyAPI.nattyIds.includes(this.answerId);
     }
 
     public canBeReported(): boolean {
-        const answerAge = this.DaysBetween(this.answerDate, new Date());
-        const daysPostedAfterQuestion = this.DaysBetween(this.questionDate, this.answerDate);
+        const answerAge = this.getDaysBetween(this.answerDate, new Date());
+        const daysPostedAfterQuestion = this.getDaysBetween(this.questionDate, this.answerDate);
         return this.answerDate > this.questionDate && answerAge < 30 && daysPostedAfterQuestion > 30;
     }
 
-    private async ReportNaa(feedback: string): Promise<string> {
+    private async reportNaa(feedback: string): Promise<string> {
         if (!this.canBeReported() || feedback !== 'tp') return '';
 
-        await this.chat.SendMessage(this.reportMessage, this.name);
+        await this.chat.sendMessage(this.reportMessage, this.name);
         return nattyReportedMessage;
     }
 
-    private DaysBetween(first: Date, second: Date): number {
+    private getDaysBetween(first: Date, second: Date): number {
         return (second.valueOf() - first.valueOf()) / dayMillis;
     }
 
-    public async SendFeedback(feedback: string): Promise<string> {
-        return this.WasReported()
-            ? await this.chat.SendMessage(`${this.feedbackMessage} ${feedback}`, this.name)
-            : await this.ReportNaa(feedback);
+    public async sendFeedback(feedback: string): Promise<string> {
+        return this.wasReported()
+            ? await this.chat.sendMessage(`${this.feedbackMessage} ${feedback}`, this.name)
+            : await this.reportNaa(feedback);
     }
 }

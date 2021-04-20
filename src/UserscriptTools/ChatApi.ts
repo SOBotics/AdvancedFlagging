@@ -4,7 +4,7 @@ import { StackExchange, CacheChatApiFkey, soboticsRoomId, getSentMessage, chatFa
 declare const StackExchange: StackExchange;
 
 export class ChatApi {
-    private static GetExpiryDate(): Date {
+    private static getExpiryDate(): Date {
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 1);
         return expiryDate;
@@ -16,11 +16,11 @@ export class ChatApi {
         this.chatRoomUrl = chatUrl;
     }
 
-    public GetChannelFKey(roomId: number): Promise<string> {
-        const expiryDate = ChatApi.GetExpiryDate();
-        return GreaseMonkeyCache.GetAndCache(CacheChatApiFkey, async () => {
+    public getChannelFKey(roomId: number): Promise<string> {
+        const expiryDate = ChatApi.getExpiryDate();
+        return GreaseMonkeyCache.getAndCache(CacheChatApiFkey, async () => {
             try {
-                const channelPage = await this.GetChannelPage(roomId);
+                const channelPage = await this.getChannelPage(roomId);
                 const fkeyElement = $(channelPage).filter('#fkey');
                 const fkey = fkeyElement.val();
                 return fkey?.toString() || '';
@@ -31,17 +31,17 @@ export class ChatApi {
         }, expiryDate);
     }
 
-    public GetChatUserId(): number {
+    public getChatUserId(): number {
         return StackExchange.options.user.userId;
     }
 
-    public async SendMessage(message: string, bot: string, roomId: number = soboticsRoomId): Promise<string> {
-        const makeRequest = async (): Promise<boolean> => await this.SendRequestToChat(message, roomId);
+    public async sendMessage(message: string, bot: string, roomId: number = soboticsRoomId): Promise<string> {
+        const makeRequest = async (): Promise<boolean> => await this.sendRequestToChat(message, roomId);
         let numTries = 0;
         const onFailure = async (): Promise<string> => {
             numTries++;
             if (numTries < 3) {
-                GreaseMonkeyCache.Unset(CacheChatApiFkey);
+                GreaseMonkeyCache.unset(CacheChatApiFkey);
                 if (!await makeRequest()) return onFailure();
             } else {
                 throw new Error(chatFailureMessage); // retry limit exceeded
@@ -53,23 +53,21 @@ export class ChatApi {
         return getSentMessage(true, message.split(' ').pop() || '', bot);
     }
 
-    private async SendRequestToChat(message: string, roomId: number): Promise<boolean> {
-        const fkey = await this.GetChannelFKey(roomId);
+    private async sendRequestToChat(message: string, roomId: number): Promise<boolean> {
+        const fkey = await this.getChannelFKey(roomId);
         return new Promise(resolve => {
             GM_xmlhttpRequest({
                 method: 'POST',
                 url: `${this.chatRoomUrl}/chats/${roomId}/messages/new`,
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 data: 'text=' + encodeURIComponent(message) + '&fkey=' + fkey,
-                onload: (chatResponse: { status: number }) => {
-                    resolve(chatResponse.status === 200);
-                },
+                onload: (chatResponse: { status: number }) => resolve(chatResponse.status === 200),
                 onerror: () => resolve(false),
             });
         });
     }
 
-    private GetChannelPage(roomId: number): Promise<string> {
+    private getChannelPage(roomId: number): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'GET',

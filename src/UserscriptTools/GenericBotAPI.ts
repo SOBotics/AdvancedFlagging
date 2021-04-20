@@ -20,7 +20,7 @@ export class GenericBotAPI {
         return hash;
     }
 
-    public SendFeedback(trackPost: string): Promise<string> {
+    public sendFeedback(trackPost: string): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             if (!trackPost) resolve('');
 

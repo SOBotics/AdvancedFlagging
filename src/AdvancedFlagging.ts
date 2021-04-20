@@ -4,7 +4,7 @@ import { NattyAPI } from './UserscriptTools/NattyApi';
 import { GenericBotAPI } from './UserscriptTools/GenericBotAPI';
 import { MetaSmokeAPI } from './UserscriptTools/MetaSmokeAPI';
 import { CopyPastorAPI } from './UserscriptTools/CopyPastorAPI';
-import { SetupConfiguration } from './Configuration';
+import { setupConfiguration } from './Configuration';
 import * as globals from './GlobalVars';
 
 declare const StackExchange: globals.StackExchange;
@@ -140,7 +140,7 @@ function showComments(postId: number, data: string): void {
 
 function setupNattyApi(postId: number, questionTime: Date | null, answerTime: Date | null, nattyIcon?: JQuery): NattyAPI {
     const nattyApi = new NattyAPI(postId, questionTime || new Date(), answerTime || new Date());
-    const isReported = nattyApi.WasReported();
+    const isReported = nattyApi.wasReported();
     if (nattyIcon && isReported) {
         globals.showInlineElement(nattyIcon);
         nattyIcon.find('a').attr('href', `//sentinel.erwaysoftware.com/posts/aid/${postId}`).attr('target', '_blank');
@@ -163,14 +163,14 @@ function setupMetasmokeApi(postId: number, postType: globals.PostType, smokeyIco
     return new MetaSmokeAPI(postId, postType);
 }
 
-function setupGuttenbergApi(copyPastorApi: CopyPastorAPI, copyPastorIcon: JQuery): CopyPastorAPI {
-    const copypastorId = copyPastorApi.copypastorId;
+function setupGuttenbergApi(copypastorApi: CopyPastorAPI, copypastorIcon: JQuery): CopyPastorAPI {
+    const copypastorId = copypastorApi.copypastorId;
     if (copypastorId) {
-        globals.showInlineElement(copyPastorIcon);
-        copyPastorIcon.find('a').attr('href', `https://copypastor.sobotics.org/posts/${copypastorId}`).attr('target', '_blank');
+        globals.showInlineElement(copypastorIcon);
+        copypastorIcon.find('a').attr('href', `https://copypastor.sobotics.org/posts/${copypastorId}`).attr('target', '_blank');
     }
 
-    return copyPastorApi;
+    return copypastorApi;
 }
 
 function getHumanFromDisplayName(displayName: Flags): string {
@@ -192,26 +192,26 @@ function increasePopoverWidth(reportLink: JQuery): void {
 
 function getAllBotIcons(): JQuery[] {
     const nattyIcon = globals.nattyIcon.clone();
-    const copyPastorIcon = globals.guttenbergIcon.clone();
+    const copypastorIcon = globals.guttenbergIcon.clone();
     const smokeyIcon = globals.smokeyIcon.clone();
     void globals.attachPopover(nattyIcon.find('a')[0], 'Reported by Natty', 'bottom-start');
-    void globals.attachPopover(copyPastorIcon.find('a')[0], 'Reported by Guttenberg', 'bottom-start');
+    void globals.attachPopover(copypastorIcon.find('a')[0], 'Reported by Guttenberg', 'bottom-start');
     void globals.attachPopover(smokeyIcon.find('a')[0], 'Reported by Smokey', 'bottom-start');
-    return [nattyIcon, copyPastorIcon, smokeyIcon];
+    return [nattyIcon, copypastorIcon, smokeyIcon];
 }
 
 function addBotIconsToReview(post: PostInfo, botIcons?: JQuery[]): void {
     if (post.type !== 'Answer') return;
 
-    const botIconsToAppend = botIcons || getAllBotIcons(), [nattyIcon, copyPastorIcon, smokeyIcon] = botIconsToAppend;
+    const botIconsToAppend = botIcons || getAllBotIcons(), [nattyIcon, copypastorIcon, smokeyIcon] = botIconsToAppend;
     const iconLocation = post.element.find('.js-post-menu').children().first();
     iconLocation.append(...botIconsToAppend);
     if (botIcons) return;
 
-    const reporters: Reporter[] = [], copyPastorApi = new CopyPastorAPI(post.postId);
+    const reporters: Reporter[] = [], copypastorApi = new CopyPastorAPI(post.postId);
     reporters.push(setupNattyApi(post.postId, post.questionTime, post.creationDate, nattyIcon));
     setupMetasmokeApi(post.postId, post.type, smokeyIcon);
-    setupGuttenbergApi(copyPastorApi, copyPastorIcon); // no need to send feedback to Guttenberg; just show the icon
+    setupGuttenbergApi(copypastorApi, copypastorIcon); // no need to send feedback to Guttenberg; just show the icon
 
     reviewPostsInformation.push({ postId: post.postId, post, reporters });
 }
@@ -325,7 +325,7 @@ function BuildFlaggingDialog(
             const flagText = copypastorId && targetUrl ? globals.getFullFlag(flagType.Id, targetUrl, copypastorId) : null;
 
             const feedbacksString = getFeedbackSpans(
-                flagType, nattyApi.WasReported(), nattyApi.canBeReported(), Boolean(smokeyId), Boolean(copypastorId)
+                flagType, nattyApi.wasReported(), nattyApi.canBeReported(), Boolean(smokeyId), Boolean(copypastorId)
             );
             const reportLinkInfo = `<div><b>Flag: </b>${reportTypeHuman || globals.noneString}</div>`
                                  + `<div><b>Comment: </b>${commentText || globals.noneString}</div>`
@@ -379,7 +379,7 @@ async function handleFlag(flagType: globals.CachedFlag, reporters: Reporter[]): 
     for (const reporter of reporters.filter(item => flagType.Feedbacks[item.name])) {
         try {
             // eslint-disable-next-line no-await-in-loop
-            const promiseValue = await reporter.SendFeedback(flagType.Feedbacks[reporter.name]);
+            const promiseValue = await reporter.sendFeedback(flagType.Feedbacks[reporter.name]);
             if (!promiseValue) continue;
             globals.displaySuccess(promiseValue);
         } catch (error) {
@@ -405,14 +405,14 @@ function SetupPostPage(): void {
         const advancedFlaggingLink: JQuery = globals.advancedFlaggingLink.clone();
         if (post.page === 'Question') iconLocation.append(globals.gridCellDiv.clone().append(advancedFlaggingLink));
 
-        const [nattyIcon, copyPastorIcon, smokeyIcon] = getAllBotIcons();
-        const copyPastorApi = new CopyPastorAPI(post.postId);
+        const [nattyIcon, copypastorIcon, smokeyIcon] = getAllBotIcons();
+        const copypastorApi = new CopyPastorAPI(post.postId);
 
         const reporters: Reporter[] = [];
         if (post.type === 'Answer' && globals.isStackOverflow) {
             reporters.push(setupNattyApi(post.postId, questionTime, answerTime, nattyIcon));
             reporters.push(setupGenericBotApi(post.postId));
-            reporters.push(setupGuttenbergApi(copyPastorApi, copyPastorIcon));
+            reporters.push(setupGuttenbergApi(copypastorApi, copypastorIcon));
         }
         reporters.push(setupMetasmokeApi(post.postId, post.type, smokeyIcon));
 
@@ -436,11 +436,11 @@ function SetupPostPage(): void {
                 void handleFlag(flagType, reporters);
             });
 
-            iconLocation.append(performedActionIcon, reportedIcon, failedActionIcon, nattyIcon, copyPastorIcon, smokeyIcon);
+            iconLocation.append(performedActionIcon, reportedIcon, failedActionIcon, nattyIcon, copypastorIcon, smokeyIcon);
 
             const shouldRaiseVlq = globals.qualifiesForVlq(post.score, answerTime || new Date());
             const dropDown = BuildFlaggingDialog(
-                post, deleted, reportedIcon, performedActionIcon, reporters, copyPastorApi,
+                post, deleted, reportedIcon, performedActionIcon, reporters, copypastorApi,
                 shouldRaiseVlq, failedActionIcon, post.addListener, questionTime, answerTime
             );
 
@@ -463,7 +463,7 @@ function SetupPostPage(): void {
                 $(window).on('click', () => dropDown.fadeOut('fast'));
             }
         } else {
-            iconLocation.after(smokeyIcon, copyPastorIcon, nattyIcon);
+            iconLocation.after(smokeyIcon, copypastorIcon, nattyIcon);
         }
     });
 }
@@ -471,14 +471,14 @@ function SetupPostPage(): void {
 function Setup(): void {
     // Collect all ids
     void Promise.all([
-        MetaSmokeAPI.Setup(globals.metaSmokeKey),
-        MetaSmokeAPI.QueryMetaSmokeInternal(),
+        MetaSmokeAPI.setup(globals.metaSmokeKey),
+        MetaSmokeAPI.queryMetaSmokeInternal(),
         CopyPastorAPI.getAllCopyPastorIds(),
         NattyAPI.getAllNattyIds()
     ]).then(() => {
         SetupPostPage();
         SetupStyles();
-        SetupConfiguration();
+        setupConfiguration();
     });
     $('body').append(popupWrapper);
 

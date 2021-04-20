@@ -89,8 +89,8 @@ interface ModalType {
 export const soboticsRoomId = 111347;
 export const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
 export const metasmokeApiFilter = 'GGJFNNKKJFHFKJFLJLGIJMFIHNNJNINJ';
-export const copyPastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
-export const copyPastorServer = 'https://copypastor.sobotics.org';
+export const copypastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
+export const copypastorServer = 'https://copypastor.sobotics.org';
 export const genericBotKey = 'Cm45BSrt51FR3ju';
 export const placeholderTarget = /\$TARGET\$/g;
 export const placeholderCopypastorLink = /\$COPYPASTOR\$/g;
@@ -345,12 +345,12 @@ export function addXHRListener(callback: (request: XMLHttpRequest) => void): voi
 }
 
 // cache-related helpers
-export const cachedConfigurationInfo = GreaseMonkeyCache.GetFromCache<CachedConfiguration>(ConfigurationCacheKey) || {} as CachedConfiguration;
-export const updateConfiguration = (): void => GreaseMonkeyCache.StoreInCache(ConfigurationCacheKey, cachedConfigurationInfo);
-export const cachedFlagTypes = GreaseMonkeyCache.GetFromCache<CachedFlag[]>(FlagTypesKey) || [];
-export const updateFlagTypes = (): void => GreaseMonkeyCache.StoreInCache(FlagTypesKey, cachedFlagTypes);
-export const cachedCategories = GreaseMonkeyCache.GetFromCache<CachedCategory[]>(FlagCategoriesKey) || [];
-export const updateCategories = (): void => GreaseMonkeyCache.StoreInCache(FlagCategoriesKey, cachedCategories);
+export const cachedConfigurationInfo = GreaseMonkeyCache.getFromCache<CachedConfiguration>(ConfigurationCacheKey) || {} as CachedConfiguration;
+export const updateConfiguration = (): void => GreaseMonkeyCache.storeInCache(ConfigurationCacheKey, cachedConfigurationInfo);
+export const cachedFlagTypes = GreaseMonkeyCache.getFromCache<CachedFlag[]>(FlagTypesKey) || [];
+export const updateFlagTypes = (): void => GreaseMonkeyCache.storeInCache(FlagTypesKey, cachedFlagTypes);
+export const cachedCategories = GreaseMonkeyCache.getFromCache<CachedCategory[]>(FlagCategoriesKey) || [];
+export const updateCategories = (): void => GreaseMonkeyCache.storeInCache(FlagCategoriesKey, cachedCategories);
 
 // For GetComment() on FlagTypes. Adds the author name before the comment if the option is enabled
 export function getFullComment(flagId: number, { AuthorName }: UserDetails, level?: 'Low' | 'High'): string | null {

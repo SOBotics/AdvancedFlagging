@@ -1,5 +1,5 @@
 import { ChatApi } from './ChatApi';
-import { isStackOverflow, copyPastorServer, username, copyPastorKey, getSentMessage, FlagTypeFeedbacks } from '../GlobalVars';
+import { isStackOverflow, copypastorServer, username, copypastorKey, getSentMessage, FlagTypeFeedbacks } from '../GlobalVars';
 import { getAllPostIds } from './sotools';
 
 interface CopyPastorFindTargetResponseItem {
@@ -26,7 +26,7 @@ interface CopyPastorData {
 }
 
 export class CopyPastorAPI {
-    private static copyPastorIds: CopyPastorData = {};
+    private static copypastorIds: CopyPastorData = {};
 
     public name: keyof FlagTypeFeedbacks = 'Guttenberg';
     public copypastorId: number;
@@ -36,9 +36,9 @@ export class CopyPastorAPI {
 
     constructor(id: number) {
         this.answerId = id;
-        this.copypastorId = CopyPastorAPI.copyPastorIds[this.answerId]?.copypastorId || 0;
-        this.repost = CopyPastorAPI.copyPastorIds[this.answerId]?.repost || false;
-        this.targetUrl = CopyPastorAPI.copyPastorIds[this.answerId]?.target_url || '';
+        this.copypastorId = CopyPastorAPI.copypastorIds[this.answerId]?.copypastorId || 0;
+        this.repost = CopyPastorAPI.copypastorIds[this.answerId]?.repost || false;
+        this.targetUrl = CopyPastorAPI.copypastorIds[this.answerId]?.target_url || '';
     }
 
     public static async getAllCopyPastorIds(): Promise<void> {
@@ -49,7 +49,7 @@ export class CopyPastorAPI {
     }
 
     private static storeReportedPosts(postUrls: string[]): Promise<void> {
-        const url = `${copyPastorServer}/posts/findTarget?url=${postUrls.join(',')}`;
+        const url = `${copypastorServer}/posts/findTarget?url=${postUrls.join(',')}`;
         return new Promise<void>((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'GET',
@@ -59,7 +59,7 @@ export class CopyPastorAPI {
                     if (responseObject.status === 'failure') return;
                     responseObject.posts.forEach(item => {
                         const sitePostId = Number(/\d+/.exec(item.target_url)?.[0]);
-                        this.copyPastorIds[sitePostId] = {
+                        this.copypastorIds[sitePostId] = {
                             copypastorId: Number(item.post_id),
                             repost: item.repost,
                             target_url: item.target_url
@@ -72,8 +72,8 @@ export class CopyPastorAPI {
         });
     }
 
-    public SendFeedback(feedback: string): Promise<string> {
-        const chatId = new ChatApi().GetChatUserId();
+    public sendFeedback(feedback: string): Promise<string> {
+        const chatId = new ChatApi().getChatUserId();
         if (!this.copypastorId) return Promise.resolve('');
 
         const successMessage = getSentMessage(true, feedback, this.name);
@@ -83,13 +83,13 @@ export class CopyPastorAPI {
             feedback_type: feedback,
             username,
             link: `https://chat.stackoverflow.com/users/${chatId}`,
-            key: copyPastorKey,
+            key: copypastorKey,
         };
 
         return new Promise<string>((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'POST',
-                url: `${copyPastorServer}/feedback/create`,
+                url: `${copypastorServer}/feedback/create`,
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 data: Object.entries(payload).map(item => item.join('=')).join('&'),
                 onload: (response: { status: number }) => {

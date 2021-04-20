@@ -258,9 +258,9 @@ function createFlagTypeDiv(displayName: string, flagId: number, reportType: Flag
             data-controller="s-expandable-control" aria-controls="${expandableId}">Edit</button>
     <button class="s-sidebarwidget--action s-btn s-btn__primary t4 r6 af-submit-content" style="display: none">Save</button>
     <div class="s-sidebarwidget--content d-block p12 fs-body3">${displayName}</div>
-        <div class="s-expandable" id="${expandableId}">
-            <div class="s-expandable--content px8">
-                <div class="advanced-flagging-flag-option py8 mln6">
+    <div class="s-expandable" id="${expandableId}">
+        <div class="s-expandable--content px8">
+            <div class="advanced-flagging-flag-option py8 mln6">
                 <label class="fw-bold ps-relative d-inline-block z-selected l16 ${shouldBeDisabled ? 'o50' : ''}">Flag as:</label>
                 <div class="s-select d-inline-block r48">
                     <select class="pl64" ${shouldBeDisabled ? 'disabled' : ''}>${getFlagOptions(reportType)}</select>

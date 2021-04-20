@@ -239,39 +239,44 @@ export const commentsLink = configurationLink.clone().attr('id', 'af-comments-bu
 
 export const overlayModal = $(`
 <aside class="s-modal" id="af-config" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
-  <div class="s-modal--dialog s-modal__full w60 sm:w100 md:w75 lg:w75" role="document">
-    <h1 class="s-modal--header fw-body c-movey" id="af-modal-title">AdvancedFlagging configuration</h1>
-    <div class="s-modal--body fs-body2" id="af-modal-description"></div>
-    <div class="grid gs8 gsx s-modal--footer">
-      <button class="grid--cell s-btn s-btn__primary" type="button">Save changes</button>
-      <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
-      <button class="grid--cell s-btn s-btn__danger af-configuration-reset" type="button">Reset</button>
+    <div class="s-modal--dialog s-modal__full w60 sm:w100 md:w75 lg:w75" role="document">
+        <h1 class="s-modal--header fw-body c-movey" id="af-modal-title">AdvancedFlagging configuration</h1>
+        <div class="s-modal--body fs-body2" id="af-modal-description"></div>
+        <div class="grid gs8 gsx s-modal--footer">
+            <button class="grid--cell s-btn s-btn__primary" type="button">Save changes</button>
+            <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
+            <button class="grid--cell s-btn s-btn__danger af-configuration-reset" type="button">Reset</button>
+        </div>
+        <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
     </div>
-    <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
-  </div>
 </aside>`);
 const grid = $('<div>').addClass('grid lg:grid md:fd-column sm:fd-column');
 export const inlineCheckboxesWrapper = gridCellDiv.clone().addClass('grid--cell lg:grid--cell md:m0 sm:m0').append(grid.clone());
 const metasmokeTokenPopup = $(`
 <aside class="s-modal" id="af-ms-token" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
-  <div class="s-modal--dialog s-modal__full sm:w100 md:w100" role="document">
-    <h1 class="s-modal--header fw-bold " id="af-modal-title">Authenticate MS with AF</h1>
-    <div class="s-modal--body fs-body2" id="af-modal-description">
-      <div class="grid gs4 gsy fd-column">
-        <div class="grid--cell">
-          <label class="d-block s-label" for="example-item1">Metasmoke access token
-            <p class="s-description mt2">Once you've authenticated Advanced Flagging with metasmoke, you'll be given a code; enter it below:</p>
-          </label>
+    <div class="s-modal--dialog s-modal__full sm:w100 md:w100" role="document">
+        <h1 class="s-modal--header fw-bold " id="af-modal-title">Authenticate MS with AF</h1>
+        <div class="s-modal--body fs-body2" id="af-modal-description">
+            <div class="grid gs4 gsy fd-column">
+                <div class="grid--cell">
+                    <label class="s-label" for="example-item1">
+                        Metasmoke access token
+                        <p class="s-description mt2">
+                            Once you've authenticated Advanced Flagging with metasmoke, you'll be given a code; enter it below:
+                        </p>
+                    </label>
+                </div>
+                <div class="grid ps-relative">
+                    <input class="s-input" type="text" id="advanced-flagging-ms-token" placeholder="Enter the code here">
+                </div>
+            </div>
         </div>
-      <div class="grid ps-relative"><input class="s-input" type="text" id="advanced-flagging-ms-token" placeholder="Enter the code here"></div>
-      </div>
+        <div class="grid gs8 gsx s-modal--footer">
+            <button class="grid--cell s-btn s-btn__primary" id="advanced-flagging-save-ms-token" type="button">Submit</button>
+            <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
+        </div>
+        <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
     </div>
-    <div class="grid gs8 gsx s-modal--footer">
-      <button class="grid--cell s-btn s-btn__primary" id="advanced-flagging-save-ms-token" type="button">Submit</button>
-      <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
-    </div>
-    <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
-  </div>
 </aside>`);
 export const editCommentsPopup = $(`
 <aside class="s-modal" id="af-comments" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">

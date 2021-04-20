@@ -42,7 +42,14 @@ export interface FlagTypeFeedbacks {
     Guttenberg: 'tp' | 'fp' | '';
     'Generic Bot': 'track' | ''; // 'track' => track the post, '' => don't
 }
-export type AllFeedbacks = FlagTypeFeedbacks[keyof FlagTypeFeedbacks];
+export type BotNames = keyof FlagTypeFeedbacks;
+export type AllFeedbacks = FlagTypeFeedbacks[BotNames] | '(none)';
+export const possibleFeedbacks: { [key in BotNames]: AllFeedbacks[] } = {
+    Smokey: ['tpu-', 'tp-', 'fp-', 'naa-', ''],
+    Natty: ['tp', 'fp', 'ne', ''],
+    Guttenberg: ['tp', 'fp', ''],
+    'Generic Bot' : ['track', '']
+};
 
 // StackExchange objects
 export interface Stacks {

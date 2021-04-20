@@ -248,23 +248,55 @@ interface ConfigSection {
     onSave?(): void;
 }
 
-function createFlagTypeDiv(displayName: string, flagId: number, reportType: Flags): JQuery {
-    const expandableId = `advanced-flagging-${flagId}-${displayName}`.toLowerCase().replace(/\s/g, '');
-    const shouldBeDisabled = reportType === 'PostOther';
+function getFeedbackCheckbox(botName: string, feedback: globals.AllFeedbacks, isChecked: boolean, flagId: number): string {
+    const radioId = `af-${botName.replace(/\s/g, '-')}-${flagId}-feedback-${feedback || 'none'}`;
+    const radioName = `af-${flagId}-feedback-to-${botName.replace(/\s/g, '-')}`;
+    return `
+<div class="grid--cell">
+    <div class="grid gs8 gsx">
+        <div class="grid--cell">
+            <input class="s-radio" data-feedback="${feedback}" type="radio"${isChecked ? ' checked' : ''}
+                   name="${radioName}" id="${radioId}"/>
+        </div>
+        <label class="grid--cell s-label fw-normal" for="${radioId}">${feedback || globals.noneString.replace('o50', '')}</label>
+    </div>
+</div>`;
+}
+
+function getCheckboxesForBot(botName: globals.BotNames, currentFeedback: globals.AllFeedbacks, flagId: number): string {
+    const feedbacks = globals.possibleFeedbacks[botName];
+    return `
+<div class="grid--cell">
+    <div class="grid gs16">
+        <div class="grid--cell fs-body2">Feedback to ${botName}:</div>
+        ${feedbacks.map(feedback => getFeedbackCheckbox(botName, feedback, feedback === currentFeedback, flagId)).join('\n')}
+    </div>
+</div>`;
+}
+
+function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
+    const expandableId = `advanced-flagging-${flagType.Id}-${flagType.DisplayName}`.toLowerCase().replace(/\s/g, '');
+    const shouldBeDisabled = flagType.ReportType === 'PostOther';
     const categoryDiv = $(`
-<div class="s-sidebarwidget" data-flag-id=${flagId}>
+<div class="s-sidebarwidget" data-flag-id=${flagType.Id}>
     <button class="s-sidebarwidget--action s-btn s-btn__danger s-btn__icon t4 r6 af-remove-expandable">Remove</button>
     <button class="s-sidebarwidget--action s-btn s-btn__icon t4 r4 af-expandable-trigger"
             data-controller="s-expandable-control" aria-controls="${expandableId}">Edit</button>
     <button class="s-sidebarwidget--action s-btn s-btn__primary t4 r6 af-submit-content" style="display: none">Save</button>
-    <div class="s-sidebarwidget--content d-block p12 fs-body3">${displayName}</div>
+    <div class="s-sidebarwidget--content d-block p12 fs-body3">${flagType.DisplayName}</div>
     <div class="s-expandable" id="${expandableId}">
         <div class="s-expandable--content px8">
             <div class="advanced-flagging-flag-option py8 mln6">
                 <label class="fw-bold ps-relative d-inline-block z-selected l16 ${shouldBeDisabled ? 'o50' : ''}">Flag as:</label>
                 <div class="s-select d-inline-block r48">
-                    <select class="pl64" ${shouldBeDisabled ? 'disabled' : ''}>${getFlagOptions(reportType)}</select>
+                    <select class="pl64" ${shouldBeDisabled ? 'disabled' : ''}>${getFlagOptions(flagType.ReportType)}</select>
                 </div>
+            </div>
+            <div class="advanced-flagging-feedbacks-radios py8 ml2">
+  ${Object.keys(globals.possibleFeedbacks).map(item => {
+        const botName = item as globals.BotNames;
+        return getCheckboxesForBot(botName, flagType.Feedbacks[botName], flagType.Id);
+    }).join('\n')}
             </div>
         </div>
     </div>
@@ -333,7 +365,7 @@ function SetupCommentsAndFlagsModal(): void {
         const comments = flagType.Comments;
         const flagText = flagType.FlagText;
 
-        const flagTypeDiv = createFlagTypeDiv(flagType.DisplayName, flagType.Id, flagType.ReportType);
+        const flagTypeDiv = createFlagTypeDiv(flagType);
         const expandable = flagTypeDiv.find('.s-expandable--content');
         const flagCategoryWrapper = categoryElements[belongsToCategory];
 
@@ -373,8 +405,19 @@ function SetupCommentsAndFlagsModal(): void {
         const commentLowRep = expandable.find('.af-lowrep-content').val() as string || '';
         const commentHighRep = expandable.find('.af-highrep-content').val() as string || '';
 
+        const getSelector = (id: number, botName: string): string => `[name^="af-${id}-feedback-to-${botName}"]:checked`;
+        // Each radio button belongs to a group af-<flagId>-feedback-to-<somebot> and has id af-<botName>-<flagId>-feedback-<feedback>
+        // Additionally, it has a data-feedback attribute which holds the feedback that corresponds to the radio
+        const botFeedbacks = {
+            Smokey: $(getSelector(flagId, 'Smokey')).data('feedback') as globals.FlagTypeFeedbacks['Smokey'],
+            Natty: $(getSelector(flagId, 'Natty')).data('feedback') as globals.FlagTypeFeedbacks['Natty'],
+            Guttenberg: $(getSelector(flagId, 'Guttenberg')).data('feedback') as globals.FlagTypeFeedbacks['Guttenberg'],
+            'Generic Bot': $(getSelector(flagId, 'Generic-Bot')).data('feedback') as globals.FlagTypeFeedbacks['Generic Bot'],
+        };
+
         if (flagContent) currentFlagType.FlagText = flagContent;
         if (commentLowRep) currentFlagType.Comments = { Low: commentLowRep, High: commentHighRep };
+        currentFlagType.Feedbacks = botFeedbacks;
         globals.updateFlagTypes();
 
         globals.displayStacksToast('Content saved successfully', 'success');

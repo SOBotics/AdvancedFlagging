@@ -1,5 +1,5 @@
 import { ChatApi } from './ChatApi';
-import { isStackOverflow, nattyAllReportsUrl, dayMillis, FlagTypeFeedbacks } from '../GlobalVars';
+import { isStackOverflow, nattyAllReportsUrl, dayMillis, FlagTypeFeedbacks, nattyReportedMessage } from '../GlobalVars';
 
 interface NattyFeedback {
     items: NattyFeedbackItem[];
@@ -61,7 +61,7 @@ export class NattyAPI {
         if (!this.canBeReported() || feedback !== 'tp') return '';
 
         await this.chat.SendMessage(this.reportMessage, this.name);
-        return 'Post reported to Natty';
+        return nattyReportedMessage;
     }
 
     private DaysBetween(first: Date, second: Date): number {

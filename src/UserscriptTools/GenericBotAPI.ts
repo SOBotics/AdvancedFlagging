@@ -1,4 +1,4 @@
-import { isStackOverflow, username, genericBotKey, getSentMessage, genericBotFailure, FlagTypeFeedbacks } from '../GlobalVars';
+import { isStackOverflow, username, genericBotKey, genericBotSuccess, genericBotFailure, FlagTypeFeedbacks } from '../GlobalVars';
 
 export class GenericBotAPI {
     private answerId: number;
@@ -39,7 +39,7 @@ export class GenericBotAPI {
                         console.error('Failed to send track request.', response);
                         reject(genericBotFailure);
                     }
-                    resolve(getSentMessage(true, '', this.name));
+                    resolve(genericBotSuccess);
                 },
                 onerror: () => reject(genericBotFailure)
             });

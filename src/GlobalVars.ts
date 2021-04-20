@@ -95,9 +95,11 @@ export const transitionDelay = 0.25 * 1000;
 export const settingUpTitle = 'Setting up MetaSmoke';
 export const settingUpBody = 'If you do not wish to connect, press cancel and this popup won\'t show up again. '
                            + 'To reset configuration, see the footer of Stack Overflow.';
+export const genericBotSuccess = 'Post tracked with Generic Bot';
 export const genericBotFailure = 'Server refused to track the post';
 export const metasmokeReportedMessage = 'Post reported to Smokey';
 export const metasmokeFailureMessage = 'Failed to report post to Smokey';
+export const nattyReportedMessage = 'Post reported to Natty';
 export const chatFailureMessage = 'Failed to send message to chat';
 const nattyImage = 'https://i.stack.imgur.com/aMUMt.jpg?s=32&g=1';
 const guttenbergImage = 'https://i.stack.imgur.com/tzKAI.png?s=32&g=1';

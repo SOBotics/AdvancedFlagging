@@ -13,10 +13,14 @@ interface MetaSmokeApiWrapper {
     items: MetaSmokeApiItem[];
 }
 
+interface MetasmokeData {
+    [key: number]: number; // key is the sitePostId, the value is the metasmokeId. That's all we need!
+}
+
 export class MetaSmokeAPI {
     private static appKey: string;
     private static accessToken: string;
-    private static metasmokeIds: { sitePostId: number, metasmokeId: number }[] = [];
+    private static metasmokeIds: MetasmokeData = {};
     public static isDisabled: boolean = GreaseMonkeyCache.GetFromCache<boolean>(globals.MetaSmokeDisabledConfig) || false;
     private postId: number;
     private postType: 'Question' | 'Answer';
@@ -70,7 +74,7 @@ export class MetaSmokeAPI {
                 const postId = /\d+$/.exec(item.link);
                 if (!postId) return;
 
-                MetaSmokeAPI.metasmokeIds.push({ sitePostId: Number(postId[0]), metasmokeId: item.id });
+                MetaSmokeAPI.metasmokeIds[Number(postId[0])] = item.id;
             });
         } catch (error) {
             globals.displayError('Failed to get Metasmoke URLs.');
@@ -100,15 +104,12 @@ export class MetaSmokeAPI {
     }
 
     public static getSmokeyId(postId: number): number {
-        return MetaSmokeAPI.metasmokeIds.find(item => item.sitePostId === postId)?.metasmokeId || 0;
+        return MetaSmokeAPI.metasmokeIds[postId] || 0;
     }
 
     public async ReportRedFlag(): Promise<string> {
         const smokeyId = MetaSmokeAPI.getSmokeyId(this.postId);
-        if (smokeyId) return await this.SendFeedback('tpu-');
-
         const urlString = MetaSmokeAPI.GetQueryUrl(this.postId, this.postType);
-        if (!MetaSmokeAPI.accessToken) return '';
 
         const reportRequest = await fetch('https://metasmoke.erwaysoftware.com/api/w/post/report', {
             method: 'POST',

@@ -164,7 +164,7 @@ function setupMetasmokeApi(postId: number, postType: globals.PostType, smokeyIco
 }
 
 function setupGuttenbergApi(copyPastorApi: CopyPastorAPI, copyPastorIcon: JQuery): CopyPastorAPI {
-    const copypastorId = copyPastorApi.getCopyPastorId();
+    const copypastorId = copyPastorApi.copypastorId;
     if (copypastorId) {
         globals.showInlineElement(copyPastorIcon);
         copyPastorIcon.find('a').attr('href', `https://copypastor.sobotics.org/posts/${copypastorId}`).attr('target', '_blank');
@@ -294,9 +294,9 @@ function BuildFlaggingDialog(
     const flagRow = globals.getPopoverOption(`af-flag-checkbox-${post.postId}`, !defaultNoFlag, 'Flag');
     const downvoteRow = globals.getPopoverOption(`af-downvote-checkbox-${post.postId}`, !defaultNoDownvote, 'Downvote');
 
-    const copypastorId = copypastorApi.getCopyPastorId();
-    const isRepost = copypastorApi.getIsRepost();
-    const targetUrl = copypastorApi.getTargetUrl();
+    const copypastorId = copypastorApi.copypastorId;
+    const isRepost = copypastorApi.repost;
+    const targetUrl = copypastorApi.targetUrl;
     const nattyApi = new NattyAPI(post.postId, questionTime || new Date(), answerTime || new Date());
     const smokeyId = MetaSmokeAPI.getSmokeyId(post.postId);
 

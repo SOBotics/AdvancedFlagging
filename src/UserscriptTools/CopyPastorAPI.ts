@@ -17,13 +17,28 @@ type CopyPastorFindTargetResponse = {
     message: string;
 };
 
+interface CopyPastorData {
+    [key: number]: { // key is the sitePostId
+        copypastorId: number;
+        repost: boolean;
+        target_url: string;
+    }
+}
+
 export class CopyPastorAPI {
-    private static copyPastorIds: { postId: number, repost: boolean, target_url: string }[] = [];
-    private answerId?: number;
+    private static copyPastorIds: CopyPastorData = {};
+
     public name: keyof FlagTypeFeedbacks = 'Guttenberg';
+    public copypastorId: number;
+    public repost: boolean;
+    public targetUrl: string;
+    private answerId: number;
 
     constructor(id: number) {
         this.answerId = id;
+        this.copypastorId = CopyPastorAPI.copyPastorIds[this.answerId]?.copypastorId || 0;
+        this.repost = CopyPastorAPI.copyPastorIds[this.answerId]?.repost || false;
+        this.targetUrl = CopyPastorAPI.copyPastorIds[this.answerId]?.target_url || '';
     }
 
     public static async getAllCopyPastorIds(): Promise<void> {
@@ -43,7 +58,12 @@ export class CopyPastorAPI {
                     const responseObject = JSON.parse(response.responseText) as CopyPastorFindTargetResponse;
                     if (responseObject.status === 'failure') return;
                     responseObject.posts.forEach(item => {
-                        this.copyPastorIds.push({ postId: Number(item.post_id), repost: item.repost, target_url: item.target_url });
+                        const sitePostId = Number(/\d+/.exec(item.target_url)?.[0]);
+                        this.copyPastorIds[sitePostId] = {
+                            copypastorId: Number(item.post_id),
+                            repost: item.repost,
+                            target_url: item.target_url
+                        };
                     });
                     resolve();
                 },
@@ -52,27 +72,14 @@ export class CopyPastorAPI {
         });
     }
 
-    public getCopyPastorId(): number {
-        return CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId)?.postId || 0;
-    }
-
-    public getIsRepost(): boolean {
-        return CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId)?.repost || false;
-    }
-
-    public getTargetUrl(): string {
-        return CopyPastorAPI.copyPastorIds.find(item => item.postId === this.answerId)?.target_url || '';
-    }
-
     public SendFeedback(feedback: string): Promise<string> {
         const chatId = new ChatApi().GetChatUserId();
-        const copyPastorId = this.getCopyPastorId();
-        if (!copyPastorId) return Promise.resolve('');
+        if (!this.copypastorId) return Promise.resolve('');
 
         const successMessage = getSentMessage(true, feedback, this.name);
         const failureMessage = getSentMessage(false, feedback, this.name);
         const payload = {
-            post_id: copyPastorId,
+            post_id: this.copypastorId,
             feedback_type: feedback,
             username,
             link: `https://chat.stackoverflow.com/users/${chatId}`,

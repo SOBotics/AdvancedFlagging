@@ -212,5 +212,28 @@ function parseAuthorDetails(authorDiv: JQuery): string {
 }
 
 function parseActionDate(actionDiv: JQuery): Date | null {
-    return parseDate((actionDiv.hasClass('relativetime') ? actionDiv : actionDiv.find('.relativeTime')).attr('title'));
+    return parseDate((actionDiv.hasClass('relativetime') ? actionDiv : actionDiv.find('.relativetime')).attr('title'));
+}
+
+export function getAllPostIds(includeQuestion: boolean, urlForm: boolean): (number | string)[] {
+    const natoElements = $('.answer-hyperlink').parents('tr'), flagElements = $('.flagged-post');
+    const questionPageElements = $('.question, .answer');
+    const elementToUse = [natoElements, flagElements, questionPageElements].find(item => item.length);
+    if (!elementToUse) return [];
+
+    return elementToUse.get().map(item => {
+        const element = $(item);
+        const isQuestionType = isQuestionPage ? element.attr('data-questionid') : element.find('.question-hyperlink').length;
+        const postType: PostType = isQuestionType ? 'Question' : 'Answer';
+        if (!includeQuestion && postType === 'Question') return '';
+
+        const elementHref = element.find(`.${postType.toLowerCase()}-hyperlink`).attr('href');
+        let postId: number;
+        if (elementHref) { // We're on flags page. We have to fetch the post id from the post URL
+            postId = Number(postType === 'Answer' ? elementHref.split('#')[1] : elementHref.split('/')[2]);
+        } else { // instead, on the question page, the element has a data-questionid or data-answerid attribute with the post id
+            postId = Number(element.attr('data-questionid') || element.attr('data-answerid'));
+        }
+        return urlForm ? `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'questions'}/${postId}` : postId;
+    }).filter(String); // remove null/empty values
 }

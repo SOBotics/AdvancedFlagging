@@ -1,5 +1,6 @@
 import { GreaseMonkeyCache } from './GreaseMonkeyCache';
 import * as globals from '../GlobalVars';
+import { getAllPostIds } from './sotools';
 
 declare const StackExchange: globals.StackExchange;
 
@@ -51,7 +52,7 @@ export class MetaSmokeAPI {
     };
 
     public static async QueryMetaSmokeInternal(): Promise<void> {
-        const urls = globals.getAllPostIds(true, true);
+        const urls = getAllPostIds(true, true);
         const urlString = urls.join(',');
 
         if (MetaSmokeAPI.isDisabled) return;

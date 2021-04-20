@@ -1,5 +1,6 @@
 import { ChatApi } from './ChatApi';
-import { isStackOverflow, getAllPostIds, copyPastorServer, username, copyPastorKey, getSentMessage, FlagTypeFeedbacks } from '../GlobalVars';
+import { isStackOverflow, copyPastorServer, username, copyPastorKey, getSentMessage, FlagTypeFeedbacks } from '../GlobalVars';
+import { getAllPostIds } from './sotools';
 
 interface CopyPastorFindTargetResponseItem {
     post_id: string;

@@ -197,7 +197,7 @@ export function getSentMessage(success: boolean, feedback: string, bot: string):
 }
 
 // jQuery icon elements
-const sampleIcon = gridCellDiv.clone().addClass(`d-none ${isFlagsPage ? ' ml8' : ''}`)
+const sampleIcon = gridCellDiv.clone().addClass(`d-none ${isQuestionPage || isLqpReviewPage ? '' : ' ml8'}`)
     .append($('<a>').addClass('s-avatar s-avatar__16 s-user-card--avatar').append($('<img>').addClass('s-avatar--image')));
 export const nattyIcon = sampleIcon.clone().find('img').attr('src', nattyImage).parent().parent();
 export const guttenbergIcon = sampleIcon.clone().find('img').attr('src', guttenbergImage).parent().parent();
@@ -342,23 +342,6 @@ export function addXHRListener(callback: (request: XMLHttpRequest) => void): voi
         open.apply(this, args);
     };
     initialized = true;
-}
-
-export function getAllPostIds(includeQuestion: boolean, urlForm: boolean): (number | string)[] {
-    return $(isQuestionPage ? '.question, .answer' : '.flagged-post').get().map(item => {
-        const el = $(item);
-        const isQuestionType = isQuestionPage ? el.attr('data-questionid') : el.find('.question-hyperlink').length;
-        const postType: PostType = isQuestionType ? 'Question' : 'Answer';
-        if (!includeQuestion && postType === 'Question') return '';
-        const elementHref = el.find(`.${postType.toLowerCase()}-hyperlink`).attr('href');
-        let postId: number;
-        if (elementHref) { // We're on flags page. We have to fetch the post id from the post URL
-            postId = Number(postType === 'Answer' ? elementHref.split('#')[1] : elementHref.split('/')[2]);
-        } else { // instead, on the question page, the element has a data-questionid or data-answerid attribute with the post id
-            postId = Number(el.attr('data-questionid') || el.attr('data-answerid'));
-        }
-        return urlForm ? `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'questions'}/${postId}` : postId;
-    }).filter(String); // remove null/empty values
 }
 
 // cache-related helpers

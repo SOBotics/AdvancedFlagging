@@ -11,8 +11,9 @@ export interface PostInfo {
     questionTime: Date | null; // not interested in that value on the Flags page
     answerTime: Date | null;
     score: number | null;
-    authorReputation: number | null; // null in the Flags page
-    authorName: string;
+    opReputation: number | null; // null in the Flags page
+    opName: string;
+    deleted: boolean;
 }
 
 $.event.special.destroyed = {
@@ -73,11 +74,12 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): vo
         const answerTime = getPostCreationDate(element, 'Answer');
         const score = Number(element.attr('data-score')) ?? null; // won't work for Flags, but we don't need that there
         // this won't work for community wiki posts and there's nothing that can be done about it
-        const authorReputation = parseAuthorReputation(element.find('.user-info .reputation-score').last());
+        const opReputation = parseAuthorReputation(element.find('.user-info .reputation-score').last());
         // in Flags page, authorName will be empty, but we aren't interested in it there anyways...
-        const authorName = element.find('.user-info .user-details a').text().trim();
+        const opName = element.find('.user-info .user-details a').text().trim();
+        const deleted = element.hasClass('deleted-answer');
 
-        callback({ postType, element, iconLocation, page, postId, questionTime, answerTime, score, authorReputation, authorName });
+        callback({ postType, element, iconLocation, page, postId, questionTime, answerTime, score, opReputation, opName, deleted });
     });
 }
 

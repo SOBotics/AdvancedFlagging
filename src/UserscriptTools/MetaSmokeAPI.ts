@@ -123,7 +123,9 @@ export class MetaSmokeAPI {
 
     public async sendFeedback(feedback: string): Promise<string> {
         const smokeyId = this.getSmokeyId();
-        if (!smokeyId && feedback === 'tpu-') return await this.reportRedFlag(); // not reported and feedback is tpu => report it!
+        const isPostDeleted = globals.isPostDeleted(this.postId);
+        // not reported, feedback is tpu AND the post isn't deleted => report it!
+        if (!smokeyId && feedback === 'tpu-' && !isPostDeleted) return await this.reportRedFlag();
         else if (!MetaSmokeAPI.accessToken || !smokeyId) return '';
 
         const feedbackRequest = await fetch(`https://metasmoke.erwaysoftware.com/api/w/post/${smokeyId}/feedback`, {

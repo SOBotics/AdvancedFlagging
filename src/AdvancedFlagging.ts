@@ -243,7 +243,8 @@ function getFeedbackSpans(
     nattyReported: boolean,
     nattyCanReport: boolean,
     smokeyReported: boolean,
-    guttenbergReported: boolean
+    guttenbergReported: boolean,
+    postDeleted: boolean
 ): string {
     return (Object.entries(flagType.Feedbacks) as [keyof globals.FlagTypeFeedbacks, globals.AllFeedbacks][])
         .filter(feedbackEntry => {
@@ -253,12 +254,12 @@ function getFeedbackSpans(
                 // either the post has been reported to Natty or it can be reported as the feedback is tp
                 (botName === 'Natty' && (nattyReported || (nattyCanReport && !/fp|ne/.test(feedback))))
                 // either the post has been reported to Smokey or the feedback is tpu- (the post is reportable)
-                || (botName === 'Smokey' && (smokeyReported || (!/naa|fp|tp-/.test(feedback))))
+                // the post shouldn't be reported if it's been deleted
+                || (botName === 'Smokey' && (smokeyReported || (!/naa|fp|tp-/.test(feedback) && !postDeleted)))
                 // there's no way to report a post to Guttenberg, so we just filter the posts that have been reported
                 || (botName === 'Guttenberg' && guttenbergReported
                 || (botName === 'Generic Bot' && feedback === 'track')); // only get bot names where there is feedback
-        })
-        .map(feedbackEntry => {
+        }).map(feedbackEntry => {
             const [botName, feedback] = feedbackEntry;
             if (feedback === 'track') return '<span><b>track </b>with Generic Bot</span>'; // different string for Generic Bot
 
@@ -271,6 +272,7 @@ function getFeedbackSpans(
             else if (isYellow) className = 'warning';
 
             // make it clear that the post will be reported
+            // but it shouldn't be reported if the post is deleted!
             const shouldReport = (botName === 'Smokey' && !smokeyReported) || (botName === 'Natty' && !nattyReported);
             return `<span class="fc-${className}"><b>${shouldReport ? 'report' : feedback}</b></span> to ${botName}`;
         }).filter(String).join(', ') || globals.noneString;
@@ -329,7 +331,6 @@ function BuildFlaggingDialog(
     failedActionIcon: JQuery,
 ): JQuery {
     const enabledFlagIds = globals.cachedConfigurationInfo?.[globals.ConfigurationEnabledFlags];
-    const deleted = post.element.hasClass('deleted-answer');
     const [commentRow, flagRow, downvoteRow] = getOptionsRow(post.element, post.postId);
     const dropdown = globals.dropdown.clone(), actionsMenu = globals.actionsMenu.clone();
     dropdown.append(actionsMenu);
@@ -360,23 +361,31 @@ function BuildFlaggingDialog(
             actionsMenu.append(dropdownItem);
 
             let commentText = globals.getFullComment(flagType.Id, {
-                authorReputation: post.authorReputation || 0,
-                authorName: post.authorName
+                authorReputation: post.opReputation || 0,
+                authorName: post.opName
             });
             const flagName = getFlagToRaise(flagType.ReportType, shouldRaiseVlq);
             let reportTypeHuman: string = getHumanFromDisplayName(flagName);
             const flagText = copypastorId && targetUrl ? globals.getFullFlag(flagType.Id, targetUrl, copypastorId) : null;
             const feedbacksString = getFeedbackSpans(
-                flagType, nattyApi?.wasReported() || false, nattyApi?.canBeReported() || false, Boolean(smokeyId), Boolean(copypastorId)
+                flagType, nattyApi?.wasReported() || false, nattyApi?.canBeReported() || false,
+                Boolean(smokeyId), Boolean(copypastorId), post.deleted
             );
 
+            let tooltipCommentText = commentText;
+            let tooltipFlagText = flagText;
+            const postDeletedString = '<span class="fc-danger">- post is deleted</span>';
             // if the flag changed from VLQ to NAA, let the user know why
             if (flagType.ReportType !== flagName) reportTypeHuman += ' (VLQ criteria weren\'t met)';
+            // there was a flag to be raised, but the post is deleted
+            else if (flagType.ReportType !== 'NoFlag' && post.deleted) reportTypeHuman = `${globals.noneString} ${postDeletedString}`;
+            else if (commentText && post.deleted) tooltipCommentText = `${globals.noneString} ${postDeletedString}`;
+            else if (flagText && post.deleted) tooltipFlagText = `${globals.noneString} ${postDeletedString}`;
             // the HTML that will be on the tooltip contains information regarding the flag that will be raised,
             // the comment that will be added, the flag text if the flag is PostOther and the feedbacks that will be sent to bots
             const reportLinkInfo = `<div><b>Flag: </b>${reportTypeHuman || globals.noneString}</div>`
-                                 + `<div><b>Comment: </b>${commentText || globals.noneString}</div>`
-                                 + (flagText ? `<div><b>Flag text: </b>${flagText}</div>` : '')
+                                 + `<div><b>Comment: </b>${tooltipCommentText || globals.noneString}</div>`
+                                 + (tooltipFlagText ? `<div><b>Flag text: </b>${tooltipFlagText}</div>` : '')
                                  + `<div><b>Feedbacks: </b> ${feedbacksString}</div>`;
             // because the tooltips are originally too narrow, we need to increase min-width
             globals.attachHtmlPopover(reportLink.parent()[0], reportLinkInfo, 'right-start');
@@ -387,7 +396,7 @@ function BuildFlaggingDialog(
                 dropdown.fadeOut('fast');
 
                 // only if the post hasn't been deleted should we upvote a comment/send feedback/downvote/flag it
-                if (!deleted) {
+                if (!post.deleted) {
                     if (!commentRow.find('.s-checkbox').is(':checked') && commentText) {
                         upvoteSameComments(post.element, getStrippedComment(commentText));
                         commentText = null;

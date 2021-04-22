@@ -186,6 +186,7 @@ export const getPostIdFromReview = (): number => Number($('[id^="answer-"]').att
 export function qualifiesForVlq(postScore: number, creationDate: Date): boolean {
     return postScore <= 0 && (new Date().valueOf() - creationDate.valueOf()) < dayMillis;
 }
+export const isPostDeleted = (postId: number): boolean => $(`#question-${postId}, #answer-${postId}`).hasClass('deleted-answer');
 
 export function getSentMessage(success: boolean, feedback: string, bot: string): string {
     return success ? `Feedback ${feedback} sent to ${bot}` : `Failed to send feedback ${feedback} to ${bot}`;

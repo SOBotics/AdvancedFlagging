@@ -1,5 +1,5 @@
 import { ChatApi } from './ChatApi';
-import { isStackOverflow, nattyAllReportsUrl, dayMillis, FlagTypeFeedbacks, nattyReportedMessage } from '../GlobalVars';
+import { isStackOverflow, nattyAllReportsUrl, dayMillis, FlagTypeFeedbacks, nattyReportedMessage, isPostDeleted } from '../GlobalVars';
 
 interface NattyFeedback {
     items: NattyFeedbackItem[];
@@ -54,7 +54,8 @@ export class NattyAPI {
     public canBeReported(): boolean {
         const answerAge = this.getDaysBetween(this.answerDate, new Date());
         const daysPostedAfterQuestion = this.getDaysBetween(this.questionDate, this.answerDate);
-        return this.answerDate > this.questionDate && answerAge < 30 && daysPostedAfterQuestion > 30;
+        const isDeleted = isPostDeleted(this.answerId); // deleted posts can't be reported
+        return this.answerDate > this.questionDate && answerAge < 30 && daysPostedAfterQuestion > 30 && !isDeleted;
     }
 
     private async reportNaa(feedback: string): Promise<string> {

@@ -32,6 +32,9 @@ export class ChatApi {
     }
 
     public getChatUserId(): number {
+        // Because the script only sends messages to SO chat, the SO chat id is the same as the SO id.
+        // This is not the case for SE chat, so it needs to be changes when/if https://github.com/SOBotics/AdvancedFlagging/issues/31
+        // is implemented
         return StackExchange.options.user.userId;
     }
 

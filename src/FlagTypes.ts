@@ -2,12 +2,7 @@ import * as globals from './GlobalVars';
 
 export type Flags = 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther' | 'PostLowQuality';
 
-export interface UserDetails {
-    Reputation: number;
-    AuthorName: string;
-}
-
-export interface FlagType {
+interface FlagType {
     Id: number;
     DisplayName: string;
     DefaultReportType: Flags;

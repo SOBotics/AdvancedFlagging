@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { GreaseMonkeyCache } from './UserscriptTools/GreaseMonkeyCache';
-import { UserDetails, Flags, FlagCategory } from './FlagTypes';
+import { Flags, FlagCategory } from './FlagTypes';
 import { displayToaster } from './AdvancedFlagging';
 
 declare const StackExchange: StackExchange;
@@ -51,11 +51,18 @@ export const possibleFeedbacks: { [key in BotNames]: AllFeedbacks[] } = {
     'Generic Bot' : ['track', '']
 };
 
+interface UserDetails {
+    authorReputation: number;
+    authorName: string;
+}
+
 // StackExchange objects
+// definitions from https://github.com/StackExchange/Stacks/blob/develop/lib/ts/controllers/s-tooltip.ts and
+// https://github.com/StackExchange/Stacks/blob/develop/lib/ts/controllers/s-modal.ts slightly modified to make TS happy
 export interface Stacks {
-    setTooltipText(element: Element | null, title: string, options: { placement: string }): Promise<void>;
-    setTooltipHtml(element: Element | null, title: string, options: { placement: string }): Promise<void>;
-    showModal(popup: Element | null): void;
+    setTooltipText(element: Element, title: string, options: { placement: string }): void;
+    setTooltipHtml(element: Element, title: string, options: { placement: string }): void;
+    showModal(popup: HTMLElement | null): void;
 }
 
 export interface StackExchange {
@@ -87,18 +94,17 @@ interface ModalType {
 
 // Constants
 export const soboticsRoomId = 111347;
-export const metaSmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
+export const metasmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
 export const metasmokeApiFilter = 'GGJFNNKKJFHFKJFLJLGIJMFIHNNJNINJ';
 export const copypastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
 export const copypastorServer = 'https://copypastor.sobotics.org';
 export const genericBotKey = 'Cm45BSrt51FR3ju';
-export const placeholderTarget = /\$TARGET\$/g;
-export const placeholderCopypastorLink = /\$COPYPASTOR\$/g;
+const placeholderTarget = /\$TARGET\$/g;
+const placeholderCopypastorLink = /\$COPYPASTOR\$/g;
 export const nattyAllReportsUrl = 'https://logs.sobotics.org/napi/api/stored/all';
 export const username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
 export const dayMillis = 1000 * 60 * 60 * 24;
 export const popupDelay = 4 * 1000;
-export const transitionDelay = 0.25 * 1000;
 export const settingUpTitle = 'Setting up MetaSmoke';
 export const settingUpBody = 'If you do not wish to connect, press cancel and this popup won\'t show up again. '
                            + 'To reset configuration, see the footer of Stack Overflow.';
@@ -112,9 +118,7 @@ const nattyImage = 'https://i.stack.imgur.com/aMUMt.jpg?s=32&g=1';
 const guttenbergImage = 'https://i.stack.imgur.com/tzKAI.png?s=32&g=1';
 const smokeyImage = 'https://i.stack.imgur.com/7cmCt.png?s=32&g=1';
 export const isStackOverflow = /^https:\/\/stackoverflow.com/.test(window.location.href);
-export const isNatoPage = /\/tools\/new-answers-old-questions/.test(window.location.href);
 export const isQuestionPage = /\/questions\/\d+.*/.test(window.location.href);
-export const isFlagsPage = /\/users\/flag-summary\//.test(window.location.href);
 export const isLqpReviewPage = /\/review\/low-quality-posts\/\d+/.test(window.location.href);
 export const gridCellDiv = $('<div>').addClass('grid--cell');
 export const noneString = '<span class="o50">(none)</span>';
@@ -151,15 +155,11 @@ export const displayStacksToast = (message: string, type: StacksToastState): voi
     type: type,
     transientTimeout: popupDelay
 });
-export const attachPopover = async (element: Element, text: string, position: string): Promise<void> => {
-    await Stacks.setTooltipText(element, text, {
-        placement: position
-    });
+export const attachPopover = (element: Element, text: string, position = 'bottom-start'): void => {
+    Stacks.setTooltipText(element, text, { placement: position });
 };
-export const attachHtmlPopover = async (element: Element, text: string, position: string): Promise<void> => {
-    await Stacks.setTooltipHtml(element, text, {
-        placement: position
-    });
+export const attachHtmlPopover = (element: Element, text: string, position = 'bottom-start'): void => {
+    Stacks.setTooltipHtml(element, text, { placement: position });
 };
 
 // regexes
@@ -185,11 +185,6 @@ const getCopypastorLink = (postId: number): string => `https://copypastor.soboti
 export const getPostIdFromReview = (): number => Number($('[id^="answer-"]').attr('id')?.split('-')[1]);
 export function qualifiesForVlq(postScore: number, creationDate: Date): boolean {
     return postScore <= 0 && (new Date().valueOf() - creationDate.valueOf()) < dayMillis;
-}
-
-export function parseDate(dateStr?: string): Date | null {
-    // Fix for safari
-    return dateStr ? new Date(dateStr.replace(' ', 'T')) : null;
 }
 
 export function getSentMessage(success: boolean, feedback: string, bot: string): string {
@@ -227,7 +222,7 @@ const iconWrapper = $('<div>').addClass('grid--cell').css('display', 'none'); //
 export const performedActionIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Checkmark').addClass('fc-green-500'));
 export const failedActionIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Clear').addClass('fc-red-500'));
 export const reportedIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Flag').addClass('fc-red-500'));
-export const popupWrapper = $('<div>').addClass('af-snackbar fc-white fs-body3 ta-center z-modal wmn2 ps-fixed l50');
+export const popupWrapper = $('<div>').addClass('af-snackbar fc-white fs-body3 ta-center z-modal ps-fixed l50');
 
 export const advancedFlaggingLink = $('<button>').attr('type', 'button').addClass('s-btn s-btn__link').text('Advanced Flagging');
 export const popoverArrow = $('<div>').addClass('s-popover--arrow s-popover--arrow__tc');
@@ -344,23 +339,25 @@ export function addXHRListener(callback: (request: XMLHttpRequest) => void): voi
     initialized = true;
 }
 
-// cache-related helpers
+// cache-related helpers/values
+// Some information from cache is stored on the variables as objects to make editing easier and simpler
+// Each time something is changed in the variables, update* must also be called to save the changes to the cache
 export const cachedConfigurationInfo = GreaseMonkeyCache.getFromCache<CachedConfiguration>(ConfigurationCacheKey) || {} as CachedConfiguration;
 export const updateConfiguration = (): void => GreaseMonkeyCache.storeInCache(ConfigurationCacheKey, cachedConfigurationInfo);
 export const cachedFlagTypes = GreaseMonkeyCache.getFromCache<CachedFlag[]>(FlagTypesKey) || [];
 export const updateFlagTypes = (): void => GreaseMonkeyCache.storeInCache(FlagTypesKey, cachedFlagTypes);
 export const cachedCategories = GreaseMonkeyCache.getFromCache<CachedCategory[]>(FlagCategoriesKey) || [];
-export const updateCategories = (): void => GreaseMonkeyCache.storeInCache(FlagCategoriesKey, cachedCategories);
+// export const updateCategories = (): void => GreaseMonkeyCache.storeInCache(FlagCategoriesKey, cachedCategories);
 
-// For GetComment() on FlagTypes. Adds the author name before the comment if the option is enabled
-export function getFullComment(flagId: number, { AuthorName }: UserDetails, level?: 'Low' | 'High'): string | null {
+// Adds the author name before the comment if the option is enabled and determines if the comment should be low/high rep
+export function getFullComment(flagId: number, { authorName }: UserDetails, level?: 'Low' | 'High'): string | null {
     const shouldAddAuthorName = cachedConfigurationInfo?.AddAuthorName;
     const flagType = getFlagTypeFromFlagId(flagId);
     const comment = flagType?.Comments[level || 'Low'];
-    return (comment && shouldAddAuthorName ? `${AuthorName}, ${comment[0].toLowerCase()}${comment.slice(1)}` : comment) || null;
+    return (comment && shouldAddAuthorName ? `${authorName}, ${comment[0].toLowerCase()}${comment.slice(1)}` : comment) || null;
 }
 
-// For GetCustomFlagText() on FlagTypes. Replaces the placeholders with actual values
+// Replaces the placeholders with actual values in the cached flag text
 export function getFullFlag(flagId: number, target: string, postId: number): string {
     const flagType = getFlagTypeFromFlagId(flagId);
     const flagContent = flagType?.FlagText;
@@ -370,16 +367,4 @@ export function getFullFlag(flagId: number, target: string, postId: number): str
 
 export function getFlagTypeFromFlagId(flagId: number): CachedFlag | null {
     return cachedFlagTypes?.find(flagType => flagType.Id === flagId) || null;
-}
-
-export function getReportType(flagId: number): Flags {
-    return cachedFlagTypes?.find(flagType => flagType.Id === flagId)?.ReportType as Flags || '';
-}
-
-export function getFlagText(flagId: number): string {
-    return cachedFlagTypes?.find(flagType => flagType.Id === flagId)?.FlagText || '';
-}
-
-export function getComments(flagId: number): CachedFlag['Comments'] {
-    return cachedFlagTypes?.find(flagType => flagType.Id === flagId)?.Comments as CachedFlag['Comments'] || '';
 }

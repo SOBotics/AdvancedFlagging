@@ -18,7 +18,7 @@ interface MetasmokeData {
 }
 
 export class MetaSmokeAPI {
-    private static appKey: string;
+    private static appKey = globals.metasmokeKey;
     private static accessToken: string;
     private static metasmokeIds: MetasmokeData = {};
     public static isDisabled: boolean = GreaseMonkeyCache.getFromCache<boolean>(globals.MetaSmokeDisabledConfig) || false;
@@ -36,8 +36,7 @@ export class MetaSmokeAPI {
         GreaseMonkeyCache.unset(globals.MetaSmokeUserKeyConfig);
     }
 
-    public static async setup(appKey: string): Promise<void> {
-        MetaSmokeAPI.appKey = appKey;
+    public static async setup(): Promise<void> {
         MetaSmokeAPI.accessToken = await MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
     }
 
@@ -56,9 +55,9 @@ export class MetaSmokeAPI {
     };
 
     public static async queryMetaSmokeInternal(): Promise<void> {
-        const urlString = getAllPostIds(true, true).join(',');
-
         if (MetaSmokeAPI.isDisabled) return;
+
+        const urlString = getAllPostIds(true, true).join(','); // postIds as URLs, including questions
         const parameters = globals.getParamsFromObject({
             urls: urlString,
             key: `${MetaSmokeAPI.appKey}`,
@@ -102,12 +101,12 @@ export class MetaSmokeAPI {
         });
     }
 
-    public static getSmokeyId(postId: number): number {
-        return MetaSmokeAPI.metasmokeIds[postId] || 0;
+    public getSmokeyId(): number {
+        return MetaSmokeAPI.metasmokeIds[this.postId] || 0;
     }
 
     public async reportRedFlag(): Promise<string> {
-        const smokeyId = MetaSmokeAPI.getSmokeyId(this.postId);
+        const smokeyId = this.getSmokeyId();
         const urlString = MetaSmokeAPI.getQueryUrl(this.postId, this.postType);
 
         const reportRequest = await fetch('https://metasmoke.erwaysoftware.com/api/w/post/report', {
@@ -123,7 +122,7 @@ export class MetaSmokeAPI {
     }
 
     public async sendFeedback(feedback: string): Promise<string> {
-        const smokeyId = MetaSmokeAPI.getSmokeyId(this.postId);
+        const smokeyId = this.getSmokeyId();
         if (!smokeyId && feedback === 'tpu-') return await this.reportRedFlag(); // not reported and feedback is tpu => report it!
         else if (!MetaSmokeAPI.accessToken || !smokeyId) return '';
 

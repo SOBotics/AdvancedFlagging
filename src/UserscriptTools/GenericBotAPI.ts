@@ -8,6 +8,8 @@ export class GenericBotAPI {
         this.answerId = answerId;
     }
 
+    // Ask Floern what this does
+    // Shamelessly stolen from https://github.com/SOBotics/Userscripts/blob/master/GenericBot/flagtracker.user.js#L32-L40
     private computeContentHash(postContent: string): number {
         if (!postContent) return 0;
 
@@ -22,13 +24,10 @@ export class GenericBotAPI {
 
     public sendFeedback(trackPost: string): Promise<string> {
         return new Promise<string>((resolve, reject) => {
-            if (!trackPost) resolve('');
-
             const flaggerName = encodeURIComponent(username || '');
-            if (!isStackOverflow || !flaggerName) resolve('');
+            if (!trackPost || !isStackOverflow || !flaggerName) resolve('');
 
             const contentHash = this.computeContentHash($(`#answer-${this.answerId} .js-post-body`).html().trim());
-
             GM_xmlhttpRequest({
                 method: 'POST',
                 url: 'https://so.floern.com/api/trackpost.php',

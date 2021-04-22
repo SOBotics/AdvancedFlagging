@@ -13,8 +13,12 @@ export class GreaseMonkeyCache {
         return result;
     }
 
+    // There are two kinds of objects that are stored in the cache: those that expire (only fkey currently) and those that are not
+    // The type of those that are expirable is ExpiryingCacheItem. The others are strings or objects
+    // To make TS happy and avoid runtime errors, we need to take into account both cases
     public static getFromCache<T>(cacheKey: string): T | null {
         const cachedItem = GM_getValue<T | ExpiryingCacheItem<T>>(cacheKey);
+        // first check if the item is actually expirable, then check if it's expired
         const isItemExpired = typeof cachedItem === 'object' && 'Data' in cachedItem && new Date(cachedItem.Expires) < new Date();
         if (!cachedItem || isItemExpired) return null;
 

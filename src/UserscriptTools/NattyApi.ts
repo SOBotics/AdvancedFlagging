@@ -58,14 +58,15 @@ export class NattyAPI {
     }
 
     private async reportNaa(feedback: string): Promise<string> {
-        if (!this.canBeReported() || feedback !== 'tp') return '';
+        if (!this.canBeReported() || feedback !== 'tp') return ''; // no point in reporting if the feedback is tp
 
         await this.chat.sendMessage(this.reportMessage, this.name);
         return nattyReportedMessage;
     }
 
-    private getDaysBetween(first: Date, second: Date): number {
-        return (second.valueOf() - first.valueOf()) / dayMillis;
+    private getDaysBetween(questionDate: Date, answerDate: Date): number {
+        // get the number of days between the creation of the question and the answer
+        return (answerDate.valueOf() - questionDate.valueOf()) / dayMillis;
     }
 
     public async sendFeedback(feedback: string): Promise<string> {

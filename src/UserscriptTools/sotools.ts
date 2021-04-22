@@ -1,203 +1,51 @@
-import { isFlagsPage, isQuestionPage, isNatoPage, parseDate, isLqpReviewPage, PostType } from '../GlobalVars';
+import { isQuestionPage, PostType } from '../GlobalVars';
 
-export type QuestionPageInfo = QuestionQuestion | QuestionAnswer;
-export type PostInfo = NatoAnswer | QuestionPageInfo | FlagPageInfo;
+type Pages = 'Question' | 'NATO' | 'Flags';
 
-interface QuestionQuestion { // the question on a question page
-    type: 'Question';
+export interface PostInfo {
+    postType: PostType;
     element: JQuery;
-    page: 'Question';
+    iconLocation: JQuery;
+    page: Pages;
     postId: number;
-    creationDate: Date;
-    score: number;
-    authorReputation: number;
+    questionTime: Date | null; // not interested in that value on the Flags page
+    answerTime: Date | null;
+    score: number | null;
+    authorReputation: number | null; // null in the Flags page
     authorName: string;
-    addListener: boolean; // in case a post is destroyed, then we don't want to add a click listener twice
-}
-
-interface QuestionAnswer { // an answer on a question page or in review
-    type: 'Answer';
-    element: JQuery;
-    page: 'Question';
-    postId: number;
-    questionTime: Date;
-    creationDate: Date;
-    score: number;
-    authorReputation: number;
-    authorName: string;
-    addListener: boolean;
-}
-
-interface NatoAnswer {
-    type: 'Answer';
-    element: JQuery;
-    page: 'NATO';
-    postId: number;
-    creationDate: Date;
-    questionTime: Date;
-    authorReputation: number;
-    authorName: string;
-}
-
-interface FlagPageInfo {
-    type: PostType;
-    element: JQuery;
-    page: 'Flags';
-    postId: number;
-    creationDate: Date;
-    authorName: string;
-    questionTime: null;
-}
-
-interface PostDetails {
-    score: number;
-    authorReputation: number;
-    authorName: string;
-    authorId?: number;
-    creationDate: Date | null;
 }
 
 $.event.special.destroyed = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     remove: (o: any): void => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        if (o.handler) o.handler();
+        o.handler?.();
     }
 };
 
-function parseNatoPage(callback: (post: NatoAnswer) => void): void {
-    $('.answer-hyperlink').parent().parent().each((_index, element) => {
-        const node = $(element);
-        const answerHref = node.find('.answer-hyperlink').attr('href');
-        if (!answerHref) return;
-
-        const postId = Number(answerHref.split('#')[1]);
-
-        const creationDate = parseActionDate(node.find('.user-action-time'));
-        const questionTime = parseActionDate(node.find('td .relativetime'));
-        if (!creationDate || !questionTime) return;
-
-        const authorReputation = parseReputation(node.find('.reputation-score'));
-        const authorName = parseAuthorDetails(node.find('.user-details'));
-
-        callback({
-            type: 'Answer' as const,
-            element: node,
-            page: 'NATO' as const,
-            postId,
-            creationDate,
-            questionTime,
-            authorReputation,
-            authorName
-        });
-    });
+function getExistingElement(): JQuery | undefined {
+    const natoElements = $('.answer-hyperlink').parents('tr'), flagElements = $('.flagged-post');
+    const questionPageElements = $('.question, .answer');
+    const elementToUse = [natoElements, flagElements, questionPageElements].find(item => item.length);
+    return elementToUse;
 }
 
-function getPostDetails(node: JQuery): PostDetails {
-    const score = Number(node.find('.js-vote-count').text());
-
-    const authorReputation = parseReputation(node.find('.user-info .reputation-score').last());
-    const authorName = parseAuthorDetails(node.find('.user-info .user-details').last());
-
-    const creationDate = parseActionDate(node.find('.user-info .relativetime').last());
-    return { score, authorReputation, authorName, creationDate };
+function getPageFromElement(postNode: JQuery): Pages {
+    if (postNode.hasClass('flagged-post')) return 'Flags';
+    else if (postNode.is('tr')) return 'NATO';
+    else return 'Question';
 }
 
-function parseAnswerDetails(aNode: JQuery, callback: (post: QuestionPageInfo) => void, questionTime: Date | null, addListener: boolean): void {
-    const answerIdString = aNode.attr('data-answerid');
-    if (!answerIdString || !questionTime) return;
-
-    const answerId = Number(answerIdString);
-    const postDetails = getPostDetails(aNode);
-    if (!postDetails.creationDate) return;
-
-    aNode.find('.answercell').on('destroyed', () => {
-        setTimeout(() => parseAnswerDetails($(`#answer-${answerId}`), callback, questionTime, false));
-    });
-
-    callback({
-        type: 'Answer' as const,
-        element: aNode,
-        page: 'Question' as const,
-        postId: answerId,
-        questionTime,
-        creationDate: postDetails.creationDate,
-        score: postDetails.score,
-        authorReputation: postDetails.authorReputation,
-        authorName: postDetails.authorName,
-        addListener
-    });
+function getPostIdFromElement(postNode: JQuery, postType: PostType): number {
+    const elementHref = postNode.find(`.${postType.toLowerCase()}-hyperlink`).attr('href');
+    // in the question page, questions/answers have a data-questionid/data-answerid with the post id
+    const postIdString = (postNode.attr('data-questionid') || postNode.attr('data-answerid'))
+        // in the flags/NATO page, we find the postId by parsing the post URL
+        || (postType === 'Answer' ? elementHref?.split('#')[1] : elementHref?.split('/')[2]);
+    return Number(postIdString);
 }
 
-function parseQuestionPage(callback: (post: QuestionPageInfo) => void): void {
-    let question: QuestionQuestion;
-    const parseQuestionDetails = (qNode: JQuery, addListener: boolean): void => {
-        const questionIdString = qNode.attr('data-questionid');
-        if (!questionIdString) return;
-
-        const postId = Number(questionIdString);
-        const postDetails = getPostDetails(qNode);
-        if (!postDetails.creationDate) return;
-
-        qNode.find('.postcell').on('destroyed', () => {
-            setTimeout(() => parseQuestionDetails($(`[data-questionid="${postId}"]`), false));
-        });
-
-        callback(question = {
-            type: 'Question' as const,
-            element: qNode,
-            page: 'Question' as const,
-            postId,
-            creationDate: postDetails.creationDate,
-            score: postDetails.score,
-            authorReputation: postDetails.authorReputation,
-            authorName: postDetails.authorName,
-            addListener
-        });
-    };
-    const questionNode = $('.question');
-    parseQuestionDetails(questionNode, true);
-
-    $('.answer').each((_index, element) => parseAnswerDetails($(element), callback, question.creationDate, true));
-}
-
-function parseFlagsPage(callback: (post: FlagPageInfo) => void): void {
-    $('.flagged-post').each((_index, nodeEl) => {
-        const node = $(nodeEl);
-        const type: PostType = node.find('.answer-hyperlink').length ? 'Answer' : 'Question';
-        const elementHref = node.find(`.${type.toLowerCase()}-hyperlink`).attr('href');
-        if (!elementHref) return;
-
-        const postId = Number(type === 'Answer' ? elementHref.split('#')[1] : elementHref.split('/')[2]);
-        const authorName = parseAuthorDetails(node.find('.post-user-info'));
-        const creationDate = parseActionDate(node.find('.post-user-info .relativetime'));
-        if (!creationDate) return;
-
-        callback({
-            type: type,
-            element: node,
-            page: 'Flags' as const,
-            postId,
-            creationDate,
-            authorName,
-            questionTime: null
-        });
-    });
-}
-
-export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): void {
-    if (isNatoPage) {
-        parseNatoPage(callback);
-    } else if (isQuestionPage) {
-        parseQuestionPage(callback);
-    } else if (isFlagsPage) {
-        parseFlagsPage(callback);
-    } else if (isLqpReviewPage) {
-        parseAnswerDetails($('.answer'), callback, parseDate($('.post-signature.owner .user-action-time span').attr('title')), true);
-    }
-}
-
-function parseReputation(reputationDiv: JQuery): number {
+function parseAuthorReputation(reputationDiv: JQuery): number {
     let reputationText = reputationDiv.text()?.replace(/,/g, '');
     if (!reputationText) return 0;
 
@@ -207,18 +55,34 @@ function parseReputation(reputationDiv: JQuery): number {
     } else return Number(reputationText);
 }
 
-function parseAuthorDetails(authorDiv: JQuery): string {
-    return authorDiv.find('a').text();
+function getPostCreationDate(postNode: JQuery, postType: PostType): Date | null {
+    const dateString = (postType === 'Question' ? $('.question') : postNode).find('.user-info .relativetime').last();
+    return new Date(dateString.attr('title') || '') || null;
 }
 
-function parseActionDate(actionDiv: JQuery): Date | null {
-    return parseDate((actionDiv.hasClass('relativetime') ? actionDiv : actionDiv.find('.relativetime')).attr('title'));
+export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): void {
+    getExistingElement()?.each((_index, node) => {
+        const element = $(node);
+        const postType: PostType = element.hasClass('question') ? 'Question' : 'Answer';
+        const page = getPageFromElement(element);
+        const iconLocation = page === 'Question'
+            ? element.find('.js-post-menu').children().first()
+            : element.find(`a.${postType === 'Question' ? 'question' : 'answer'}-hyperlink`);
+        const postId = getPostIdFromElement(element, postType);
+        const questionTime = getPostCreationDate(element, 'Question');
+        const answerTime = getPostCreationDate(element, 'Answer');
+        const score = Number(element.attr('data-score')) ?? null; // won't work for Flags, but we don't need that there
+        // this won't work for community wiki posts and there's nothing that can be done about it
+        const authorReputation = parseAuthorReputation(element.find('.user-info .reputation-score').last());
+        // in Flags page, authorName will be empty, but we aren't interested in it there anyways...
+        const authorName = element.find('.user-info .user-details a').text().trim();
+
+        callback({ postType, element, iconLocation, page, postId, questionTime, answerTime, score, authorReputation, authorName });
+    });
 }
 
 export function getAllPostIds(includeQuestion: boolean, urlForm: boolean): (number | string)[] {
-    const natoElements = $('.answer-hyperlink').parents('tr'), flagElements = $('.flagged-post');
-    const questionPageElements = $('.question, .answer');
-    const elementToUse = [natoElements, flagElements, questionPageElements].find(item => item.length);
+    const elementToUse = getExistingElement();
     if (!elementToUse) return [];
 
     return elementToUse.get().map(item => {

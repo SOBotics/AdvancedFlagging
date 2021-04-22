@@ -4,6 +4,7 @@
     "isolatedModules": true,
     "strict": true,
     "strictBindCallApply": false,
+    "removeComments": true,
     "module": "commonjs",
     "target": "es2019",
     "lib": [ "es2020", "DOM" ]

@@ -21,6 +21,11 @@ function SetupStyles(): void {
 
 const reviewPostsInformation: ReviewQueuePostInfo[] = [];
 
+function getFlagToRaise(flagName: Flags, qualifiesForVlq: boolean): Flags {
+    // if the flag name is VLQ, then we need to check if the criteria are met. If not, switch to NAA
+    return flagName === 'PostLowQuality' ? (qualifiesForVlq ? 'PostLowQuality' : 'AnswerNotAnAnswer') : flagName;
+}
+
 async function handleActions(
     post: PostInfo,
     flag: globals.CachedFlag,
@@ -49,8 +54,7 @@ async function handleActions(
     if (flagRequired && flag.ReportType !== 'NoFlag') {
         autoFlagging = true;
         // if the flag name is VLQ, then we need to check if the criteria are met. If not, switch to NAA
-        const flagName: Flags = flag.ReportType === 'PostLowQuality' ?
-            (qualifiesForVlq ? 'PostLowQuality' : 'AnswerNotAnAnswer') : flag.ReportType;
+        const flagName = getFlagToRaise(flag.ReportType, qualifiesForVlq);
         try {
             const failedToFlagText = 'Failed to flag: ';
             const flagPost = await fetch(`//${window.location.hostname}/flags/posts/${post.postId}/add/${flagName}`, {
@@ -359,12 +363,15 @@ function BuildFlaggingDialog(
                 authorReputation: post.authorReputation || 0,
                 authorName: post.authorName
             });
-            const reportTypeHuman = getHumanFromDisplayName(flagType.ReportType);
+            const flagName = getFlagToRaise(flagType.ReportType, shouldRaiseVlq);
+            let reportTypeHuman: string = getHumanFromDisplayName(flagName);
             const flagText = copypastorId && targetUrl ? globals.getFullFlag(flagType.Id, targetUrl, copypastorId) : null;
             const feedbacksString = getFeedbackSpans(
                 flagType, nattyApi?.wasReported() || false, nattyApi?.canBeReported() || false, Boolean(smokeyId), Boolean(copypastorId)
             );
 
+            // if the flag changed from VLQ to NAA, let the user know why
+            if (flagType.ReportType !== flagName) reportTypeHuman += ' (VLQ criteria weren\'t met)';
             // the HTML that will be on the tooltip contains information regarding the flag that will be raised,
             // the comment that will be added, the flag text if the flag is PostOther and the feedbacks that will be sent to bots
             const reportLinkInfo = `<div><b>Flag: </b>${reportTypeHuman || globals.noneString}</div>`

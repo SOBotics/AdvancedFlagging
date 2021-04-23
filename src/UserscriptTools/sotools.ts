@@ -31,10 +31,11 @@ function getExistingElement(): JQuery | undefined {
     return elementToUse;
 }
 
-function getPageFromElement(postNode: JQuery): Pages {
+function getPageFromElement(postNode: JQuery): Pages | '' {
     if (postNode.hasClass('flagged-post')) return 'Flags';
-    else if (postNode.is('tr')) return 'NATO';
-    else return 'Question';
+    else if (/\/tools\/new-answers-old-questions/.test(window.location.href)) return 'NATO';
+    else if (postNode.hasClass('question') || postNode.hasClass('answer')) return 'Question';
+    else return '';
 }
 
 function getPostIdFromElement(postNode: JQuery, postType: PostType): number {
@@ -66,6 +67,8 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): vo
         const element = $(node);
         const postType: PostType = element.hasClass('question') ? 'Question' : 'Answer';
         const page = getPageFromElement(element);
+        if (!page) return;
+
         const iconLocation = page === 'Question'
             ? element.find('.js-post-menu').children().first()
             : element.find(`a.${postType === 'Question' ? 'question' : 'answer'}-hyperlink`);

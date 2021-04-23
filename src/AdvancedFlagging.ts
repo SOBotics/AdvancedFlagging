@@ -247,8 +247,7 @@ function getFeedbackSpans(
     postDeleted: boolean
 ): string {
     return (Object.entries(flagType.Feedbacks) as [keyof globals.FlagTypeFeedbacks, globals.AllFeedbacks][])
-        .filter(feedbackEntry => {
-            const [botName, feedback] = feedbackEntry;
+        .filter(([botName, feedback]) => {
             return feedback && // make sure there's actually a feedback
             // if the post hasn't been reported and can't be reported, don't include the feedback in the list
                 // either the post has been reported to Natty or it can be reported as the feedback is tp
@@ -259,8 +258,7 @@ function getFeedbackSpans(
                 // there's no way to report a post to Guttenberg, so we just filter the posts that have been reported
                 || (botName === 'Guttenberg' && guttenbergReported
                 || (botName === 'Generic Bot' && feedback === 'track')); // only get bot names where there is feedback
-        }).map(feedbackEntry => {
-            const [botName, feedback] = feedbackEntry;
+        }).map(([botName, feedback]) => {
             if (feedback === 'track') return '<span><b>track </b>with Generic Bot</span>'; // different string for Generic Bot
 
             // determine the colour to add to the feedback using Stacks classes

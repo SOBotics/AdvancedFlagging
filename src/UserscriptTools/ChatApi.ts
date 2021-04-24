@@ -18,7 +18,7 @@ export class ChatApi {
 
     public getChannelFKey(roomId: number): Promise<string> {
         const expiryDate = ChatApi.getExpiryDate();
-        return GreaseMonkeyCache.getAndCache(CacheChatApiFkey, async () => {
+        return GreaseMonkeyCache.getAndCache<string>(CacheChatApiFkey, async () => {
             try {
                 const channelPage = await this.getChannelPage(roomId);
                 const fkeyElement = $(channelPage).filter('#fkey');

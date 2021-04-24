@@ -113,7 +113,7 @@ export function displayToaster(message: string, state: string): void {
 
 function displaySuccessFlagged(reportedIcon: JQuery, reportType?: Flags): void {
     if (!reportType) return;
-    const flaggedMessage = `Flagged ${getHumanFromDisplayName(reportType)}`;
+    const flaggedMessage = `Flagged ${globals.getHumanFromDisplayName(reportType)}`;
     void globals.attachPopover(reportedIcon[0], flaggedMessage);
     reportedIcon.fadeIn();
     globals.displaySuccess(flaggedMessage);
@@ -192,18 +192,6 @@ function setupGuttenbergApi(postId: number, copypastorIcon: JQuery): CopyPastorA
     }
 
     return copypastorApi;
-}
-
-function getHumanFromDisplayName(displayName: Flags): string {
-    switch (displayName) {
-        case 'AnswerNotAnAnswer': return 'as NAA';
-        case 'PostOffensive': return 'as R/A';
-        case 'PostSpam': return 'as spam';
-        case 'NoFlag': return '';
-        case 'PostOther': return 'for moderator attention';
-        case 'PostLowQuality': return 'as VLQ';
-        default: return '';
-    }
 }
 
 function increasePopoverWidth(reportLink: JQuery): void {
@@ -328,7 +316,6 @@ function BuildFlaggingDialog(
     shouldRaiseVlq: boolean,
     failedActionIcon: JQuery,
 ): JQuery {
-    const enabledFlagIds = globals.cachedConfigurationInfo?.[globals.ConfigurationEnabledFlags];
     const [commentRow, flagRow, downvoteRow] = getOptionsRow(post.element, post.postId);
     const dropdown = globals.dropdown.clone(), actionsMenu = globals.actionsMenu.clone();
     dropdown.append(actionsMenu);
@@ -346,7 +333,7 @@ function BuildFlaggingDialog(
         const showGutReport = Boolean(copypastorId) && (flagType.DisplayName === 'Duplicate Answer' ? isRepost : !isRepost);
         // show the red flags and general items on every site, restrict the others to StackOverflow
         const showOnMainSite = ['Red flags', 'General'].includes(flagType.BelongsTo) ? true : globals.isStackOverflow;
-        return enabledFlagIds?.includes(flagType.Id) && (isGuttenbergItem ? showGutReport : showOnMainSite);
+        return flagType.Enabled && (isGuttenbergItem ? showGutReport : showOnMainSite);
     }).forEach(flagType => newCategories.find(category => flagType.BelongsTo === category.Name)?.FlagTypes.push(flagType));
 
     newCategories.filter(category => category.FlagTypes.length).forEach(category => {
@@ -363,7 +350,7 @@ function BuildFlaggingDialog(
                 authorName: post.opName
             });
             const flagName = getFlagToRaise(flagType.ReportType, shouldRaiseVlq);
-            let reportTypeHuman: string = getHumanFromDisplayName(flagName);
+            let reportTypeHuman: string = globals.getHumanFromDisplayName(flagName);
             const flagText = copypastorId && targetUrl ? globals.getFullFlag(flagType.Id, targetUrl, copypastorId) : null;
             const feedbacksString = getFeedbackSpans(
                 flagType, nattyApi?.wasReported() || false, nattyApi?.canBeReported() || false,

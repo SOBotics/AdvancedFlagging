@@ -18,8 +18,8 @@ interface MetasmokeData {
 }
 
 export class MetaSmokeAPI {
+    public static accessToken: string;
     private static appKey = globals.metasmokeKey;
-    private static accessToken: string;
     private static metasmokeIds: MetasmokeData = {};
     public static isDisabled: boolean = GreaseMonkeyCache.getFromCache<boolean>(globals.MetaSmokeDisabledConfig) || false;
     private postId: number;

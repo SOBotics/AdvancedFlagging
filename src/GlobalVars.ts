@@ -19,7 +19,9 @@ export interface CachedFlag {
     };
     ReportType: Flags;
     Feedbacks: FlagTypeFeedbacks;
-    BelongsTo: string; // category Name where it belongs
+    BelongsTo: string; // the Name of the category it belongs to
+    IsDefault: boolean;
+    Enabled: boolean;
 }
 
 export type CachedCategory = Omit<FlagCategory, 'FlagTypes'>;
@@ -32,8 +34,7 @@ export interface CachedConfiguration {
     WatchFlags: boolean;
     WatchQueues: boolean;
     LinkDisabled: boolean;
-    AddAuthorName: boolean
-    EnabledFlags: number[];
+    AddAuthorName: boolean;
 }
 
 export interface FlagTypeFeedbacks {
@@ -140,7 +141,6 @@ export const ConfigurationDefaultNoComment = 'DefaultNoComment';
 export const ConfigurationDefaultNoDownvote = 'DefaultNoDownvote';
 export const ConfigurationWatchFlags = 'WatchFlags';
 export const ConfigurationWatchQueues = 'WatchQueues';
-export const ConfigurationEnabledFlags = 'EnabledFlags';
 export const ConfigurationLinkDisabled = 'LinkDisabled';
 export const ConfigurationAddAuthorName = 'AddAuthorName';
 export const CacheChatApiFkey = 'fkey';
@@ -203,13 +203,6 @@ export const smokeyIcon = sampleIcon.clone().find('img').attr('src', smokeyImage
 export const getMessageDiv = (text: string, state: string): JQuery => $('<div>').addClass(`p12 bg-${state}`).text(text).hide();
 export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').html(`<h2 class="grid--cell">${name}</h2>`)
     .addClass(`grid gs8 gsy fd-column af-section-${name.toLowerCase()}`);
-export const getConfigHtml = (optionId: string, text: string): JQuery => $(`
-<div>
-  <div class="grid gs4">
-    <div class="grid--cell"><input class="s-checkbox" type="checkbox" id="${optionId}"/></div>
-    <label class="grid--cell s-label fw-normal pt2" for="${optionId}">${text}</label>
-  </div>
-</div>`);
 type ContentType = 'flag' | 'lowrep' | 'highrep'
 export const getTextarea = (textareaContent: string, labelText: string, contentType: ContentType, labelDisplay?: string): JQuery => $(`
 <div class="grid gs4 gsy fd-column">
@@ -242,7 +235,7 @@ export const configurationLink = $('<a>').attr('id', 'af-modal-button').text('Ad
 export const commentsDiv = configurationDiv.clone().removeClass('advanced-flagging-configuration-div').addClass('af-comments-div');
 export const commentsLink = configurationLink.clone().attr('id', 'af-comments-button').text('AdvancedFlagging: edit comments and flags');
 
-export const overlayModal = $(`
+export const configurationModal = $(`
 <aside class="s-modal" id="af-config" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
     <div class="s-modal--dialog s-modal__full w60 sm:w100 md:w75 lg:w75" role="document">
         <h1 class="s-modal--header fw-body c-movey" id="af-modal-title">AdvancedFlagging configuration</h1>
@@ -255,8 +248,6 @@ export const overlayModal = $(`
         <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
     </div>
 </aside>`);
-const grid = $('<div>').addClass('grid lg:grid md:fd-column sm:fd-column');
-export const inlineCheckboxesWrapper = gridCellDiv.clone().addClass('grid--cell lg:grid--cell md:m0 sm:m0').append(grid.clone());
 const metasmokeTokenPopup = $(`
 <aside class="s-modal" id="af-ms-token" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
     <div class="s-modal--dialog s-modal__full sm:w100 md:w100" role="document">
@@ -368,4 +359,16 @@ export function getFullFlag(flagId: number, target: string, postId: number): str
 
 export function getFlagTypeFromFlagId(flagId: number): CachedFlag | null {
     return cachedFlagTypes?.find(flagType => flagType.Id === flagId) || null;
+}
+
+export function getHumanFromDisplayName(displayName: Flags): string {
+    switch (displayName) {
+        case 'AnswerNotAnAnswer': return 'as NAA';
+        case 'PostOffensive': return 'as R/A';
+        case 'PostSpam': return 'as spam';
+        case 'NoFlag': return '';
+        case 'PostOther': return 'for moderator attention';
+        case 'PostLowQuality': return 'as VLQ';
+        default: return '';
+    }
 }

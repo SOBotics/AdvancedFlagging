@@ -69,10 +69,10 @@ export class MetaSmokeAPI {
             const metasmokeApiCall = await fetch(`https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls?${parameters}`);
             const metasmokeResult = await metasmokeApiCall.json() as MetaSmokeApiWrapper;
             metasmokeResult.items.forEach(item => {
-                const postId = /\d+$/.exec(item.link);
+                const postId = Number(/\d+$/.exec(item.link)?.[0]);
                 if (!postId) return;
 
-                MetaSmokeAPI.metasmokeIds[Number(postId[0])] = item.id;
+                MetaSmokeAPI.metasmokeIds[postId] = item.id;
             });
         } catch (error) {
             globals.displayError('Failed to get Metasmoke URLs.');

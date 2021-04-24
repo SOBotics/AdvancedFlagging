@@ -39,7 +39,7 @@ function getPageFromElement(postNode: JQuery): Pages | '' {
 }
 
 function getPostIdFromElement(postNode: JQuery, postType: PostType): number {
-    const elementHref = postNode.find(`.${postType.toLowerCase()}-hyperlink`).attr('href');
+    const elementHref = postNode.find('.answer-hyperlink, .question-hyperlink').attr('href');
     // in the question page, questions/answers have a data-questionid/data-answerid with the post id
     const postIdString = (postNode.attr('data-questionid') || postNode.attr('data-answerid'))
         // in the flags/NATO page, we find the postId by parsing the post URL
@@ -65,13 +65,13 @@ function getPostCreationDate(postNode: JQuery, postType: PostType): Date | null 
 export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): void {
     getExistingElement()?.each((_index, node) => {
         const element = $(node);
-        const postType: PostType = element.hasClass('question') ? 'Question' : 'Answer';
+        const postType: PostType = element.hasClass('question') || element.find('.question-hyperlink').length ? 'Question' : 'Answer';
         const page = getPageFromElement(element);
         if (!page) return;
 
         const iconLocation = page === 'Question'
             ? element.find('.js-post-menu').children().first()
-            : element.find(`a.${postType === 'Question' ? 'question' : 'answer'}-hyperlink`);
+            : element.find('a.question-hyperlink, a.answer-hyperlink');
         const postId = getPostIdFromElement(element, postType);
         const questionTime = getPostCreationDate(element, 'Question');
         const answerTime = getPostCreationDate(element, 'Answer');

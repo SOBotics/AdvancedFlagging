@@ -120,6 +120,8 @@ const guttenbergImage = 'https://i.stack.imgur.com/tzKAI.png?s=32&g=1';
 const smokeyImage = 'https://i.stack.imgur.com/7cmCt.png?s=32&g=1';
 export const isStackOverflow = /^https:\/\/stackoverflow.com/.test(window.location.href);
 export const isQuestionPage = /\/questions\/\d+.*/.test(window.location.href);
+export const isNatoPage = /\/tools\/new-answers-old-questions/.test(window.location.href);
+export const isFlagsPage = /\/users\/flag-summary\/\d+/.test(window.location.href);
 export const isLqpReviewPage = /\/review\/low-quality-posts\/\d+/.test(window.location.href);
 export const gridCellDiv = $('<div>').addClass('grid--cell');
 export const noneString = '<span class="o50">(none)</span>';

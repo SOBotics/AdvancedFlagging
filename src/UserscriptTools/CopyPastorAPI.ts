@@ -45,6 +45,7 @@ export class CopyPastorAPI {
         if (!isStackOverflow) return;
 
         const postUrls = getAllPostIds(false, true); // postIds as URLs excluding questions
+        if (!postUrls.length) return; // make sure the array isn't empty
         await this.storeReportedPosts(postUrls as string[]);
     }
 

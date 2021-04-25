@@ -58,6 +58,8 @@ export class MetaSmokeAPI {
         if (MetaSmokeAPI.isDisabled) return;
 
         const urlString = getAllPostIds(true, true).join(','); // postIds as URLs, including questions
+        if (!urlString) return; // don't make the request if there aren't URLs
+
         const parameters = globals.getParamsFromObject({
             urls: urlString,
             key: `${MetaSmokeAPI.appKey}`,

@@ -25,7 +25,7 @@ export class GenericBotAPI {
     public sendFeedback(trackPost: string): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             const flaggerName = encodeURIComponent(username || '');
-            if (!trackPost || !isStackOverflow || !flaggerName) resolve('');
+            if (!trackPost || !isStackOverflow || !flaggerName) return resolve('');
 
             const contentHash = this.computeContentHash($(`#answer-${this.answerId} .js-post-body`).html().trim());
             GM_xmlhttpRequest({

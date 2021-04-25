@@ -1,4 +1,4 @@
-import { isQuestionPage, PostType } from '../GlobalVars';
+import { isQuestionPage, isNatoPage, isFlagsPage, PostType } from '../GlobalVars';
 
 type Pages = 'Question' | 'NATO' | 'Flags';
 
@@ -25,16 +25,17 @@ $.event.special.destroyed = {
 };
 
 function getExistingElement(): JQuery | undefined {
+    if (!isQuestionPage && !isNatoPage && !isFlagsPage) return;
     const natoElements = $('.answer-hyperlink').parents('tr'), flagElements = $('.flagged-post');
     const questionPageElements = $('.question, .answer');
     const elementToUse = [natoElements, flagElements, questionPageElements].find(item => item.length);
     return elementToUse;
 }
 
-function getPageFromElement(postNode: JQuery): Pages | '' {
-    if (postNode.hasClass('flagged-post')) return 'Flags';
-    else if (/\/tools\/new-answers-old-questions/.test(window.location.href)) return 'NATO';
-    else if (postNode.hasClass('question') || postNode.hasClass('answer')) return 'Question';
+function getPage(): Pages | '' {
+    if (isFlagsPage) return 'Flags';
+    else if (isNatoPage) return 'NATO';
+    else if (isQuestionPage) return 'Question';
     else return '';
 }
 
@@ -66,7 +67,7 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): vo
     getExistingElement()?.each((_index, node) => {
         const element = $(node);
         const postType: PostType = element.hasClass('question') || element.find('.question-hyperlink').length ? 'Question' : 'Answer';
-        const page = getPageFromElement(element);
+        const page = getPage();
         if (!page) return;
 
         const iconLocation = page === 'Question'

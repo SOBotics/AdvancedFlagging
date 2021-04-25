@@ -1,5 +1,8 @@
 import { ChatApi } from './ChatApi';
-import { isStackOverflow, nattyAllReportsUrl, dayMillis, FlagTypeFeedbacks, nattyReportedMessage, isPostDeleted } from '../GlobalVars';
+import {
+    isStackOverflow, nattyAllReportsUrl, dayMillis, FlagTypeFeedbacks, nattyReportedMessage, isPostDeleted, isLqpReviewPage
+} from '../GlobalVars';
+import { getAllPostIds } from './sotools';
 
 interface NattyFeedback {
     items: NattyFeedbackItem[];
@@ -31,7 +34,8 @@ export class NattyAPI {
 
     public static getAllNattyIds(): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            if (!isStackOverflow) resolve();
+            // the response is quite big (1MB+); check if there are ids before making it!
+            if (!isStackOverflow || !(isLqpReviewPage || getAllPostIds(false, true).length)) return resolve();
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: `${nattyAllReportsUrl}`,

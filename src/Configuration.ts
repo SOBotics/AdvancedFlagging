@@ -249,7 +249,7 @@ function createCheckbox(text: string, checkCheckbox: boolean | null): JQuery {
       that will be used regardless of the OP's reputation. This appears to be the simplest approach
 */
 
-function getFeedbackCheckbox(botName: string, feedback: globals.AllFeedbacks, isChecked: boolean, flagId: number): string {
+function getFeedbackRadio(botName: string, feedback: globals.AllFeedbacks, isChecked: boolean, flagId: number): string {
     const radioId = `af-${botName.replace(/\s/g, '-')}-${flagId}-feedback-${feedback || 'none'}`;
     const radioName = `af-${flagId}-feedback-to-${botName.replace(/\s/g, '-')}`;
     return `
@@ -267,14 +267,9 @@ function getFeedbackCheckbox(botName: string, feedback: globals.AllFeedbacks, is
 function getRadiosForBot(botName: globals.BotNames, currentFeedback: globals.AllFeedbacks, flagId: number): string {
     const feedbacks = globals.possibleFeedbacks[botName];
     const botFeedbacks = feedbacks
-        .map(feedback => getFeedbackCheckbox(botName, feedback, feedback === currentFeedback, flagId))
+        .map(feedback => getFeedbackRadio(botName, feedback, feedback === currentFeedback, flagId))
         .join('\n');
-    return `
-<div class="grid--cell">
-    <div class="grid gs16">
-        <div class="grid--cell fs-body2">Feedback to ${botName}:</div>${botFeedbacks}
-    </div>
-</div>`;
+    return `<div class="grid gs16"><div class="grid--cell fs-body2">Feedback to ${botName}:</div>${botFeedbacks}</div>`;
 }
 
 function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
@@ -302,7 +297,7 @@ function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
     </div>
     <div class="s-expandable" id="${expandableId}">
         <div class="s-expandable--content">
-            <div class="advanced-flagging-flag-option py8 mln6">
+            <div class="advanced-flagging-flag-option py8 mln4">
                 <label class="fw-bold ps-relative d-inline-block z-selected l12 fs-body1 ${isDisabled ? 'o50' : ''}">Flag as:</label>
                 <div class="s-select d-inline-block r48">
                     <select class="pl64" ${isDisabled ? 'disabled' : ''}>${getFlagOptions(flagType.ReportType)}</select>
@@ -322,6 +317,15 @@ function createCategoryDiv(displayName: string): JQuery {
     return $('<div>').addClass(`af-${displayName.toLowerCase().replace(/\s/g, '')}-content grid--cell`).append(categoryHeader);
 }
 
+function getCommentFlagsDivs(comments: globals.CachedFlag['Comments'], flagText: globals.CachedFlag['FlagText']): JQuery {
+    const contentWrapper = $('<div>').addClass('advanced-flagging-flag-comments-text grid gsy gs8 fd-column');
+    const lowRepLabel = comments.High ? 'LowRep comment' : 'Comment text'; // if there are two comments, add label for LowRep
+    if (flagText) contentWrapper.append(globals.getTextarea(flagText, 'Flag text', 'flag'));
+    if (comments.Low) contentWrapper.append(globals.getTextarea(comments.Low, lowRepLabel, 'lowrep'));
+    if (comments.High) contentWrapper.append(globals.getTextarea(comments.High, 'HighRep comment', 'highrep'));
+    return contentWrapper;
+}
+
 function setupCommentsAndFlagsModal(): void {
     const editCommentsPopup = globals.editCommentsPopup.clone();
     editCommentsPopup.find('.s-modal--close').append(globals.getStacksSvg('Clear'));
@@ -331,18 +335,11 @@ function setupCommentsAndFlagsModal(): void {
 
     globals.cachedFlagTypes.forEach(flagType => {
         const belongsToCategory = flagType.BelongsTo, comments = flagType.Comments, flagText = flagType.FlagText;
-
         const flagTypeDiv = createFlagTypeDiv(flagType);
         const expandable = flagTypeDiv.find('.s-expandable--content');
         const flagCategoryWrapper = categoryElements[belongsToCategory];
 
-        const labelDisplay = comments.High ? 'd-block' : 'd-none'; // if there are two comments we want to show a label
-        const lowRepLabel = comments.High ? 'LowRep comment' : 'Comment text'; // if there are two comments, add label for LowRep
-
-        if (flagText) expandable.prepend(globals.getTextarea(flagText, 'Flag text', 'flag'));
-        if (comments.High) expandable.prepend(globals.getTextarea(comments.High, 'HighRep comment', 'highrep', labelDisplay));
-        if (comments.Low) expandable.prepend(globals.getTextarea(comments.Low, lowRepLabel, 'lowrep'));
-
+        expandable.prepend(getCommentFlagsDivs(comments, flagText));
         flagCategoryWrapper?.append(flagTypeDiv);
     });
     // now append all categories to the modal

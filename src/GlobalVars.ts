@@ -205,13 +205,10 @@ export const smokeyIcon = sampleIcon.clone().find('img').attr('src', smokeyImage
 export const getMessageDiv = (text: string, state: string): JQuery => $('<div>').addClass(`p12 bg-${state}`).text(text).hide();
 export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').html(`<h2 class="grid--cell">${name}</h2>`)
     .addClass(`grid gs8 gsy fd-column af-section-${name.toLowerCase()}`);
-type ContentType = 'flag' | 'lowrep' | 'highrep'
-export const getTextarea = (textareaContent: string, labelText: string, contentType: ContentType, labelDisplay?: string): JQuery => $(`
+export const getTextarea = (textareaContent: string, labelText: string, contentType: 'flag' | 'lowrep' | 'highrep'): JQuery => $(`
 <div class="grid gs4 gsy fd-column">
-    <label class="grid--cell s-label ${labelDisplay || 'd-block'}">${labelText}</label>
-    <div class="grid ps-relative">
-        <textarea rows=4 class="grid--cell s-textarea fs-body2 af-${contentType}-content">${textareaContent}</textarea>
-    </div> 
+    <label class="grid--cell s-label">${labelText}</label>
+    <textarea rows=4 class="grid--cell s-textarea fs-body2 af-${contentType}-content">${textareaContent}</textarea>
 </div>`);
 
 const iconWrapper = $('<div>').addClass('grid--cell').css('display', 'none'); // the element that will contain the bot icons
@@ -279,9 +276,9 @@ const metasmokeTokenPopup = $(`
 export const editCommentsPopup = $(`
 <aside class="s-modal" id="af-comments" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
     <div class="s-modal--dialog s-modal__full md:w100 sm:w100 w80" role="document">
-        <h1 class="s-modal--header fw-body c-movey" id="af-comments-title">AdvancedFlagging: edit comments and flags</h1>
+        <h1 class="s-modal--header fw-body" id="af-comments-title">AdvancedFlagging: edit comments and flags</h1>
         <div class="s-modal--body fs-body2" id="af-comments-description">
-            <div class="grid grid__fl1 fd-column gs16"></div>
+            <div class="grid fd-column gs16"></div>
         </div>
         <div class="grid gs8 gsx s-modal--footer">
             <button class="grid--cell s-btn s-btn__primary" type="button" data-action="s-modal#hide">I'm done!</button>

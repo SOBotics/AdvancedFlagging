@@ -206,7 +206,7 @@ export const getMessageDiv = (text: string, state: string): JQuery => $('<div>')
 export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').html(`<h2 class="grid--cell">${name}</h2>`)
     .addClass(`grid gs8 gsy fd-column af-section-${name.toLowerCase()}`);
 export const getTextarea = (textareaContent: string, labelText: string, contentType: 'flag' | 'lowrep' | 'highrep'): JQuery => $(`
-<div class="grid gs4 gsy fd-column">
+<div class="grid gs4 gsy fd-column" style="display: ${textareaContent ? 'block' : 'none'};">
     <label class="grid--cell s-label">${labelText}</label>
     <textarea rows=4 class="grid--cell s-textarea fs-body2 af-${contentType}-content">${textareaContent}</textarea>
 </div>`);
@@ -341,10 +341,10 @@ export const cachedCategories = GreaseMonkeyCache.getFromCache<CachedCategory[]>
 // export const updateCategories = (): void => GreaseMonkeyCache.storeInCache(FlagCategoriesKey, cachedCategories);
 
 // Adds the author name before the comment if the option is enabled and determines if the comment should be low/high rep
-export function getFullComment(flagId: number, { authorName }: UserDetails, level?: 'Low' | 'High'): string | null {
+export function getFullComment(flagId: number, { authorReputation, authorName }: UserDetails): string | null {
     const shouldAddAuthorName = cachedConfigurationInfo?.AddAuthorName;
     const flagType = getFlagTypeFromFlagId(flagId);
-    const comment = flagType?.Comments[level || 'Low'];
+    const comment = flagType?.Comments[authorReputation > 50 ? 'High' : 'Low'] || flagType?.Comments.Low;
     return (comment && shouldAddAuthorName ? `${authorName}, ${comment[0].toLowerCase()}${comment.slice(1)}` : comment) || null;
 }
 

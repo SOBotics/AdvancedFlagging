@@ -317,12 +317,35 @@ function createCategoryDiv(displayName: string): JQuery {
     return $('<div>').addClass(`af-${displayName.toLowerCase().replace(/\s/g, '')}-content grid--cell`).append(categoryHeader);
 }
 
-function getCommentFlagsDivs(comments: globals.CachedFlag['Comments'], flagText: globals.CachedFlag['FlagText']): JQuery {
+function getCommentFlagsDivs(flagId: number, comments: globals.CachedFlag['Comments'], flagText: string): JQuery {
     const contentWrapper = $('<div>').addClass('advanced-flagging-flag-comments-text grid gsy gs8 fd-column');
+    const toggleSwitchId = `advanced-flagging-comments-${flagId}-toggle`;
+    const enableSwitch = Boolean(comments.Low); // enable switch if lowrep comment exists
+    const tickCheckbox = Boolean(comments.High); // tick checkbox if highrep comment exists
+    const checkboxId = `advanced-flagging-highrep-${flagId}-checkbox`;
+
+    const commentOptions = $(`
+<div class="grid gsx gs12 ai-center">
+    <label class="grid--cell s-label mx0" for="${toggleSwitchId}">Leave comment</label>
+    <div class="grid--cell s-toggle-switch">
+        <input id="${toggleSwitchId}"${enableSwitch ? ' checked' : ''} class="af-toggle-comment" type="checkbox">
+        <div class="s-toggle-switch--indicator"></div>
+    </div>
+    <div class="grid gsx gs4 ai-center${enableSwitch ? '' : ' is-disabled'}">
+        (<div class="grid--cell pb2">
+            <input class="s-checkbox af-toggle-highrep" type="checkbox"${tickCheckbox ? ' checked' : ''}
+            ${enableSwitch ? '' : ' disabled'} id="${checkboxId}">
+        </div>
+    <label class="grid--cell s-label fw-normal" for="${checkboxId}">Include comment for high rep users</label>
+    </div>
+    <span class="ps-relative r8">)</span>
+</div>`);
+
+    contentWrapper.append(commentOptions);
     const lowRepLabel = comments.High ? 'LowRep comment' : 'Comment text'; // if there are two comments, add label for LowRep
-    if (flagText) contentWrapper.append(globals.getTextarea(flagText, 'Flag text', 'flag'));
-    if (comments.Low) contentWrapper.append(globals.getTextarea(comments.Low, lowRepLabel, 'lowrep'));
-    if (comments.High) contentWrapper.append(globals.getTextarea(comments.High, 'HighRep comment', 'highrep'));
+    contentWrapper.append(globals.getTextarea(flagText, 'Flag text', 'flag'));
+    contentWrapper.append(globals.getTextarea(comments.Low, lowRepLabel, 'lowrep'));
+    contentWrapper.append(globals.getTextarea(comments.High, 'HighRep comment', 'highrep'));
     return contentWrapper;
 }
 
@@ -339,7 +362,7 @@ function setupCommentsAndFlagsModal(): void {
         const expandable = flagTypeDiv.find('.s-expandable--content');
         const flagCategoryWrapper = categoryElements[belongsToCategory];
 
-        expandable.prepend(getCommentFlagsDivs(comments, flagText));
+        expandable.prepend(getCommentFlagsDivs(flagType.Id, comments, flagText));
         flagCategoryWrapper?.append(flagTypeDiv);
     });
     // now append all categories to the modal
@@ -369,9 +392,10 @@ function setupCommentsAndFlagsModal(): void {
         // use || '' to avoid null/undefined values in cache
         // each textarea has one of those three classes: af-flag-content, af-lowrep-content and af-highrep-content
         // for the flag text, the low-rep comment text and the high-rep comment text respectively
-        const flagContent = expandable.find('.af-flag-content').val() as string || '';
-        const commentLowRep = expandable.find('.af-lowrep-content').val() as string || '';
-        const commentHighRep = expandable.find('.af-highrep-content').val() as string || '';
+        const flagElement = expandable.find('.af-flag-content');
+        const commentLow = expandable.find('.af-lowrep-content');
+        const commentHigh = expandable.find('.af-highrep-content');
+        const [flagContent, commentLowRep, commentHighRep] = [flagElement.val(), commentLow.val(), commentHigh.val()] as string[];
 
         const getSelector = (flagId: number, botName: string): string => `[name^="af-${flagId}-feedback-to-${botName}"]:checked`;
         // Each radio button belongs to a group af-<flagId>-feedback-to-<bot> and has id af-<bot>-<flagId>-feedback-<feedback>
@@ -383,8 +407,13 @@ function setupCommentsAndFlagsModal(): void {
             'Generic Bot': $(getSelector(flagId, 'Generic-Bot')).data('feedback') as globals.FlagTypeFeedbacks['Generic Bot'],
         };
 
-        if (flagContent) currentFlagType.FlagText = flagContent;
-        if (commentLowRep) currentFlagType.Comments = { Low: commentLowRep, High: commentHighRep };
+        // the textarea may be hidden (because user has just disabled leave comment), but it still has text
+        // in case the user has accidentally done so. We need to save the content in visible textareas!
+        if (flagContent) currentFlagType.FlagText = flagElement.is(':visible') ? flagContent : '';
+        if (commentLowRep) currentFlagType.Comments = {
+            Low: commentLow.is(':visible') ? commentLowRep : '',
+            High: commentHigh.is(':visible') ? commentHighRep : ''
+        };
         currentFlagType.Feedbacks = botFeedbacks;
         globals.updateFlagTypes();
 
@@ -429,6 +458,32 @@ function setupCommentsAndFlagsModal(): void {
         globals.updateFlagTypes();
         isEnabled ? flagTypeWrapper.removeClass('s-card__muted') : flagTypeWrapper.addClass('s-card__muted');
         globals.displayStacksToast(`Successfully ${isEnabled ? 'enabled' : 'disabled'} flag type`, 'success');
+    }).on('change', '.af-toggle-comment, .af-toggle-highrep', event => { // leave comment options
+        const inputElement = $(event.target), flagTypeWrapper = inputElement.parents('.s-card');
+        const lowRepComment = flagTypeWrapper.find('.af-lowrep-content').parent();
+        const highRepComment = flagTypeWrapper.find('.af-highrep-content').parent();
+        const toggleComment = flagTypeWrapper.find('.af-toggle-comment'), toggleHighRep = flagTypeWrapper.find('.af-toggle-highrep');
+        if (toggleComment.is(':checked')) { // leave comment toggle has been enabled
+            // re-enable the highrep comment option checkbox
+            toggleHighRep.parent().parent().removeClass('is-disabled');
+            toggleHighRep.removeAttr('disabled');
+            lowRepComment.fadeIn();
+        } else {
+            // disable the highrep comment option checkbox
+            toggleHighRep.parent().parent().addClass('is-disabled');
+            toggleHighRep.prop('disabled', true);
+            lowRepComment.fadeOut(400, () => lowRepComment.hide());
+            highRepComment.fadeOut(400, () => highRepComment.hide());
+            return; // don't check for the high rep checkbox if leave comment is disabled
+        }
+
+        if (toggleHighRep.is(':checked')) {
+            highRepComment.fadeIn();
+            lowRepComment.find('label').text('LowRep comment'); // highrep comment exists => lowrep comment exists
+        } else {
+            highRepComment.fadeOut(400, () => highRepComment.hide());
+            lowRepComment.find('label').text('Comment text'); // no highrep comment => no lowrep comment
+        }
     });
     $('body').append(editCommentsPopup);
 }

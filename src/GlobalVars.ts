@@ -206,7 +206,7 @@ export const getMessageDiv = (text: string, state: string): JQuery => $('<div>')
 export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').html(`<h2 class="grid--cell">${name}</h2>`)
     .addClass(`grid gs8 gsy fd-column af-section-${name.toLowerCase()}`);
 export const getTextarea = (textareaContent: string, labelText: string, contentType: 'flag' | 'lowrep' | 'highrep'): JQuery => $(`
-<div class="grid gs4 gsy fd-column" style="display: ${textareaContent ? 'block' : 'none'};">
+<div class="grid gs4 gsy fd-column" style="display: ${textareaContent ? 'flex' : 'none'};">
     <label class="grid--cell s-label">${labelText}</label>
     <textarea rows=4 class="grid--cell s-textarea fs-body2 af-${contentType}-content">${textareaContent}</textarea>
 </div>`);

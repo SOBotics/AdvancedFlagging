@@ -317,6 +317,35 @@ function createCategoryDiv(displayName: string): JQuery {
     return $('<div>').addClass(`af-${displayName.toLowerCase().replace(/\s/g, '')}-content grid--cell`).append(categoryHeader);
 }
 
+function getCharSpan(textareaContent: string, contentType: 'comment' | 'flag'): string {
+    const minCharacters = contentType === 'flag' ? 10 : 15, maxCharacters = contentType === 'flag' ? 500 : 600;
+    const charCount = textareaContent.length, pluralS = Math.abs(maxCharacters - charCount) !== 1 ? 's' : '';
+    // behaves the same way as the comment/custom flag textarea
+    // if there are zero characters => Enter at least x characters
+    // if the min character limit isn't reached => x more to go...
+    // if the min character limit is reached but the max isn't => x characters left
+    // if the max character limit is reached => too long by x characters
+    let spanText: string;
+    if (charCount === 0) spanText = `Enter at least ${minCharacters} characters`;
+    else if (charCount < minCharacters) spanText = `${minCharacters - charCount} more to go...`;
+    else if (charCount > maxCharacters) spanText = `Too long by ${charCount - maxCharacters} character${pluralS}`;
+    else spanText = `${maxCharacters - charCount} character${pluralS} left`;
+
+    // find the class name based on the characters remaining, not the characters already entered!!
+    const charactersLeft = maxCharacters - charCount;
+    let classname: 'cool' | 'warm' | 'hot' | 'supernova' | 'fc-red-400';
+    if (charCount > maxCharacters) classname = 'fc-red-400';
+    else if (charactersLeft >= maxCharacters * 3 / 5) classname = 'cool';
+    else if (charactersLeft >= maxCharacters * 2 / 5) classname = 'warm';
+    else if (charactersLeft >= maxCharacters / 5) classname = 'hot';
+    else classname = 'supernova';
+
+    // the form is invalid if there are more or less characters than the limit
+    const isInvalid = classname === 'fc-red-400' || spanText.includes('more') || spanText.includes('at least');
+    const invalidClass = isInvalid ? ' af-invalid-content' : '';
+    return `<span class="af-text-counter ml-auto ${classname}${invalidClass}">${spanText}</span>`;
+}
+
 function getCommentFlagsDivs(flagId: number, comments: globals.CachedFlag['Comments'], flagText: string): JQuery {
     const contentWrapper = $('<div>').addClass('advanced-flagging-flag-comments-text grid gsy gs8 fd-column');
     const toggleSwitchId = `advanced-flagging-comments-${flagId}-toggle`;
@@ -343,9 +372,16 @@ function getCommentFlagsDivs(flagId: number, comments: globals.CachedFlag['Comme
 
     contentWrapper.append(commentOptions);
     const lowRepLabel = comments.High ? 'LowRep comment' : 'Comment text'; // if there are two comments, add label for LowRep
-    contentWrapper.append(globals.getTextarea(flagText, 'Flag text', 'flag'));
-    contentWrapper.append(globals.getTextarea(comments.Low, lowRepLabel, 'lowrep'));
-    contentWrapper.append(globals.getTextarea(comments.High, 'HighRep comment', 'highrep'));
+    const flagEl = globals.getTextarea(flagText, 'Flag text', 'flag').append(getCharSpan(flagText, 'flag'));
+    const lowRepEl = globals.getTextarea(comments.Low, lowRepLabel, 'lowrep').append(getCharSpan(comments.Low, 'comment'));
+    const highRepEl = globals.getTextarea(comments.High, 'HighRep comment', 'highrep').append(getCharSpan(comments.High, 'comment'));
+    contentWrapper.append(flagEl, lowRepEl, highRepEl);
+    // change the text counter information on keyup
+    flagEl.add(lowRepEl).add(highRepEl).on('keyup', event => {
+        const textarea = $(event.target), textareaContent = textarea.val() as string;
+        const contentType = textarea.hasClass('af-flag-content') ? 'flag' : 'comment';
+        textarea.next().replaceWith(getCharSpan(textareaContent, contentType));
+    });
     return contentWrapper;
 }
 
@@ -382,9 +418,16 @@ function setupCommentsAndFlagsModal(): void {
     }).on('click', '.af-submit-content', event => { // save changes
         const element = $(event.target), flagTypeWrapper = element.parents('.s-card');
         const expandable = flagTypeWrapper.find('.s-expandable');
-        element.next().trigger('click'); // hide the textarea by clicking the 'Hide' button and not manually
         const flagId = Number(flagTypeWrapper.data('flag-id'));
         if (!flagId) return globals.displayStacksToast('Failed to save options', 'danger');
+        // only find invalid forms in visible textareas!
+        const invalidElement = flagTypeWrapper.find('.af-invalid-content').filter(':visible');
+        if (invalidElement.length) {
+            // similar to what happens when add comment is clicked but the form is invalid
+            invalidElement.fadeOut(100).fadeIn(100);
+            globals.displayStacksToast('One or more of the textareas are invalid', 'danger');
+            return;
+        }
 
         const currentFlagType = globals.getFlagTypeFromFlagId(flagId);
         if (!currentFlagType) return globals.displayStacksToast('Failed to save options', 'danger'); // somehow something went wrong
@@ -417,6 +460,7 @@ function setupCommentsAndFlagsModal(): void {
         currentFlagType.Feedbacks = botFeedbacks;
         globals.updateFlagTypes();
 
+        element.next().trigger('click'); // hide the textarea by clicking the 'Hide' button and not manually
         globals.displayStacksToast('Content saved successfully', 'success');
     }).on('click', '.af-remove-expandable', event => {
         const removeButton = $(event.target), flagTypeWrapper = removeButton.parents('.s-card');
@@ -466,7 +510,7 @@ function setupCommentsAndFlagsModal(): void {
         if (toggleComment.is(':checked')) { // leave comment toggle has been enabled
             // re-enable the highrep comment option checkbox
             toggleHighRep.parent().parent().removeClass('is-disabled');
-            toggleHighRep.removeAttr('disabled');
+            toggleHighRep.prop('disabled', false);
             lowRepComment.fadeIn();
         } else {
             // disable the highrep comment option checkbox

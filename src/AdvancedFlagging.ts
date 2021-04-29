@@ -86,8 +86,11 @@ async function handleActions(
         }
     }
 
+    const downvoteButton = post.element.find('.js-vote-down-btn');
     // The user probably doesn't want to auto-downvote posts after selecting Looks Fine, Needs editing, etc.
-    if (downvoteRequired && flag.ReportType !== 'NoFlag') post.element.find('.js-vote-down-btn').trigger('click');
+    // Also we don't want to undo a downvote, so we check if the post is downvoted already (the button has the fc-theme-primary class)
+    if (!downvoteRequired || flag.ReportType === 'NoFlag' || downvoteButton.hasClass('fc-theme-primary')) return;
+    downvoteButton.trigger('click');
 }
 
 async function handleFlag(flagType: globals.CachedFlag, reporters: ReporterInformation): Promise<boolean> {

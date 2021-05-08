@@ -35,7 +35,7 @@ module.exports = {
                      // @exclude      *://chat.stackexchange.com/*
                      // @exclude      *://chat.meta.stackexchange.com/*
                      // @exclude      *://chat.stackoverflow.com/*
-                     // @exclude      *://*.area51.stackexchange.com/*
+                     // @exclude      *://area51.stackexchange.com/*
                      // @exclude      *://data.stackexchange.com/*
                      // @exclude      *://stackoverflow.com/c/*
                      // @exclude      *://winterbash*.stackexchange.com/*

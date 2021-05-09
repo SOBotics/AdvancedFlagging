@@ -119,7 +119,7 @@ function buildConfigurationOverlay(): void {
     });
 
     const resetConfigurationText = 'Reset configuration values to defaults. You will be asked to set them again.';
-    globals.attachPopover($('.af-configuration-reset')[0], resetConfigurationText, 'top');
+    globals.attachPopover($('.af-configuration-reset')[0], resetConfigurationText, 'right');
 }
 
 function getGeneralConfigItems(): JQuery {
@@ -158,7 +158,7 @@ function getGeneralConfigItems(): JQuery {
     ].map(item => {
         const storedValue = globals.cachedConfigurationInfo?.[item.configValue as GeneralItems];
         const configCheckbox = createCheckbox(item.text, Boolean(storedValue)).data('option-id', item.configValue);
-        if (item.tooltipText) globals.attachPopover(configCheckbox.find('label')[0], item.tooltipText, 'top');
+        if (item.tooltipText) globals.attachPopover(configCheckbox.find('label')[0], item.tooltipText, 'right');
         return configCheckbox;
     }).forEach(element => sectionWrapper.append(element));
 
@@ -186,8 +186,8 @@ function getAdminConfigItems(): JQuery {
     const metasmokeTooltip = `This will remove your metasmoke access token (${msAccessTokenText})`;
     const fkeyClearTooltip = 'This will clear the chat fkey. It will be regenerated the next time feedback is sent to Natty '
                            + `(${chatFkey ? `fkey: ${chatFkey}` : 'fkey is not stored in cache'})`;
-    globals.attachPopover(clearMetasmokeInfo.find('a')[0], metasmokeTooltip, 'top');
-    globals.attachPopover(clearFkey.find('a')[0], fkeyClearTooltip, 'top');
+    globals.attachPopover(clearMetasmokeInfo.find('a')[0], metasmokeTooltip, 'right');
+    globals.attachPopover(clearFkey.find('a')[0], fkeyClearTooltip, 'right');
 
     return sectionWrapper;
 }

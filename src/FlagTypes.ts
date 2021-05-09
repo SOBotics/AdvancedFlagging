@@ -1,6 +1,7 @@
 import * as globals from './GlobalVars';
 
 export type Flags = 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther' | 'PostLowQuality';
+export type HumanFlags = 'as NAA' | 'as R/A' | 'as spam' | 'for moderator attention' | 'as VLQ' | '';
 
 interface FlagType {
     Id: number;

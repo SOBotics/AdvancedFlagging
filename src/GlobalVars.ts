@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { GreaseMonkeyCache } from './UserscriptTools/GreaseMonkeyCache';
-import { Flags, FlagCategory } from './FlagTypes';
+import { Flags, FlagCategory, HumanFlags } from './FlagTypes';
 import { displayToaster } from './AdvancedFlagging';
 
 declare const StackExchange: StackExchange;
@@ -360,14 +360,14 @@ export function getFlagTypeFromFlagId(flagId: number): CachedFlag | null {
     return cachedFlagTypes?.find(flagType => flagType.Id === flagId) || null;
 }
 
-export function getHumanFromDisplayName(displayName: Flags): string {
+export function getHumanFromDisplayName(displayName: Flags): HumanFlags {
     switch (displayName) {
         case 'AnswerNotAnAnswer': return 'as NAA';
         case 'PostOffensive': return 'as R/A';
         case 'PostSpam': return 'as spam';
-        case 'NoFlag': return '';
         case 'PostOther': return 'for moderator attention';
         case 'PostLowQuality': return 'as VLQ';
+        case 'NoFlag':
         default: return '';
     }
 }

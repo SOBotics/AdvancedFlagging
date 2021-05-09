@@ -9,8 +9,12 @@ type GeneralItems = Exclude<keyof globals.CachedConfiguration, 'EnabledFlags'>;
 
 const flagTypes = flagCategories.flatMap(category => category.FlagTypes);
 const flagNames = [...new Set(flagTypes.map(flagType => flagType.DefaultReportType))];
-const getOption = (flag: Flags, name: string): string => `<option${flag === name ? ' selected' : ''}>${flag}</option>`;
-const getFlagOptions = (name: string): string => flagNames.map(flag => getOption(flag, name)).join('');
+// we'll be using a value here because the option text is not of type Flags and therefore can't be stored to cache
+const getOption = (flagName: Flags, currentName: Flags): string =>
+    `<option${flagName === currentName ? ' selected' : ''} value=${flagName}>
+      ${globals.getHumanFromDisplayName(flagName) || '(none)'}
+    </option>`;
+const getFlagOptions = (currentName: Flags): string => flagNames.map(flagName => getOption(flagName, currentName)).join('');
 
 function cacheFlags(): void {
     const flagTypesToCache = flagCategories.flatMap(category => {
@@ -298,9 +302,9 @@ function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
     <div class="s-expandable" id="${expandableId}">
         <div class="s-expandable--content">
             <div class="advanced-flagging-flag-option py8 mln4">
-                <label class="fw-bold ps-relative d-inline-block z-selected l12 fs-body1 ${isDisabled ? 'o50' : ''}">Flag as:</label>
-                <div class="s-select d-inline-block r48">
-                    <select class="pl64" ${isDisabled ? 'disabled' : ''}>${getFlagOptions(flagType.ReportType)}</select>
+                <label class="fw-bold ps-relative d-inline-block z-selected l12 fs-body1 ${isDisabled ? 'o50' : ''}">Flag:</label>
+                <div class="s-select d-inline-block r32">
+                    <select class="pl48" ${isDisabled ? 'disabled' : ''}>${getFlagOptions(flagType.ReportType)}</select>
                 </div>
             </div>
             <div class="advanced-flagging-feedbacks-radios py8 ml2">${feedbackRadios}</div>

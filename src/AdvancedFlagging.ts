@@ -1,4 +1,4 @@
-import { Flags } from './FlagTypes';
+import { Flags, HumanFlags } from './FlagTypes';
 import { parseQuestionsAndAnswers, PostInfo } from './UserscriptTools/sotools';
 import { NattyAPI } from './UserscriptTools/NattyApi';
 import { GenericBotAPI } from './UserscriptTools/GenericBotAPI';
@@ -353,7 +353,7 @@ function BuildFlaggingDialog(
                 authorName: post.opName
             });
             const flagName = getFlagToRaise(flagType.ReportType, shouldRaiseVlq);
-            let reportTypeHuman: string = globals.getHumanFromDisplayName(flagName);
+            let reportTypeHuman: HumanFlags | string = globals.getHumanFromDisplayName(flagName);
             const flagText = copypastorId && targetUrl ? globals.getFullFlag(flagType.Id, targetUrl, copypastorId) : null;
             const feedbacksString = getFeedbackSpans(
                 flagType, nattyApi?.wasReported() || false, nattyApi?.canBeReported() || false,

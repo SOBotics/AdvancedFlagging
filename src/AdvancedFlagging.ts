@@ -88,24 +88,23 @@ async function handleActions(
 
     const downvoteButton = post.element.find('.js-vote-down-btn');
     // The user probably doesn't want to auto-downvote posts after selecting Looks Fine, Needs editing, etc.
-    // Also we don't want to undo a downvote, so we check if the post is downvoted already (the button has the fc-theme-primary class)
+    // Also we don't want to undo a downvote, so we check if the post is downvoted already
     if (!downvoteRequired || flag.ReportType === 'NoFlag' || downvoteButton.hasClass('fc-theme-primary')) return;
     downvoteButton.trigger('click');
 }
 
 async function handleFlag(flagType: globals.CachedFlag, reporters: ReporterInformation): Promise<boolean> {
-    for (const reporter of (Object.values(reporters) as Reporter[]).filter(item => flagType.Feedbacks[item.name])) {
-        try {
-            // eslint-disable-next-line no-await-in-loop
-            const promiseValue = await reporter.sendFeedback(flagType.Feedbacks[reporter.name]);
-            if (!promiseValue) continue;
-            globals.displaySuccess(promiseValue);
-        } catch (error) {
-            globals.displayError((error as Error).message);
-            return false;
-        }
-    }
-    return true;
+    let hasFailed = false;
+    const allPromises = (Object.values(reporters) as Reporter[]).filter(item => flagType.Feedbacks[item.name]).map(reporter => {
+        return reporter.sendFeedback(flagType.Feedbacks[reporter.name])
+            .then(promiseValue => promiseValue ? globals.displaySuccess(promiseValue) : '')
+            .catch(promiseError => {
+                globals.displayError((promiseError as Error).message);
+                hasFailed = true;
+            });
+    });
+    await Promise.allSettled(allPromises);
+    return !hasFailed;
 }
 
 export function displayToaster(message: string, state: string): void {

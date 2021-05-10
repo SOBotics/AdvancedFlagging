@@ -103,7 +103,7 @@ function buildConfigurationOverlay(): void {
         event.preventDefault();
         // find the option id (it's the data-option-id attribute) and store whether the box is checked or not
         $('.af-section-general').find('input').each((_index, el) => {
-            const optionId = $(el).parents().eq(2).data('option-id') as GeneralItems;
+            const optionId = $(el).parents().eq(2).attr('data-option-id') as GeneralItems;
             globals.cachedConfigurationInfo[optionId] = Boolean($(el).prop('checked'));
         });
 
@@ -157,7 +157,7 @@ function getGeneralConfigItems(): JQuery {
         }
     ].map(item => {
         const storedValue = globals.cachedConfigurationInfo?.[item.configValue as GeneralItems];
-        const configCheckbox = createCheckbox(item.text, Boolean(storedValue)).data('option-id', item.configValue);
+        const configCheckbox = createCheckbox(item.text, Boolean(storedValue)).attr('data-option-id', item.configValue);
         if (item.tooltipText) globals.attachPopover(configCheckbox.find('label')[0], item.tooltipText, 'right');
         return configCheckbox;
     }).forEach(element => sectionWrapper.append(element));
@@ -422,7 +422,7 @@ function setupCommentsAndFlagsModal(): void {
     }).on('click', '.af-submit-content', event => { // save changes
         const element = $(event.target), flagTypeWrapper = element.parents('.s-card');
         const expandable = flagTypeWrapper.find('.s-expandable');
-        const flagId = Number(flagTypeWrapper.data('flag-id'));
+        const flagId = Number(flagTypeWrapper.attr('data-flag-id'));
         if (!flagId) return globals.displayStacksToast('Failed to save options', 'danger');
         // only find invalid forms in visible textareas!
         const invalidElement = flagTypeWrapper.find('.af-invalid-content').filter(':visible');
@@ -448,11 +448,11 @@ function setupCommentsAndFlagsModal(): void {
         // Each radio button belongs to a group af-<flagId>-feedback-to-<bot> and has id af-<bot>-<flagId>-feedback-<feedback>
         // Additionally, it has a data-feedback attribute which holds the feedback that corresponds to the radio
         const botFeedbacks = {
-            Smokey: $(getSelector(flagId, 'Smokey')).data('feedback') as globals.FlagTypeFeedbacks['Smokey'],
-            Natty: $(getSelector(flagId, 'Natty')).data('feedback') as globals.FlagTypeFeedbacks['Natty'],
-            Guttenberg: $(getSelector(flagId, 'Guttenberg')).data('feedback') as globals.FlagTypeFeedbacks['Guttenberg'],
-            'Generic Bot': $(getSelector(flagId, 'Generic-Bot')).data('feedback') as globals.FlagTypeFeedbacks['Generic Bot'],
-        };
+            Smokey: $(getSelector(flagId, 'Smokey')).attr('data-feedback'),
+            Natty: $(getSelector(flagId, 'Natty')).attr('data-feedback'),
+            Guttenberg: $(getSelector(flagId, 'Guttenberg')).attr('data-feedback'),
+            'Generic Bot': $(getSelector(flagId, 'Generic-Bot')).attr('data-feedback'),
+        } as globals.FlagTypeFeedbacks;
 
         // the textarea may be hidden (because user has just disabled leave comment), but it still has text
         // in case the user has accidentally done so. We need to save the content in visible textareas!
@@ -468,7 +468,7 @@ function setupCommentsAndFlagsModal(): void {
         globals.displayStacksToast('Content saved successfully', 'success');
     }).on('click', '.af-remove-expandable', event => {
         const removeButton = $(event.target), flagTypeWrapper = removeButton.parents('.s-card');
-        const flagId = Number(flagTypeWrapper.data('flag-id'));
+        const flagId = Number(flagTypeWrapper.attr('data-flag-id'));
         const flagTypeIndex = globals.cachedFlagTypes.findIndex(item => item.Id === flagId);
         globals.cachedFlagTypes.splice(flagTypeIndex, 1);
         globals.updateFlagTypes();
@@ -488,7 +488,7 @@ function setupCommentsAndFlagsModal(): void {
     }).on('change', '.advanced-flagging-flag-option select', event => { // save a new report type
         const selectElement = $(event.target), flagTypeWrapper = selectElement.parents('.s-card');
         const newReportType = selectElement.val() as Flags;
-        const flagId = Number(flagTypeWrapper.data('flag-id'));
+        const flagId = Number(flagTypeWrapper.attr('data-flag-id'));
         const currentFlagType = globals.getFlagTypeFromFlagId(flagId);
         if (!currentFlagType) return globals.displayStacksToast('Failed to change the report flag type', 'danger');
         if (newReportType === 'PostOther') return globals.displayStacksToast('Flag PostOther cannot be used with this option', 'danger');
@@ -498,7 +498,7 @@ function setupCommentsAndFlagsModal(): void {
         globals.displayStacksToast('Successfully changed the flag type for this option', 'success');
     }).on('change', '.advanced-flagging-flag-enabled', event => { // enable/disable a flag
         const toggleSwitch = $(event.target), flagTypeWrapper = toggleSwitch.parents('.s-card');
-        const flagId = Number(flagTypeWrapper.data('flag-id')), currentFlagType = globals.getFlagTypeFromFlagId(flagId);
+        const flagId = Number(flagTypeWrapper.attr('data-flag-id')), currentFlagType = globals.getFlagTypeFromFlagId(flagId);
         if (!currentFlagType) return globals.displayStacksToast('Failed to toggle flag type', 'danger');
 
         const isEnabled = toggleSwitch.is(':checked');

@@ -1,7 +1,5 @@
 import { ChatApi } from './ChatApi';
-import {
-    isStackOverflow, nattyAllReportsUrl, dayMillis, FlagTypeFeedbacks, nattyReportedMessage, isPostDeleted, isLqpReviewPage
-} from '../GlobalVars';
+import { isStackOverflow, nattyFeedbackUrl, dayMillis, FlagTypeFeedbacks, nattyReportedMessage, isPostDeleted } from '../GlobalVars';
 import { getAllPostIds } from './sotools';
 
 interface NattyFeedback {
@@ -9,10 +7,10 @@ interface NattyFeedback {
     message: string;
 }
 
-interface NattyFeedbackItem {
+type NattyFeedbackItem = {
     name: string;
     type: string;
-}
+} | null;
 
 export class NattyAPI {
     private static nattyIds: number[] = [];
@@ -33,17 +31,19 @@ export class NattyAPI {
     }
 
     public static getAllNattyIds(): Promise<void> {
+        const postIds = getAllPostIds(false, false).join(',');
+        if (!isStackOverflow || !postIds) return Promise.resolve();
+
         return new Promise<void>((resolve, reject) => {
-            // the response is quite big (1MB+); check if there are ids before making it!
-            if (!isStackOverflow || !(isLqpReviewPage || getAllPostIds(false, true).length)) return resolve();
             GM_xmlhttpRequest({
                 method: 'GET',
-                url: `${nattyAllReportsUrl}`,
+                url: `${nattyFeedbackUrl}${postIds}`,
                 onload: (response: { status: number, responseText: string }) => {
                     if (response.status !== 200) reject();
 
                     const result = JSON.parse(response.responseText) as NattyFeedback;
-                    this.nattyIds = result.items.map(item => Number(item.name));
+                    // use .filter(Boolean) to remove null values in the response
+                    this.nattyIds = result.items.map(item => Number(item?.name)).filter(Boolean);
                     resolve();
                 },
                 onerror: () => reject()

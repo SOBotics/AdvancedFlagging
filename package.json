@@ -9,7 +9,7 @@
   "devDependencies": {
     "@types/jquery": "3.5.5",
     "@types/tampermonkey": "4.0.0",
-    "@typescript-eslint/eslint-plugin": "4.23.0",
+    "@typescript-eslint/eslint-plugin": "4.24.0",
     "@typescript-eslint/parser": "4.23.0",
     "eslint": "7.26.0",
     "ts-loader": "9.1.2",

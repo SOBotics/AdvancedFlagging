@@ -7,10 +7,10 @@ interface NattyFeedback {
     message: string;
 }
 
-type NattyFeedbackItem = {
+interface NattyFeedbackItem {
     name: string;
-    type: string;
-} | null;
+    type: 'Stored post';
+}
 
 export class NattyAPI {
     private static nattyIds: number[] = [];
@@ -42,8 +42,7 @@ export class NattyAPI {
                     if (response.status !== 200) reject();
 
                     const result = JSON.parse(response.responseText) as NattyFeedback;
-                    // use .filter(Boolean) to remove null values in the response
-                    this.nattyIds = result.items.map(item => Number(item?.name)).filter(Boolean);
+                    this.nattyIds = result.items.map(item => Number(item.name));
                     resolve();
                 },
                 onerror: () => reject()

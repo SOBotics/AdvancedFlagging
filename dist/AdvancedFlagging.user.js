@@ -592,7 +592,7 @@ exports.copypastorServer = 'https://copypastor.sobotics.org';
 exports.genericBotKey = 'Cm45BSrt51FR3ju';
 const placeholderTarget = /\$TARGET\$/g;
 const placeholderCopypastorLink = /\$COPYPASTOR\$/g;
-exports.nattyFeedbackUrl = 'https://logs.sobotics.org/napi-1.1/api/feedback/';
+exports.nattyFeedbackUrl = 'https://logs.sobotics.org/napi-1.1/api/stored/';
 exports.username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
 exports.dayMillis = 1000 * 60 * 60 * 24;
 exports.popupDelay = 4 * 1000;
@@ -925,7 +925,7 @@ class NattyAPI {
                     if (response.status !== 200)
                         reject();
                     const result = JSON.parse(response.responseText);
-                    this.nattyIds = result.items.map(item => Number(item === null || item === void 0 ? void 0 : item.name)).filter(Boolean);
+                    this.nattyIds = result.items.map(item => Number(item.name));
                     resolve();
                 },
                 onerror: () => reject()

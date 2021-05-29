@@ -64,13 +64,14 @@ export function setupConfiguration(): void {
 
     commentsDiv.append(commentsLink).insertAfter(bottomBox);
     configurationDiv.append(configurationLink).insertAfter(bottomBox);
-    if (!Object.prototype.hasOwnProperty.call(globals.cachedConfigurationInfo, globals.ConfigurationAddAuthorName)) {
+    if (!Object.prototype.hasOwnProperty.call(globals.cachedConfiguration, globals.ConfigurationAddAuthorName)) {
         globals.displayStacksToast('Please set up AdvancedFlagging before continuing.', 'info');
         StackExchange.helpers.showModal(document.querySelector('#af-config'));
     }
 }
 
 function setupDefaults(): void {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!globals.cachedFlagTypes.length || !globals.cachedFlagTypes[0].Feedbacks) cacheFlags();
     if (!globals.cachedCategories.length) cacheCategories();
 }
@@ -104,7 +105,7 @@ function buildConfigurationOverlay(): void {
         // find the option id (it's the data-option-id attribute) and store whether the box is checked or not
         $('.af-section-general').find('input').each((_index, el) => {
             const optionId = $(el).parents().eq(2).attr('data-option-id') as GeneralItems;
-            globals.cachedConfigurationInfo[optionId] = Boolean($(el).prop('checked'));
+            globals.cachedConfiguration[optionId] = Boolean($(el).prop('checked'));
         });
 
         globals.updateConfiguration();
@@ -156,7 +157,7 @@ function getGeneralConfigItems(): JQuery {
             tooltipText: 'Add the author\'s name before every comment to make them friendlier'
         }
     ].map(item => {
-        const storedValue = globals.cachedConfigurationInfo?.[item.configValue as GeneralItems];
+        const storedValue = globals.cachedConfiguration[item.configValue as GeneralItems];
         const configCheckbox = createCheckbox(item.text, Boolean(storedValue)).attr('data-option-id', item.configValue);
         if (item.tooltipText) globals.attachPopover(configCheckbox.find('label')[0], item.tooltipText, 'right');
         return configCheckbox;
@@ -301,10 +302,16 @@ function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
     </div>
     <div class="s-expandable" id="${expandableId}">
         <div class="s-expandable--content">
-            <div class="advanced-flagging-flag-option py8 mln4">
-                <label class="fw-bold ps-relative d-inline-block z-selected l12 fs-body1 ${isDisabled ? 'o50' : ''}">Flag:</label>
-                <div class="s-select d-inline-block r32">
+            <div class="advanced-flagging-flag-option grid ai-center gsx gs6">
+                <label class="fw-bold ps-relative z-selected l12 fs-body1 grid--cell">Flag:</label>
+                <div class="s-select r32 grid--cell">
                     <select class="pl48" ${isDisabled ? 'disabled' : ''}>${getFlagOptions(flagType.ReportType)}</select>
+                </div>
+                <div class="grid gsx gs4 ai-center grid--cell">
+                    <div class="grid--cell pb2 d-inline-block">
+                        <input class="s-checkbox" type="checkbox">
+                    </div>
+                    <label class="grid--cell s-label fw-normal">Send feedback from this flag type when this flag is raised</label>
                 </div>
             </div>
             <div class="advanced-flagging-feedbacks-radios py8 ml2">${feedbackRadios}</div>
@@ -403,7 +410,7 @@ function setupCommentsAndFlagsModal(): void {
         const flagCategoryWrapper = categoryElements[belongsToCategory];
 
         expandable.prepend(getCommentFlagsDivs(flagType.Id, comments, flagText));
-        flagCategoryWrapper?.append(flagTypeDiv);
+        flagCategoryWrapper.append(flagTypeDiv);
     });
     // now append all categories to the modal
     Object.values(categoryElements)

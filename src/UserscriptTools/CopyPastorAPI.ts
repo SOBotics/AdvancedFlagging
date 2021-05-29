@@ -26,13 +26,13 @@ interface CopyPastorData {
 }
 
 export class CopyPastorAPI {
-    private static copypastorIds: CopyPastorData = {};
+    private static copypastorIds: Partial<CopyPastorData> = {};
 
     public name: keyof FlagTypeFeedbacks = 'Guttenberg';
     public copypastorId: number;
     public repost: boolean;
     public targetUrl: string;
-    private answerId: number;
+    private readonly answerId: number;
 
     constructor(id: number) {
         this.answerId = id;

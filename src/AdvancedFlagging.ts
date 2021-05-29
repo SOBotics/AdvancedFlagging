@@ -82,7 +82,7 @@ async function handleActions(
                 displayErrorFlagged(failedToFlagText + message, fullMessage);
             }
         } catch (error) {
-            displayErrorFlagged('Failed to flag post', error);
+            displayErrorFlagged('Failed to flag post', error as string);
         }
     }
 
@@ -116,7 +116,7 @@ export function displayToaster(message: string, state: string): void {
 function displaySuccessFlagged(reportedIcon: JQuery, reportType?: Flags): void {
     if (!reportType) return;
     const flaggedMessage = `Flagged ${globals.getHumanFromDisplayName(reportType)}`;
-    void globals.attachPopover(reportedIcon[0], flaggedMessage);
+    globals.attachPopover(reportedIcon[0], flaggedMessage);
     reportedIcon.fadeIn();
     globals.displaySuccess(flaggedMessage);
 }
@@ -147,9 +147,9 @@ function upvoteSameComments(postElement: JQuery, strippedCommentText: string): v
 }
 
 function getErrorMessage(responseJson: StackExchangeFlagResponse): string {
-    if (/already flagged/.test(responseJson.Message)) {
+    if (responseJson.Message.includes('already flagged')) {
         return 'post already flagged';
-    } else if (/limit reached/.test(responseJson.Message)) {
+    } else if (responseJson.Message.includes('limit reached')) {
         return 'post flag limit reached';
     } else {
         return responseJson.Message;
@@ -205,9 +205,9 @@ function getAllBotIcons(): JQuery[] {
     const nattyIcon = globals.nattyIcon.clone();
     const copypastorIcon = globals.guttenbergIcon.clone();
     const smokeyIcon = globals.smokeyIcon.clone();
-    void globals.attachPopover(nattyIcon.find('a')[0], 'Reported by Natty');
-    void globals.attachPopover(copypastorIcon.find('a')[0], 'Reported by Guttenberg');
-    void globals.attachPopover(smokeyIcon.find('a')[0], 'Reported by Smokey');
+    globals.attachPopover(nattyIcon.find('a')[0], 'Reported by Natty');
+    globals.attachPopover(copypastorIcon.find('a')[0], 'Reported by Guttenberg');
+    globals.attachPopover(smokeyIcon.find('a')[0], 'Reported by Smokey');
     return [nattyIcon, copypastorIcon, smokeyIcon];
 }
 
@@ -269,9 +269,9 @@ function getFeedbackSpans(
 function getOptionsRow(postElement: JQuery, postId: number): JQuery[] {
     const postComments = postElement.find('.comment-body');
     // check which of the checkboxes the user has chosen to uncheck by default
-    const defaultNoComment = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoComment];
-    const defaultNoFlag = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoFlag];
-    const defaultNoDownvote = globals.cachedConfigurationInfo?.[globals.ConfigurationDefaultNoDownvote];
+    const defaultNoComment = globals.cachedConfiguration[globals.ConfigurationDefaultNoComment];
+    const defaultNoFlag = globals.cachedConfiguration[globals.ConfigurationDefaultNoFlag];
+    const defaultNoDownvote = globals.cachedConfiguration[globals.ConfigurationDefaultNoDownvote];
     // check 'Leave comment' if there aren't more comments and user has selected to do so
     const checkComment = !defaultNoComment && !postComments.length;
 
@@ -400,10 +400,10 @@ function BuildFlaggingDialog(
                 if (flagType.ReportType !== 'NoFlag') return; // don't show performed/failed action icons if post has been flagged
 
                 if (success) {
-                    void globals.attachPopover(performedActionIcon[0], `Performed action ${flagType.DisplayName}`);
+                    globals.attachPopover(performedActionIcon[0], `Performed action ${flagType.DisplayName}`);
                     performedActionIcon.fadeIn();
                 } else {
-                    void globals.attachPopover(failedActionIcon[0], `Failed to perform action ${flagType.DisplayName}`);
+                    globals.attachPopover(failedActionIcon[0], `Failed to perform action ${flagType.DisplayName}`);
                     failedActionIcon.fadeIn();
                 }
             });
@@ -420,7 +420,7 @@ function BuildFlaggingDialog(
 
 let autoFlagging = false;
 function SetupPostPage(): void {
-    const linkDisabled = globals.cachedConfigurationInfo?.[globals.ConfigurationLinkDisabled];
+    const linkDisabled = globals.cachedConfiguration[globals.ConfigurationLinkDisabled];
     if (linkDisabled || globals.isLqpReviewPage) return; // do not add the buttons on review
     parseQuestionsAndAnswers(post => {
         if (!post.element.length) return;
@@ -451,7 +451,7 @@ function SetupPostPage(): void {
         post.iconLocation.append(performedActionIcon, reportedIcon, failedActionIcon, nattyIcon, copypastorIcon, smokeyIcon);
 
         // Determine if the dropdown should be opened on hover or on click based on what the user has chosen
-        const openOnHover = globals.cachedConfigurationInfo?.[globals.ConfigurationOpenOnHover];
+        const openOnHover = globals.cachedConfiguration[globals.ConfigurationOpenOnHover];
         if (openOnHover) {
             advancedFlaggingLink.on('mouseover', event => {
                 event.stopPropagation();
@@ -469,7 +469,7 @@ function SetupPostPage(): void {
         }
 
         // Watch for manual flags if the user has chosen to do so
-        const shouldWatchFlags = globals.cachedConfigurationInfo?.[globals.ConfigurationWatchFlags];
+        const shouldWatchFlags = globals.cachedConfiguration[globals.ConfigurationWatchFlags];
         globals.addXHRListener(xhr => {
             if (!shouldWatchFlags || autoFlagging || xhr.status !== 200 || !globals.flagsUrlRegex.test(xhr.responseURL)) return;
 
@@ -497,7 +497,7 @@ function Setup(): void {
     });
     $('body').append(globals.popupWrapper);
 
-    const watchedQueuesEnabled = globals.cachedConfigurationInfo?.[globals.ConfigurationWatchQueues];
+    const watchedQueuesEnabled = globals.cachedConfiguration[globals.ConfigurationWatchQueues];
     if (!watchedQueuesEnabled) return;
 
     globals.addXHRListener(xhr => {

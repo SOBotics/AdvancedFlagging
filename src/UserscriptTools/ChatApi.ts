@@ -10,7 +10,7 @@ export class ChatApi {
         return expiryDate;
     }
 
-    private chatRoomUrl: string;
+    private readonly chatRoomUrl: string;
 
     public constructor(chatUrl = 'https://chat.stackoverflow.com') {
         this.chatRoomUrl = chatUrl;

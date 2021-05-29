@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { GreaseMonkeyCache } from './UserscriptTools/GreaseMonkeyCache';
 import { Flags, FlagCategory, HumanFlags } from './FlagTypes';
 import { displayToaster } from './AdvancedFlagging';
@@ -120,7 +119,7 @@ const guttenbergImage = 'https://i.stack.imgur.com/tzKAI.png?s=32&g=1';
 const smokeyImage = 'https://i.stack.imgur.com/7cmCt.png?s=32&g=1';
 export const isStackOverflow = /^https:\/\/stackoverflow.com/.test(window.location.href);
 export const isQuestionPage = /\/questions\/\d+.*/.test(window.location.href);
-export const isNatoPage = /\/tools\/new-answers-old-questions/.test(window.location.href);
+export const isNatoPage = window.location.href.includes('/tools/new-answers-old-questions');
 export const isFlagsPage = /\/users\/flag-summary\/\d+/.test(window.location.href);
 export const isLqpReviewPage = /\/review\/low-quality-posts\/\d+/.test(window.location.href);
 export const gridCellDiv = $('<div>').addClass('grid--cell');
@@ -168,27 +167,31 @@ export const attachHtmlPopover = (element: Element, text: string, position = 'bo
 export const isReviewItemRegex = /\/review\/(next-task|task-reviewed\/)/;
 export const isDeleteVoteRegex = /(\d+)\/vote\/10|(\d+)\/recommend-delete/;
 export const flagsUrlRegex = /flags\/posts\/\d+\/add\/[a-zA-Z]+/;
-export const getFlagsUrlRegex = (postId: number): RegExp => new RegExp(`/flags/posts/${postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther|PostLowQuality)`);
+export function getFlagsUrlRegex(postId: number): RegExp {
+    return new RegExp(`/flags/posts/${postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther|PostLowQuality)`);
+}
 
-// helper functions
+// various helper functions
 export const showElement = (element: JQuery): JQuery => element.addClass('d-block').removeClass('d-none');
 export const showInlineElement = (element: JQuery): JQuery => element.addClass('d-inline-block').removeClass('d-none');
 export const displaySuccess = (message: string): void => displayToaster(message, 'success');
 export const displayError = (message: string): void => displayToaster(message, 'danger');
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export const getParamsFromObject = (object: any): string => Object.entries(object).map(item => item.join('=')).join('&');
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export const getFormDataFromObject = (object: any): FormData => Object.keys(object).reduce((formData, key) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    formData.append(key, object[key]);
-    return formData;
-}, new FormData());
+export const isPostDeleted = (postId: number): boolean => $(`#question-${postId}, #answer-${postId}`).hasClass('deleted-answer');
+
+export function getParamsFromObject<T>(object: T): string {
+    return Object.entries(object).map(item => item.join('=')).join('&');
+}
+export function getFormDataFromObject<T extends { [key: string]: string }>(object: T): FormData {
+    return Object.keys(object).reduce((formData, key) => {
+        formData.append(key, object[key]);
+        return formData;
+    }, new FormData());
+}
 const getCopypastorLink = (postId: number): string => `https://copypastor.sobotics.org/posts/${postId}`;
 export const getPostIdFromReview = (): number => Number($('[id^="answer-"]').attr('id')?.split('-')[1]);
 export function qualifiesForVlq(postScore: number, creationDate: Date): boolean {
     return postScore <= 0 && (new Date().valueOf() - creationDate.valueOf()) < dayMillis;
 }
-export const isPostDeleted = (postId: number): boolean => $(`#question-${postId}, #answer-${postId}`).hasClass('deleted-answer');
 
 export function getSentMessage(success: boolean, feedback: string, bot: string): string {
     return success ? `Feedback ${feedback} sent to ${bot}` : `Failed to send feedback ${feedback} to ${bot}`;
@@ -321,11 +324,12 @@ export function addXHRListener(callback: (request: XMLHttpRequest) => void): voi
     if (initialized) return;
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const open = XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open = function(...args: any[]): void {
+    XMLHttpRequest.prototype.open = function(): void {
         this.addEventListener('load', () => {
             callbacks.forEach(cb => cb(this));
         }, false);
-        open.apply(this, args);
+        // eslint-disable-next-line prefer-rest-params
+        open.apply(this, arguments);
     };
     initialized = true;
 }
@@ -333,8 +337,8 @@ export function addXHRListener(callback: (request: XMLHttpRequest) => void): voi
 // cache-related helpers/values
 // Some information from cache is stored on the variables as objects to make editing easier and simpler
 // Each time something is changed in the variables, update* must also be called to save the changes to the cache
-export const cachedConfigurationInfo = GreaseMonkeyCache.getFromCache<CachedConfiguration>(ConfigurationCacheKey) || {} as CachedConfiguration;
-export const updateConfiguration = (): void => GreaseMonkeyCache.storeInCache(ConfigurationCacheKey, cachedConfigurationInfo);
+export const cachedConfiguration = GreaseMonkeyCache.getFromCache<CachedConfiguration>(ConfigurationCacheKey) || {} as Partial<CachedConfiguration>;
+export const updateConfiguration = (): void => GreaseMonkeyCache.storeInCache(ConfigurationCacheKey, cachedConfiguration);
 export const cachedFlagTypes = GreaseMonkeyCache.getFromCache<CachedFlag[]>(FlagTypesKey) || [];
 export const updateFlagTypes = (): void => GreaseMonkeyCache.storeInCache(FlagTypesKey, cachedFlagTypes);
 export const cachedCategories = GreaseMonkeyCache.getFromCache<CachedCategory[]>(FlagCategoriesKey) || [];
@@ -342,7 +346,7 @@ export const cachedCategories = GreaseMonkeyCache.getFromCache<CachedCategory[]>
 
 // Adds the author name before the comment if the option is enabled and determines if the comment should be low/high rep
 export function getFullComment(flagId: number, { authorReputation, authorName }: UserDetails): string | null {
-    const shouldAddAuthorName = cachedConfigurationInfo?.AddAuthorName;
+    const shouldAddAuthorName = cachedConfiguration.AddAuthorName;
     const flagType = getFlagTypeFromFlagId(flagId);
     const comment = flagType?.Comments[authorReputation > 50 ? 'High' : 'Low'] || flagType?.Comments.Low;
     return (comment && shouldAddAuthorName ? `${authorName}, ${comment[0].toLowerCase()}${comment.slice(1)}` : comment) || null;
@@ -357,7 +361,7 @@ export function getFullFlag(flagId: number, target: string, postId: number): str
 }
 
 export function getFlagTypeFromFlagId(flagId: number): CachedFlag | null {
-    return cachedFlagTypes?.find(flagType => flagType.Id === flagId) || null;
+    return cachedFlagTypes.find(flagType => flagType.Id === flagId) || null;
 }
 
 export function getHumanFromDisplayName(displayName: Flags): HumanFlags {

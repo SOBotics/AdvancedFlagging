@@ -47,6 +47,25 @@ module.exports = {
         'space-in-parens': 'off',
         '@typescript-eslint/explicit-function-return-type': 'warn',
         '@typescript-eslint/no-misused-promises': ['warn', { 'checksVoidReturn': false }],
-        '@typescript-eslint/member-delimiter-style': 'warn'
+        '@typescript-eslint/member-delimiter-style': 'warn',
+        '@typescript-eslint/consistent-type-definitions': 'warn',
+        '@typescript-eslint/method-signature-style': ['warn', 'method'],
+        '@typescript-eslint/no-base-to-string': 'warn',
+        '@typescript-eslint/no-require-imports': 'warn',
+        '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'warn',
+        '@typescript-eslint/no-unnecessary-condition': 'warn',
+        '@typescript-eslint/no-unsafe-argument': 'warn',
+        '@typescript-eslint/prefer-for-of': 'warn',
+        '@typescript-eslint/prefer-includes': 'warn',
+        '@typescript-eslint/prefer-optional-chain': 'warn',
+        '@typescript-eslint/prefer-readonly': 'warn',
+        '@typescript-eslint/prefer-reduce-type-parameter': 'warn',
+        '@typescript-eslint/prefer-string-starts-ends-with': 'warn',
+        '@typescript-eslint/type-annotation-spacing': ['warn', {
+            'before': false,
+            'after': true,
+            'overrides': {
+                'arrow': { 'before': true, 'after': true }}
+            }]
     }
 };

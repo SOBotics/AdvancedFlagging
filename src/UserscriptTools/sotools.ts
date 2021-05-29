@@ -49,7 +49,7 @@ function getPostIdFromElement(postNode: JQuery, postType: PostType): number {
 }
 
 function parseAuthorReputation(reputationDiv: JQuery): number {
-    let reputationText = reputationDiv.text()?.replace(/,/g, '');
+    let reputationText = reputationDiv.text().replace(/,/g, '');
     if (!reputationText) return 0;
 
     if (reputationText.includes('k')) {
@@ -58,9 +58,9 @@ function parseAuthorReputation(reputationDiv: JQuery): number {
     } else return Number(reputationText);
 }
 
-function getPostCreationDate(postNode: JQuery, postType: PostType): Date | null {
+function getPostCreationDate(postNode: JQuery, postType: PostType): Date {
     const dateString = (postType === 'Question' ? $('.question') : postNode).find('.user-info .relativetime').last();
-    return new Date(dateString.attr('title') || '') || null;
+    return new Date(dateString.attr('title') || '');
 }
 
 export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): void {
@@ -76,7 +76,7 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): vo
         const postId = getPostIdFromElement(element, postType);
         const questionTime = getPostCreationDate(element, 'Question');
         const answerTime = getPostCreationDate(element, 'Answer');
-        const score = Number(element.attr('data-score')) ?? null; // won't work for Flags, but we don't need that there
+        const score = Number(element.attr('data-score')) || 0; // won't work for Flags, but we don't need that there
         // this won't work for community wiki posts and there's nothing that can be done about it
         const opReputation = parseAuthorReputation(element.find('.user-info .reputation-score').last());
         // in Flags page, authorName will be empty, but we aren't interested in it there anyways...

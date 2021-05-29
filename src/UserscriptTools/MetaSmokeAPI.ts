@@ -19,11 +19,11 @@ interface MetasmokeData {
 
 export class MetaSmokeAPI {
     public static accessToken: string;
-    private static appKey = globals.metasmokeKey;
+    private static readonly appKey = globals.metasmokeKey;
     private static metasmokeIds: MetasmokeData = {};
     public static isDisabled: boolean = GreaseMonkeyCache.getFromCache<boolean>(globals.MetaSmokeDisabledConfig) || false;
-    private postId: number;
-    private postType: globals.PostType;
+    private readonly postId: number;
+    private readonly postType: globals.PostType;
     public name: keyof globals.FlagTypeFeedbacks = 'Smokey';
 
     constructor(postId: number, postType: globals.PostType) {
@@ -40,7 +40,7 @@ export class MetaSmokeAPI {
         MetaSmokeAPI.accessToken = await MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
     }
 
-    private static codeGetter: (metaSmokeOAuthUrl: string) => Promise<string | undefined> = async (metaSmokeOAuthUrl?: string) => {
+    private static readonly codeGetter: (metaSmokeOAuthUrl: string) => Promise<string | undefined> = async (metaSmokeOAuthUrl?: string) => {
         if (MetaSmokeAPI.isDisabled) return;
 
         const userDisableMetasmoke = await globals.showConfirmModal(globals.settingUpTitle, globals.settingUpBody);

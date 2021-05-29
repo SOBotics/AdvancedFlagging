@@ -140,7 +140,7 @@ function displaySuccessFlagged(reportedIcon, reportType) {
     if (!reportType)
         return;
     const flaggedMessage = `Flagged ${globals.getHumanFromDisplayName(reportType)}`;
-    void globals.attachPopover(reportedIcon[0], flaggedMessage);
+    globals.attachPopover(reportedIcon[0], flaggedMessage);
     reportedIcon.fadeIn();
     globals.displaySuccess(flaggedMessage);
 }
@@ -165,10 +165,10 @@ function upvoteSameComments(postElement, strippedCommentText) {
     });
 }
 function getErrorMessage(responseJson) {
-    if (/already flagged/.test(responseJson.Message)) {
+    if (responseJson.Message.includes('already flagged')) {
         return 'post already flagged';
     }
-    else if (/limit reached/.test(responseJson.Message)) {
+    else if (responseJson.Message.includes('limit reached')) {
         return 'post flag limit reached';
     }
     else {
@@ -215,9 +215,9 @@ function getAllBotIcons() {
     const nattyIcon = globals.nattyIcon.clone();
     const copypastorIcon = globals.guttenbergIcon.clone();
     const smokeyIcon = globals.smokeyIcon.clone();
-    void globals.attachPopover(nattyIcon.find('a')[0], 'Reported by Natty');
-    void globals.attachPopover(copypastorIcon.find('a')[0], 'Reported by Guttenberg');
-    void globals.attachPopover(smokeyIcon.find('a')[0], 'Reported by Smokey');
+    globals.attachPopover(nattyIcon.find('a')[0], 'Reported by Natty');
+    globals.attachPopover(copypastorIcon.find('a')[0], 'Reported by Guttenberg');
+    globals.attachPopover(smokeyIcon.find('a')[0], 'Reported by Smokey');
     return [nattyIcon, copypastorIcon, smokeyIcon];
 }
 function addBotIconsToReview(post, botIcons) {
@@ -259,11 +259,10 @@ function getFeedbackSpans(flagType, nattyReported, nattyCanReport, smokeyReporte
     }).filter(String).join(', ') || globals.noneString;
 }
 function getOptionsRow(postElement, postId) {
-    var _a, _b, _c;
     const postComments = postElement.find('.comment-body');
-    const defaultNoComment = (_a = globals.cachedConfigurationInfo) === null || _a === void 0 ? void 0 : _a[globals.ConfigurationDefaultNoComment];
-    const defaultNoFlag = (_b = globals.cachedConfigurationInfo) === null || _b === void 0 ? void 0 : _b[globals.ConfigurationDefaultNoFlag];
-    const defaultNoDownvote = (_c = globals.cachedConfigurationInfo) === null || _c === void 0 ? void 0 : _c[globals.ConfigurationDefaultNoDownvote];
+    const defaultNoComment = globals.cachedConfiguration[globals.ConfigurationDefaultNoComment];
+    const defaultNoFlag = globals.cachedConfiguration[globals.ConfigurationDefaultNoFlag];
+    const defaultNoDownvote = globals.cachedConfiguration[globals.ConfigurationDefaultNoDownvote];
     const checkComment = !defaultNoComment && !postComments.length;
     const commentRow = globals.getPopoverOption(`af-comment-checkbox-${postId}`, checkComment, 'Leave comment');
     const flagRow = globals.getPopoverOption(`af-flag-checkbox-${postId}`, !defaultNoFlag, 'Flag');
@@ -332,11 +331,11 @@ function BuildFlaggingDialog(post, reportedIcon, performedActionIcon, reporters,
                 if (flagType.ReportType !== 'NoFlag')
                     return;
                 if (success) {
-                    void globals.attachPopover(performedActionIcon[0], `Performed action ${flagType.DisplayName}`);
+                    globals.attachPopover(performedActionIcon[0], `Performed action ${flagType.DisplayName}`);
                     performedActionIcon.fadeIn();
                 }
                 else {
-                    void globals.attachPopover(failedActionIcon[0], `Failed to perform action ${flagType.DisplayName}`);
+                    globals.attachPopover(failedActionIcon[0], `Failed to perform action ${flagType.DisplayName}`);
                     failedActionIcon.fadeIn();
                 }
             });
@@ -351,12 +350,10 @@ function BuildFlaggingDialog(post, reportedIcon, performedActionIcon, reporters,
 }
 let autoFlagging = false;
 function SetupPostPage() {
-    var _a;
-    const linkDisabled = (_a = globals.cachedConfigurationInfo) === null || _a === void 0 ? void 0 : _a[globals.ConfigurationLinkDisabled];
+    const linkDisabled = globals.cachedConfiguration[globals.ConfigurationLinkDisabled];
     if (linkDisabled || globals.isLqpReviewPage)
         return;
     sotools_1.parseQuestionsAndAnswers(post => {
-        var _a, _b;
         if (!post.element.length)
             return;
         const [nattyIcon, copypastorIcon, smokeyIcon] = getAllBotIcons();
@@ -379,7 +376,7 @@ function SetupPostPage() {
         const dropDown = BuildFlaggingDialog(post, reportedIcon, performedActionIcon, reporters, shouldRaiseVlq, failedActionIcon);
         advancedFlaggingLink.append(dropDown);
         post.iconLocation.append(performedActionIcon, reportedIcon, failedActionIcon, nattyIcon, copypastorIcon, smokeyIcon);
-        const openOnHover = (_a = globals.cachedConfigurationInfo) === null || _a === void 0 ? void 0 : _a[globals.ConfigurationOpenOnHover];
+        const openOnHover = globals.cachedConfiguration[globals.ConfigurationOpenOnHover];
         if (openOnHover) {
             advancedFlaggingLink.on('mouseover', event => {
                 event.stopPropagation();
@@ -398,7 +395,7 @@ function SetupPostPage() {
             });
             $(window).on('click', () => dropDown.fadeOut('fast'));
         }
-        const shouldWatchFlags = (_b = globals.cachedConfigurationInfo) === null || _b === void 0 ? void 0 : _b[globals.ConfigurationWatchFlags];
+        const shouldWatchFlags = globals.cachedConfiguration[globals.ConfigurationWatchFlags];
         globals.addXHRListener(xhr => {
             if (!shouldWatchFlags || autoFlagging || xhr.status !== 200 || !globals.flagsUrlRegex.test(xhr.responseURL))
                 return;
@@ -412,7 +409,6 @@ function SetupPostPage() {
     });
 }
 function Setup() {
-    var _a;
     void Promise.all([
         MetaSmokeAPI_1.MetaSmokeAPI.setup(),
         MetaSmokeAPI_1.MetaSmokeAPI.queryMetaSmokeInternal(),
@@ -424,7 +420,7 @@ function Setup() {
         Configuration_1.setupConfiguration();
     });
     $('body').append(globals.popupWrapper);
-    const watchedQueuesEnabled = (_a = globals.cachedConfigurationInfo) === null || _a === void 0 ? void 0 : _a[globals.ConfigurationWatchQueues];
+    const watchedQueuesEnabled = globals.cachedConfiguration[globals.ConfigurationWatchQueues];
     if (!watchedQueuesEnabled)
         return;
     globals.addXHRListener(xhr => {
@@ -505,8 +501,7 @@ function getPostIdFromElement(postNode, postType) {
     return Number(postIdString);
 }
 function parseAuthorReputation(reputationDiv) {
-    var _a;
-    let reputationText = (_a = reputationDiv.text()) === null || _a === void 0 ? void 0 : _a.replace(/,/g, '');
+    let reputationText = reputationDiv.text().replace(/,/g, '');
     if (!reputationText)
         return 0;
     if (reputationText.includes('k')) {
@@ -518,12 +513,11 @@ function parseAuthorReputation(reputationDiv) {
 }
 function getPostCreationDate(postNode, postType) {
     const dateString = (postType === 'Question' ? $('.question') : postNode).find('.user-info .relativetime').last();
-    return new Date(dateString.attr('title') || '') || null;
+    return new Date(dateString.attr('title') || '');
 }
 function parseQuestionsAndAnswers(callback) {
     var _a;
     (_a = getExistingElement()) === null || _a === void 0 ? void 0 : _a.each((_index, node) => {
-        var _a;
         const element = $(node);
         const postType = element.hasClass('question') || element.find('.question-hyperlink').length ? 'Question' : 'Answer';
         const page = getPage();
@@ -535,7 +529,7 @@ function parseQuestionsAndAnswers(callback) {
         const postId = getPostIdFromElement(element, postType);
         const questionTime = getPostCreationDate(element, 'Question');
         const answerTime = getPostCreationDate(element, 'Answer');
-        const score = (_a = Number(element.attr('data-score'))) !== null && _a !== void 0 ? _a : null;
+        const score = Number(element.attr('data-score')) || 0;
         const opReputation = parseAuthorReputation(element.find('.user-info .reputation-score').last());
         const opName = element.find('.user-info .user-details a').text().trim();
         const deleted = element.hasClass('deleted-answer');
@@ -574,7 +568,7 @@ exports.getAllPostIds = getAllPostIds;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.attachPopover = exports.displayStacksToast = exports.getStacksSvg = exports.FlagCategoriesKey = exports.FlagTypesKey = exports.MetaSmokeDisabledConfig = exports.MetaSmokeUserKeyConfig = exports.CacheChatApiFkey = exports.ConfigurationAddAuthorName = exports.ConfigurationLinkDisabled = exports.ConfigurationWatchQueues = exports.ConfigurationWatchFlags = exports.ConfigurationDefaultNoDownvote = exports.ConfigurationDefaultNoComment = exports.ConfigurationDefaultNoFlag = exports.ConfigurationOpenOnHover = exports.ConfigurationCacheKey = exports.flagPosts = exports.setBounties = exports.whyVote = exports.voteUpHelp = exports.reputationHelp = exports.commentHelp = exports.deletedAnswers = exports.noneString = exports.gridCellDiv = exports.isLqpReviewPage = exports.isFlagsPage = exports.isNatoPage = exports.isQuestionPage = exports.isStackOverflow = exports.chatFailureMessage = exports.nattyReportedMessage = exports.metasmokeFailureMessage = exports.metasmokeReportedMessage = exports.genericBotFailure = exports.genericBotSuccess = exports.settingUpBody = exports.settingUpTitle = exports.popupDelay = exports.dayMillis = exports.username = exports.nattyFeedbackUrl = exports.genericBotKey = exports.copypastorServer = exports.copypastorKey = exports.metasmokeApiFilter = exports.metasmokeKey = exports.soboticsRoomId = exports.possibleFeedbacks = void 0;
-exports.getFullFlag = exports.getFullComment = exports.cachedCategories = exports.updateFlagTypes = exports.cachedFlagTypes = exports.updateConfiguration = exports.cachedConfigurationInfo = exports.addXHRListener = exports.showConfirmModal = exports.Delay = exports.showMSTokenPopupAndGet = exports.editCommentsPopup = exports.configurationModal = exports.commentsLink = exports.commentsDiv = exports.configurationLink = exports.configurationDiv = exports.getPopoverOption = exports.categoryDivider = exports.reportLink = exports.dropdownItem = exports.actionsMenu = exports.dropdown = exports.popoverArrow = exports.advancedFlaggingLink = exports.popupWrapper = exports.reportedIcon = exports.failedActionIcon = exports.performedActionIcon = exports.getTextarea = exports.getSectionWrapper = exports.getMessageDiv = exports.smokeyIcon = exports.guttenbergIcon = exports.nattyIcon = exports.getSentMessage = exports.isPostDeleted = exports.qualifiesForVlq = exports.getPostIdFromReview = exports.getFormDataFromObject = exports.getParamsFromObject = exports.displayError = exports.displaySuccess = exports.showInlineElement = exports.showElement = exports.getFlagsUrlRegex = exports.flagsUrlRegex = exports.isDeleteVoteRegex = exports.isReviewItemRegex = exports.attachHtmlPopover = void 0;
+exports.getFullFlag = exports.getFullComment = exports.cachedCategories = exports.updateFlagTypes = exports.cachedFlagTypes = exports.updateConfiguration = exports.cachedConfiguration = exports.addXHRListener = exports.showConfirmModal = exports.Delay = exports.showMSTokenPopupAndGet = exports.editCommentsPopup = exports.configurationModal = exports.commentsLink = exports.commentsDiv = exports.configurationLink = exports.configurationDiv = exports.getPopoverOption = exports.categoryDivider = exports.reportLink = exports.dropdownItem = exports.actionsMenu = exports.dropdown = exports.popoverArrow = exports.advancedFlaggingLink = exports.popupWrapper = exports.reportedIcon = exports.failedActionIcon = exports.performedActionIcon = exports.getTextarea = exports.getSectionWrapper = exports.getMessageDiv = exports.smokeyIcon = exports.guttenbergIcon = exports.nattyIcon = exports.getSentMessage = exports.qualifiesForVlq = exports.getPostIdFromReview = exports.getFormDataFromObject = exports.getParamsFromObject = exports.isPostDeleted = exports.displayError = exports.displaySuccess = exports.showInlineElement = exports.showElement = exports.getFlagsUrlRegex = exports.flagsUrlRegex = exports.isDeleteVoteRegex = exports.isReviewItemRegex = exports.attachHtmlPopover = void 0;
 exports.getHumanFromDisplayName = exports.getFlagTypeFromFlagId = void 0;
 const GreaseMonkeyCache_1 = __webpack_require__(3);
 const AdvancedFlagging_1 = __webpack_require__(0);
@@ -610,7 +604,7 @@ const guttenbergImage = 'https://i.stack.imgur.com/tzKAI.png?s=32&g=1';
 const smokeyImage = 'https://i.stack.imgur.com/7cmCt.png?s=32&g=1';
 exports.isStackOverflow = /^https:\/\/stackoverflow.com/.test(window.location.href);
 exports.isQuestionPage = /\/questions\/\d+.*/.test(window.location.href);
-exports.isNatoPage = /\/tools\/new-answers-old-questions/.test(window.location.href);
+exports.isNatoPage = window.location.href.includes('/tools/new-answers-old-questions');
 exports.isFlagsPage = /\/users\/flag-summary\/\d+/.test(window.location.href);
 exports.isLqpReviewPage = /\/review\/low-quality-posts\/\d+/.test(window.location.href);
 exports.gridCellDiv = $('<div>').addClass('grid--cell');
@@ -654,7 +648,9 @@ exports.attachHtmlPopover = attachHtmlPopover;
 exports.isReviewItemRegex = /\/review\/(next-task|task-reviewed\/)/;
 exports.isDeleteVoteRegex = /(\d+)\/vote\/10|(\d+)\/recommend-delete/;
 exports.flagsUrlRegex = /flags\/posts\/\d+\/add\/[a-zA-Z]+/;
-const getFlagsUrlRegex = (postId) => new RegExp(`/flags/posts/${postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther|PostLowQuality)`);
+function getFlagsUrlRegex(postId) {
+    return new RegExp(`/flags/posts/${postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther|PostLowQuality)`);
+}
 exports.getFlagsUrlRegex = getFlagsUrlRegex;
 const showElement = (element) => element.addClass('d-block').removeClass('d-none');
 exports.showElement = showElement;
@@ -664,12 +660,18 @@ const displaySuccess = (message) => AdvancedFlagging_1.displayToaster(message, '
 exports.displaySuccess = displaySuccess;
 const displayError = (message) => AdvancedFlagging_1.displayToaster(message, 'danger');
 exports.displayError = displayError;
-const getParamsFromObject = (object) => Object.entries(object).map(item => item.join('=')).join('&');
+const isPostDeleted = (postId) => $(`#question-${postId}, #answer-${postId}`).hasClass('deleted-answer');
+exports.isPostDeleted = isPostDeleted;
+function getParamsFromObject(object) {
+    return Object.entries(object).map(item => item.join('=')).join('&');
+}
 exports.getParamsFromObject = getParamsFromObject;
-const getFormDataFromObject = (object) => Object.keys(object).reduce((formData, key) => {
-    formData.append(key, object[key]);
-    return formData;
-}, new FormData());
+function getFormDataFromObject(object) {
+    return Object.keys(object).reduce((formData, key) => {
+        formData.append(key, object[key]);
+        return formData;
+    }, new FormData());
+}
 exports.getFormDataFromObject = getFormDataFromObject;
 const getCopypastorLink = (postId) => `https://copypastor.sobotics.org/posts/${postId}`;
 const getPostIdFromReview = () => { var _a; return Number((_a = $('[id^="answer-"]').attr('id')) === null || _a === void 0 ? void 0 : _a.split('-')[1]); };
@@ -678,8 +680,6 @@ function qualifiesForVlq(postScore, creationDate) {
     return postScore <= 0 && (new Date().valueOf() - creationDate.valueOf()) < exports.dayMillis;
 }
 exports.qualifiesForVlq = qualifiesForVlq;
-const isPostDeleted = (postId) => $(`#question-${postId}, #answer-${postId}`).hasClass('deleted-answer');
-exports.isPostDeleted = isPostDeleted;
 function getSentMessage(success, feedback, bot) {
     return success ? `Feedback ${feedback} sent to ${bot}` : `Failed to send feedback ${feedback} to ${bot}`;
 }
@@ -810,24 +810,24 @@ function addXHRListener(callback) {
     if (initialized)
         return;
     const open = XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open = function (...args) {
+    XMLHttpRequest.prototype.open = function () {
         this.addEventListener('load', () => {
             callbacks.forEach(cb => cb(this));
         }, false);
-        open.apply(this, args);
+        open.apply(this, arguments);
     };
     initialized = true;
 }
 exports.addXHRListener = addXHRListener;
-exports.cachedConfigurationInfo = GreaseMonkeyCache_1.GreaseMonkeyCache.getFromCache(exports.ConfigurationCacheKey) || {};
-const updateConfiguration = () => GreaseMonkeyCache_1.GreaseMonkeyCache.storeInCache(exports.ConfigurationCacheKey, exports.cachedConfigurationInfo);
+exports.cachedConfiguration = GreaseMonkeyCache_1.GreaseMonkeyCache.getFromCache(exports.ConfigurationCacheKey) || {};
+const updateConfiguration = () => GreaseMonkeyCache_1.GreaseMonkeyCache.storeInCache(exports.ConfigurationCacheKey, exports.cachedConfiguration);
 exports.updateConfiguration = updateConfiguration;
 exports.cachedFlagTypes = GreaseMonkeyCache_1.GreaseMonkeyCache.getFromCache(exports.FlagTypesKey) || [];
 const updateFlagTypes = () => GreaseMonkeyCache_1.GreaseMonkeyCache.storeInCache(exports.FlagTypesKey, exports.cachedFlagTypes);
 exports.updateFlagTypes = updateFlagTypes;
 exports.cachedCategories = GreaseMonkeyCache_1.GreaseMonkeyCache.getFromCache(exports.FlagCategoriesKey) || [];
 function getFullComment(flagId, { authorReputation, authorName }) {
-    const shouldAddAuthorName = exports.cachedConfigurationInfo === null || exports.cachedConfigurationInfo === void 0 ? void 0 : exports.cachedConfigurationInfo.AddAuthorName;
+    const shouldAddAuthorName = exports.cachedConfiguration.AddAuthorName;
     const flagType = getFlagTypeFromFlagId(flagId);
     const comment = (flagType === null || flagType === void 0 ? void 0 : flagType.Comments[authorReputation > 50 ? 'High' : 'Low']) || (flagType === null || flagType === void 0 ? void 0 : flagType.Comments.Low);
     return (comment && shouldAddAuthorName ? `${authorName}, ${comment[0].toLowerCase()}${comment.slice(1)}` : comment) || null;
@@ -842,7 +842,7 @@ function getFullFlag(flagId, target, postId) {
 }
 exports.getFullFlag = getFullFlag;
 function getFlagTypeFromFlagId(flagId) {
-    return (exports.cachedFlagTypes === null || exports.cachedFlagTypes === void 0 ? void 0 : exports.cachedFlagTypes.find(flagType => flagType.Id === flagId)) || null;
+    return exports.cachedFlagTypes.find(flagType => flagType.Id === flagId) || null;
 }
 exports.getFlagTypeFromFlagId = getFlagTypeFromFlagId;
 function getHumanFromDisplayName(displayName) {
@@ -1357,7 +1357,7 @@ function setupConfiguration() {
     $(document).on('click', '#af-comments-button', () => Stacks.showModal(document.querySelector('#af-comments')));
     commentsDiv.append(commentsLink).insertAfter(bottomBox);
     configurationDiv.append(configurationLink).insertAfter(bottomBox);
-    if (!Object.prototype.hasOwnProperty.call(globals.cachedConfigurationInfo, globals.ConfigurationAddAuthorName)) {
+    if (!Object.prototype.hasOwnProperty.call(globals.cachedConfiguration, globals.ConfigurationAddAuthorName)) {
         globals.displayStacksToast('Please set up AdvancedFlagging before continuing.', 'info');
         StackExchange.helpers.showModal(document.querySelector('#af-config'));
     }
@@ -1378,7 +1378,7 @@ function buildConfigurationOverlay() {
         event.preventDefault();
         $('.af-section-general').find('input').each((_index, el) => {
             const optionId = $(el).parents().eq(2).attr('data-option-id');
-            globals.cachedConfigurationInfo[optionId] = Boolean($(el).prop('checked'));
+            globals.cachedConfiguration[optionId] = Boolean($(el).prop('checked'));
         });
         globals.updateConfiguration();
         globals.displayStacksToast('Configuration saved', 'success');
@@ -1425,8 +1425,7 @@ function getGeneralConfigItems() {
             tooltipText: 'Add the author\'s name before every comment to make them friendlier'
         }
     ].map(item => {
-        var _a;
-        const storedValue = (_a = globals.cachedConfigurationInfo) === null || _a === void 0 ? void 0 : _a[item.configValue];
+        const storedValue = globals.cachedConfiguration[item.configValue];
         const configCheckbox = createCheckbox(item.text, Boolean(storedValue)).attr('data-option-id', item.configValue);
         if (item.tooltipText)
             globals.attachPopover(configCheckbox.find('label')[0], item.tooltipText, 'right');
@@ -1517,10 +1516,16 @@ function createFlagTypeDiv(flagType) {
     </div>
     <div class="s-expandable" id="${expandableId}">
         <div class="s-expandable--content">
-            <div class="advanced-flagging-flag-option py8 mln4">
-                <label class="fw-bold ps-relative d-inline-block z-selected l12 fs-body1 ${isDisabled ? 'o50' : ''}">Flag:</label>
-                <div class="s-select d-inline-block r32">
+            <div class="advanced-flagging-flag-option grid ai-center gsx gs6">
+                <label class="fw-bold ps-relative z-selected l12 fs-body1 grid--cell">Flag:</label>
+                <div class="s-select r32 grid--cell">
                     <select class="pl48" ${isDisabled ? 'disabled' : ''}>${getFlagOptions(flagType.ReportType)}</select>
+                </div>
+                <div class="grid gsx gs4 ai-center grid--cell">
+                    <div class="grid--cell pb2 d-inline-block">
+                        <input class="s-checkbox" type="checkbox">
+                    </div>
+                    <label class="grid--cell s-label fw-normal">Send feedback from this flag type when this flag is raised</label>
                 </div>
             </div>
             <div class="advanced-flagging-feedbacks-radios py8 ml2">${feedbackRadios}</div>
@@ -1609,7 +1614,7 @@ function setupCommentsAndFlagsModal() {
         const expandable = flagTypeDiv.find('.s-expandable--content');
         const flagCategoryWrapper = categoryElements[belongsToCategory];
         expandable.prepend(getCommentFlagsDivs(flagType.Id, comments, flagText));
-        flagCategoryWrapper === null || flagCategoryWrapper === void 0 ? void 0 : flagCategoryWrapper.append(flagTypeDiv);
+        flagCategoryWrapper.append(flagTypeDiv);
     });
     Object.values(categoryElements)
         .filter(categoryWrapper => categoryWrapper.children().length > 1)

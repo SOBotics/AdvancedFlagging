@@ -14,12 +14,12 @@ interface NattyFeedbackItem {
 
 export class NattyAPI {
     private static nattyIds: number[] = [];
-    private chat: ChatApi = new ChatApi();
-    private answerId: number;
-    private feedbackMessage: string;
-    private reportMessage: string;
-    private questionDate: Date;
-    private answerDate: Date;
+    private readonly chat: ChatApi = new ChatApi();
+    private readonly answerId: number;
+    private readonly feedbackMessage: string;
+    private readonly reportMessage: string;
+    private readonly questionDate: Date;
+    private readonly answerDate: Date;
     public name: keyof FlagTypeFeedbacks = 'Natty';
 
     constructor(answerId: number, questionDate: Date, answerDate: Date) {

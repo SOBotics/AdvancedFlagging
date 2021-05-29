@@ -1,7 +1,7 @@
 import { isStackOverflow, username, genericBotKey, genericBotSuccess, genericBotFailure, FlagTypeFeedbacks } from '../GlobalVars';
 
 export class GenericBotAPI {
-    private answerId: number;
+    private readonly answerId: number;
     public name: keyof FlagTypeFeedbacks = 'Generic Bot';
 
     constructor(answerId: number) {

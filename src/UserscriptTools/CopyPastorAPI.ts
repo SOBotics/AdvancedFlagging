@@ -22,7 +22,7 @@ interface CopyPastorData {
         copypastorId: number;
         repost: boolean;
         target_url: string;
-    }
+    };
 }
 
 export class CopyPastorAPI {

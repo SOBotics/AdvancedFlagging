@@ -10,7 +10,7 @@ interface FlagType {
     DefaultFlagText?: string;
     DefaultComment?: string; // if a type has two comments, then this one is for LowRep
     DefaultCommentHigh?: string; // this is for HighRep instead
-    DefaultFeedbacks: globals.FlagTypeFeedbacks
+    DefaultFeedbacks: globals.FlagTypeFeedbacks;
 }
 
 export interface FlagCategory {

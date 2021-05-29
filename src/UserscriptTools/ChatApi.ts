@@ -75,7 +75,7 @@ export class ChatApi {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: `${this.chatRoomUrl}/rooms/${roomId}`,
-                onload: (response: { status: number, responseText: string }) => {
+                onload: (response: { status: number; responseText: string }) => {
                     response.status === 200 ? resolve(response.responseText) : reject();
                 },
                 onerror: () => reject()

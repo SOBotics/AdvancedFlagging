@@ -38,7 +38,7 @@ export class NattyAPI {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: `${nattyFeedbackUrl}${postIds}`,
-                onload: (response: { status: number, responseText: string }) => {
+                onload: (response: { status: number; responseText: string }) => {
                     if (response.status !== 200) reject();
 
                     const result = JSON.parse(response.responseText) as NattyFeedback;

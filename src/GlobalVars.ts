@@ -70,14 +70,14 @@ export interface StackExchange {
     helpers: {
         showConfirmModal(modal: ModalType): Promise<boolean>;
         showModal(popup: JQuery | Element | null): void;
-        showToast(message: string, info: { type: string, transientTimeout: number }): void;
+        showToast(message: string, info: { type: string; transientTimeout: number }): void;
     };
     options: {
         user: {
             fkey: string;
             userId: number;
             isModerator: boolean;
-        }
+        };
     };
     comments: {
         uiForPost(comments: JQuery): {

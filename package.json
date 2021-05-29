@@ -2,7 +2,7 @@
   "name": "advancedflagging",
   "version": "1.3.7",
   "scripts": {
-    "build": "eslint src && webpack"
+    "build": "eslint src --fix && webpack"
   },
   "author": "Robert Rudman <rjrudman@gmail.com> (https://github.com/rjrudman)",
   "license": "ISC",

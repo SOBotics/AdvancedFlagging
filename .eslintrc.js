@@ -46,6 +46,7 @@ module.exports = {
         'semi': [1, 'always'],
         'space-in-parens': 'off',
         '@typescript-eslint/explicit-function-return-type': 'warn',
-        '@typescript-eslint/no-misused-promises': ['warn', { 'checksVoidReturn': false }]
+        '@typescript-eslint/no-misused-promises': ['warn', { 'checksVoidReturn': false }],
+        '@typescript-eslint/member-delimiter-style': 'warn'
     }
 };

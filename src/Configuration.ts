@@ -31,6 +31,8 @@ function cacheFlags(): void {
                 Feedbacks: flagType.DefaultFeedbacks,
                 BelongsTo: category.Name,
                 IsDefault: true,
+                // whether to send feedback from Feedbacks if ReportType is raised
+                SendWhenFlagRaised: flagType.DefaultSendWhenFlagRaised,
                 Enabled: true // all flags should be enabled by default
             } as globals.CachedFlag;
         });
@@ -71,8 +73,7 @@ export function setupConfiguration(): void {
 }
 
 function setupDefaults(): void {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!globals.cachedFlagTypes.length || !globals.cachedFlagTypes[0].Feedbacks) cacheFlags();
+    if (!globals.cachedFlagTypes.length || !globals.cachedFlagTypes[0]?.SendWhenFlagRaised) cacheFlags();
     if (!globals.cachedCategories.length) cacheCategories();
 }
 
@@ -277,14 +278,37 @@ function getRadiosForBot(botName: globals.BotNames, currentFeedback: globals.All
     return `<div class="grid gs16"><div class="grid--cell fs-body2">Feedback to ${botName}:</div>${botFeedbacks}</div>`;
 }
 
-function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
-    const expandableId = `advanced-flagging-${flagType.Id}-${flagType.DisplayName}`.toLowerCase().replace(/\s/g, '');
-    const isDisabled = flagType.ReportType === 'PostOther';
+function getExpandableContent(
+    flagId: number, reportType: Flags, flagFeedbacks: globals.FlagTypeFeedbacks, checkCheckbox: boolean
+): string {
+    const isDisabled = reportType === 'PostOther';
     const feedbackRadios = Object.keys(globals.possibleFeedbacks).map(item => {
         const botName = item as globals.BotNames;
-        return getRadiosForBot(botName, flagType.Feedbacks[botName], flagType.Id);
+        return getRadiosForBot(botName, flagFeedbacks[botName], flagId);
     }).join('\n');
+    const checkboxId = `af-flagtype-send-feedback-${flagId}`;
+    return `
+<div class="advanced-flagging-flag-option grid ai-center gsx gs6">
+    <label class="fw-bold ps-relative z-selected l12 fs-body1 grid--cell${isDisabled ? ' o50' : ''}">Flag:</label>
+    <div class="s-select r32 grid--cell">
+        <select class="pl48" ${isDisabled ? 'disabled' : ''}>${getFlagOptions(reportType)}</select>
+    </div>
+    <div class="grid gsx gs4 ai-center grid--cell">
+        <div class="grid--cell pb2 d-inline-block">
+            <input class="s-checkbox af-flagtype-send-feedback" id="${checkboxId}" type="checkbox"${checkCheckbox ? ' checked' : ''}>
+        </div>
+        <label class="grid--cell s-label fw-normal" for="${checkboxId}">
+            Send feedback from this flag type when this type of flag is raised
+        </label>
+    </div>
+</div>
+<div class="advanced-flagging-feedbacks-radios py8 ml2">${feedbackRadios}</div>`;
+}
+
+function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
+    const expandableId = `advanced-flagging-${flagType.Id}-${flagType.DisplayName}`.toLowerCase().replace(/\s/g, '');
     const isFlagEnabled = flagType.Enabled;
+    const expandableContent = getExpandableContent(flagType.Id, flagType.ReportType, flagType.Feedbacks, flagType.SendWhenFlagRaised);
     const categoryDiv = $(`
 <div class="s-card${isFlagEnabled ? '' : ' s-card__muted'} bs-sm py4" data-flag-id=${flagType.Id}>
     <div class="grid ai-center sm:fd-column sm:ai-start">
@@ -301,21 +325,7 @@ function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
         </div>
     </div>
     <div class="s-expandable" id="${expandableId}">
-        <div class="s-expandable--content">
-            <div class="advanced-flagging-flag-option grid ai-center gsx gs6">
-                <label class="fw-bold ps-relative z-selected l12 fs-body1 grid--cell">Flag:</label>
-                <div class="s-select r32 grid--cell">
-                    <select class="pl48" ${isDisabled ? 'disabled' : ''}>${getFlagOptions(flagType.ReportType)}</select>
-                </div>
-                <div class="grid gsx gs4 ai-center grid--cell">
-                    <div class="grid--cell pb2 d-inline-block">
-                        <input class="s-checkbox" type="checkbox">
-                    </div>
-                    <label class="grid--cell s-label fw-normal">Send feedback from this flag type when this flag is raised</label>
-                </div>
-            </div>
-            <div class="advanced-flagging-feedbacks-radios py8 ml2">${feedbackRadios}</div>
-        </div>
+        <div class="s-expandable--content">${expandableContent}</div>
     </div>
 </div>`);
     categoryDiv.find('.af-remove-expandable').prepend(globals.getStacksSvg('Trash'), ' '); // add the trash icon to the remove button
@@ -401,7 +411,9 @@ function setupCommentsAndFlagsModal(): void {
     editCommentsPopup.find('.s-modal--close').append(globals.getStacksSvg('Clear'));
 
     const categoryElements = {} as { [key: string]: JQuery };
-    globals.cachedCategories.forEach(category => categoryElements[category.Name] = createCategoryDiv(category.Name));
+    globals.cachedCategories
+        .filter(category => category.Name)
+        .forEach(category => categoryElements[category.Name || ''] = createCategoryDiv(category.Name || ''));
 
     globals.cachedFlagTypes.forEach(flagType => {
         const belongsToCategory = flagType.BelongsTo, comments = flagType.Comments, flagText = flagType.FlagText;
@@ -539,6 +551,22 @@ function setupCommentsAndFlagsModal(): void {
             highRepComment.fadeOut(400, () => highRepComment.hide());
             lowRepComment.find('label').text('Comment text'); // no highrep comment => no lowrep comment
         }
+    }).on('change', '.af-flagtype-send-feedback', event => {
+        const checkbox = $(event.target), flagTypeWrapper = checkbox.parents('.s-card');
+        const flagId = Number(flagTypeWrapper.attr('data-flag-id')), currentFlagType = globals.getFlagTypeFromFlagId(flagId);
+        if (!currentFlagType) return;
+
+        currentFlagType.SendWhenFlagRaised = checkbox.is(':checked');
+        globals.updateFlagTypes();
+        globals.displayStacksToast('Successfully changed option', 'success');
+        // if any other FlagType with the same ReportType has SendWhenFlagRaised to true, then we need to change that
+        const similarFlagType = globals.cachedFlagTypes.find(item => item.SendWhenFlagRaised
+                                                                  && item.ReportType === currentFlagType.ReportType
+                                                                  && item.Id !== flagId); // not this FlagType
+        if (!similarFlagType || !checkbox.is(':checked')) return; // such FlagType doesn't exist or the checkbox was unchecked
+        similarFlagType.SendWhenFlagRaised = false;
+        $(`#af-flagtype-send-feedback-${similarFlagType.Id}`).prop('checked', false);
+        globals.updateFlagTypes();
     });
     $('body').append(editCommentsPopup);
 }

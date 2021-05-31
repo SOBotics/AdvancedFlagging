@@ -327,7 +327,7 @@ function BuildFlaggingDialog(
     const copypastorId = copypastorApi?.copypastorId, isRepost = copypastorApi?.repost, targetUrl = copypastorApi?.targetUrl;
 
     // add the flag types to the category they correspond to
-    const newCategories = globals.cachedCategories.filter(item => item.AppliesTo.includes(post.postType))
+    const newCategories = globals.cachedCategories.filter(item => item.AppliesTo?.includes(post.postType))
         .map(item => ({ ...item, FlagTypes: [] as globals.CachedFlag[] }));
     globals.cachedFlagTypes.filter(flagType => {
         const isGuttenbergItem = flagType.ReportType === 'PostOther'; // only Guttenberg reports (can) have the PostOther ReportType
@@ -474,7 +474,8 @@ function SetupPostPage(): void {
             if (!shouldWatchFlags || autoFlagging || xhr.status !== 200 || !globals.flagsUrlRegex.test(xhr.responseURL)) return;
 
             const matches = globals.getFlagsUrlRegex(post.postId).exec(xhr.responseURL);
-            const flagType = globals.cachedFlagTypes.find(item => item.ReportType === (matches?.[1] as Flags));
+            const flagType = globals.cachedFlagTypes
+                .find(item => item.SendWhenFlagRaised && item.ReportType === (matches?.[1] as Flags));
             if (!flagType) return;
 
             displaySuccessFlagged(reportedIcon, flagType.ReportType);

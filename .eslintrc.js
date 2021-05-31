@@ -66,6 +66,7 @@ module.exports = {
             'after': true,
             'overrides': {
                 'arrow': { 'before': true, 'after': true }}
-            }]
+            }
+        ]
     }
 };

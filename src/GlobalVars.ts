@@ -20,6 +20,7 @@ export interface CachedFlag {
     Feedbacks: FlagTypeFeedbacks;
     BelongsTo: string; // the Name of the category it belongs to
     IsDefault: boolean;
+    SendWhenFlagRaised: boolean;
     Enabled: boolean;
 }
 
@@ -341,7 +342,7 @@ export const cachedConfiguration = GreaseMonkeyCache.getFromCache<CachedConfigur
 export const updateConfiguration = (): void => GreaseMonkeyCache.storeInCache(ConfigurationCacheKey, cachedConfiguration);
 export const cachedFlagTypes = GreaseMonkeyCache.getFromCache<CachedFlag[]>(FlagTypesKey) || [];
 export const updateFlagTypes = (): void => GreaseMonkeyCache.storeInCache(FlagTypesKey, cachedFlagTypes);
-export const cachedCategories = GreaseMonkeyCache.getFromCache<CachedCategory[]>(FlagCategoriesKey) || [];
+export const cachedCategories = GreaseMonkeyCache.getFromCache<CachedCategory[]>(FlagCategoriesKey) || [] as (Partial<CachedCategory>)[];
 // export const updateCategories = (): void => GreaseMonkeyCache.storeInCache(FlagCategoriesKey, cachedCategories);
 
 // Adds the author name before the comment if the option is enabled and determines if the comment should be low/high rep

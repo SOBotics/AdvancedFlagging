@@ -123,7 +123,8 @@ export class MetaSmokeAPI {
         return globals.metasmokeReportedMessage;
     }
 
-    public async sendFeedback(feedback: string): Promise<string> {
+    public async sendFeedback(feedback: string, sendFeedback: boolean): Promise<string> {
+        if (!sendFeedback) return '';
         const smokeyId = this.getSmokeyId();
         const isPostDeleted = globals.isPostDeleted(this.postId);
         // not reported, feedback is tpu AND the post isn't deleted => report it!

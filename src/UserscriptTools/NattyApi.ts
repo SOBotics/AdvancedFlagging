@@ -73,7 +73,8 @@ export class NattyAPI {
         return (answerDate.valueOf() - questionDate.valueOf()) / dayMillis;
     }
 
-    public async sendFeedback(feedback: string): Promise<string> {
+    public async sendFeedback(feedback: string, sendFeedback: boolean): Promise<string> {
+        if (!sendFeedback) return '';
         return this.wasReported()
             ? await this.chat.sendMessage(`${this.feedbackMessage} ${feedback}`, this.name)
             : await this.reportNaa(feedback);

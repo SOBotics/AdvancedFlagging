@@ -156,6 +156,18 @@ function getGeneralConfigItems(): JQuery {
             text: 'Add author\'s name before comments',
             configValue: globals.ConfigurationAddAuthorName,
             tooltipText: 'Add the author\'s name before every comment to make them friendlier'
+        }, {
+            text: 'Don\'t send feedback to Smokey by default',
+            configValue: globals.getCachedConfigBotKey('Smokey')
+        }, {
+            text: 'Don\'t send feedback to Natty by default',
+            configValue: globals.getCachedConfigBotKey('Natty')
+        }, {
+            text: 'Don\'t send feedback to Guttenberg by default',
+            configValue: globals.getCachedConfigBotKey('Guttenberg')
+        }, {
+            text: 'Don\'t send feedback to Generic Bot by default',
+            configValue: globals.getCachedConfigBotKey('Generic Bot')
         }
     ].map(item => {
         const storedValue = globals.cachedConfiguration[item.configValue as GeneralItems];

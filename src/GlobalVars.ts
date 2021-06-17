@@ -31,6 +31,10 @@ export interface CachedConfiguration {
     DefaultNoFlag: boolean;
     DefaultNoComment: boolean;
     DefaultNoDownvote: boolean;
+    DefaultNoSmokey: boolean;
+    DefaultNoNatty: boolean;
+    DefaultNoGuttenberg: boolean;
+    DefaultNoGenericBot: boolean;
     WatchFlags: boolean;
     WatchQueues: boolean;
     LinkDisabled: boolean;
@@ -115,9 +119,6 @@ export const metasmokeReportedMessage = 'Post reported to Smokey';
 export const metasmokeFailureMessage = 'Failed to report post to Smokey';
 export const nattyReportedMessage = 'Post reported to Natty';
 export const chatFailureMessage = 'Failed to send message to chat';
-const nattyImage = 'https://i.stack.imgur.com/aMUMt.jpg?s=32&g=1';
-const guttenbergImage = 'https://i.stack.imgur.com/tzKAI.png?s=32&g=1';
-const smokeyImage = 'https://i.stack.imgur.com/7cmCt.png?s=32&g=1';
 export const isStackOverflow = /^https:\/\/stackoverflow.com/.test(window.location.href);
 export const isQuestionPage = /\/questions\/\d+.*/.test(window.location.href);
 export const isNatoPage = window.location.href.includes('/tools/new-answers-old-questions');
@@ -125,6 +126,12 @@ export const isFlagsPage = /\/users\/flag-summary\/\d+/.test(window.location.hre
 export const isLqpReviewPage = /\/review\/low-quality-posts\/\d+/.test(window.location.href);
 export const gridCellDiv = $('<div>').addClass('grid--cell');
 export const noneString = '<span class="o50">(none)</span>';
+const botImages = {
+    Natty: 'https://i.stack.imgur.com/aMUMt.jpg?s=32&g=1',
+    Smokey: 'https://i.stack.imgur.com/7cmCt.png?s=32&g=1',
+    'Generic Bot': 'https://i.stack.imgur.com/6DsXG.png?s=32&g=1',
+    Guttenberg: 'https://i.stack.imgur.com/tzKAI.png?s=32&g=1'
+};
 
 // Help center links used in FlagTypes for comments/flags
 export const deletedAnswers = '/help/deleted-answers';
@@ -190,6 +197,7 @@ export function getFormDataFromObject<T extends { [key: string]: string }>(objec
 }
 const getCopypastorLink = (postId: number): string => `https://copypastor.sobotics.org/posts/${postId}`;
 export const getPostIdFromReview = (): number => Number($('[id^="answer-"]').attr('id')?.split('-')[1]);
+export const getCachedConfigBotKey = (botName: BotNames): string => `DefaultNo${botName.replace(/\s/g, '')}`;
 export function qualifiesForVlq(postScore: number, creationDate: Date): boolean {
     return postScore <= 0 && (new Date().valueOf() - creationDate.valueOf()) < dayMillis;
 }
@@ -201,9 +209,7 @@ export function getSentMessage(success: boolean, feedback: string, bot: string):
 // jQuery icon elements
 const sampleIcon = gridCellDiv.clone().addClass(`d-none ${isQuestionPage || isLqpReviewPage ? '' : ' ml8'}`)
     .append($('<a>').addClass('s-avatar s-avatar__16 s-user-card--avatar').append($('<img>').addClass('s-avatar--image')));
-export const nattyIcon = sampleIcon.clone().find('img').attr('src', nattyImage).parent().parent();
-export const guttenbergIcon = sampleIcon.clone().find('img').attr('src', guttenbergImage).parent().parent();
-export const smokeyIcon = sampleIcon.clone().find('img').attr('src', smokeyImage).parent().parent();
+export const getBotImageEl = (botName: BotNames): JQuery => sampleIcon.clone().find('img').attr('src', botImages[botName]).parents('div');
 
 // dynamically generated jQuery elements based on the parameters passed
 export const getMessageDiv = (text: string, state: string): JQuery => $('<div>').addClass(`p12 bg-${state}`).text(text).hide();

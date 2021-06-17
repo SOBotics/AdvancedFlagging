@@ -22,10 +22,10 @@ export class GenericBotAPI {
         return hash;
     }
 
-    public sendFeedback(trackPost: string): Promise<string> {
+    public sendFeedback(trackPost: string, sendFeedback: boolean): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             const flaggerName = encodeURIComponent(username || '');
-            if (!trackPost || !isStackOverflow || !flaggerName) return resolve('');
+            if (!trackPost || !isStackOverflow || !flaggerName || !sendFeedback) return resolve('');
 
             const contentHash = this.computeContentHash($(`#answer-${this.answerId} .js-post-body`).html().trim());
             GM_xmlhttpRequest({

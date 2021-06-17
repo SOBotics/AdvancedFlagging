@@ -73,9 +73,9 @@ export class CopyPastorAPI {
         });
     }
 
-    public sendFeedback(feedback: string): Promise<string> {
+    public sendFeedback(feedback: string, sendFeedback: boolean): Promise<string> {
         const chatId = new ChatApi().getChatUserId();
-        if (!this.copypastorId) return Promise.resolve('');
+        if (!this.copypastorId || !sendFeedback) return Promise.resolve('');
 
         const successMessage = getSentMessage(true, feedback, this.name);
         const failureMessage = getSentMessage(false, feedback, this.name);

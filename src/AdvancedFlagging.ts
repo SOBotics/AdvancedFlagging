@@ -93,10 +93,18 @@ async function handleActions(
     downvoteButton.trigger('click');
 }
 
-async function handleFlag(flagType: globals.CachedFlag, reporters: ReporterInformation): Promise<boolean> {
+async function handleFlag(
+    flagType: globals.CachedFlag,
+    reporters: ReporterInformation,
+    checkboxesInformation?: CheckboxesInformation
+): Promise<boolean> {
     let hasFailed = false;
+    // simultaneously send feedback to all bots and check if something goes wrong with the hasFailed boolean variable
     const allPromises = (Object.values(reporters) as Reporter[]).filter(item => flagType.Feedbacks[item.name]).map(reporter => {
-        return reporter.sendFeedback(flagType.Feedbacks[reporter.name])
+        // this may be undefined (the parameter is not passed or the checkbox is somehow not found)
+        // hence the ?? instead of ||
+        const sendFeedbackToBot = checkboxesInformation?.[reporter.name].find('input').is(':checked');
+        return reporter.sendFeedback(flagType.Feedbacks[reporter.name], sendFeedbackToBot ?? true)
             .then(promiseValue => promiseValue ? globals.displaySuccess(promiseValue) : '')
             .catch(promiseError => {
                 globals.displayError((promiseError as Error).message);
@@ -202,9 +210,9 @@ function increasePopoverWidth(reportLink: JQuery): void {
 }
 
 function getAllBotIcons(): JQuery[] {
-    const nattyIcon = globals.nattyIcon.clone();
-    const copypastorIcon = globals.guttenbergIcon.clone();
-    const smokeyIcon = globals.smokeyIcon.clone();
+    const nattyIcon = globals.getBotImageEl('Natty');
+    const copypastorIcon = globals.getBotImageEl('Guttenberg');
+    const smokeyIcon = globals.getBotImageEl('Smokey');
     globals.attachPopover(nattyIcon.find('a')[0], 'Reported by Natty');
     globals.attachPopover(copypastorIcon.find('a')[0], 'Reported by Guttenberg');
     globals.attachPopover(smokeyIcon.find('a')[0], 'Reported by Smokey');
@@ -281,7 +289,22 @@ function getOptionsRow(postElement: JQuery, postId: number): JQuery[] {
     return [commentRow, flagRow, downvoteRow];
 }
 
+function getBotFeedbackCheckboxesRow(reporters: ReporterInformation, postId: number): CheckboxesInformation {
+    const checkboxes: CheckboxesInformation = {} as CheckboxesInformation;
+    (Object.keys(reporters) as globals.BotNames[]).forEach(botName => {
+        const configCacheKey = globals.getCachedConfigBotKey(botName) as keyof globals.CachedConfiguration;
+        // need the postId in the id to make it unique
+        const botNameId = `af-send-feedback-to-${botName.replace(/\s/g, '').toLowerCase()}-${postId}`;
+        const defaultNoCheck = globals.cachedConfiguration[configCacheKey];
+        const botImageHtml = globals.getBotImageEl(botName).removeClass('d-none').addClass('d-inline-block')[0].outerHTML;
+        checkboxes[botName] = globals.getPopoverOption(botNameId, !defaultNoCheck, `Feedback to ${botImageHtml}`);
+        globals.attachPopover(checkboxes[botName][0], `Send feedback to ${botName}`, 'right-start');
+    });
+    return checkboxes;
+}
+
 type Reporter = CopyPastorAPI | MetaSmokeAPI | NattyAPI | GenericBotAPI;
+type CheckboxesInformation = { [key in globals.BotNames]: JQuery }
 
 interface ReporterInformation {
     Smokey?: MetaSmokeAPI;
@@ -319,6 +342,7 @@ function BuildFlaggingDialog(
     failedActionIcon: JQuery,
 ): JQuery {
     const [commentRow, flagRow, downvoteRow] = getOptionsRow(post.element, post.postId);
+    const checkboxesInformation = getBotFeedbackCheckboxesRow(reporters, post.postId);
     const dropdown = globals.dropdown.clone(), actionsMenu = globals.actionsMenu.clone();
     dropdown.append(actionsMenu);
 
@@ -396,7 +420,7 @@ function BuildFlaggingDialog(
 
                 // feedback should however be sent
                 // if it's sent successfully, the success variable is true, otherwise false
-                const success = await handleFlag(flagType, reporters);
+                const success = await handleFlag(flagType, reporters, checkboxesInformation);
                 if (flagType.ReportType !== 'NoFlag') return; // don't show performed/failed action icons if post has been flagged
 
                 if (success) {
@@ -414,6 +438,14 @@ function BuildFlaggingDialog(
     actionsMenu.append(globals.popoverArrow.clone());
     if (globals.isStackOverflow) actionsMenu.append(commentRow); // the user shouldn't be able to leave comments on non-SO sites
     actionsMenu.append(flagRow, downvoteRow);
+    const elementsToAppend = Object.entries(checkboxesInformation).map(([botName, element]) => {
+        // check if the posts have (or can) be reported to bots before adding them
+        if (botName === 'Natty' && !nattyApi?.wasReported() && !nattyApi?.canBeReported()) return;
+        else if (botName === 'Guttenberg' && !copypastorId) return;
+        else if (botName === 'Generic Bot' && !globals.isStackOverflow) return; // generic bot only works on SO
+        return element;
+    }).filter(Boolean); // get rid of undefined's
+    if (elementsToAppend.length) actionsMenu.append(globals.categoryDivider.clone(), ...elementsToAppend as JQuery[]);
 
     return dropdown;
 }
@@ -430,7 +462,8 @@ function SetupPostPage(): void {
         if (post.postType === 'Answer' && globals.isStackOverflow) {
             reporters.Natty = setupNattyApi(post.postId, post.questionTime, post.answerTime, nattyIcon);
             reporters.Guttenberg = setupGuttenbergApi(post.postId, copypastorIcon);
-        } else if (post.postType === 'Question' && globals.isStackOverflow) reporters['Generic Bot'] = new GenericBotAPI(post.postId);
+        }
+        if (globals.isStackOverflow) reporters['Generic Bot'] = new GenericBotAPI(post.postId);
 
         // if we aren't in a question page, then we just insert the icons
         if (post.page !== 'Question') return post.iconLocation.after(smokeyIcon, copypastorIcon, nattyIcon);

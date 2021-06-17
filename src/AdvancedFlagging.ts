@@ -429,9 +429,8 @@ function SetupPostPage(): void {
         const reporters: ReporterInformation = { Smokey: setupMetasmokeApi(post.postId, post.postType, smokeyIcon) };
         if (post.postType === 'Answer' && globals.isStackOverflow) {
             reporters.Natty = setupNattyApi(post.postId, post.questionTime, post.answerTime, nattyIcon);
-            reporters['Generic Bot'] = new GenericBotAPI(post.postId);
             reporters.Guttenberg = setupGuttenbergApi(post.postId, copypastorIcon);
-        }
+        } else if (post.postType === 'Question' && globals.isStackOverflow) reporters['Generic Bot'] = new GenericBotAPI(post.postId);
 
         // if we aren't in a question page, then we just insert the icons
         if (post.page !== 'Question') return post.iconLocation.after(smokeyIcon, copypastorIcon, nattyIcon);

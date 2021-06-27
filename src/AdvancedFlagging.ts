@@ -87,9 +87,8 @@ async function handleActions(
     }
 
     const downvoteButton = post.element.find('.js-vote-down-btn');
-    // The user probably doesn't want to auto-downvote posts after selecting Looks Fine, Needs editing, etc.
-    // Also we don't want to undo a downvote, so we check if the post is downvoted already
-    if (!downvoteRequired || flag.ReportType === 'NoFlag' || downvoteButton.hasClass('fc-theme-primary')) return;
+    // We don't want to undo a downvote, so we check if the post is downvoted already
+    if (!downvoteRequired || !flag.Downvote || downvoteButton.hasClass('fc-theme-primary')) return;
     downvoteButton.trigger('click');
 }
 
@@ -397,7 +396,8 @@ function BuildFlaggingDialog(
             const reportLinkInfo = `<div><b>Flag: </b>${reportTypeHuman || globals.noneString}</div>`
                                  + `<div><b>Comment: </b>${tooltipCommentText || globals.noneString}</div>`
                                  + (tooltipFlagText ? `<div><b>Flag text: </b>${tooltipFlagText}</div>` : '')
-                                 + `<div><b>Feedbacks: </b> ${feedbacksString}</div>`;
+                                 + `<div><b>Feedbacks: </b> ${feedbacksString}</div>`
+                                 + `<div>${flagType.Downvote ? '<b>Downvotes</b>' : 'Does <b>not</b> downvote'} the post</div>`;
             // because the tooltips are originally too narrow, we need to increase min-width
             globals.attachHtmlPopover(reportLink.parent()[0], reportLinkInfo, 'right-start');
             setTimeout(() => increasePopoverWidth(reportLink)); // without setTimeout, the tooltip width isn't increased
@@ -414,8 +414,8 @@ function BuildFlaggingDialog(
                     }
 
                     const flagPost = flagRow.find('.s-checkbox').is(':checked');
-                    const downvotePost = downvoteRow.find('.s-checkbox').is(':checked');
-                    await handleActions(post, flagType, flagPost, downvotePost, reportedIcon, shouldRaiseVlq, flagText, commentText);
+                    const downvoteBoxChecked = downvoteRow.find('.s-checkbox').is(':checked');
+                    await handleActions(post, flagType, flagPost, downvoteBoxChecked, reportedIcon, shouldRaiseVlq, flagText, commentText);
                 }
 
                 // feedback should however be sent

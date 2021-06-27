@@ -21,6 +21,7 @@ export interface CachedFlag {
     BelongsTo: string; // the Name of the category it belongs to
     IsDefault: boolean;
     SendWhenFlagRaised: boolean;
+    Downvote: boolean;
     Enabled: boolean;
 }
 

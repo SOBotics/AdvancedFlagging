@@ -33,8 +33,9 @@ function cacheFlags(): void {
                 IsDefault: true,
                 // whether to send feedback from Feedbacks if ReportType is raised
                 SendWhenFlagRaised: flagType.DefaultSendWhenFlagRaised,
+                Downvote: ['NoFlag', 'PostOther'].some(reportType => !flagType.DefaultReportType.includes(reportType)),
                 Enabled: true // all flags should be enabled by default
-            } as globals.CachedFlag;
+            };
         });
     });
     GreaseMonkeyCache.storeInCache<globals.CachedFlag[]>(globals.FlagTypesKey, flagTypesToCache);
@@ -73,7 +74,7 @@ export function setupConfiguration(): void {
 }
 
 function setupDefaults(): void {
-    if (!globals.cachedFlagTypes.length || !globals.cachedFlagTypes[0]?.SendWhenFlagRaised) cacheFlags();
+    if (!globals.cachedFlagTypes.length || !globals.cachedFlagTypes[0]?.Downvote) cacheFlags();
     if (!globals.cachedCategories.length) cacheCategories();
 }
 
@@ -291,27 +292,39 @@ function getRadiosForBot(botName: globals.BotNames, currentFeedback: globals.All
 }
 
 function getExpandableContent(
-    flagId: number, reportType: Flags, flagFeedbacks: globals.FlagTypeFeedbacks, checkCheckbox: boolean
+    flagId: number, reportType: Flags, flagFeedbacks: globals.FlagTypeFeedbacks, checkSendFeedback: boolean, checkDownvote: boolean
 ): string {
     const isDisabled = reportType === 'PostOther';
     const feedbackRadios = Object.keys(globals.possibleFeedbacks).map(item => {
         const botName = item as globals.BotNames;
         return getRadiosForBot(botName, flagFeedbacks[botName], flagId);
     }).join('\n');
-    const checkboxId = `af-flagtype-send-feedback-${flagId}`;
+    const sendFeedbackId = `af-flagtype-send-feedback-${flagId}`;
+    const downvoteId = `af-downvote-option-${flagId}`;
+
     return `
 <div class="advanced-flagging-flag-option grid ai-center gsx gs6">
     <label class="fw-bold ps-relative z-selected l12 fs-body1 grid--cell${isDisabled ? ' o50' : ''}">Flag:</label>
     <div class="s-select r32 grid--cell">
         <select class="pl48" ${isDisabled ? 'disabled' : ''}>${getFlagOptions(reportType)}</select>
     </div>
+
     <div class="grid gsx gs4 ai-center grid--cell">
         <div class="grid--cell pb2 d-inline-block">
-            <input class="s-checkbox af-flagtype-send-feedback" id="${checkboxId}" type="checkbox"${checkCheckbox ? ' checked' : ''}>
+            <input class="s-checkbox af-flagtype-send-feedback" id="${sendFeedbackId}"
+                   type="checkbox"${checkSendFeedback ? ' checked' : ''}>
         </div>
-        <label class="grid--cell s-label fw-normal" for="${checkboxId}">
+        <label class="grid--cell s-label fw-normal" for="${sendFeedbackId}">
             Send feedback from this flag type when this type of flag is raised
         </label>
+    </div>
+
+    <div class="grid gsx gs4 ai-center grid--cell">
+        <div class="grid--cell pb2 d-inline-block">
+            <input class="s-checkbox af-flagtype-downvote-post" id="${downvoteId}"
+                   type="checkbox"${checkDownvote ? ' checked' : ''}>
+        </div>
+    <label class="grid--cell s-label fw-normal" for="${downvoteId}">Downvote post</label>
     </div>
 </div>
 <div class="advanced-flagging-feedbacks-radios py8 ml2">${feedbackRadios}</div>`;
@@ -320,7 +333,8 @@ function getExpandableContent(
 function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
     const expandableId = `advanced-flagging-${flagType.Id}-${flagType.DisplayName}`.toLowerCase().replace(/\s/g, '');
     const isFlagEnabled = flagType.Enabled;
-    const expandableContent = getExpandableContent(flagType.Id, flagType.ReportType, flagType.Feedbacks, flagType.SendWhenFlagRaised);
+    const expandableContent =
+        getExpandableContent(flagType.Id, flagType.ReportType, flagType.Feedbacks, flagType.SendWhenFlagRaised, flagType.Downvote);
     const categoryDiv = $(`
 <div class="s-card${isFlagEnabled ? '' : ' s-card__muted'} bs-sm py4" data-flag-id=${flagType.Id}>
     <div class="grid ai-center sm:fd-column sm:ai-start">
@@ -579,6 +593,14 @@ function setupCommentsAndFlagsModal(): void {
         similarFlagType.SendWhenFlagRaised = false;
         $(`#af-flagtype-send-feedback-${similarFlagType.Id}`).prop('checked', false);
         globals.updateFlagTypes();
+    }).on('change', '.af-flagtype-downvote-post', event => {
+        const checkbox = $(event.target), flagTypeWrapper = checkbox.parents('.s-card');
+        const flagId = Number(flagTypeWrapper.attr('data-flag-id')), currentFlagType = globals.getFlagTypeFromFlagId(flagId);
+        if (!currentFlagType) return;
+
+        currentFlagType.Downvote = checkbox.is(':checked');
+        globals.updateFlagTypes();
+        globals.displayStacksToast('Successfully changed option', 'success');
     });
     $('body').append(editCommentsPopup);
 }

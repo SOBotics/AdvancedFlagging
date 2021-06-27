@@ -455,16 +455,18 @@ function setupCommentsAndFlagsModal(): void {
         .filter(categoryWrapper => categoryWrapper.children().length > 1) // the header is a child so the count must be >1
         .forEach(element => editCommentsPopup.find('.s-modal--body').children().append(element));
 
-    $(document).on('s-expandable-control:hide s-expandable-control:show', event => { // the expandable is triggered
+    // listen to state change of expandables in our modal
+    $(document).on('s-expandable-control:hide s-expandable-control:show', '.af-expandable-trigger', event => {
         const editButton = $(event.target), saveButton = editButton.prev(), flagTypeWrapper = editButton.parents('.s-card');
-        if (!editButton.length || !saveButton.length || !flagTypeWrapper.length) return; // another expandable triggered
+        if (!editButton.length || !saveButton.length || !flagTypeWrapper.length) return;
 
         const pencilSvgHtml = globals.getStacksSvg('Pencil')[0].outerHTML;
         const eyeOffSvgHtml = globals.getStacksSvg('EyeOff')[0].outerHTML;
         const isExpanded = flagTypeWrapper.find('.s-expandable').hasClass('is-expanded');
         editButton.html(isExpanded ? `${eyeOffSvgHtml} Hide` : `${pencilSvgHtml} Edit`);
         isExpanded ? saveButton.fadeIn('fast') : saveButton.fadeOut('fast');
-    }).on('click', '.af-submit-content', event => { // save changes
+    });
+    $(document).on('click', '.af-submit-content', event => { // save changes
         const element = $(event.target), flagTypeWrapper = element.parents('.s-card');
         const expandable = flagTypeWrapper.find('.s-expandable');
         const flagId = Number(flagTypeWrapper.attr('data-flag-id'));

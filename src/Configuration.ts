@@ -99,7 +99,7 @@ function buildConfigurationOverlay(): void {
     overlayModal.find('.s-modal--close').append(globals.getStacksSvg('Clear'));
     $('body').append(overlayModal);
 
-    overlayModal.find('#af-modal-description').append(getGeneralConfigItems(), $('<hr>').addClass('my16'), getAdminConfigItems());
+    overlayModal.find('#af-config-description').append(getGeneralConfigItems(), $('<hr>').addClass('my16'), getAdminConfigItems());
 
     // event listener for "Save changes" button click
     overlayModal.find('.s-btn__primary').on('click', event => {

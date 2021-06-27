@@ -212,7 +212,7 @@ const sampleIcon = gridCellDiv.clone().addClass(`d-none ${isQuestionPage || isLq
     .append($('<a>').addClass('s-avatar s-avatar__16 s-user-card--avatar').append($('<img>').addClass('s-avatar--image')));
 export const getBotImageEl = (botName: BotNames): JQuery => sampleIcon.clone().find('img').attr('src', botImages[botName]).parents('div');
 
-// dynamically generated jQuery elements based on the parameters passed
+// dynamically generated jQuery elements
 export const getMessageDiv = (text: string, state: string): JQuery => $('<div>').addClass(`p12 bg-${state}`).text(text).hide();
 export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').html(`<h2 class="grid--cell">${name}</h2>`)
     .addClass(`grid gs8 gsy fd-column af-section-${name.toLowerCase()}`);
@@ -245,60 +245,43 @@ export const configurationLink = $('<a>').attr('id', 'af-modal-button').text('Ad
 export const commentsDiv = configurationDiv.clone().removeClass('advanced-flagging-configuration-div').addClass('af-comments-div');
 export const commentsLink = configurationLink.clone().attr('id', 'af-comments-button').text('AdvancedFlagging: edit comments and flags');
 
-export const configurationModal = $(`
-<aside class="s-modal" id="af-config" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
-    <div class="s-modal--dialog s-modal__full w60 sm:w100 md:w75 lg:w75" role="document">
-        <h1 class="s-modal--header fw-body c-movey" id="af-modal-title">AdvancedFlagging configuration</h1>
-        <div class="s-modal--body fs-body2" id="af-modal-description"></div>
+const generateBasicModal = (modalId: string, primaryText: string, modalTitle: string, modalWidth: string): JQuery => $(`
+<aside class="s-modal" id="${modalId}" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
+    <div class="s-modal--dialog s-modal__full ${modalWidth} sm:w100 md:w75 lg:w75" role="document">
+        <h1 class="s-modal--header fw-body" id="${modalId}-title">${modalTitle}</h1>
+        <div class="s-modal--body fs-body2" id="${modalId}-description"></div>
         <div class="grid gs8 gsx s-modal--footer">
-            <button class="grid--cell s-btn s-btn__primary" type="button">Save changes</button>
-            <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
-            <button class="grid--cell s-btn s-btn__danger af-configuration-reset" type="button">Reset</button>
-        </div>
-        <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
-    </div>
-</aside>`);
-const metasmokeTokenPopup = $(`
-<aside class="s-modal" id="af-ms-token" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
-    <div class="s-modal--dialog s-modal__full sm:w100 md:w100" role="document">
-        <h1 class="s-modal--header fw-bold " id="af-modal-title">Authenticate MS with AF</h1>
-        <div class="s-modal--body fs-body2" id="af-modal-description">
-            <div class="grid gs4 gsy fd-column">
-                <div class="grid--cell">
-                    <label class="s-label" for="example-item1">
-                        Metasmoke access token
-                        <p class="s-description mt2">
-                            Once you've authenticated Advanced Flagging with metasmoke, you'll be given a code; enter it below:
-                        </p>
-                    </label>
-                </div>
-                <div class="grid ps-relative">
-                    <input class="s-input" type="text" id="advanced-flagging-ms-token" placeholder="Enter the code here">
-                </div>
-            </div>
-        </div>
-        <div class="grid gs8 gsx s-modal--footer">
-            <button class="grid--cell s-btn s-btn__primary" id="advanced-flagging-save-ms-token" type="button">Submit</button>
+            <button class="grid--cell s-btn s-btn__primary" type="button">${primaryText}</button>
             <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
         </div>
         <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
     </div>
 </aside>`);
-export const editCommentsPopup = $(`
-<aside class="s-modal" id="af-comments" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
-    <div class="s-modal--dialog s-modal__full md:w100 sm:w100 w80" role="document">
-        <h1 class="s-modal--header fw-body" id="af-comments-title">AdvancedFlagging: edit comments and flags</h1>
-        <div class="s-modal--body fs-body2" id="af-comments-description">
-            <div class="grid fd-column gs16"></div>
-        </div>
-        <div class="grid gs8 gsx s-modal--footer">
-            <button class="grid--cell s-btn s-btn__primary" type="button" data-action="s-modal#hide">I'm done!</button>
-            <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
-            <button class="grid--cell s-btn s-btn__danger af-comments-reset" type="button">Reset</button>
-        </div>
-        <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
+export const configurationModal = generateBasicModal('af-config', 'Save changes', 'AdvancedFlagging configuration', 'w60');
+const configurationResetButton = $('<button>')
+    .addClass('grid--cell s-btn s-btn__danger af-configuration-reset').text('Reset').attr('type', 'button');
+configurationModal.find('.s-modal--footer').append(configurationResetButton);
+
+const metasmokeTokenPopup = generateBasicModal('af-ms-token', 'Submit', 'Authenticate MS with AF', '');
+metasmokeTokenPopup.find('.s-btn__primary').attr('id', 'advanced-flagging-save-ms-token');
+metasmokeTokenPopup.find('.s-modal--body').append(`
+<div class="grid gs4 gsy fd-column">
+    <div class="grid--cell">
+        <label class="s-label" for="example-item1">
+            Metasmoke access token
+            <p class="s-description mt2">
+                Once you've authenticated Advanced Flagging with metasmoke, you'll be given a code; enter it below:
+            </p>
+        </label>
     </div>
-</aside>`);
+    <div class="grid ps-relative">
+        <input class="s-input" type="text" id="advanced-flagging-ms-token" placeholder="Enter the code here">
+    </div>
+</div>`);
+export const editCommentsPopup = generateBasicModal('af-comments', 'I\'m done!', 'AdvancedFlagging: edit comments and flags', 'w80');
+const resetButton = $('<button>').addClass('grid--cell s-btn s-btn__danger af-comments-reset').text('Reset').attr('type', 'button');
+editCommentsPopup.find('.s-modal--body').append($('<div>').addClass('grid fd-column gs16'));
+editCommentsPopup.find('.s-modal--footer').append(resetButton);
 
 export function showMSTokenPopupAndGet(): Promise<string | undefined> {
     return new Promise<string | undefined>(resolve => {

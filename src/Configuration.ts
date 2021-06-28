@@ -291,6 +291,16 @@ function getRadiosForBot(botName: globals.BotNames, currentFeedback: globals.All
     return `<div class="d-flex gs16"><div class="flex--item fs-body2">Feedback to ${botName}:</div>${botFeedbacks}</div>`;
 }
 
+function createModalOptionCheckbox(checkboxId: string, shouldCheck: boolean, labelText: string, checkboxClass: string): string {
+    return `
+<div class="d-flex gsx gs4 ai-center flex--item">
+    <div class="flex--item pb2 d-inline-block">
+        <input class="s-checkbox ${checkboxClass}" id="${checkboxId}" type="checkbox"${shouldCheck ? ' checked' : ''}>
+    </div>
+    <label class="flex--item s-label fw-normal" for="${checkboxId}">${labelText}</label>
+</div>`;
+}
+
 function getExpandableContent(
     flagId: number, reportType: Flags, flagFeedbacks: globals.FlagTypeFeedbacks, checkSendFeedback: boolean, checkDownvote: boolean
 ): string {
@@ -299,8 +309,13 @@ function getExpandableContent(
         const botName = item as globals.BotNames;
         return getRadiosForBot(botName, flagFeedbacks[botName], flagId);
     }).join('\n');
-    const sendFeedbackId = `af-flagtype-send-feedback-${flagId}`;
-    const downvoteId = `af-downvote-option-${flagId}`;
+    const sendFeedbackId = `af-flagtype-send-feedback-${flagId}`, sendFeedbackClass = 'af-flagtype-send-feedback';
+    const sendFeedbackText = 'Send feedback from this flag type when this type of flag is raised';
+    const downvoteId = `af-downvote-option-${flagId}`, downvoteClass = 'af-downvote-option';
+    const downvoteText = 'Downvote post';
+
+    const sendFeedbackCheckbox = createModalOptionCheckbox(sendFeedbackId, checkSendFeedback, sendFeedbackText, sendFeedbackClass);
+    const downvoteCheckbox = createModalOptionCheckbox(downvoteId, checkDownvote, downvoteText, downvoteClass);
 
     return `
 <div class="advanced-flagging-flag-option d-flex ai-center gsx gs6">
@@ -309,23 +324,8 @@ function getExpandableContent(
         <select class="pl48" ${isDisabled ? 'disabled' : ''}>${getFlagOptions(reportType)}</select>
     </div>
 
-    <div class="d-flex gsx gs4 ai-center flex--item">
-        <div class="flex--item pb2 d-inline-block">
-            <input class="s-checkbox af-flagtype-send-feedback" id="${sendFeedbackId}"
-                   type="checkbox"${checkSendFeedback ? ' checked' : ''}>
-        </div>
-        <label class="flex--item s-label fw-normal" for="${sendFeedbackId}">
-            Send feedback from this flag type when this type of flag is raised
-        </label>
-    </div>
-
-    <div class="d-flex gsx gs4 ai-center flex--item">
-        <div class="flex--item pb2 d-inline-block">
-            <input class="s-checkbox af-flagtype-downvote-post" id="${downvoteId}"
-                   type="checkbox"${checkDownvote ? ' checked' : ''}>
-        </div>
-    <label class="flex--item s-label fw-normal" for="${downvoteId}">Downvote post</label>
-    </div>
+    ${['NoFlag', 'PostOther'].some(flagName => flagName === reportType) ? '' : sendFeedbackCheckbox /* no point in adding the box */}
+    ${downvoteCheckbox}
 </div>
 <div class="advanced-flagging-feedbacks-radios py8 ml2">${feedbackRadios}</div>`;
 }
@@ -596,7 +596,7 @@ function setupCommentsAndFlagsModal(): void {
         similarFlagType.SendWhenFlagRaised = false;
         $(`#af-flagtype-send-feedback-${similarFlagType.Id}`).prop('checked', false);
         globals.updateFlagTypes();
-    }).on('change', '.af-flagtype-downvote-post', event => {
+    }).on('change', '.af-downvote-option', event => {
         const checkbox = $(event.target), flagTypeWrapper = checkbox.parents('.s-card');
         const flagId = Number(flagTypeWrapper.attr('data-flag-id')), currentFlagType = globals.getFlagTypeFromFlagId(flagId);
         if (!currentFlagType) return;

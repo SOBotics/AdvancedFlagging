@@ -192,7 +192,7 @@ function getAdminConfigItems(): JQuery {
             GreaseMonkeyCache.unset(globals.CacheChatApiFkey);
             globals.displayStacksToast('Successfully cleared chat fkey.', 'success');
         })
-    ].map(item => item.wrap(globals.gridCellDiv.clone()).parent());
+    ].map(item => item.wrap(globals.flexItemDiv.clone()).parent());
     [clearMetasmokeInfo, clearFkey].forEach(element => sectionWrapper.append(element));
     const chatFkey = GreaseMonkeyCache.getFromCache<string>(globals.CacheChatApiFkey);
     const msAccessTokenText = MetaSmokeAPI.accessToken
@@ -211,9 +211,9 @@ function createCheckbox(text: string, checkCheckbox: boolean | null): JQuery {
     const optionId = text.toLowerCase().replace(/\s/g, '_');
     const configHtml = $(`
 <div>
-  <div class="grid gs4">
-    <div class="grid--cell"><input class="s-checkbox" type="checkbox" id="${optionId}"/></div>
-    <label class="grid--cell s-label fw-normal pt2" for="${optionId}">${text}</label>
+  <div class="d-flex gs4">
+    <div class="flex--item"><input class="s-checkbox" type="checkbox" id="${optionId}"/></div>
+    <label class="flex--item s-label fw-normal pt2" for="${optionId}">${text}</label>
   </div>
 </div>`);
     if (checkCheckbox) configHtml.find('input').prop('checked', true);
@@ -272,13 +272,13 @@ function getFeedbackRadio(botName: string, feedback: globals.AllFeedbacks, isChe
     const radioId = `af-${botName.replace(/\s/g, '-')}-${flagId}-feedback-${feedback || 'none'}`;
     const radioName = `af-${flagId}-feedback-to-${botName.replace(/\s/g, '-')}`;
     return `
-<div class="grid--cell">
-    <div class="grid gs8 gsx">
-        <div class="grid--cell">
+<div class="flex--item">
+    <div class="d-flex gs8 gsx">
+        <div class="flex--item">
             <input class="s-radio" data-feedback="${feedback}" type="radio"${isChecked ? ' checked' : ''}
                    name="${radioName}" id="${radioId}"/>
         </div>
-        <label class="grid--cell s-label fw-normal" for="${radioId}">${feedback || globals.noneString.replace('o50', '')}</label>
+        <label class="flex--item s-label fw-normal" for="${radioId}">${feedback || globals.noneString.replace('o50', '')}</label>
     </div>
 </div>`;
 }
@@ -288,7 +288,7 @@ function getRadiosForBot(botName: globals.BotNames, currentFeedback: globals.All
     const botFeedbacks = feedbacks
         .map(feedback => getFeedbackRadio(botName, feedback, feedback === currentFeedback, flagId))
         .join('\n');
-    return `<div class="grid gs16"><div class="grid--cell fs-body2">Feedback to ${botName}:</div>${botFeedbacks}</div>`;
+    return `<div class="d-flex gs16"><div class="flex--item fs-body2">Feedback to ${botName}:</div>${botFeedbacks}</div>`;
 }
 
 function getExpandableContent(
@@ -303,28 +303,28 @@ function getExpandableContent(
     const downvoteId = `af-downvote-option-${flagId}`;
 
     return `
-<div class="advanced-flagging-flag-option grid ai-center gsx gs6">
-    <label class="fw-bold ps-relative z-selected l12 fs-body1 grid--cell${isDisabled ? ' o50' : ''}">Flag:</label>
-    <div class="s-select r32 grid--cell">
+<div class="advanced-flagging-flag-option d-flex ai-center gsx gs6">
+    <label class="fw-bold ps-relative z-selected l12 fs-body1 flex--item${isDisabled ? ' o50' : ''}">Flag:</label>
+    <div class="s-select r32 flex--item">
         <select class="pl48" ${isDisabled ? 'disabled' : ''}>${getFlagOptions(reportType)}</select>
     </div>
 
-    <div class="grid gsx gs4 ai-center grid--cell">
-        <div class="grid--cell pb2 d-inline-block">
+    <div class="d-flex gsx gs4 ai-center flex--item">
+        <div class="flex--item pb2 d-inline-block">
             <input class="s-checkbox af-flagtype-send-feedback" id="${sendFeedbackId}"
                    type="checkbox"${checkSendFeedback ? ' checked' : ''}>
         </div>
-        <label class="grid--cell s-label fw-normal" for="${sendFeedbackId}">
+        <label class="flex--item s-label fw-normal" for="${sendFeedbackId}">
             Send feedback from this flag type when this type of flag is raised
         </label>
     </div>
 
-    <div class="grid gsx gs4 ai-center grid--cell">
-        <div class="grid--cell pb2 d-inline-block">
+    <div class="d-flex gsx gs4 ai-center flex--item">
+        <div class="flex--item pb2 d-inline-block">
             <input class="s-checkbox af-flagtype-downvote-post" id="${downvoteId}"
                    type="checkbox"${checkDownvote ? ' checked' : ''}>
         </div>
-    <label class="grid--cell s-label fw-normal" for="${downvoteId}">Downvote post</label>
+    <label class="flex--item s-label fw-normal" for="${downvoteId}">Downvote post</label>
     </div>
 </div>
 <div class="advanced-flagging-feedbacks-radios py8 ml2">${feedbackRadios}</div>`;
@@ -337,14 +337,14 @@ function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
         getExpandableContent(flagType.Id, flagType.ReportType, flagType.Feedbacks, flagType.SendWhenFlagRaised, flagType.Downvote);
     const categoryDiv = $(`
 <div class="s-card${isFlagEnabled ? '' : ' s-card__muted'} bs-sm py4" data-flag-id=${flagType.Id}>
-    <div class="grid ai-center sm:fd-column sm:ai-start">
+    <div class="d-flex ai-center sm:fd-column sm:ai-start">
         <h3 class="mb0 mr-auto fs-body3">${flagType.DisplayName}</h3>
-        <div class="grid gs8">
-            <button class="grid--cell s-btn s-btn__primary af-submit-content" type="button" style="display: none">Save</button>
-            <button class="grid--cell s-btn s-btn__icon af-expandable-trigger"
+        <div class="d-flex gs8">
+            <button class="flex--item s-btn s-btn__primary af-submit-content" type="button" style="display: none">Save</button>
+            <button class="flex--item s-btn s-btn__icon af-expandable-trigger"
                     data-controller="s-expandable-control" aria-controls="${expandableId}" type="button">Edit</button>
-            <button class="grid--cell s-btn s-btn__danger s-btn__icon af-remove-expandable">Remove</button>
-            <div class="grid--cell s-toggle-switch pt6">
+            <button class="flex--item s-btn s-btn__danger s-btn__icon af-remove-expandable">Remove</button>
+            <div class="flex--item s-toggle-switch pt6">
                 <input class="advanced-flagging-flag-enabled" type="checkbox"${isFlagEnabled ? ' checked' : ''}>
                 <div class="s-toggle-switch--indicator"></div>
             </div>
@@ -361,7 +361,7 @@ function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
 
 function createCategoryDiv(displayName: string): JQuery {
     const categoryHeader = $('<h2>').addClass('ta-center mb8 fs-title').html(displayName);
-    return $('<div>').addClass(`af-${displayName.toLowerCase().replace(/\s/g, '')}-content grid--cell`).append(categoryHeader);
+    return $('<div>').addClass(`af-${displayName.toLowerCase().replace(/\s/g, '')}-content flex--item`).append(categoryHeader);
 }
 
 function getCharSpan(textareaContent: string, contentType: 'comment' | 'flag'): string {
@@ -394,25 +394,25 @@ function getCharSpan(textareaContent: string, contentType: 'comment' | 'flag'): 
 }
 
 function getCommentFlagsDivs(flagId: number, comments: globals.CachedFlag['Comments'], flagText: string): JQuery {
-    const contentWrapper = $('<div>').addClass('advanced-flagging-flag-comments-text grid gsy gs8 fd-column');
+    const contentWrapper = $('<div>').addClass('advanced-flagging-flag-comments-text d-flex gsy gs8 fd-column');
     const toggleSwitchId = `advanced-flagging-comments-${flagId}-toggle`;
     const enableSwitch = Boolean(comments.Low); // enable switch if lowrep comment exists
     const tickCheckbox = Boolean(comments.High); // tick checkbox if highrep comment exists
     const checkboxId = `advanced-flagging-highrep-${flagId}-checkbox`;
 
     const commentOptions = $(`
-<div class="grid gsx gs12 ai-center">
-    <label class="grid--cell s-label mx0" for="${toggleSwitchId}">Leave comment</label>
-    <div class="grid--cell s-toggle-switch">
+<div class="d-flex gsx gs12 ai-center">
+    <label class="flex--item s-label mx0" for="${toggleSwitchId}">Leave comment</label>
+    <div class="flex--item s-toggle-switch">
         <input id="${toggleSwitchId}"${enableSwitch ? ' checked' : ''} class="af-toggle-comment" type="checkbox">
         <div class="s-toggle-switch--indicator"></div>
     </div>
-    <div class="grid gsx gs4 ai-center${enableSwitch ? '' : ' is-disabled'}">
-        (<div class="grid--cell pb2">
+    <div class="d-flex gsx gs4 ai-center${enableSwitch ? '' : ' is-disabled'}">
+        (<div class="flex--item pb2">
             <input class="s-checkbox af-toggle-highrep" type="checkbox"${tickCheckbox ? ' checked' : ''}
             ${enableSwitch ? '' : ' disabled'} id="${checkboxId}">
         </div>
-    <label class="grid--cell s-label fw-normal" for="${checkboxId}">Include comment for high rep users</label>
+    <label class="flex--item s-label fw-normal" for="${checkboxId}">Include comment for high rep users</label>
     </div>
     <span class="ps-relative r8">)</span>
 </div>`);
@@ -562,21 +562,22 @@ function setupCommentsAndFlagsModal(): void {
             // re-enable the highrep comment option checkbox
             toggleHighRep.parent().parent().removeClass('is-disabled');
             toggleHighRep.prop('disabled', false);
-            lowRepComment.fadeIn();
+            lowRepComment.fadeIn(400, () => lowRepComment.removeClass('d-none').addClass('d-flex'));
         } else {
             // disable the highrep comment option checkbox
             toggleHighRep.parent().parent().addClass('is-disabled');
             toggleHighRep.prop('disabled', true);
-            lowRepComment.fadeOut(400, () => lowRepComment.hide());
-            highRepComment.fadeOut(400, () => highRepComment.hide());
+            // due to d-flex using !important, we also need display: none; to use it as well
+            lowRepComment.fadeOut(400, () => lowRepComment.addClass('d-none').removeClass('d-flex'));
+            highRepComment.fadeOut(400, () => highRepComment.addClass('d-none').removeClass('d-flex'));
             return; // don't check for the high rep checkbox if leave comment is disabled
         }
 
         if (toggleHighRep.is(':checked')) {
-            highRepComment.fadeIn();
+            highRepComment.fadeIn(400, () => highRepComment.removeClass('d-none').addClass('d-flex'));
             lowRepComment.find('label').text('LowRep comment'); // highrep comment exists => lowrep comment exists
         } else {
-            highRepComment.fadeOut(400, () => highRepComment.hide());
+            highRepComment.fadeOut(400, () => highRepComment.addClass('d-none').removeClass('d-flex'));
             lowRepComment.find('label').text('Comment text'); // no highrep comment => no lowrep comment
         }
     }).on('change', '.af-flagtype-send-feedback', event => {

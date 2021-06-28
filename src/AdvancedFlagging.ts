@@ -470,7 +470,7 @@ function SetupPostPage(): void {
         if (post.score === null) return; // can't use !post.score, because score might be 0
 
         const advancedFlaggingLink = globals.advancedFlaggingLink.clone();
-        post.iconLocation.append(globals.gridCellDiv.clone().append(advancedFlaggingLink));
+        post.iconLocation.append(globals.flexItemDiv.clone().append(advancedFlaggingLink));
 
         const performedActionIcon = globals.performedActionIcon();
         const failedActionIcon = globals.failedActionIcon();

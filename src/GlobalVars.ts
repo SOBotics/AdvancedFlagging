@@ -125,7 +125,7 @@ export const isQuestionPage = /\/questions\/\d+.*/.test(window.location.href);
 export const isNatoPage = window.location.href.includes('/tools/new-answers-old-questions');
 export const isFlagsPage = /\/users\/flag-summary\/\d+/.test(window.location.href);
 export const isLqpReviewPage = /\/review\/low-quality-posts\/\d+/.test(window.location.href);
-export const gridCellDiv = $('<div>').addClass('grid--cell');
+export const flexItemDiv = $('<div>').addClass('flex--item');
 export const noneString = '<span class="o50">(none)</span>';
 const botImages = {
     Natty: 'https://i.stack.imgur.com/aMUMt.jpg?s=32&g=1',
@@ -208,21 +208,21 @@ export function getSentMessage(success: boolean, feedback: string, bot: string):
 }
 
 // jQuery icon elements
-const sampleIcon = gridCellDiv.clone().addClass(`d-none ${isQuestionPage || isLqpReviewPage ? '' : ' ml8'}`)
+const sampleIcon = flexItemDiv.clone().addClass(`d-none ${isQuestionPage || isLqpReviewPage ? '' : ' ml8'}`)
     .append($('<a>').addClass('s-avatar s-avatar__16 s-user-card--avatar').append($('<img>').addClass('s-avatar--image')));
 export const getBotImageEl = (botName: BotNames): JQuery => sampleIcon.clone().find('img').attr('src', botImages[botName]).parents('div');
 
 // dynamically generated jQuery elements
 export const getMessageDiv = (text: string, state: string): JQuery => $('<div>').addClass(`p12 bg-${state}`).text(text).hide();
-export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').html(`<h2 class="grid--cell">${name}</h2>`)
-    .addClass(`grid gs8 gsy fd-column af-section-${name.toLowerCase()}`);
+export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').html(`<h2 class="flex--item">${name}</h2>`)
+    .addClass(`d-flex gs8 gsy fd-column af-section-${name.toLowerCase()}`);
 export const getTextarea = (textareaContent: string, labelText: string, contentType: 'flag' | 'lowrep' | 'highrep'): JQuery => $(`
-<div class="grid gs4 gsy fd-column" style="display: ${textareaContent ? 'flex' : 'none'};">
-    <label class="grid--cell s-label">${labelText}</label>
-    <textarea rows=4 class="grid--cell s-textarea fs-body2 af-${contentType}-content">${textareaContent}</textarea>
+<div class="d-flex gs4 gsy fd-column" style="display: ${textareaContent ? 'flex' : 'none'} !important;">
+    <label class="flex--item s-label">${labelText}</label>
+    <textarea rows=4 class="flex--item s-textarea fs-body2 af-${contentType}-content">${textareaContent}</textarea>
 </div>`);
 
-const iconWrapper = $('<div>').addClass('grid--cell').css('display', 'none'); // the element that will contain the bot icons
+const iconWrapper = $('<div>').addClass('flex--item').css('display', 'none'); // the element that will contain the bot icons
 export const performedActionIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Checkmark').addClass('fc-green-500'));
 export const failedActionIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Clear').addClass('fc-red-500'));
 export const reportedIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Flag').addClass('fc-red-500'));
@@ -250,23 +250,23 @@ const generateBasicModal = (modalId: string, primaryText: string, modalTitle: st
     <div class="s-modal--dialog s-modal__full ${modalWidth} sm:w100 md:w75 lg:w75" role="document">
         <h1 class="s-modal--header fw-body" id="${modalId}-title">${modalTitle}</h1>
         <div class="s-modal--body fs-body2" id="${modalId}-description"></div>
-        <div class="grid gs8 gsx s-modal--footer">
-            <button class="grid--cell s-btn s-btn__primary" type="button">${primaryText}</button>
-            <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
+        <div class="d-flex gs8 gsx s-modal--footer">
+            <button class="flex--item s-btn s-btn__primary" type="button">${primaryText}</button>
+            <button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button>
         </div>
         <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
     </div>
 </aside>`);
 export const configurationModal = generateBasicModal('af-config', 'Save changes', 'AdvancedFlagging configuration', 'w60');
 const configurationResetButton = $('<button>')
-    .addClass('grid--cell s-btn s-btn__danger af-configuration-reset').text('Reset').attr('type', 'button');
+    .addClass('flex--item s-btn s-btn__danger af-configuration-reset').text('Reset').attr('type', 'button');
 configurationModal.find('.s-modal--footer').append(configurationResetButton);
 
 const metasmokeTokenPopup = generateBasicModal('af-ms-token', 'Submit', 'Authenticate MS with AF', '');
 metasmokeTokenPopup.find('.s-btn__primary').attr('id', 'advanced-flagging-save-ms-token');
 metasmokeTokenPopup.find('.s-modal--body').append(`
-<div class="grid gs4 gsy fd-column">
-    <div class="grid--cell">
+<div class="d-flex gs4 gsy fd-column">
+    <div class="flex--item">
         <label class="s-label" for="example-item1">
             Metasmoke access token
             <p class="s-description mt2">
@@ -274,13 +274,13 @@ metasmokeTokenPopup.find('.s-modal--body').append(`
             </p>
         </label>
     </div>
-    <div class="grid ps-relative">
+    <div class="d-flex ps-relative">
         <input class="s-input" type="text" id="advanced-flagging-ms-token" placeholder="Enter the code here">
     </div>
 </div>`);
 export const editCommentsPopup = generateBasicModal('af-comments', 'I\'m done!', 'AdvancedFlagging: edit comments and flags', 'w80');
-const resetButton = $('<button>').addClass('grid--cell s-btn s-btn__danger af-comments-reset').text('Reset').attr('type', 'button');
-editCommentsPopup.find('.s-modal--body').append($('<div>').addClass('grid fd-column gs16'));
+const resetButton = $('<button>').addClass('flex--item s-btn s-btn__danger af-comments-reset').text('Reset').attr('type', 'button');
+editCommentsPopup.find('.s-modal--body').append($('<div>').addClass('d-flex fd-column gs16'));
 editCommentsPopup.find('.s-modal--footer').append(resetButton);
 
 export function showMSTokenPopupAndGet(): Promise<string | undefined> {

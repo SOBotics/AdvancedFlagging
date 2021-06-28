@@ -15,6 +15,7 @@ const getOption = (flagName: Flags, currentName: Flags): string =>
       ${globals.getHumanFromDisplayName(flagName) || '(none)'}
     </option>`;
 const getFlagOptions = (currentName: Flags): string => flagNames.map(flagName => getOption(flagName, currentName)).join('');
+const isModOrNoFlag = (flagName: Flags): boolean => ['PostOther', 'NoFlag'].some(reportType => reportType === flagName);
 
 function cacheFlags(): void {
     const flagTypesToCache = flagCategories.flatMap(category => {
@@ -33,7 +34,7 @@ function cacheFlags(): void {
                 IsDefault: true,
                 // whether to send feedback from Feedbacks if ReportType is raised
                 SendWhenFlagRaised: flagType.DefaultSendWhenFlagRaised,
-                Downvote: ['NoFlag', 'PostOther'].some(reportType => !flagType.DefaultReportType.includes(reportType)),
+                Downvote: !isModOrNoFlag(flagType.DefaultReportType),
                 Enabled: true // all flags should be enabled by default
             };
         });
@@ -96,7 +97,6 @@ function setupDefaults(): void {
 */
 function buildConfigurationOverlay(): void {
     const overlayModal = globals.configurationModal.clone();
-    overlayModal.find('.s-modal--close').append(globals.getStacksSvg('Clear'));
     $('body').append(overlayModal);
 
     overlayModal.find('#af-config-description').append(getGeneralConfigItems(), $('<hr>').addClass('my16'), getAdminConfigItems());
@@ -226,37 +226,43 @@ function createCheckbox(text: string, checkCheckbox: boolean | null): JQuery {
    Sample cache (undefined values are empty strings):
        FlagTypes: [{
            Id: 1,
+           DisplayName: 'Plagiarism',
            FlagText: 'This is some text',
            Comments: {
                Low: 'This is a LowRep comment',
                High: ''
            },
            ReportType: 'PostOther',
-           DisplayName: 'Plagiarism',
            Feedbacks: {
                Smokey: 'tp-',
                Natty: 'tp',
                Guttenberg: 'tp'
                'Generic Bot': 'track'
            },
+           BelongsTo: 'Guttenberg mod-flags',
            IsDefault: true,
+           SendWhenFlagRaised: false,
+           Downvote: false,
            Enabled: false
        }, {
            Id: 2,
+           DisplayName: 'Not an answer',
            FlagText: '',
            Comments: {
                Low: 'This is a LowRep comment',
                High: 'This is a HighRep comment'
            },
            ReportType: 'AnswerNotAnAnswer',
-           DisplayName: 'Not an answer'
            Feedbacks: {
                Smokey: 'fp-',
                Natty: 'ne',
                Guttenberg: 'fp'
                'Generic Bot': ''
            },
+           BelongsTo: 'Answer-related',
            IsDefault: false,
+           SendWhenFlagRaised: true,
+           Downvote: true,
            Enabled: true
        }]
 
@@ -324,7 +330,7 @@ function getExpandableContent(
         <select class="pl48" ${isDisabled ? 'disabled' : ''}>${getFlagOptions(reportType)}</select>
     </div>
 
-    ${['NoFlag', 'PostOther'].some(flagName => flagName === reportType) ? '' : sendFeedbackCheckbox /* no point in adding the box */}
+    ${isModOrNoFlag(reportType) ? '' : sendFeedbackCheckbox /* no point in adding the box */}
     ${downvoteCheckbox}
 </div>
 <div class="advanced-flagging-feedbacks-radios py8 ml2">${feedbackRadios}</div>`;
@@ -432,29 +438,7 @@ function getCommentFlagsDivs(flagId: number, comments: globals.CachedFlag['Comme
     return contentWrapper;
 }
 
-function setupCommentsAndFlagsModal(): void {
-    const editCommentsPopup = globals.editCommentsPopup.clone();
-    editCommentsPopup.find('.s-modal--close').append(globals.getStacksSvg('Clear'));
-
-    const categoryElements = {} as { [key: string]: JQuery };
-    globals.cachedCategories
-        .filter(category => category.Name)
-        .forEach(category => categoryElements[category.Name || ''] = createCategoryDiv(category.Name || ''));
-
-    globals.cachedFlagTypes.forEach(flagType => {
-        const belongsToCategory = flagType.BelongsTo, comments = flagType.Comments, flagText = flagType.FlagText;
-        const flagTypeDiv = createFlagTypeDiv(flagType);
-        const expandable = flagTypeDiv.find('.s-expandable--content');
-        const flagCategoryWrapper = categoryElements[belongsToCategory];
-
-        expandable.prepend(getCommentFlagsDivs(flagType.Id, comments, flagText));
-        flagCategoryWrapper.append(flagTypeDiv);
-    });
-    // now append all categories to the modal
-    Object.values(categoryElements)
-        .filter(categoryWrapper => categoryWrapper.children().length > 1) // the header is a child so the count must be >1
-        .forEach(element => editCommentsPopup.find('.s-modal--body').children().append(element));
-
+function setupEventListeners(): void {
     // listen to state change of expandables in our modal
     $(document).on('s-expandable-control:hide s-expandable-control:show', '.af-expandable-trigger', event => {
         const editButton = $(event.target), saveButton = editButton.prev(), flagTypeWrapper = editButton.parents('.s-card');
@@ -466,54 +450,7 @@ function setupCommentsAndFlagsModal(): void {
         editButton.html(isExpanded ? `${eyeOffSvgHtml} Hide` : `${pencilSvgHtml} Edit`);
         isExpanded ? saveButton.fadeIn('fast') : saveButton.fadeOut('fast');
     });
-    $(document).on('click', '.af-submit-content', event => { // save changes
-        const element = $(event.target), flagTypeWrapper = element.parents('.s-card');
-        const expandable = flagTypeWrapper.find('.s-expandable');
-        const flagId = Number(flagTypeWrapper.attr('data-flag-id'));
-        if (!flagId) return globals.displayStacksToast('Failed to save options', 'danger');
-        // only find invalid forms in visible textareas!
-        const invalidElement = flagTypeWrapper.find('.af-invalid-content').filter(':visible');
-        if (invalidElement.length) {
-            // similar to what happens when add comment is clicked but the form is invalid
-            invalidElement.fadeOut(100).fadeIn(100);
-            globals.displayStacksToast('One or more of the textareas are invalid', 'danger');
-            return;
-        }
-
-        const currentFlagType = globals.getFlagTypeFromFlagId(flagId);
-        if (!currentFlagType) return globals.displayStacksToast('Failed to save options', 'danger'); // somehow something went wrong
-
-        // use || '' to avoid null/undefined values in cache
-        // each textarea has one of those three classes: af-flag-content, af-lowrep-content and af-highrep-content
-        // for the flag text, the low-rep comment text and the high-rep comment text respectively
-        const flagElement = expandable.find('.af-flag-content');
-        const commentLow = expandable.find('.af-lowrep-content');
-        const commentHigh = expandable.find('.af-highrep-content');
-        const [flagContent, commentLowRep, commentHighRep] = [flagElement.val(), commentLow.val(), commentHigh.val()] as string[];
-
-        const getSelector = (flagId: number, botName: string): string => `[name^="af-${flagId}-feedback-to-${botName}"]:checked`;
-        // Each radio button belongs to a group af-<flagId>-feedback-to-<bot> and has id af-<bot>-<flagId>-feedback-<feedback>
-        // Additionally, it has a data-feedback attribute which holds the feedback that corresponds to the radio
-        const botFeedbacks = {
-            Smokey: $(getSelector(flagId, 'Smokey')).attr('data-feedback'),
-            Natty: $(getSelector(flagId, 'Natty')).attr('data-feedback'),
-            Guttenberg: $(getSelector(flagId, 'Guttenberg')).attr('data-feedback'),
-            'Generic Bot': $(getSelector(flagId, 'Generic-Bot')).attr('data-feedback'),
-        } as globals.FlagTypeFeedbacks;
-
-        // the textarea may be hidden (because user has just disabled leave comment), but it still has text
-        // in case the user has accidentally done so. We need to save the content in visible textareas!
-        if (flagContent) currentFlagType.FlagText = flagElement.is(':visible') ? flagContent : '';
-        if (commentLowRep) currentFlagType.Comments = {
-            Low: commentLow.is(':visible') ? commentLowRep : '',
-            High: commentHigh.is(':visible') ? commentHighRep : ''
-        };
-        currentFlagType.Feedbacks = botFeedbacks;
-        globals.updateFlagTypes();
-
-        element.next().trigger('click'); // hide the textarea by clicking the 'Hide' button and not manually
-        globals.displayStacksToast('Content saved successfully', 'success');
-    }).on('click', '.af-remove-expandable', event => {
+    $(document).on('click', '.af-remove-expandable', event => {
         const removeButton = $(event.target), flagTypeWrapper = removeButton.parents('.s-card');
         const flagId = Number(flagTypeWrapper.attr('data-flag-id'));
         const flagTypeIndex = globals.cachedFlagTypes.findIndex(item => item.Id === flagId);
@@ -532,17 +469,85 @@ function setupCommentsAndFlagsModal(): void {
         cacheFlags();
         globals.displayStacksToast('Comments and flags have been reset to defaults', 'success');
         setTimeout(() => window.location.reload(), 500);
-    }).on('change', '.advanced-flagging-flag-option select', event => { // save a new report type
-        const selectElement = $(event.target), flagTypeWrapper = selectElement.parents('.s-card');
-        const newReportType = selectElement.val() as Flags;
+    }).on('click', '.af-submit-content', event => { // save changes
+        const element = $(event.target), flagTypeWrapper = element.parents('.s-card');
+        const expandable = flagTypeWrapper.find('.s-expandable');
         const flagId = Number(flagTypeWrapper.attr('data-flag-id'));
-        const currentFlagType = globals.getFlagTypeFromFlagId(flagId);
-        if (!currentFlagType) return globals.displayStacksToast('Failed to change the report flag type', 'danger');
-        if (newReportType === 'PostOther') return globals.displayStacksToast('Flag PostOther cannot be used with this option', 'danger');
+        if (!flagId) return globals.displayStacksToast('Failed to save options', 'danger');
 
-        currentFlagType.ReportType = newReportType;
+        // only find invalid forms in visible textareas!
+        const invalidElement = flagTypeWrapper.find('.af-invalid-content').filter(':visible');
+        if (invalidElement.length) {
+            // similar to what happens when add comment is clicked but the form is invalid
+            invalidElement.fadeOut(100).fadeIn(100);
+            globals.displayStacksToast('One or more of the comment textareas are invalid', 'danger');
+            return;
+        }
+
+        const currentFlagType = globals.getFlagTypeFromFlagId(flagId);
+        if (!currentFlagType) return globals.displayStacksToast('Failed to save options', 'danger'); // somehow something went wrong
+
+        /* --- store comments of a comment and/or flag --- */
+        // use || '' to avoid null/undefined values in cache
+        // each textarea has one of those three classes: af-flag-content, af-lowrep-content and af-highrep-content
+        // for the flag text, the low-rep comment text and the high-rep comment text respectively
+        const flagElement = expandable.find('.af-flag-content');
+        const commentLow = expandable.find('.af-lowrep-content');
+        const commentHigh = expandable.find('.af-highrep-content');
+        const [flagContent, commentLowRep, commentHighRep] = [flagElement.val(), commentLow.val(), commentHigh.val()] as string[];
+
+        // while the user can hide the textarea, we still keep the text in it, in case this was an accident
+        // therefore, we only need to search and save content in visible textareas
+        if (flagContent) currentFlagType.FlagText = flagElement.is(':visible') ? flagContent : '';
+        if (commentLowRep) currentFlagType.Comments = {
+            Low: commentLow.is(':visible') ? commentLowRep : '',
+            High: commentHigh.is(':visible') ? commentHighRep : ''
+        };
+        /* --- end --- */
+
+        /* --- save feedbacks --- */
+        const getSelector = (flagId: number, botName: string): string => `[name^="af-${flagId}-feedback-to-${botName}"]:checked`;
+        // Each radio button belongs to a group af-<flagId>-feedback-to-<bot> and has id af-<bot>-<flagId>-feedback-<feedback>
+        // Additionally, it has a data-feedback attribute which holds the feedback that corresponds to the radio
+        const botFeedbacks = {
+            Smokey: $(getSelector(flagId, 'Smokey')).attr('data-feedback'),
+            Natty: $(getSelector(flagId, 'Natty')).attr('data-feedback'),
+            Guttenberg: $(getSelector(flagId, 'Guttenberg')).attr('data-feedback'),
+            'Generic Bot': $(getSelector(flagId, 'Generic-Bot')).attr('data-feedback'),
+        } as globals.FlagTypeFeedbacks;
+        currentFlagType.Feedbacks = botFeedbacks;
+        /* --- end --- */
+
+        /* --- save ReportType --- */
+        const selectElement = flagTypeWrapper.find('select');
+        const newReportType = selectElement.val() as Flags;
+        if (newReportType === 'PostOther') globals.displayStacksToast('Flag PostOther cannot be used with this option', 'danger');
+        else currentFlagType.ReportType = newReportType;
+        /* --- end --- */
+
+        /* --- save SendWhenFlagRaised --- */
+        const sendFeedbackWhenFlagRaisedBox = flagTypeWrapper.find('.af-flagtype-send-feedback');
+        currentFlagType.SendWhenFlagRaised = sendFeedbackWhenFlagRaisedBox.is(':checked');
+
+        // if any other FlagType with the same ReportType has SendWhenFlagRaised to true, then we need to change that
+        const similarFlagType = globals.cachedFlagTypes.find(item => item.SendWhenFlagRaised
+                                                                  && item.ReportType === currentFlagType.ReportType
+                                                                  && item.Id !== flagId); // not this FlagType
+        // make sure the FlagType exists and that the checkbox is checked
+        if (similarFlagType && sendFeedbackWhenFlagRaisedBox.is(':checked')) {
+            similarFlagType.SendWhenFlagRaised = false; // then turn off the option
+            $(`#af-flagtype-send-feedback-${similarFlagType.Id}`).prop('checked', false); // and uncheck the checkbox
+        }
+        /* --- end --- */
+
+        /* --- save Downvote option --- */
+        const downvoteOptionCheckbox = flagTypeWrapper.find('.af-downvote-option');
+        currentFlagType.Downvote = downvoteOptionCheckbox.is(':checked');
+        /* --- end --- */
+
         globals.updateFlagTypes();
-        globals.displayStacksToast('Successfully changed the flag type for this option', 'success');
+        element.next().trigger('click'); // hide the textarea by clicking the 'Hide' button and not manually
+        globals.displayStacksToast('Content saved successfully', 'success');
     }).on('change', '.advanced-flagging-flag-enabled', event => { // enable/disable a flag
         const toggleSwitch = $(event.target), flagTypeWrapper = toggleSwitch.parents('.s-card');
         const flagId = Number(flagTypeWrapper.attr('data-flag-id')), currentFlagType = globals.getFlagTypeFromFlagId(flagId);
@@ -580,30 +585,31 @@ function setupCommentsAndFlagsModal(): void {
             highRepComment.fadeOut(400, () => highRepComment.addClass('d-none').removeClass('d-flex'));
             lowRepComment.find('label').text('Comment text'); // no highrep comment => no lowrep comment
         }
-    }).on('change', '.af-flagtype-send-feedback', event => {
-        const checkbox = $(event.target), flagTypeWrapper = checkbox.parents('.s-card');
-        const flagId = Number(flagTypeWrapper.attr('data-flag-id')), currentFlagType = globals.getFlagTypeFromFlagId(flagId);
-        if (!currentFlagType) return;
-
-        currentFlagType.SendWhenFlagRaised = checkbox.is(':checked');
-        globals.updateFlagTypes();
-        globals.displayStacksToast('Successfully changed option', 'success');
-        // if any other FlagType with the same ReportType has SendWhenFlagRaised to true, then we need to change that
-        const similarFlagType = globals.cachedFlagTypes.find(item => item.SendWhenFlagRaised
-                                                                  && item.ReportType === currentFlagType.ReportType
-                                                                  && item.Id !== flagId); // not this FlagType
-        if (!similarFlagType || !checkbox.is(':checked')) return; // such FlagType doesn't exist or the checkbox was unchecked
-        similarFlagType.SendWhenFlagRaised = false;
-        $(`#af-flagtype-send-feedback-${similarFlagType.Id}`).prop('checked', false);
-        globals.updateFlagTypes();
-    }).on('change', '.af-downvote-option', event => {
-        const checkbox = $(event.target), flagTypeWrapper = checkbox.parents('.s-card');
-        const flagId = Number(flagTypeWrapper.attr('data-flag-id')), currentFlagType = globals.getFlagTypeFromFlagId(flagId);
-        if (!currentFlagType) return;
-
-        currentFlagType.Downvote = checkbox.is(':checked');
-        globals.updateFlagTypes();
-        globals.displayStacksToast('Successfully changed option', 'success');
     });
+}
+
+function setupCommentsAndFlagsModal(): void {
+    const editCommentsPopup = globals.editCommentsPopup.clone();
+
+    const categoryElements = {} as { [key: string]: JQuery };
+    globals.cachedCategories
+        .filter(category => category.Name)
+        .forEach(category => categoryElements[category.Name || ''] = createCategoryDiv(category.Name || ''));
+
+    globals.cachedFlagTypes.forEach(flagType => {
+        const belongsToCategory = flagType.BelongsTo, comments = flagType.Comments, flagText = flagType.FlagText;
+        const flagTypeDiv = createFlagTypeDiv(flagType);
+        const expandable = flagTypeDiv.find('.s-expandable--content');
+        const flagCategoryWrapper = categoryElements[belongsToCategory];
+
+        expandable.prepend(getCommentFlagsDivs(flagType.Id, comments, flagText));
+        flagCategoryWrapper.append(flagTypeDiv);
+    });
+    // now append all categories to the modal
+    Object.values(categoryElements)
+        .filter(categoryWrapper => categoryWrapper.children().length > 1) // the header is a child so the count must be >1
+        .forEach(element => editCommentsPopup.find('.s-modal--body').children().append(element));
+
+    setupEventListeners();
     $('body').append(editCommentsPopup);
 }

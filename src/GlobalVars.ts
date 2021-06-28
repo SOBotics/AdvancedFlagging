@@ -254,7 +254,9 @@ const generateBasicModal = (modalId: string, primaryText: string, modalTitle: st
             <button class="flex--item s-btn s-btn__primary" type="button">${primaryText}</button>
             <button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button>
         </div>
-        <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
+        <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide">
+            ${getStacksSvg('Clear')[0].outerHTML}
+        </button>
     </div>
 </aside>`);
 export const configurationModal = generateBasicModal('af-config', 'Save changes', 'AdvancedFlagging configuration', 'w60');

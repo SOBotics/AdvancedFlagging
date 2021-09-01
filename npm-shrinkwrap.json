@@ -10,7 +10,7 @@
       "license": "ISC",
       "devDependencies": {
         "@types/jquery": "3.5.6",
-        "@types/tampermonkey": "4.0.2",
+        "@types/tampermonkey": "4.0.5",
         "@typescript-eslint/eslint-plugin": "4.29.1",
         "@typescript-eslint/parser": "4.28.1",
         "eslint": "7.32.0",
@@ -246,9 +246,9 @@
       "dev": true
     },
     "node_modules/@types/tampermonkey": {
-      "version": "4.0.2",
-      "resolved": "https://registry.npmjs.org/@types/tampermonkey/-/tampermonkey-4.0.2.tgz",
-      "integrity": "sha512-KMDDTaT3UXDNwYFF2MKAe5s4HsAEZeRw/aidZdEeaddN5sf83wFddG3gF/QYmJ8Cm9YPwAHF65rwNd12DBQw8w==",
+      "version": "4.0.5",
+      "resolved": "https://registry.npmjs.org/@types/tampermonkey/-/tampermonkey-4.0.5.tgz",
+      "integrity": "sha512-FGPo7d+qZkDF7vyrwY1WNhcUnfDyVpt2uyL7krAu3WKCUMCfIUzOuvt8aSk8N2axHT8XPr9stAEDGVHLvag6Pw==",
       "dev": true
     },
     "node_modules/@typescript-eslint/eslint-plugin": {
@@ -3167,9 +3167,9 @@
       "dev": true
     },
     "@types/tampermonkey": {
-      "version": "4.0.2",
-      "resolved": "https://registry.npmjs.org/@types/tampermonkey/-/tampermonkey-4.0.2.tgz",
-      "integrity": "sha512-KMDDTaT3UXDNwYFF2MKAe5s4HsAEZeRw/aidZdEeaddN5sf83wFddG3gF/QYmJ8Cm9YPwAHF65rwNd12DBQw8w==",
+      "version": "4.0.5",
+      "resolved": "https://registry.npmjs.org/@types/tampermonkey/-/tampermonkey-4.0.5.tgz",
+      "integrity": "sha512-FGPo7d+qZkDF7vyrwY1WNhcUnfDyVpt2uyL7krAu3WKCUMCfIUzOuvt8aSk8N2axHT8XPr9stAEDGVHLvag6Pw==",
       "dev": true
     },
     "@typescript-eslint/eslint-plugin": {

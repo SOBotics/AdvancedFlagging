@@ -3,9 +3,10 @@ import { flagCategories, Flags } from './FlagTypes';
 import { GreaseMonkeyCache } from './UserscriptTools/GreaseMonkeyCache';
 import * as globals from './GlobalVars';
 
-declare const StackExchange: globals.StackExchange;
 declare const Stacks: globals.Stacks;
 type GeneralItems = Exclude<keyof globals.CachedConfiguration, 'EnabledFlags'>;
+
+const { classSelectors, modalClasses, idSelectors, getDynamicAttributes } = globals;
 
 const flagTypes = flagCategories.flatMap(category => category.FlagTypes);
 const flagNames = [...new Set(flagTypes.map(flagType => flagType.DefaultReportType))];
@@ -15,7 +16,8 @@ const getOption = (flagName: Flags, currentName: Flags): string =>
       ${globals.getHumanFromDisplayName(flagName) || '(none)'}
     </option>`;
 const getFlagOptions = (currentName: Flags): string => flagNames.map(flagName => getOption(flagName, currentName)).join('');
-const isModOrNoFlag = (flagName: Flags): boolean => ['PostOther', 'NoFlag'].some(reportType => reportType === flagName);
+const isModOrNoFlag = (flagName: Flags): boolean => [globals.FlagNames.NoFlag, globals.FlagNames.ModFlag]
+    .some(reportType => reportType === flagName);
 
 function cacheFlags(): void {
     const flagTypesToCache = flagCategories.flatMap(category => {
@@ -63,14 +65,14 @@ export function setupConfiguration(): void {
     const bottomBox = $('.site-footer--copyright').children('.-list');
     const configurationDiv = globals.configurationDiv.clone(), commentsDiv = globals.commentsDiv.clone();
     const configurationLink = globals.configurationLink.clone(), commentsLink = globals.commentsLink.clone();
-    $(document).on('click', '#af-modal-button', () => Stacks.showModal(document.querySelector('#af-config')));
-    $(document).on('click', '#af-comments-button', () => Stacks.showModal(document.querySelector('#af-comments')));
+    $(document).on('click', idSelectors.configButton, () => Stacks.showModal(document.querySelector(idSelectors.configModal)));
+    $(document).on('click', idSelectors.commentsButton, () => Stacks.showModal(document.querySelector(idSelectors.commentsModal)));
 
     commentsDiv.append(commentsLink).insertAfter(bottomBox);
     configurationDiv.append(configurationLink).insertAfter(bottomBox);
     if (!Object.prototype.hasOwnProperty.call(globals.cachedConfiguration, globals.ConfigurationAddAuthorName)) {
         globals.displayStacksToast('Please set up AdvancedFlagging before continuing.', 'info');
-        StackExchange.helpers.showModal(document.querySelector('#af-config'));
+        Stacks.showModal(document.querySelector(idSelectors.configModal));
     }
 }
 
@@ -82,7 +84,7 @@ function setupDefaults(): void {
 /* The configuration modal has two sections:
    - General (uses cache): general options. They are properties of the main Configuration object and accept Boolean values
      All options are disabled by default
-   - Admin doesn't use cache, but it interacts with it (deletes values)
+   - Admin: doesn't use cache, but it interacts with it (deletes values)
    Sample cache:
 
    Configuration: {
@@ -99,13 +101,13 @@ function buildConfigurationOverlay(): void {
     const overlayModal = globals.configurationModal.clone();
     $('body').append(overlayModal);
 
-    overlayModal.find('#af-config-description').append(getGeneralConfigItems(), $('<hr>').addClass('my16'), getAdminConfigItems());
+    overlayModal.find(idSelectors.configDescription).append(getGeneralConfigItems(), $('<hr>').addClass('my16'), getAdminConfigItems());
 
     // event listener for "Save changes" button click
     overlayModal.find('.s-btn__primary').on('click', event => {
         event.preventDefault();
         // find the option id (it's the data-option-id attribute) and store whether the box is checked or not
-        $('.af-section-general').find('input').each((_index, el) => {
+        $(idSelectors.configGeneralSection).find('input').each((_index, el) => {
             const optionId = $(el).parents().eq(2).attr('data-option-id') as GeneralItems;
             globals.cachedConfiguration[optionId] = Boolean($(el).prop('checked'));
         });
@@ -115,14 +117,14 @@ function buildConfigurationOverlay(): void {
         setTimeout(() => window.location.reload(), 500);
     });
     // reset configuration to defaults
-    overlayModal.find('.af-configuration-reset').on('click', () => {
+    overlayModal.find(idSelectors.configReset).on('click', () => {
         GreaseMonkeyCache.unset(globals.ConfigurationCacheKey);
         globals.displayStacksToast('Configuration settings have been reset to defaults', 'success');
         setTimeout(() => window.location.reload(), 500);
     });
 
     const resetConfigurationText = 'Reset configuration values to defaults. You will be asked to set them again.';
-    globals.attachPopover($('.af-configuration-reset')[0], resetConfigurationText, 'right');
+    globals.attachPopover($(idSelectors.configReset)[0], resetConfigurationText, 'right');
 }
 
 function getGeneralConfigItems(): JQuery {
@@ -275,8 +277,9 @@ function createCheckbox(text: string, checkCheckbox: boolean | null): JQuery {
 */
 
 function getFeedbackRadio(botName: string, feedback: globals.AllFeedbacks, isChecked: boolean, flagId: number): string {
-    const radioId = `af-${botName.replace(/\s/g, '-')}-${flagId}-feedback-${feedback || 'none'}`;
-    const radioName = `af-${flagId}-feedback-to-${botName.replace(/\s/g, '-')}`;
+    const botNameToIdFormat = botName.replace(/\s/g, '-');
+    const radioId = getDynamicAttributes.feedbackRadioId(botNameToIdFormat, flagId, feedback || 'none');
+    const radioName = getDynamicAttributes.feedbackRadioName(flagId, botNameToIdFormat);
     return `
 <div class="flex--item">
     <div class="d-flex gs8 gsx">
@@ -315,16 +318,16 @@ function getExpandableContent(
         const botName = item as globals.BotNames;
         return getRadiosForBot(botName, flagFeedbacks[botName], flagId);
     }).join('\n');
-    const sendFeedbackId = `af-flagtype-send-feedback-${flagId}`, sendFeedbackClass = 'af-flagtype-send-feedback';
+    const sendFeedbackId = getDynamicAttributes.sendWhenFlagRaised(flagId), sendFeedbackClass = modalClasses.commentsSendWhenFlagRaised;
     const sendFeedbackText = 'Send feedback from this flag type when this type of flag is raised';
-    const downvoteId = `af-downvote-option-${flagId}`, downvoteClass = 'af-downvote-option';
+    const downvoteId = getDynamicAttributes.downvoteOption(flagId), downvoteClass = modalClasses.commentsDownvoteOption;
     const downvoteText = 'Downvote post';
 
     const sendFeedbackCheckbox = createModalOptionCheckbox(sendFeedbackId, checkSendFeedback, sendFeedbackText, sendFeedbackClass);
     const downvoteCheckbox = createModalOptionCheckbox(downvoteId, checkDownvote, downvoteText, downvoteClass);
 
     return `
-<div class="advanced-flagging-flag-option d-flex ai-center gsx gs6">
+<div class="${modalClasses.commentsFlagOptions} d-flex ai-center gsx gs6">
     <label class="fw-bold ps-relative z-selected l12 fs-body1 flex--item${isDisabled ? ' o50' : ''}">Flag:</label>
     <div class="s-select r32 flex--item">
         <select class="pl48" ${isDisabled ? 'disabled' : ''}>${getFlagOptions(reportType)}</select>
@@ -333,11 +336,11 @@ function getExpandableContent(
     ${isModOrNoFlag(reportType) ? '' : sendFeedbackCheckbox /* no point in adding the box */}
     ${downvoteCheckbox}
 </div>
-<div class="advanced-flagging-feedbacks-radios py8 ml2">${feedbackRadios}</div>`;
+<div class="${modalClasses.commentsSendFeedbackRadios} py8 ml2">${feedbackRadios}</div>`;
 }
 
 function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
-    const expandableId = `advanced-flagging-${flagType.Id}-${flagType.DisplayName}`.toLowerCase().replace(/\s/g, '');
+    const expandableId = getDynamicAttributes.expandableId(flagType.Id, flagType.DisplayName.toLowerCase().replace(/\s/g, ''));
     const isFlagEnabled = flagType.Enabled;
     const expandableContent =
         getExpandableContent(flagType.Id, flagType.ReportType, flagType.Feedbacks, flagType.SendWhenFlagRaised, flagType.Downvote);
@@ -346,12 +349,12 @@ function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
     <div class="d-flex ai-center sm:fd-column sm:ai-start">
         <h3 class="mb0 mr-auto fs-body3">${flagType.DisplayName}</h3>
         <div class="d-flex gs8">
-            <button class="flex--item s-btn s-btn__primary af-submit-content" type="button" style="display: none">Save</button>
-            <button class="flex--item s-btn s-btn__icon af-expandable-trigger"
+            <button class="flex--item s-btn s-btn__primary ${modalClasses.commentsSubmit}" type="button" style="display: none">Save</button>
+            <button class="flex--item s-btn s-btn__icon ${modalClasses.commentsExpandableTrigger}"
                     data-controller="s-expandable-control" aria-controls="${expandableId}" type="button">Edit</button>
-            <button class="flex--item s-btn s-btn__danger s-btn__icon af-remove-expandable">Remove</button>
+            <button class="flex--item s-btn s-btn__danger s-btn__icon ${modalClasses.commentsRemoveExpandable}">Remove</button>
             <div class="flex--item s-toggle-switch pt6">
-                <input class="advanced-flagging-flag-enabled" type="checkbox"${isFlagEnabled ? ' checked' : ''}>
+                <input class="${modalClasses.commentsToggleSwitch}" type="checkbox"${isFlagEnabled ? ' checked' : ''}>
                 <div class="s-toggle-switch--indicator"></div>
             </div>
         </div>
@@ -360,14 +363,15 @@ function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
         <div class="s-expandable--content">${expandableContent}</div>
     </div>
 </div>`);
-    categoryDiv.find('.af-remove-expandable').prepend(globals.getStacksSvg('Trash'), ' '); // add the trash icon to the remove button
-    categoryDiv.find('.af-expandable-trigger').prepend(globals.getStacksSvg('Pencil'), ' '); // add the pencil icon to the edit button
+    categoryDiv.find(classSelectors.commentsRemoveExpandable).prepend(globals.getStacksSvg('Trash'), ' '); // trash icon to remove button
+    categoryDiv.find(classSelectors.commentsExpandableTrigger).prepend(globals.getStacksSvg('Pencil'), ' '); // pencil icon to edit button
     return categoryDiv;
 }
 
 function createCategoryDiv(displayName: string): JQuery {
     const categoryHeader = $('<h2>').addClass('ta-center mb8 fs-title').html(displayName);
-    return $('<div>').addClass(`af-${displayName.toLowerCase().replace(/\s/g, '')}-content flex--item`).append(categoryHeader);
+    const categoryDivClass = getDynamicAttributes.categoryContent(displayName.toLowerCase().replace(/\s/g, ''));
+    return $('<div>').addClass(`${categoryDivClass} flex--item`).append(categoryHeader);
 }
 
 function getCharSpan(textareaContent: string, contentType: 'comment' | 'flag'): string {
@@ -375,9 +379,9 @@ function getCharSpan(textareaContent: string, contentType: 'comment' | 'flag'): 
     const charCount = textareaContent.length, pluralS = Math.abs(maxCharacters - charCount) !== 1 ? 's' : '';
     // behaves the same way as the comment/custom flag textarea
     // if there are zero characters => Enter at least x characters
-    // if the min character limit isn't reached => x more to go...
-    // if the min character limit is reached but the max isn't => x characters left
-    // if the max character limit is reached => too long by x characters
+    // if the min character limit isn't exceeded => x more to go...
+    // if the min character limit is exceeded but the max isn't => x characters left
+    // if the max character limit is exceeded => too long by x characters
     let spanText: string;
     if (charCount === 0) spanText = `Enter at least ${minCharacters} characters`;
     else if (charCount < minCharacters) spanText = `${minCharacters - charCount} more to go...`;
@@ -395,27 +399,28 @@ function getCharSpan(textareaContent: string, contentType: 'comment' | 'flag'): 
 
     // the form is invalid if there are more or less characters than the limit
     const isInvalid = classname === 'fc-red-400' || spanText.includes('more') || spanText.includes('at least');
-    const invalidClass = isInvalid ? ' af-invalid-content' : '';
-    return `<span class="af-text-counter ml-auto ${classname}${invalidClass}">${spanText}</span>`;
+    const invalidClass = isInvalid ? ` ${modalClasses.commentsInvalid}` : '';
+    return `<span class="${modalClasses.commentsTextCounter} ml-auto ${classname + invalidClass}">${spanText}</span>`;
 }
 
 function getCommentFlagsDivs(flagId: number, comments: globals.CachedFlag['Comments'], flagText: string): JQuery {
-    const contentWrapper = $('<div>').addClass('advanced-flagging-flag-comments-text d-flex gsy gs8 fd-column');
-    const toggleSwitchId = `advanced-flagging-comments-${flagId}-toggle`;
+    const { commentsTextsContainer, commentsToggleLeaveComment, commentsToggleHighRep } = modalClasses;
+    const contentWrapper = $('<div>').addClass(`${commentsTextsContainer} d-flex gsy gs8 fd-column`);
+    const toggleSwitchId = getDynamicAttributes.toggleSwitchId(flagId);
     const enableSwitch = Boolean(comments.Low); // enable switch if lowrep comment exists
     const tickCheckbox = Boolean(comments.High); // tick checkbox if highrep comment exists
-    const checkboxId = `advanced-flagging-highrep-${flagId}-checkbox`;
+    const checkboxId = getDynamicAttributes.highRepCheckbox(flagId);
 
     const commentOptions = $(`
 <div class="d-flex gsx gs12 ai-center">
     <label class="flex--item s-label mx0" for="${toggleSwitchId}">Leave comment</label>
     <div class="flex--item s-toggle-switch">
-        <input id="${toggleSwitchId}"${enableSwitch ? ' checked' : ''} class="af-toggle-comment" type="checkbox">
+        <input id="${toggleSwitchId}" class="${commentsToggleLeaveComment}" type="checkbox"${enableSwitch ? ' checked' : ''}>
         <div class="s-toggle-switch--indicator"></div>
     </div>
     <div class="d-flex gsx gs4 ai-center${enableSwitch ? '' : ' is-disabled'}">
         (<div class="flex--item pb2">
-            <input class="s-checkbox af-toggle-highrep" type="checkbox"${tickCheckbox ? ' checked' : ''}
+            <input class="s-checkbox ${commentsToggleHighRep}" type="checkbox"${tickCheckbox ? ' checked' : ''}
             ${enableSwitch ? '' : ' disabled'} id="${checkboxId}">
         </div>
     <label class="flex--item s-label fw-normal" for="${checkboxId}">Include comment for high rep users</label>
@@ -432,15 +437,31 @@ function getCommentFlagsDivs(flagId: number, comments: globals.CachedFlag['Comme
     // change the text counter information on keyup
     flagEl.add(lowRepEl).add(highRepEl).on('keyup', event => {
         const textarea = $(event.target), textareaContent = textarea.val() as string;
-        const contentType = textarea.hasClass('af-flag-content') ? 'flag' : 'comment';
+        const contentType = textarea.hasClass(modalClasses.commentsFlagContent) ? 'flag' : 'comment';
         textarea.next().replaceWith(getCharSpan(textareaContent, contentType));
     });
     return contentWrapper;
 }
 
 function setupEventListeners(): void {
+    const {
+        commentsExpandableTrigger,
+        commentsRemoveExpandable,
+        commentsReset,
+        commentsSubmit,
+        commentsInvalid,
+        commentsFlagContent,
+        commentsLowRepContent,
+        commentsHighRepContent,
+        commentsSendWhenFlagRaised,
+        commentsDownvoteOption,
+        commentsToggleSwitch,
+        commentsToggleLeaveComment,
+        commentsToggleHighRep
+    } = classSelectors;
+
     // listen to state change of expandables in our modal
-    $(document).on('s-expandable-control:hide s-expandable-control:show', '.af-expandable-trigger', event => {
+    $(document).on('s-expandable-control:hide s-expandable-control:show', commentsExpandableTrigger, event => {
         const editButton = $(event.target), saveButton = editButton.prev(), flagTypeWrapper = editButton.parents('.s-card');
         if (!editButton.length || !saveButton.length || !flagTypeWrapper.length) return;
 
@@ -450,7 +471,8 @@ function setupEventListeners(): void {
         editButton.html(isExpanded ? `${eyeOffSvgHtml} Hide` : `${pencilSvgHtml} Edit`);
         isExpanded ? saveButton.fadeIn('fast') : saveButton.fadeOut('fast');
     });
-    $(document).on('click', '.af-remove-expandable', event => {
+
+    $(document).on('click', commentsRemoveExpandable, event => {
         const removeButton = $(event.target), flagTypeWrapper = removeButton.parents('.s-card');
         const flagId = Number(flagTypeWrapper.attr('data-flag-id'));
         const flagTypeIndex = globals.cachedFlagTypes.findIndex(item => item.Id === flagId);
@@ -464,19 +486,19 @@ function setupEventListeners(): void {
             if (categoryWrapper.children().length === 1) flagTypeWrapper.fadeOut('fast', () => categoryWrapper.remove());
         });
         globals.displayStacksToast('Successfully removed flag type', 'success');
-    }).on('click', '.af-comments-reset', () => {
+    }).on('click', commentsReset, () => {
         GreaseMonkeyCache.unset(globals.FlagTypesKey);
         cacheFlags();
         globals.displayStacksToast('Comments and flags have been reset to defaults', 'success');
         setTimeout(() => window.location.reload(), 500);
-    }).on('click', '.af-submit-content', event => { // save changes
+    }).on('click', commentsSubmit, event => { // save changes
         const element = $(event.target), flagTypeWrapper = element.parents('.s-card');
         const expandable = flagTypeWrapper.find('.s-expandable');
         const flagId = Number(flagTypeWrapper.attr('data-flag-id'));
         if (!flagId) return globals.displayStacksToast('Failed to save options', 'danger');
 
         // only find invalid forms in visible textareas!
-        const invalidElement = flagTypeWrapper.find('.af-invalid-content').filter(':visible');
+        const invalidElement = flagTypeWrapper.find(commentsInvalid).filter(':visible');
         if (invalidElement.length) {
             // similar to what happens when add comment is clicked but the form is invalid
             invalidElement.fadeOut(100).fadeIn(100);
@@ -489,11 +511,9 @@ function setupEventListeners(): void {
 
         /* --- store comments of a comment and/or flag --- */
         // use || '' to avoid null/undefined values in cache
-        // each textarea has one of those three classes: af-flag-content, af-lowrep-content and af-highrep-content
-        // for the flag text, the low-rep comment text and the high-rep comment text respectively
-        const flagElement = expandable.find('.af-flag-content');
-        const commentLow = expandable.find('.af-lowrep-content');
-        const commentHigh = expandable.find('.af-highrep-content');
+        const flagElement = expandable.find(commentsFlagContent);
+        const commentLow = expandable.find(commentsLowRepContent);
+        const commentHigh = expandable.find(commentsHighRepContent);
         const [flagContent, commentLowRep, commentHighRep] = [flagElement.val(), commentLow.val(), commentHigh.val()] as string[];
 
         // while the user can hide the textarea, we still keep the text in it, in case this was an accident
@@ -506,14 +526,15 @@ function setupEventListeners(): void {
         /* --- end --- */
 
         /* --- save feedbacks --- */
-        const getSelector = (flagId: number, botName: string): string => `[name^="af-${flagId}-feedback-to-${botName}"]:checked`;
-        // Each radio button belongs to a group af-<flagId>-feedback-to-<bot> and has id af-<bot>-<flagId>-feedback-<feedback>
-        // Additionally, it has a data-feedback attribute which holds the feedback that corresponds to the radio
+        const getRadioName = (botName: string): string => getDynamicAttributes.feedbackRadioName(flagId, botName);
+        const getSelector = (botName: string): string => `[name^="${getRadioName(botName)}"]:checked`;
+
+        // The data-feedback attribute holds the feedback that corresponds to the radio
         const botFeedbacks = {
-            Smokey: $(getSelector(flagId, 'Smokey')).attr('data-feedback'),
-            Natty: $(getSelector(flagId, 'Natty')).attr('data-feedback'),
-            Guttenberg: $(getSelector(flagId, 'Guttenberg')).attr('data-feedback'),
-            'Generic Bot': $(getSelector(flagId, 'Generic-Bot')).attr('data-feedback'),
+            Smokey: $(getSelector('Smokey')).attr('data-feedback'),
+            Natty: $(getSelector('Natty')).attr('data-feedback'),
+            Guttenberg: $(getSelector('Guttenberg')).attr('data-feedback'),
+            'Generic Bot': $(getSelector('Generic-Bot')).attr('data-feedback'),
         } as globals.FlagTypeFeedbacks;
         currentFlagType.Feedbacks = botFeedbacks;
         /* --- end --- */
@@ -526,7 +547,7 @@ function setupEventListeners(): void {
         /* --- end --- */
 
         /* --- save SendWhenFlagRaised --- */
-        const sendFeedbackWhenFlagRaisedBox = flagTypeWrapper.find('.af-flagtype-send-feedback');
+        const sendFeedbackWhenFlagRaisedBox = flagTypeWrapper.find(commentsSendWhenFlagRaised);
         currentFlagType.SendWhenFlagRaised = sendFeedbackWhenFlagRaisedBox.is(':checked');
 
         // if any other FlagType with the same ReportType has SendWhenFlagRaised to true, then we need to change that
@@ -536,19 +557,19 @@ function setupEventListeners(): void {
         // make sure the FlagType exists and that the checkbox is checked
         if (similarFlagType && sendFeedbackWhenFlagRaisedBox.is(':checked')) {
             similarFlagType.SendWhenFlagRaised = false; // then turn off the option
-            $(`#af-flagtype-send-feedback-${similarFlagType.Id}`).prop('checked', false); // and uncheck the checkbox
+            $(`#${getDynamicAttributes.sendWhenFlagRaised(similarFlagType.Id)}`).prop('checked', false); // and uncheck the checkbox
         }
         /* --- end --- */
 
         /* --- save Downvote option --- */
-        const downvoteOptionCheckbox = flagTypeWrapper.find('.af-downvote-option');
+        const downvoteOptionCheckbox = flagTypeWrapper.find(commentsDownvoteOption);
         currentFlagType.Downvote = downvoteOptionCheckbox.is(':checked');
         /* --- end --- */
 
         globals.updateFlagTypes();
         element.next().trigger('click'); // hide the textarea by clicking the 'Hide' button and not manually
         globals.displayStacksToast('Content saved successfully', 'success');
-    }).on('change', '.advanced-flagging-flag-enabled', event => { // enable/disable a flag
+    }).on('change', commentsToggleSwitch, event => { // enable/disable a flag
         const toggleSwitch = $(event.target), flagTypeWrapper = toggleSwitch.parents('.s-card');
         const flagId = Number(flagTypeWrapper.attr('data-flag-id')), currentFlagType = globals.getFlagTypeFromFlagId(flagId);
         if (!currentFlagType) return globals.displayStacksToast('Failed to toggle flag type', 'danger');
@@ -558,11 +579,13 @@ function setupEventListeners(): void {
         globals.updateFlagTypes();
         isEnabled ? flagTypeWrapper.removeClass('s-card__muted') : flagTypeWrapper.addClass('s-card__muted');
         globals.displayStacksToast(`Successfully ${isEnabled ? 'enabled' : 'disabled'} flag type`, 'success');
-    }).on('change', '.af-toggle-comment, .af-toggle-highrep', event => { // leave comment options
+    }).on('change', `${commentsToggleLeaveComment}, ${commentsToggleHighRep}`, event => { // leave comment options
         const inputElement = $(event.target), flagTypeWrapper = inputElement.parents('.s-card');
-        const lowRepComment = flagTypeWrapper.find('.af-lowrep-content').parent();
-        const highRepComment = flagTypeWrapper.find('.af-highrep-content').parent();
-        const toggleComment = flagTypeWrapper.find('.af-toggle-comment'), toggleHighRep = flagTypeWrapper.find('.af-toggle-highrep');
+        const lowRepComment = flagTypeWrapper.find(commentsLowRepContent).parent();
+        const highRepComment = flagTypeWrapper.find(commentsHighRepContent).parent();
+        const toggleComment = flagTypeWrapper.find(commentsToggleLeaveComment);
+        const toggleHighRep = flagTypeWrapper.find(commentsToggleHighRep);
+
         if (toggleComment.is(':checked')) { // leave comment toggle has been enabled
             // re-enable the highrep comment option checkbox
             toggleHighRep.parent().parent().removeClass('is-disabled');

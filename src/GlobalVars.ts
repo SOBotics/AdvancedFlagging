@@ -98,6 +98,15 @@ interface ModalType {
     buttonLabel: string;
 }
 
+export enum FlagNames {
+    Spam = 'PostSpam',
+    Rude = 'PostOffensive',
+    NAA = 'AnswerNotAnAnswer',
+    VLQ = 'PostLowQuality',
+    ModFlag = 'PostOther',
+    NoFlag = 'NoFlag'
+}
+
 // Constants
 export const soboticsRoomId = 111347;
 export const metasmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
@@ -134,15 +143,6 @@ const botImages = {
     Guttenberg: 'https://i.stack.imgur.com/tzKAI.png?s=32&g=1'
 };
 
-// Help center links used in FlagTypes for comments/flags
-export const deletedAnswers = '/help/deleted-answers';
-export const commentHelp = '/help/privileges/comment';
-export const reputationHelp = '/help/whats-reputation';
-export const voteUpHelp = '/help/privileges/vote-up';
-export const whyVote = '/help/why-vote';
-export const setBounties = '/help/privileges/set-bounties';
-export const flagPosts = '/help/privileges/flag-posts';
-
 // Cache keys
 export const ConfigurationCacheKey = 'Configuration';
 export const ConfigurationOpenOnHover = 'OpenOnHover';
@@ -158,6 +158,71 @@ export const MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
 export const MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
 export const FlagTypesKey = 'FlagTypes';
 export const FlagCategoriesKey = 'FlagCategories';
+
+type ConfigObject<T> = { [key in keyof T]: string };
+const addPrefixToObjectValues = <T>(prefix: string, attributesObject: T): ConfigObject<T> => Object.fromEntries(
+    Object.entries(attributesObject).map(([key, value]) => ([key, `${prefix}${value as string}`]))
+) as ConfigObject<T>; // keys will remain the same
+
+const prefix = 'advanced-flagging';
+const classesObj = {
+    dialog: 'dialog',
+    commentsSendFeedbackRadios: 'comments-send-feedback',
+    commentsSendWhenFlagRaised: 'comments-send-when-flag-raised',
+    commentsDownvoteOption: 'comments-downvote-option',
+    commentsFlagOptions: 'comments-flag-options',
+    commentsFeedbackRadios: 'comments-feedback-radios',
+    commentsSubmit: 'comments-submit',
+    commentsReset: 'comments-reset',
+    commentsExpandableTrigger: 'comments-expandable-trigger',
+    commentsRemoveExpandable: 'comments-expandable-remove',
+    commentsToggleSwitch: 'comments-enable-disable-flagtype',
+    commentsInvalid: 'comments-invalid-content',
+    commentsTextCounter: 'comments-text-counter',
+    commentsTextsContainer: 'comments-textareas-container',
+    commentsToggleLeaveComment: 'comments-toggle-leave-comment',
+    commentsToggleHighRep: 'comments-toggle-highrep-leave-comment',
+    commentsFlagContent: 'comments-flag-textarea-content',
+    commentsLowRepContent: 'comments-lowrep-textarea-content',
+    commentsHighRepContent: 'comments-highrep-textarea-content'
+};
+const idsObj = {
+    snackbar: 'snackbar',
+    configButton: 'configuration-button',
+    configButtonContainer: 'configuration-button-container',
+    configModal: 'configuration-modal',
+    configDescription: 'configuration-modal-description',
+    configGeneralSection: 'configuration-section-general',
+    configReset: 'configuration-reset',
+    commentsButton: 'comments-button',
+    commentsButtonContainer: 'comments-button-container',
+    commentsModal: 'comments',
+    metasmokeTokenModal: 'metasmoke-token-modal',
+    metasmokeTokenSave: 'metasmoke-token-save',
+    metasmokeTokenInput: 'metasmoke-token-input'
+};
+
+// prepend the prefix
+// *Selectors will already have the advanced-flagging- prefix, so we need # for ids and . for classes
+export const modalClasses = addPrefixToObjectValues<typeof classesObj>(`${prefix}-`, classesObj);
+export const classSelectors = addPrefixToObjectValues<typeof modalClasses>('.', modalClasses);
+export const modalIds = addPrefixToObjectValues<typeof idsObj>(`${prefix}-`, idsObj);
+export const idSelectors = addPrefixToObjectValues<typeof modalIds>('#', modalIds);
+
+export const getDynamicAttributes = {
+    feedbackRadioId: (botName: string, flagId: number, feedback: string): string => `${prefix}${botName}-${flagId}-feedack-${feedback}`,
+    feedbackRadioName: (flagId: number, botName: string): string => `${prefix}${flagId}-feedback-to-${botName}`,
+    sendWhenFlagRaised: (flagId: number): string => `${modalClasses.commentsSendWhenFlagRaised}-${flagId}`,
+    downvoteOption: (flagId: number): string => `${modalClasses.commentsDownvoteOption}-${flagId}`,
+    expandableId: (flagId: number, displayName: string): string => [prefix, flagId, displayName].join('-'),
+    categoryContent: (displayName: string): string => `${prefix}-comments-${displayName}-content`,
+    toggleSwitchId: (flagId: number): string => `${prefix}-comments-toggle-${flagId}`,
+    highRepCheckbox: (flagId: number): string => `${prefix}-highrep-${flagId}-checkbox`,
+    configSection: (sectionName: string): string => `${prefix}-configuration-section-${sectionName}`,
+    textareaContent: (contentType: string): string => `${prefix}-comments-${contentType}-textarea-content`,
+    popoverSendFeedbackTo: (botName: string, postId: number): string => `${prefix}-send-feedback-to-${botName}-${postId}`,
+    optionCheckbox: (checkboxType: string, postId: number): string => `${prefix}-${checkboxType}-checkbox-${postId}`
+};
 
 export const getStacksSvg = (svgName: string): JQuery => $(GM_getResourceText(svgName));
 
@@ -215,22 +280,22 @@ export const getBotImageEl = (botName: BotNames): JQuery => sampleIcon.clone().f
 // dynamically generated jQuery elements
 export const getMessageDiv = (text: string, state: string): JQuery => $('<div>').addClass(`p12 bg-${state}`).text(text).hide();
 export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').html(`<h2 class="flex--item">${name}</h2>`)
-    .addClass(`d-flex gs8 gsy fd-column af-section-${name.toLowerCase()}`);
-export const getTextarea = (textareaContent: string, labelText: string, contentType: 'flag' | 'lowrep' | 'highrep'): JQuery => $(`
-<div class="d-flex gs4 gsy fd-column" style="display: ${textareaContent ? 'flex' : 'none'} !important;">
+    .addClass('d-flex gs8 gsy fd-column').attr('id', getDynamicAttributes.configSection(name.toLowerCase()));
+export const getTextarea = (content: string, labelText: string, contentType: 'flag' | 'lowrep' | 'highrep'): JQuery => $(`
+<div class="d-flex gs4 gsy fd-column" style="display: ${content ? 'flex' : 'none'} !important;">
     <label class="flex--item s-label">${labelText}</label>
-    <textarea rows=4 class="flex--item s-textarea fs-body2 af-${contentType}-content">${textareaContent}</textarea>
+    <textarea rows=4 class="flex--item s-textarea fs-body2 ${getDynamicAttributes.textareaContent(contentType)}">${content}</textarea>
 </div>`);
 
 const iconWrapper = $('<div>').addClass('flex--item').css('display', 'none'); // the element that will contain the bot icons
 export const performedActionIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Checkmark').addClass('fc-green-500'));
 export const failedActionIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Clear').addClass('fc-red-500'));
 export const reportedIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Flag').addClass('fc-red-500'));
-export const popupWrapper = $('<div>').addClass('af-snackbar fc-white fs-body3 ta-center z-modal ps-fixed l50');
+export const popupWrapper = $('<div>').addClass('fc-white fs-body3 ta-center z-modal ps-fixed l50').attr('id', modalIds.snackbar);
 
 export const advancedFlaggingLink = $('<button>').attr('type', 'button').addClass('s-btn s-btn__link').text('Advanced Flagging');
 export const popoverArrow = $('<div>').addClass('s-popover--arrow s-popover--arrow__tc');
-export const dropdown = $('<div>').addClass('advanced-flagging-dialog s-popover s-anchors s-anchors__default mt2 c-default');
+export const dropdown = $('<div>').addClass(`${modalClasses.dialog} s-popover s-anchors s-anchors__default mt2 c-default`);
 export const actionsMenu = $('<ul>').addClass('s-menu mxn12 myn8').attr('role', 'menu');
 export const dropdownItem = $('<li>').attr('role', 'menuitem');
 export const reportLink = $('<a>').addClass('s-block-link py4');
@@ -240,10 +305,10 @@ const getOptionLabel = (elId: string, text: string): JQuery => $(`<label for="${
 export const getPopoverOption = (itemId: string, checked: boolean, text: string): JQuery => dropdownItem.clone().addClass('pl6')
     .append(getOptionCheckbox(itemId).prop('checked', checked), getOptionLabel(itemId, text));
 
-export const configurationDiv = $('<div>').addClass('advanced-flagging-configuration-div ta-left pt6');
-export const configurationLink = $('<a>').attr('id', 'af-modal-button').text('AdvancedFlagging configuration');
-export const commentsDiv = configurationDiv.clone().removeClass('advanced-flagging-configuration-div').addClass('af-comments-div');
-export const commentsLink = configurationLink.clone().attr('id', 'af-comments-button').text('AdvancedFlagging: edit comments and flags');
+export const configurationDiv = $('<div>').addClass('ta-left pt6').attr('id', modalIds.configButtonContainer);
+export const configurationLink = $('<a>').attr('id', modalIds.configButton).text('AdvancedFlagging configuration');
+export const commentsDiv = configurationDiv.clone().attr('id', modalIds.configButtonContainer);
+export const commentsLink = configurationLink.clone().attr('id', modalIds.commentsButton).text('AdvancedFlagging: edit comments and flags');
 
 const generateBasicModal = (modalId: string, primaryText: string, modalTitle: string, modalWidth: string): JQuery => $(`
 <aside class="s-modal" id="${modalId}" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
@@ -259,13 +324,16 @@ const generateBasicModal = (modalId: string, primaryText: string, modalTitle: st
         </button>
     </div>
 </aside>`);
-export const configurationModal = generateBasicModal('af-config', 'Save changes', 'AdvancedFlagging configuration', 'w60');
+export const configurationModal = generateBasicModal(modalIds.configModal, 'Save changes', 'AdvancedFlagging configuration', 'w60');
 const configurationResetButton = $('<button>')
-    .addClass('flex--item s-btn s-btn__danger af-configuration-reset').text('Reset').attr('type', 'button');
+    .addClass('flex--item s-btn s-btn__danger')
+    .text('Reset')
+    .attr('id', modalIds.configReset)
+    .attr('type', 'button');
 configurationModal.find('.s-modal--footer').append(configurationResetButton);
 
-const metasmokeTokenPopup = generateBasicModal('af-ms-token', 'Submit', 'Authenticate MS with AF', '');
-metasmokeTokenPopup.find('.s-btn__primary').attr('id', 'advanced-flagging-save-ms-token');
+const metasmokeTokenPopup = generateBasicModal(modalIds.metasmokeTokenModal, 'Submit', 'Authenticate MS with AF', '');
+metasmokeTokenPopup.find('.s-btn__primary').attr('id', modalIds.metasmokeTokenSave);
 metasmokeTokenPopup.find('.s-modal--body').append(`
 <div class="d-flex gs4 gsy fd-column">
     <div class="flex--item">
@@ -277,20 +345,24 @@ metasmokeTokenPopup.find('.s-modal--body').append(`
         </label>
     </div>
     <div class="d-flex ps-relative">
-        <input class="s-input" type="text" id="advanced-flagging-ms-token" placeholder="Enter the code here">
+        <input class="s-input" type="text" id="${modalIds.metasmokeTokenInput}" placeholder="Enter the code here">
     </div>
 </div>`);
-export const editCommentsPopup = generateBasicModal('af-comments', 'I\'m done!', 'AdvancedFlagging: edit comments and flags', 'w80');
-const resetButton = $('<button>').addClass('flex--item s-btn s-btn__danger af-comments-reset').text('Reset').attr('type', 'button');
+
+export const editCommentsPopup = generateBasicModal(modalIds.commentsModal, 'I\'m done!', 'AdvancedFlagging: edit popover options', 'w80');
+const resetButton = $('<button>')
+    .addClass(`flex--item s-btn s-btn__danger ${modalClasses.commentsReset}`)
+    .text('Reset')
+    .attr('type', 'button');
 editCommentsPopup.find('.s-modal--body').append($('<div>').addClass('d-flex fd-column gs16'));
 editCommentsPopup.find('.s-modal--footer').append(resetButton);
 
 export function showMSTokenPopupAndGet(): Promise<string | undefined> {
     return new Promise<string | undefined>(resolve => {
         StackExchange.helpers.showModal(metasmokeTokenPopup);
-        $('#advanced-flagging-save-ms-token').on('click', () => {
-            const token = $('#advanced-flagging-ms-token').val();
-            $('#af-ms-token').remove(); // dismiss modal
+        $(idSelectors.metasmokeTokenSave).on('click', () => {
+            const token = $(idSelectors.metasmokeTokenInput).val();
+            $(idSelectors.metasmokeTokenModal).remove(); // dismiss modal
             if (!token) return;
             resolve(token.toString());
         });
@@ -359,12 +431,12 @@ export function getFlagTypeFromFlagId(flagId: number): CachedFlag | null {
 
 export function getHumanFromDisplayName(displayName: Flags): HumanFlags {
     switch (displayName) {
-        case 'AnswerNotAnAnswer': return 'as NAA';
-        case 'PostOffensive': return 'as R/A';
-        case 'PostSpam': return 'as spam';
-        case 'PostOther': return 'for moderator attention';
-        case 'PostLowQuality': return 'as VLQ';
-        case 'NoFlag':
+        case FlagNames.NAA: return 'as NAA';
+        case FlagNames.Rude: return 'as R/A';
+        case FlagNames.Spam: return 'as spam';
+        case FlagNames.ModFlag: return 'for moderator attention';
+        case FlagNames.VLQ: return 'as VLQ';
+        case FlagNames.NoFlag:
         default: return '';
     }
 }

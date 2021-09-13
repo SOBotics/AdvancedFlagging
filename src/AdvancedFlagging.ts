@@ -11,9 +11,9 @@ declare const StackExchange: globals.StackExchange;
 
 function SetupStyles(): void {
     GM_addStyle(`
-.advanced-flagging-dialog { min-width: 10rem !important; }
-#af-comments textarea { resize: vertical; }
-.af-snackbar {
+${globals.classSelectors.dialog} { min-width: 10rem !important; }
+${globals.idSelectors.commentsModal} textarea { resize: vertical; }
+${globals.idSelectors.snackbar} {
     transform: translate(-50%, 0); /* correctly centre the element */
     min-width: 19rem;
 }`);
@@ -22,8 +22,10 @@ function SetupStyles(): void {
 const reviewPostsInformation: ReviewQueuePostInfo[] = [];
 
 function getFlagToRaise(flagName: Flags, qualifiesForVlq: boolean): Flags {
+    const vlqFlag = globals.FlagNames.VLQ;
+    const naaFlag = globals.FlagNames.NAA;
     // if the flag name is VLQ, then we need to check if the criteria are met. If not, switch to NAA
-    return flagName === 'PostLowQuality' ? (qualifiesForVlq ? 'PostLowQuality' : 'AnswerNotAnAnswer') : flagName;
+    return flagName === vlqFlag ? (qualifiesForVlq ? vlqFlag : naaFlag) : flagName;
 }
 
 async function handleActions(
@@ -275,16 +277,22 @@ function getFeedbackSpans(
 
 function getOptionsRow(postElement: JQuery, postId: number): JQuery[] {
     const postComments = postElement.find('.comment-body');
+
     // check which of the checkboxes the user has chosen to uncheck by default
     const defaultNoComment = globals.cachedConfiguration[globals.ConfigurationDefaultNoComment];
     const defaultNoFlag = globals.cachedConfiguration[globals.ConfigurationDefaultNoFlag];
     const defaultNoDownvote = globals.cachedConfiguration[globals.ConfigurationDefaultNoDownvote];
+
     // check 'Leave comment' if there aren't more comments and user has selected to do so
     const checkComment = !defaultNoComment && !postComments.length;
 
-    const commentRow = globals.getPopoverOption(`af-comment-checkbox-${postId}`, checkComment, 'Leave comment');
-    const flagRow = globals.getPopoverOption(`af-flag-checkbox-${postId}`, !defaultNoFlag, 'Flag');
-    const downvoteRow = globals.getPopoverOption(`af-downvote-checkbox-${postId}`, !defaultNoDownvote, 'Downvote');
+    const commentCheckboxId = globals.getDynamicAttributes.optionCheckbox('comment', postId);
+    const flagCheckboxId = globals.getDynamicAttributes.optionCheckbox('flag', postId);
+    const downvoteCheckboxId = globals.getDynamicAttributes.optionCheckbox('downvote', postId);
+
+    const commentRow = globals.getPopoverOption(commentCheckboxId, checkComment, 'Leave comment');
+    const flagRow = globals.getPopoverOption(flagCheckboxId, !defaultNoFlag, 'Flag');
+    const downvoteRow = globals.getPopoverOption(downvoteCheckboxId, !defaultNoDownvote, 'Downvote');
     return [commentRow, flagRow, downvoteRow];
 }
 
@@ -293,7 +301,7 @@ function getBotFeedbackCheckboxesRow(reporters: ReporterInformation, postId: num
     (Object.keys(reporters) as globals.BotNames[]).forEach(botName => {
         const configCacheKey = globals.getCachedConfigBotKey(botName) as keyof globals.CachedConfiguration;
         // need the postId in the id to make it unique
-        const botNameId = `af-send-feedback-to-${botName.replace(/\s/g, '').toLowerCase()}-${postId}`;
+        const botNameId = globals.getDynamicAttributes.popoverSendFeedbackTo(botName.replace(/\s/g, '').toLowerCase(), postId);
         const defaultNoCheck = globals.cachedConfiguration[configCacheKey];
         const botImageHtml = globals.getBotImageEl(botName).removeClass('d-none').addClass('d-inline-block')[0].outerHTML;
         checkboxes[botName] = globals.getPopoverOption(botNameId, !defaultNoCheck, `Feedback to ${botImageHtml}`);
@@ -353,7 +361,8 @@ function BuildFlaggingDialog(
     const newCategories = globals.cachedCategories.filter(item => item.AppliesTo?.includes(post.postType))
         .map(item => ({ ...item, FlagTypes: [] as globals.CachedFlag[] }));
     globals.cachedFlagTypes.filter(flagType => {
-        const isGuttenbergItem = flagType.ReportType === 'PostOther'; // only Guttenberg reports (can) have the PostOther ReportType
+        // only Guttenberg reports (can) have the PostOther ReportType
+        const isGuttenbergItem = flagType.ReportType === globals.FlagNames.ModFlag;
         // a CopyPastor id must exist and the requirements from https://github.com/SOBotics/AdvancedFlagging/issues/16 must be met
         const showGutReport = Boolean(copypastorId) && (flagType.DisplayName === 'Duplicate Answer' ? isRepost : !isRepost);
         // show the red flags and general items on every site, restrict the others to StackOverflow

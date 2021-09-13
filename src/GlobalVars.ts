@@ -311,7 +311,7 @@ export const commentsDiv = configurationDiv.clone().attr('id', modalIds.configBu
 export const commentsLink = configurationLink.clone().attr('id', modalIds.commentsButton).text('AdvancedFlagging: edit comments and flags');
 
 const generateBasicModal = (modalId: string, primaryText: string, modalTitle: string, modalWidth: string): JQuery => $(`
-<aside class="s-modal" id="${modalId}" role="dialog" aria-hidden="true" data-controller="s-modal" data-target="s-modal.modal">
+<aside class="s-modal" id="${modalId}" role="dialog" aria-hidden="true" data-controller="s-modal" data-s-modal-target="modal">
     <div class="s-modal--dialog s-modal__full ${modalWidth} sm:w100 md:w75 lg:w75" role="document">
         <h1 class="s-modal--header fw-body" id="${modalId}-title">${modalTitle}</h1>
         <div class="s-modal--body fs-body2" id="${modalId}-description"></div>

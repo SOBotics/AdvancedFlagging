@@ -3,7 +3,6 @@ import { flagCategories, Flags } from './FlagTypes';
 import { GreaseMonkeyCache } from './UserscriptTools/GreaseMonkeyCache';
 import * as globals from './GlobalVars';
 
-declare const Stacks: globals.Stacks;
 type GeneralItems = Exclude<keyof globals.CachedConfiguration, 'EnabledFlags'>;
 
 const { classSelectors, modalClasses, idSelectors, getDynamicAttributes } = globals;
@@ -65,14 +64,17 @@ export function setupConfiguration(): void {
     const bottomBox = $('.site-footer--copyright').children('.-list');
     const configurationDiv = globals.configurationDiv.clone(), commentsDiv = globals.commentsDiv.clone();
     const configurationLink = globals.configurationLink.clone(), commentsLink = globals.commentsLink.clone();
-    $(document).on('click', idSelectors.configButton, () => Stacks.showModal(document.querySelector(idSelectors.configModal)));
-    $(document).on('click', idSelectors.commentsButton, () => Stacks.showModal(document.querySelector(idSelectors.commentsModal)));
+
+    const configModal = document.querySelector(idSelectors.configModal) as HTMLElement;
+    const commentsModal = document.querySelector(idSelectors.commentsModal) as HTMLElement;
+    $(document).on('click', idSelectors.configButton, () => Stacks.showModal(configModal));
+    $(document).on('click', idSelectors.commentsButton, () => Stacks.showModal(commentsModal));
 
     commentsDiv.append(commentsLink).insertAfter(bottomBox);
     configurationDiv.append(configurationLink).insertAfter(bottomBox);
     if (!Object.prototype.hasOwnProperty.call(globals.cachedConfiguration, globals.ConfigurationAddAuthorName)) {
         globals.displayStacksToast('Please set up AdvancedFlagging before continuing.', 'info');
-        Stacks.showModal(document.querySelector(idSelectors.configModal));
+        Stacks.showModal(configModal);
     }
 }
 

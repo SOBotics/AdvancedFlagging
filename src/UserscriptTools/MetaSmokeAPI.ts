@@ -2,8 +2,6 @@ import { GreaseMonkeyCache } from './GreaseMonkeyCache';
 import * as globals from '../GlobalVars';
 import { getAllPostIds } from './sotools';
 
-declare const StackExchange: globals.StackExchange;
-
 interface MetaSmokeApiItem {
     id: number;
     link: string;

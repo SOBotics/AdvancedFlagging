@@ -1,7 +1,5 @@
 import { GreaseMonkeyCache } from './GreaseMonkeyCache';
-import { StackExchange, CacheChatApiFkey, soboticsRoomId, getSentMessage, chatFailureMessage } from '../GlobalVars';
-
-declare const StackExchange: StackExchange;
+import { CacheChatApiFkey, soboticsRoomId, getSentMessage, chatFailureMessage } from '../GlobalVars';
 
 export class ChatApi {
     private static getExpiryDate(): Date {
@@ -35,7 +33,7 @@ export class ChatApi {
         // Because the script only sends messages to SO chat, the SO chat id is the same as the SO id.
         // This is not the case for SE chat, so it needs to be changes when/if https://github.com/SOBotics/AdvancedFlagging/issues/31
         // is implemented
-        return StackExchange.options.user.userId;
+        return StackExchange.options.user.userId as number;
     }
 
     public async sendMessage(message: string, bot: string, roomId: number = soboticsRoomId): Promise<string> {

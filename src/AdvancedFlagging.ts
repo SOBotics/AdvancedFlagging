@@ -7,8 +7,6 @@ import { CopyPastorAPI } from './UserscriptTools/CopyPastorAPI';
 import { setupConfiguration } from './Configuration';
 import * as globals from './GlobalVars';
 
-declare const StackExchange: globals.StackExchange;
-
 function SetupStyles(): void {
     GM_addStyle(`
 ${globals.classSelectors.dialog} { min-width: 10rem !important; }

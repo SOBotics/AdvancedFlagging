@@ -2,9 +2,6 @@ import { GreaseMonkeyCache } from './UserscriptTools/GreaseMonkeyCache';
 import { Flags, FlagCategory, HumanFlags } from './FlagTypes';
 import { displayToaster } from './AdvancedFlagging';
 
-declare const StackExchange: StackExchange;
-declare const Stacks: Stacks;
-
 export type StacksToastState = 'success' | 'danger' | 'info' | 'warning';
 export type PostType = 'Question' | 'Answer';
 
@@ -60,42 +57,6 @@ export const possibleFeedbacks: { [key in BotNames]: AllFeedbacks[] } = {
 interface UserDetails {
     authorReputation: number;
     authorName: string;
-}
-
-// StackExchange objects
-// definitions from https://github.com/StackExchange/Stacks/blob/develop/lib/ts/controllers/s-tooltip.ts and
-// https://github.com/StackExchange/Stacks/blob/develop/lib/ts/controllers/s-modal.ts slightly modified to make TS happy
-export interface Stacks {
-    setTooltipText(element: Element, title: string, options: { placement: string }): void;
-    setTooltipHtml(element: Element, title: string, options: { placement: string }): void;
-    showModal(popup: HTMLElement | null): void;
-}
-
-export interface StackExchange {
-    helpers: {
-        showConfirmModal(modal: ModalType): Promise<boolean>;
-        showModal(popup: JQuery | Element | null): void;
-        showToast(message: string, info: { type: string; transientTimeout: number }): void;
-    };
-    options: {
-        user: {
-            fkey: string;
-            userId: number;
-            isModerator: boolean;
-        };
-    };
-    comments: {
-        uiForPost(comments: JQuery): {
-            addShow(value1: boolean, value2: boolean): void;
-            showComments(value1: string, value2: string | null, value3: boolean, value4: boolean): void;
-        };
-    };
-}
-
-interface ModalType {
-    title: string;
-    bodyHtml: string;
-    buttonLabel: string;
 }
 
 export enum FlagNames {
@@ -231,10 +192,10 @@ export const displayStacksToast = (message: string, type: StacksToastState): voi
     transientTimeout: popupDelay
 });
 export const attachPopover = (element: Element, text: string, position = 'bottom-start'): void => {
-    Stacks.setTooltipText(element, text, { placement: position });
+    Stacks.setTooltipText(element, text, { placement: position as Stacks.TooltipOptions['placement'] });
 };
 export const attachHtmlPopover = (element: Element, text: string, position = 'bottom-start'): void => {
-    Stacks.setTooltipHtml(element, text, { placement: position });
+    Stacks.setTooltipHtml(element, text, { placement: position as Stacks.TooltipOptions['placement'] });
 };
 
 // regexes

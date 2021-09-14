@@ -74,7 +74,7 @@ export function setupConfiguration(): void {
     configurationDiv.append(configurationLink).insertAfter(bottomBox);
     if (!Object.prototype.hasOwnProperty.call(globals.cachedConfiguration, globals.ConfigurationAddAuthorName)) {
         globals.displayStacksToast('Please set up AdvancedFlagging before continuing.', 'info');
-        Stacks.showModal(configModal);
+        setTimeout(() => Stacks.showModal(configModal));
     }
 }
 
@@ -100,13 +100,20 @@ function setupDefaults(): void {
      This is the property of the option that will be used in cache.
 */
 function buildConfigurationOverlay(): void {
-    const overlayModal = globals.configurationModal.clone();
-    $('body').append(overlayModal);
+    const modalTitle = 'AdvancedFlagging configuration';
+    const modalBody = $(getGeneralConfigItems()).add($('<hr>').addClass('my16')).add(getAdminConfigItems());
+    const resetButton = $('<button>')
+        .addClass('flex--item s-btn s-btn__danger')
+        .text('Reset')
+        .attr('id', globals.modalIds.configReset)
+        .attr('type', 'button');
 
-    overlayModal.find(idSelectors.configDescription).append(getGeneralConfigItems(), $('<hr>').addClass('my16'), getAdminConfigItems());
+    const configModal = globals.createModal(globals.modalIds.configModal, modalTitle, 'Save changes', modalBody, resetButton, 'w60');
+
+    $('body').append(configModal);
 
     // event listener for "Save changes" button click
-    overlayModal.find('.s-btn__primary').on('click', event => {
+    configModal.find('.s-btn__primary').on('click', event => {
         event.preventDefault();
         // find the option id (it's the data-option-id attribute) and store whether the box is checked or not
         $(idSelectors.configGeneralSection).find('input').each((_index, el) => {
@@ -119,14 +126,14 @@ function buildConfigurationOverlay(): void {
         setTimeout(() => window.location.reload(), 500);
     });
     // reset configuration to defaults
-    overlayModal.find(idSelectors.configReset).on('click', () => {
+    resetButton.on('click', () => {
         GreaseMonkeyCache.unset(globals.ConfigurationCacheKey);
         globals.displayStacksToast('Configuration settings have been reset to defaults', 'success');
         setTimeout(() => window.location.reload(), 500);
     });
 
     const resetConfigurationText = 'Reset configuration values to defaults. You will be asked to set them again.';
-    globals.attachPopover($(idSelectors.configReset)[0], resetConfigurationText, 'right');
+    globals.attachPopover(resetButton[0], resetConfigurationText, 'right');
 }
 
 function getGeneralConfigItems(): JQuery {
@@ -614,7 +621,13 @@ function setupEventListeners(): void {
 }
 
 function setupCommentsAndFlagsModal(): void {
-    const editCommentsPopup = globals.editCommentsPopup.clone();
+    const modalTitle = 'AdvancedFlagging: edit comments and flags';
+    const modalBody = $('<div>').addClass('d-flex fd-column gs16');
+    const resetButton = $('<button>')
+        .addClass(`flex--item s-btn s-btn__danger ${modalClasses.commentsReset}`)
+        .text('Reset')
+        .attr('type', 'button');
+    const commentsPopup = globals.createModal(globals.modalIds.commentsModal, modalTitle, 'I\'m done!', modalBody, resetButton, 'w80');
 
     const categoryElements = {} as { [key: string]: JQuery };
     globals.cachedCategories
@@ -633,8 +646,8 @@ function setupCommentsAndFlagsModal(): void {
     // now append all categories to the modal
     Object.values(categoryElements)
         .filter(categoryWrapper => categoryWrapper.children().length > 1) // the header is a child so the count must be >1
-        .forEach(element => editCommentsPopup.find('.s-modal--body').children().append(element));
+        .forEach(element => commentsPopup.find('.s-modal--body').children().append(element));
 
     setupEventListeners();
-    $('body').append(editCommentsPopup);
+    $('body').append(commentsPopup);
 }

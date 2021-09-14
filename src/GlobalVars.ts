@@ -271,31 +271,7 @@ export const configurationLink = $('<a>').attr('id', modalIds.configButton).text
 export const commentsDiv = configurationDiv.clone().attr('id', modalIds.configButtonContainer);
 export const commentsLink = configurationLink.clone().attr('id', modalIds.commentsButton).text('AdvancedFlagging: edit comments and flags');
 
-const generateBasicModal = (modalId: string, primaryText: string, modalTitle: string, modalWidth: string): JQuery => $(`
-<aside class="s-modal" id="${modalId}" role="dialog" aria-hidden="true" data-controller="s-modal" data-s-modal-target="modal">
-    <div class="s-modal--dialog s-modal__full ${modalWidth} sm:w100 md:w75 lg:w75" role="document">
-        <h1 class="s-modal--header fw-body" id="${modalId}-title">${modalTitle}</h1>
-        <div class="s-modal--body fs-body2" id="${modalId}-description"></div>
-        <div class="d-flex gs8 gsx s-modal--footer">
-            <button class="flex--item s-btn s-btn__primary" type="button">${primaryText}</button>
-            <button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button>
-        </div>
-        <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide">
-            ${getStacksSvg('Clear')[0].outerHTML}
-        </button>
-    </div>
-</aside>`);
-export const configurationModal = generateBasicModal(modalIds.configModal, 'Save changes', 'AdvancedFlagging configuration', 'w60');
-const configurationResetButton = $('<button>')
-    .addClass('flex--item s-btn s-btn__danger')
-    .text('Reset')
-    .attr('id', modalIds.configReset)
-    .attr('type', 'button');
-configurationModal.find('.s-modal--footer').append(configurationResetButton);
-
-const metasmokeTokenPopup = generateBasicModal(modalIds.metasmokeTokenModal, 'Submit', 'Authenticate MS with AF', '');
-metasmokeTokenPopup.find('.s-btn__primary').attr('id', modalIds.metasmokeTokenSave);
-metasmokeTokenPopup.find('.s-modal--body').append(`
+const metasmokePopupBody = $(`
 <div class="d-flex gs4 gsy fd-column">
     <div class="flex--item">
         <label class="s-label" for="example-item1">
@@ -309,14 +285,8 @@ metasmokeTokenPopup.find('.s-modal--body').append(`
         <input class="s-input" type="text" id="${modalIds.metasmokeTokenInput}" placeholder="Enter the code here">
     </div>
 </div>`);
-
-export const editCommentsPopup = generateBasicModal(modalIds.commentsModal, 'I\'m done!', 'AdvancedFlagging: edit popover options', 'w80');
-const resetButton = $('<button>')
-    .addClass(`flex--item s-btn s-btn__danger ${modalClasses.commentsReset}`)
-    .text('Reset')
-    .attr('type', 'button');
-editCommentsPopup.find('.s-modal--body').append($('<div>').addClass('d-flex fd-column gs16'));
-editCommentsPopup.find('.s-modal--footer').append(resetButton);
+const metasmokeTokenPopup = createModal(modalIds.metasmokeTokenModal, 'Authenticate MS with AF', 'Submit', metasmokePopupBody);
+metasmokeTokenPopup.find('.s-btn__primary').attr('id', modalIds.metasmokeTokenSave);
 
 export function showMSTokenPopupAndGet(): Promise<string | undefined> {
     return new Promise<string | undefined>(resolve => {
@@ -400,4 +370,35 @@ export function getHumanFromDisplayName(displayName: Flags): HumanFlags {
         case FlagNames.NoFlag:
         default: return '';
     }
+}
+
+// Stacks helpers
+export function createModal(
+    id: string,
+    title: string,
+    buttonPrimaryText: string,
+    bodyHtml: JQuery,
+    resetButton?: JQuery,
+    classes?: string // space-separated
+): JQuery {
+    const iconClear = getStacksSvg('Clear')[0].outerHTML;
+    const modalElement = $(`
+<aside class="s-modal" id="${id}" tabindex="-1" role="dialog" aria-hidden="true" data-s-modal-target="modal" data-controller="s-modal">
+    <div class="s-modal--dialog ps-relative s-modal__full" role="document">
+        <h1 class="s-modal--header">${title}</h1>
+        <div class="s-modal--body fs-body2"></div>
+
+        <div class="d-flex gs8 gsx s-modal--footer">
+            <button class="flex--item s-btn s-btn__primary" type="button">${buttonPrimaryText}</button>
+            <button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button>
+        </div>
+        <button class="s-modal--close s-btn s-btn__muted" type="button" data-action="s-modal#hide">${iconClear}</button>
+    </div>
+</aside>
+    `);
+    modalElement.find('.s-modal--body').append(bodyHtml);
+    if (resetButton) modalElement.find('.s-modal--footer').append(resetButton);
+    if (classes) modalElement.find('.s-modal--dialog').addClass(classes);
+
+    return modalElement;
 }

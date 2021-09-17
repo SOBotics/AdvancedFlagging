@@ -117,7 +117,7 @@ function buildConfigurationOverlay(): void {
         event.preventDefault();
         // find the option id (it's the data-option-id attribute) and store whether the box is checked or not
         $(idSelectors.configGeneralSection).find('input').each((_index, el) => {
-            const optionId = $(el).parents().eq(2).attr('data-option-id') as GeneralItems;
+            const optionId = $(el).parent().parent().attr('data-option-id') as GeneralItems;
             globals.cachedConfiguration[optionId] = Boolean($(el).prop('checked'));
         });
 
@@ -183,9 +183,13 @@ function getGeneralConfigItems(): JQuery {
         }
     ].map(item => {
         const storedValue = globals.cachedConfiguration[item.configValue as GeneralItems];
-        const configCheckbox = createCheckbox(item.text, Boolean(storedValue)).attr('data-option-id', item.configValue);
+        const configCheckbox = globals.createCheckbox(item.text, item.text, Boolean(storedValue), {
+            label: 'pt2'
+        });
+        configCheckbox.attr('data-option-id', item.configValue);
+
         if (item.tooltipText) globals.attachPopover(configCheckbox.find('label')[0], item.tooltipText, 'right');
-        return configCheckbox;
+        return $('<div>').append(configCheckbox);
     }).forEach(element => sectionWrapper.append(element));
 
     return sectionWrapper;
@@ -216,20 +220,6 @@ function getAdminConfigItems(): JQuery {
     globals.attachPopover(clearFkey.find('a')[0], fkeyClearTooltip, 'right');
 
     return sectionWrapper;
-}
-
-function createCheckbox(text: string, checkCheckbox: boolean | null): JQuery {
-    const optionId = text.toLowerCase().replace(/\s/g, '_');
-    const configHtml = $(`
-<div>
-  <div class="d-flex gs4">
-    <div class="flex--item"><input class="s-checkbox" type="checkbox" id="${optionId}"/></div>
-    <label class="flex--item s-label fw-normal pt2" for="${optionId}">${text}</label>
-  </div>
-</div>`);
-    if (checkCheckbox) configHtml.find('input').prop('checked', true);
-
-    return configHtml;
 }
 
 /* In this case, we are caching a FlagType, but removing unnecessary properties.
@@ -309,19 +299,13 @@ function getRadiosForBot(botName: globals.BotNames, currentFeedback: globals.All
     return `<div class="d-flex gs16"><div class="flex--item fs-body2">Feedback to ${botName}:</div>${botFeedbacks}</div>`;
 }
 
-function createModalOptionCheckbox(checkboxId: string, shouldCheck: boolean, labelText: string, checkboxClass: string): string {
-    return `
-<div class="d-flex gsx gs4 ai-center flex--item">
-    <div class="flex--item pb2 d-inline-block">
-        <input class="s-checkbox ${checkboxClass}" id="${checkboxId}" type="checkbox"${shouldCheck ? ' checked' : ''}>
-    </div>
-    <label class="flex--item s-label fw-normal" for="${checkboxId}">${labelText}</label>
-</div>`;
-}
-
 function getExpandableContent(
-    flagId: number, reportType: Flags, flagFeedbacks: globals.FlagTypeFeedbacks, checkSendFeedback: boolean, checkDownvote: boolean
-): string {
+    flagId: number,
+    reportType: Flags,
+    flagFeedbacks: globals.FlagTypeFeedbacks,
+    checkSendFeedback: boolean,
+    checkDownvote: boolean
+): JQuery {
     const isDisabled = reportType === 'PostOther';
     const feedbackRadios = Object.keys(globals.possibleFeedbacks).map(item => {
         const botName = item as globals.BotNames;
@@ -332,20 +316,30 @@ function getExpandableContent(
     const downvoteId = getDynamicAttributes.downvoteOption(flagId), downvoteClass = modalClasses.commentsDownvoteOption;
     const downvoteText = 'Downvote post';
 
-    const sendFeedbackCheckbox = createModalOptionCheckbox(sendFeedbackId, checkSendFeedback, sendFeedbackText, sendFeedbackClass);
-    const downvoteCheckbox = createModalOptionCheckbox(downvoteId, checkDownvote, downvoteText, downvoteClass);
+    const classesList = {
+        flex: 'ai-center flex--item',
+        inputParent: 'pb2 d-inline-block'
+    };
+    const sendFeedbackCheckbox = globals.createCheckbox(sendFeedbackId, sendFeedbackText, checkSendFeedback, Object.assign({
+        input: sendFeedbackClass,
+    }, classesList));
+    const downvoteCheckbox = globals.createCheckbox(downvoteId, downvoteText, checkDownvote, Object.assign({
+        input: downvoteClass,
+    }, classesList));
 
-    return `
+    const content = $(`
 <div class="${modalClasses.commentsFlagOptions} d-flex ai-center gsx gs6">
     <label class="fw-bold ps-relative z-selected l12 fs-body1 flex--item${isDisabled ? ' o50' : ''}">Flag:</label>
     <div class="s-select r32 flex--item">
         <select class="pl48" ${isDisabled ? 'disabled' : ''}>${getFlagOptions(reportType)}</select>
     </div>
-
-    ${isModOrNoFlag(reportType) ? '' : sendFeedbackCheckbox /* no point in adding the box */}
-    ${downvoteCheckbox}
 </div>
-<div class="${modalClasses.commentsSendFeedbackRadios} py8 ml2">${feedbackRadios}</div>`;
+<div class="${modalClasses.commentsSendFeedbackRadios} py8 ml2">${feedbackRadios}</div>`);
+
+    if (!isModOrNoFlag(reportType)) content.eq(0).append(sendFeedbackCheckbox);
+    content.eq(0).append(downvoteCheckbox);
+
+    return content;
 }
 
 function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
@@ -369,11 +363,18 @@ function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
         </div>
     </div>
     <div class="s-expandable" id="${expandableId}">
-        <div class="s-expandable--content">${expandableContent}</div>
+        <div class="s-expandable--content"></div>
     </div>
 </div>`);
-    categoryDiv.find(classSelectors.commentsRemoveExpandable).prepend(globals.getStacksSvg('Trash'), ' '); // trash icon to remove button
-    categoryDiv.find(classSelectors.commentsExpandableTrigger).prepend(globals.getStacksSvg('Pencil'), ' '); // pencil icon to edit button
+    categoryDiv
+        .find(classSelectors.commentsRemoveExpandable)
+        .prepend(globals.getStacksSvg('Trash'), ' ') // trash icon to the remove button
+        .end()
+        .find(classSelectors.commentsExpandableTrigger)
+        .prepend(globals.getStacksSvg('Pencil'), ' ') // pencil icon to edit button
+        .end()
+        .find('.s-expandable--content')
+        .append(expandableContent); // insert the expandable content;
     return categoryDiv;
 }
 
@@ -416,9 +417,17 @@ function getCommentFlagsDivs(flagId: number, comments: globals.CachedFlag['Comme
     const { commentsTextsContainer, commentsToggleLeaveComment, commentsToggleHighRep } = modalClasses;
     const contentWrapper = $('<div>').addClass(`${commentsTextsContainer} d-flex gsy gs8 fd-column`);
     const toggleSwitchId = getDynamicAttributes.toggleSwitchId(flagId);
+
     const enableSwitch = Boolean(comments.Low); // enable switch if lowrep comment exists
     const tickCheckbox = Boolean(comments.High); // tick checkbox if highrep comment exists
     const checkboxId = getDynamicAttributes.highRepCheckbox(flagId);
+
+    const labelText = 'Include comment for high rep users';
+    const checkbox = globals.createCheckbox(checkboxId, labelText, tickCheckbox, {
+        flex: `gsx ai-center${enableSwitch ? '' : ' is-disabled'}`,
+        inputParent: 'pb2',
+        input: commentsToggleHighRep
+    });
 
     const commentOptions = $(`
 <div class="d-flex gsx gs12 ai-center">
@@ -427,15 +436,8 @@ function getCommentFlagsDivs(flagId: number, comments: globals.CachedFlag['Comme
         <input id="${toggleSwitchId}" class="${commentsToggleLeaveComment}" type="checkbox"${enableSwitch ? ' checked' : ''}>
         <div class="s-toggle-switch--indicator"></div>
     </div>
-    <div class="d-flex gsx gs4 ai-center${enableSwitch ? '' : ' is-disabled'}">
-        (<div class="flex--item pb2">
-            <input class="s-checkbox ${commentsToggleHighRep}" type="checkbox"${tickCheckbox ? ' checked' : ''}
-            ${enableSwitch ? '' : ' disabled'} id="${checkboxId}">
-        </div>
-    <label class="flex--item s-label fw-normal" for="${checkboxId}">Include comment for high rep users</label>
-    </div>
-    <span class="ps-relative r8">)</span>
 </div>`);
+    commentOptions.append(checkbox);
 
     contentWrapper.append(commentOptions);
     const lowRepLabel = comments.High ? 'LowRep comment' : 'Comment text'; // if there are two comments, add label for LowRep

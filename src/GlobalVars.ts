@@ -261,10 +261,6 @@ export const actionsMenu = $('<ul>').addClass('s-menu mxn12 myn8').attr('role', 
 export const dropdownItem = $('<li>').attr('role', 'menuitem');
 export const reportLink = $('<a>').addClass('s-block-link py4');
 export const categoryDivider = $('<li>').addClass('s-menu--divider').attr('role', 'separator');
-const getOptionCheckbox = (elId: string): JQuery => $(`<input type="checkbox" name="${elId}" id="${elId}" class="s-checkbox">`);
-const getOptionLabel = (elId: string, text: string): JQuery => $(`<label for="${elId}" class="ml6 va-middle c-pointer">${text}</label>`);
-export const getPopoverOption = (itemId: string, checked: boolean, text: string): JQuery => dropdownItem.clone().addClass('pl6')
-    .append(getOptionCheckbox(itemId).prop('checked', checked), getOptionLabel(itemId, text));
 
 export const configurationDiv = $('<div>').addClass('ta-left pt6').attr('id', modalIds.configButtonContainer);
 export const configurationLink = $('<a>').attr('id', modalIds.configButton).text('AdvancedFlagging configuration');
@@ -401,4 +397,33 @@ export function createModal(
     if (classes) modalElement.find('.s-modal--dialog').addClass(classes);
 
     return modalElement;
+}
+
+type CheckboxClasses = { [key in 'label' | 'input' | 'flex' | 'inputParent']: string };
+export function createCheckbox(
+    checkboxId: string,
+    labelText: string,
+    checked: boolean,
+    {
+        label = '',
+        input = '',
+        flex = '',
+        inputParent = ''
+    }: Partial<CheckboxClasses>
+): JQuery {
+    const id = checkboxId.toLowerCase().replace(/\s/g, '_');
+    const checkboxElement = $(`
+<div class="d-flex gs4">
+    <div class="flex--item">
+        <input class="s-checkbox" type="checkbox" id="${id}"/>
+    </div>
+    <label class="flex--item s-label fw-normal" for="${id}">${labelText}</label>
+</div>`);
+    checkboxElement.find('input').prop('checked', checked);
+    if (label) checkboxElement.find('label').addClass(label);
+    if (input) checkboxElement.find('input').addClass(input);
+    if (flex) checkboxElement.addClass(flex);
+    if (inputParent) checkboxElement.find('input').parent().addClass(inputParent);
+
+    return checkboxElement;
 }

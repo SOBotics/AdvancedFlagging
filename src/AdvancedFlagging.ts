@@ -273,6 +273,16 @@ function getFeedbackSpans(
         }).filter(String).join(', ') || globals.noneString;
 }
 
+function getPopoverOption(checkboxId: string, labelText: string, checked: boolean): JQuery {
+    const checkbox = globals.createCheckbox(checkboxId, labelText, checked, {
+        label: 'pt1 fs-body1'
+    });
+    return globals.dropdownItem
+        .clone()
+        .addClass('pl8')
+        .append(checkbox);
+}
+
 function getOptionsRow(postElement: JQuery, postId: number): JQuery[] {
     const postComments = postElement.find('.comment-body');
 
@@ -288,9 +298,9 @@ function getOptionsRow(postElement: JQuery, postId: number): JQuery[] {
     const flagCheckboxId = globals.getDynamicAttributes.optionCheckbox('flag', postId);
     const downvoteCheckboxId = globals.getDynamicAttributes.optionCheckbox('downvote', postId);
 
-    const commentRow = globals.getPopoverOption(commentCheckboxId, checkComment, 'Leave comment');
-    const flagRow = globals.getPopoverOption(flagCheckboxId, !defaultNoFlag, 'Flag');
-    const downvoteRow = globals.getPopoverOption(downvoteCheckboxId, !defaultNoDownvote, 'Downvote');
+    const commentRow = getPopoverOption(commentCheckboxId, 'Leave comment', checkComment);
+    const flagRow = getPopoverOption(flagCheckboxId, 'Flag', !defaultNoFlag);
+    const downvoteRow = getPopoverOption(downvoteCheckboxId, 'Downvote', !defaultNoDownvote);
     return [commentRow, flagRow, downvoteRow];
 }
 
@@ -302,7 +312,7 @@ function getBotFeedbackCheckboxesRow(reporters: ReporterInformation, postId: num
         const botNameId = globals.getDynamicAttributes.popoverSendFeedbackTo(botName.replace(/\s/g, '').toLowerCase(), postId);
         const defaultNoCheck = globals.cachedConfiguration[configCacheKey];
         const botImageHtml = globals.getBotImageEl(botName).removeClass('d-none').addClass('d-inline-block')[0].outerHTML;
-        checkboxes[botName] = globals.getPopoverOption(botNameId, !defaultNoCheck, `Feedback to ${botImageHtml}`);
+        checkboxes[botName] = getPopoverOption(botNameId, `Feedback to ${botImageHtml}`, !defaultNoCheck);
         globals.attachPopover(checkboxes[botName][0], `Send feedback to ${botName}`, 'right-start');
     });
     return checkboxes;

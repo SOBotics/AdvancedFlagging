@@ -256,8 +256,8 @@ export const popupWrapper = $('<div>').addClass('fc-white fs-body3 ta-center z-m
 
 export const advancedFlaggingLink = $('<button>').attr('type', 'button').addClass('s-btn s-btn__link').text('Advanced Flagging');
 export const popoverArrow = $('<div>').addClass('s-popover--arrow s-popover--arrow__tc');
-export const dropdown = $('<div>').addClass(`${modalClasses.dialog} s-popover s-anchors s-anchors__default mt2 c-default`);
-export const actionsMenu = $('<ul>').addClass('s-menu mxn12 myn8').attr('role', 'menu');
+export const dropdown = $('<div>').addClass(`${modalClasses.dialog} s-popover s-anchors s-anchors__default mt2 c-default px0 py4`);
+export const actionsMenu = $('<ul>').addClass('s-menu').attr('role', 'menu');
 export const dropdownItem = $('<li>').attr('role', 'menuitem');
 export const reportLink = $('<a>').addClass('s-block-link py4');
 export const categoryDivider = $('<li>').addClass('s-menu--divider').attr('role', 'separator');

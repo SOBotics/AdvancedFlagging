@@ -102,11 +102,7 @@ function setupDefaults(): void {
 function buildConfigurationOverlay(): void {
     const modalTitle = 'AdvancedFlagging configuration';
     const modalBody = $(getGeneralConfigItems()).add($('<hr>').addClass('my16')).add(getAdminConfigItems());
-    const resetButton = $('<button>')
-        .addClass('flex--item s-btn s-btn__danger')
-        .text('Reset')
-        .attr('id', globals.modalIds.configReset)
-        .attr('type', 'button');
+    const resetButton = globals.createButton('Reset', [ 'danger' ], [ 'flex--item' ]);
 
     const configModal = globals.createModal(globals.modalIds.configModal, modalTitle, 'Save changes', modalBody, resetButton, 'w60');
 
@@ -347,15 +343,21 @@ function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
     const isFlagEnabled = flagType.Enabled;
     const expandableContent =
         getExpandableContent(flagType.Id, flagType.ReportType, flagType.Feedbacks, flagType.SendWhenFlagRaised, flagType.Downvote);
+
+    const pencilIcon = globals.getStacksSvg('Pencil');
+    const trashIcon = globals.getStacksSvg('Trash');
+
+    const saveButton = globals.createButton('Save', [ 'primary' ], [ 'flex--item', modalClasses.commentsSubmit ]).hide();
+    const editButton = globals.createButton('Edit', [], [ 'flex--item', modalClasses.commentsExpandableTrigger ], pencilIcon)
+        .attr('data-controller', 's-expandable-control')
+        .attr('aria-controls', expandableId);
+    const removeButton = globals.createButton('Remove', [ 'danger' ], [ modalClasses.commentsRemoveExpandable ], trashIcon);
+
     const categoryDiv = $(`
 <div class="s-card${isFlagEnabled ? '' : ' s-card__muted'} bs-sm py4" data-flag-id=${flagType.Id}>
     <div class="d-flex ai-center sm:fd-column sm:ai-start">
         <h3 class="mb0 mr-auto fs-body3">${flagType.DisplayName}</h3>
         <div class="d-flex gs8">
-            <button class="flex--item s-btn s-btn__primary ${modalClasses.commentsSubmit}" type="button" style="display: none">Save</button>
-            <button class="flex--item s-btn s-btn__icon ${modalClasses.commentsExpandableTrigger}"
-                    data-controller="s-expandable-control" aria-controls="${expandableId}" type="button">Edit</button>
-            <button class="flex--item s-btn s-btn__danger s-btn__icon ${modalClasses.commentsRemoveExpandable}">Remove</button>
             <div class="flex--item s-toggle-switch pt6">
                 <input class="${modalClasses.commentsToggleSwitch}" type="checkbox"${isFlagEnabled ? ' checked' : ''}>
                 <div class="s-toggle-switch--indicator"></div>
@@ -366,15 +368,9 @@ function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
         <div class="s-expandable--content"></div>
     </div>
 </div>`);
-    categoryDiv
-        .find(classSelectors.commentsRemoveExpandable)
-        .prepend(globals.getStacksSvg('Trash'), ' ') // trash icon to the remove button
-        .end()
-        .find(classSelectors.commentsExpandableTrigger)
-        .prepend(globals.getStacksSvg('Pencil'), ' ') // pencil icon to edit button
-        .end()
-        .find('.s-expandable--content')
-        .append(expandableContent); // insert the expandable content;
+    categoryDiv.find('.s-expandable--content').append(expandableContent); // insert the expandable content;
+    categoryDiv.find('.s-toggle-switch').before(saveButton, editButton, removeButton);
+
     return categoryDiv;
 }
 
@@ -625,10 +621,7 @@ function setupEventListeners(): void {
 function setupCommentsAndFlagsModal(): void {
     const modalTitle = 'AdvancedFlagging: edit comments and flags';
     const modalBody = $('<div>').addClass('d-flex fd-column gs16');
-    const resetButton = $('<button>')
-        .addClass(`flex--item s-btn s-btn__danger ${modalClasses.commentsReset}`)
-        .text('Reset')
-        .attr('type', 'button');
+    const resetButton = globals.createButton('Reset', [ 'danger' ], [ 'flex--item', modalClasses.commentsReset ]);
     const commentsPopup = globals.createModal(globals.modalIds.commentsModal, modalTitle, 'I\'m done!', modalBody, resetButton, 'w80');
 
     const categoryElements = {} as { [key: string]: JQuery };

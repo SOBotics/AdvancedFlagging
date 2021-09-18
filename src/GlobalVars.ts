@@ -254,7 +254,6 @@ export const failedActionIcon = (): JQuery => iconWrapper.clone().append(getStac
 export const reportedIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Flag').addClass('fc-red-500'));
 export const popupWrapper = $('<div>').addClass('fc-white fs-body3 ta-center z-modal ps-fixed l50').attr('id', modalIds.snackbar);
 
-export const advancedFlaggingLink = $('<button>').attr('type', 'button').addClass('s-btn s-btn__link').text('Advanced Flagging');
 export const popoverArrow = $('<div>').addClass('s-popover--arrow s-popover--arrow__tc');
 export const dropdown = $('<div>').addClass(`${modalClasses.dialog} s-popover s-anchors s-anchors__default mt2 c-default px0 py4`);
 export const actionsMenu = $('<ul>').addClass('s-menu').attr('role', 'menu');
@@ -377,22 +376,29 @@ export function createModal(
     resetButton?: JQuery,
     classes?: string // space-separated
 ): JQuery {
-    const iconClear = getStacksSvg('Clear')[0].outerHTML;
+    const iconClear = getStacksSvg('Clear');
+    const buttonPrimary = createButton(buttonPrimaryText, [ 'primary' ], [ 'flex--item' ]);
+    const buttonCancel = createButton('Cancel', [], [ 'flex--item' ])
+        .attr('data-action', 's-modal#hide');
+    const buttonClose = createButton(iconClear, [ 'muted' ], [ 's-modal--close' ])
+        .attr('data-action', 's-modal#hide');
+
     const modalElement = $(`
 <aside class="s-modal" id="${id}" tabindex="-1" role="dialog" aria-hidden="true" data-s-modal-target="modal" data-controller="s-modal">
     <div class="s-modal--dialog ps-relative s-modal__full" role="document">
         <h1 class="s-modal--header">${title}</h1>
         <div class="s-modal--body fs-body2"></div>
 
-        <div class="d-flex gs8 gsx s-modal--footer">
-            <button class="flex--item s-btn s-btn__primary" type="button">${buttonPrimaryText}</button>
-            <button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button>
-        </div>
-        <button class="s-modal--close s-btn s-btn__muted" type="button" data-action="s-modal#hide">${iconClear}</button>
+        <div class="d-flex gs8 gsx s-modal--footer"></div>
     </div>
 </aside>
     `);
+
     modalElement.find('.s-modal--body').append(bodyHtml);
+    modalElement.find('.s-modal--footer')
+        .append(buttonPrimary, buttonCancel)
+        .after(buttonClose);
+
     if (resetButton) modalElement.find('.s-modal--footer').append(resetButton);
     if (classes) modalElement.find('.s-modal--dialog').addClass(classes);
 
@@ -420,10 +426,35 @@ export function createCheckbox(
     <label class="flex--item s-label fw-normal" for="${id}">${labelText}</label>
 </div>`);
     checkboxElement.find('input').prop('checked', checked);
+
     if (label) checkboxElement.find('label').addClass(label);
     if (input) checkboxElement.find('input').addClass(input);
     if (flex) checkboxElement.addClass(flex);
     if (inputParent) checkboxElement.find('input').parent().addClass(inputParent);
 
     return checkboxElement;
+}
+
+type ButtonTypes = 'primary' | 'secondary' | 'danger' | 'muted' | 'link';
+export function createButton(
+    buttonText: string | JQuery,
+    buttonTypes?: ButtonTypes[],
+    classes?: string[],
+    svgIcon?: JQuery,
+): JQuery {
+    const classesToAdd = classes || [];
+    classesToAdd.push('s-btn');
+    buttonTypes?.forEach(type => classesToAdd.push(`s-btn__${type}`));
+
+    if (svgIcon) classesToAdd.push('s-btn__icon');
+
+    const button = $('<button>')
+        .attr('type', 'button')
+        .append(buttonText)
+        .addClass(classesToAdd.join(' '));
+
+    // add icon, if one has been passes
+    if (svgIcon) button.prepend(' ', svgIcon);
+
+    return button;
 }

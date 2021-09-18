@@ -486,7 +486,7 @@ function SetupPostPage(): void {
         if (post.page !== 'Question') return post.iconLocation.after(smokeyIcon, copypastorIcon, nattyIcon);
         if (post.score === null) return; // can't use !post.score, because score might be 0
 
-        const advancedFlaggingLink = globals.advancedFlaggingLink.clone();
+        const advancedFlaggingLink = globals.createButton('Advanced Flagging', [ 'link' ]);
         post.iconLocation.append(globals.flexItemDiv.clone().append(advancedFlaggingLink));
 
         const performedActionIcon = globals.performedActionIcon();

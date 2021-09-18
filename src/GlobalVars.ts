@@ -187,10 +187,13 @@ export const getDynamicAttributes = {
 
 export const getStacksSvg = (svgName: string): JQuery => $(GM_getResourceText(svgName));
 
-export const displayStacksToast = (message: string, type: StacksToastState): void => StackExchange.helpers.showToast(message, {
-    type: type,
-    transientTimeout: popupDelay
-});
+export const displayStacksToast = (message: string, type: StacksToastState, addParent?: boolean): void =>
+    StackExchange.helpers.showToast(message, {
+        type: type,
+        transientTimeout: popupDelay,
+        // so that dismissing the toast won't close the modal
+        $parent: addParent ? $('.s-modal[aria-hidden="false"] > .s-modal--dialog') : $()
+    });
 export const attachPopover = (element: Element, text: string, position = 'bottom-start'): void => {
     Stacks.setTooltipText(element, text, { placement: position as Stacks.TooltipOptions['placement'] });
 };

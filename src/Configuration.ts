@@ -73,7 +73,7 @@ export function setupConfiguration(): void {
     commentsDiv.append(commentsLink).insertAfter(bottomBox);
     configurationDiv.append(configurationLink).insertAfter(bottomBox);
     if (!Object.prototype.hasOwnProperty.call(globals.cachedConfiguration, globals.ConfigurationAddAuthorName)) {
-        globals.displayStacksToast('Please set up AdvancedFlagging before continuing.', 'info');
+        globals.displayStacksToast('Please set up AdvancedFlagging before continuing.', 'info', true);
         setTimeout(() => Stacks.showModal(configModal));
     }
 }
@@ -197,11 +197,11 @@ function getAdminConfigItems(): JQuery {
     const [clearMetasmokeInfo, clearFkey] = [
         $('<a>').text('Clear metasmoke configuration').on('click', () => {
             MetaSmokeAPI.reset();
-            globals.displayStacksToast('Successfully cleared MS configuration.', 'success');
+            globals.displayStacksToast('Successfully cleared MS configuration.', 'success', true);
         }),
         $('<a>').text('Clear chat fkey').on('click', () => {
             GreaseMonkeyCache.unset(globals.CacheChatApiFkey);
-            globals.displayStacksToast('Successfully cleared chat fkey.', 'success');
+            globals.displayStacksToast('Successfully cleared chat fkey.', 'success', true);
         })
     ].map(item => item.wrap(globals.flexItemDiv.clone()).parent());
     [clearMetasmokeInfo, clearFkey].forEach(element => sectionWrapper.append(element));
@@ -492,7 +492,7 @@ function setupEventListeners(): void {
             // if length is 1, then only the category header remains, which should be removed
             if (categoryWrapper.children().length === 1) flagTypeWrapper.fadeOut('fast', () => categoryWrapper.remove());
         });
-        globals.displayStacksToast('Successfully removed flag type', 'success');
+        globals.displayStacksToast('Successfully removed flag type', 'success', true);
     }).on('click', commentsReset, () => {
         GreaseMonkeyCache.unset(globals.FlagTypesKey);
         cacheFlags();
@@ -502,19 +502,19 @@ function setupEventListeners(): void {
         const element = $(event.target), flagTypeWrapper = element.parents('.s-card');
         const expandable = flagTypeWrapper.find('.s-expandable');
         const flagId = Number(flagTypeWrapper.attr('data-flag-id'));
-        if (!flagId) return globals.displayStacksToast('Failed to save options', 'danger');
+        if (!flagId) return globals.displayStacksToast('Failed to save options', 'danger', true);
 
         // only find invalid forms in visible textareas!
         const invalidElement = flagTypeWrapper.find(commentsInvalid).filter(':visible');
         if (invalidElement.length) {
             // similar to what happens when add comment is clicked but the form is invalid
             invalidElement.fadeOut(100).fadeIn(100);
-            globals.displayStacksToast('One or more of the comment textareas are invalid', 'danger');
+            globals.displayStacksToast('One or more of the comment textareas are invalid', 'danger', true);
             return;
         }
 
         const currentFlagType = globals.getFlagTypeFromFlagId(flagId);
-        if (!currentFlagType) return globals.displayStacksToast('Failed to save options', 'danger'); // somehow something went wrong
+        if (!currentFlagType) return globals.displayStacksToast('Failed to save options', 'danger', true);
 
         /* --- store comments of a comment and/or flag --- */
         // use || '' to avoid null/undefined values in cache
@@ -549,7 +549,7 @@ function setupEventListeners(): void {
         /* --- save ReportType --- */
         const selectElement = flagTypeWrapper.find('select');
         const newReportType = selectElement.val() as Flags;
-        if (newReportType === 'PostOther') globals.displayStacksToast('Flag PostOther cannot be used with this option', 'danger');
+        if (newReportType === 'PostOther') globals.displayStacksToast('Flag PostOther cannot be used with this option', 'danger', true);
         else currentFlagType.ReportType = newReportType;
         /* --- end --- */
 
@@ -575,17 +575,17 @@ function setupEventListeners(): void {
 
         globals.updateFlagTypes();
         element.next().trigger('click'); // hide the textarea by clicking the 'Hide' button and not manually
-        globals.displayStacksToast('Content saved successfully', 'success');
+        globals.displayStacksToast('Content saved successfully', 'success', true);
     }).on('change', commentsToggleSwitch, event => { // enable/disable a flag
         const toggleSwitch = $(event.target), flagTypeWrapper = toggleSwitch.parents('.s-card');
         const flagId = Number(flagTypeWrapper.attr('data-flag-id')), currentFlagType = globals.getFlagTypeFromFlagId(flagId);
-        if (!currentFlagType) return globals.displayStacksToast('Failed to toggle flag type', 'danger');
+        if (!currentFlagType) return globals.displayStacksToast('Failed to toggle flag type', 'danger', true);
 
         const isEnabled = toggleSwitch.is(':checked');
         currentFlagType.Enabled = isEnabled;
         globals.updateFlagTypes();
         isEnabled ? flagTypeWrapper.removeClass('s-card__muted') : flagTypeWrapper.addClass('s-card__muted');
-        globals.displayStacksToast(`Successfully ${isEnabled ? 'enabled' : 'disabled'} flag type`, 'success');
+        globals.displayStacksToast(`Successfully ${isEnabled ? 'enabled' : 'disabled'} flag type`, 'success', true);
     }).on('change', `${commentsToggleLeaveComment}, ${commentsToggleHighRep}`, event => { // leave comment options
         const inputElement = $(event.target), flagTypeWrapper = inputElement.parents('.s-card');
         const lowRepComment = flagTypeWrapper.find(commentsLowRepContent).parent();

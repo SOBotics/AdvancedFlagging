@@ -38,6 +38,48 @@ export class MetaSmokeAPI {
         MetaSmokeAPI.accessToken = await MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
     }
 
+    private static getMetasmokeTokenPopup(): JQuery {
+        const {
+            metasmokeTokenInput,
+            metasmokeTokenModal,
+        } = globals.modalIds;
+
+        const flexItemDiv = $('<div>').addClass('flex--item');
+        const authenticationLabel = globals.createLabel(
+            'Metasmoke access token',
+            metasmokeTokenInput,
+            [ 'd-block' ],
+            'Once you\'ve authenticated Advanced Flagging with metasmoke, you\'ll be given a code; enter it below:',
+            [ 'mt2' ]
+        );
+        flexItemDiv.append(authenticationLabel);
+
+        const metasmokePopupBody = $(`
+<div class="d-flex gs4 gsy fd-column">
+    <div class="d-flex ps-relative">
+        <input class="s-input" type="text" id="${metasmokeTokenInput}" placeholder="Enter the code here">
+    </div>
+</div>`);
+        metasmokePopupBody.prepend(flexItemDiv);
+        const metasmokeTokenPopup = globals.createModal(metasmokeTokenModal, 'Authenticate MS with AF', 'Submit', metasmokePopupBody);
+
+        return metasmokeTokenPopup;
+    }
+
+    private static showMSTokenPopupAndGet(): Promise<string | undefined> {
+        return new Promise<string>(resolve => {
+            const metasmokeTokenPopup = this.getMetasmokeTokenPopup();
+            StackExchange.helpers.showModal(metasmokeTokenPopup);
+
+            metasmokeTokenPopup.find('.s-btn__primary').on('click', () => {
+                const token = metasmokeTokenPopup.find(globals.idSelectors.metasmokeTokenInput).val();
+                metasmokeTokenPopup.remove(); // dismiss modal
+                if (!token) return;
+                resolve(token.toString());
+            });
+        });
+    }
+
     private static readonly codeGetter: (metaSmokeOAuthUrl: string) => Promise<string | undefined> = async (metaSmokeOAuthUrl?: string) => {
         if (MetaSmokeAPI.isDisabled) return;
 
@@ -49,7 +91,7 @@ export class MetaSmokeAPI {
 
         window.open(metaSmokeOAuthUrl, '_blank');
         await globals.Delay(100);
-        return await globals.showMSTokenPopupAndGet();
+        return await this.showMSTokenPopupAndGet();
     };
 
     public static async queryMetaSmokeInternal(): Promise<void> {

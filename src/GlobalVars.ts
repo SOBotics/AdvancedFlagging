@@ -159,7 +159,6 @@ const idsObj = {
     commentsButtonContainer: 'comments-button-container',
     commentsModal: 'comments',
     metasmokeTokenModal: 'metasmoke-token-modal',
-    metasmokeTokenSave: 'metasmoke-token-save',
     metasmokeTokenInput: 'metasmoke-token-input'
 };
 
@@ -245,11 +244,6 @@ export const getBotImageEl = (botName: BotNames): JQuery => sampleIcon.clone().f
 export const getMessageDiv = (text: string, state: string): JQuery => $('<div>').addClass(`p12 bg-${state}`).text(text).hide();
 export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').html(`<h2 class="flex--item">${name}</h2>`)
     .addClass('d-flex gs8 gsy fd-column').attr('id', getDynamicAttributes.configSection(name.toLowerCase()));
-export const getTextarea = (content: string, labelText: string, contentType: 'flag' | 'lowrep' | 'highrep'): JQuery => $(`
-<div class="d-flex gs4 gsy fd-column" style="display: ${content ? 'flex' : 'none'} !important;">
-    <label class="flex--item s-label">${labelText}</label>
-    <textarea rows=4 class="flex--item s-textarea fs-body2 ${getDynamicAttributes.textareaContent(contentType)}">${content}</textarea>
-</div>`);
 
 const iconWrapper = $('<div>').addClass('flex--item').css('display', 'none'); // the element that will contain the bot icons
 export const performedActionIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Checkmark').addClass('fc-green-500'));
@@ -268,35 +262,6 @@ export const configurationDiv = $('<div>').addClass('ta-left pt6').attr('id', mo
 export const configurationLink = $('<a>').attr('id', modalIds.configButton).text('AdvancedFlagging configuration');
 export const commentsDiv = configurationDiv.clone().attr('id', modalIds.configButtonContainer);
 export const commentsLink = configurationLink.clone().attr('id', modalIds.commentsButton).text('AdvancedFlagging: edit comments and flags');
-
-const metasmokePopupBody = $(`
-<div class="d-flex gs4 gsy fd-column">
-    <div class="flex--item">
-        <label class="s-label" for="example-item1">
-            Metasmoke access token
-            <p class="s-description mt2">
-                Once you've authenticated Advanced Flagging with metasmoke, you'll be given a code; enter it below:
-            </p>
-        </label>
-    </div>
-    <div class="d-flex ps-relative">
-        <input class="s-input" type="text" id="${modalIds.metasmokeTokenInput}" placeholder="Enter the code here">
-    </div>
-</div>`);
-const metasmokeTokenPopup = createModal(modalIds.metasmokeTokenModal, 'Authenticate MS with AF', 'Submit', metasmokePopupBody);
-metasmokeTokenPopup.find('.s-btn__primary').attr('id', modalIds.metasmokeTokenSave);
-
-export function showMSTokenPopupAndGet(): Promise<string | undefined> {
-    return new Promise<string | undefined>(resolve => {
-        StackExchange.helpers.showModal(metasmokeTokenPopup);
-        $(idSelectors.metasmokeTokenSave).on('click', () => {
-            const token = $(idSelectors.metasmokeTokenInput).val();
-            $(idSelectors.metasmokeTokenModal).remove(); // dismiss modal
-            if (!token) return;
-            resolve(token.toString());
-        });
-    });
-}
 
 export async function Delay(milliseconds: number): Promise<void> {
     return await new Promise<void>(resolve => setTimeout(resolve, milliseconds));
@@ -421,21 +386,22 @@ export function createCheckbox(
     }: Partial<CheckboxClasses>
 ): JQuery {
     const id = checkboxId.toLowerCase().replace(/\s/g, '_');
-    const checkboxElement = $(`
+    const labelElement = createLabel(labelText, id, [ 'flex--item', 'fw-normal' ]);
+    const checkboxWrapper = $(`
 <div class="d-flex gs4">
     <div class="flex--item">
         <input class="s-checkbox" type="checkbox" id="${id}"/>
     </div>
-    <label class="flex--item s-label fw-normal" for="${id}">${labelText}</label>
 </div>`);
-    checkboxElement.find('input').prop('checked', checked);
+    checkboxWrapper.find('input').prop('checked', checked);
+    checkboxWrapper.append(labelElement);
 
-    if (label) checkboxElement.find('label').addClass(label);
-    if (input) checkboxElement.find('input').addClass(input);
-    if (flex) checkboxElement.addClass(flex);
-    if (inputParent) checkboxElement.find('input').parent().addClass(inputParent);
+    if (label) labelElement.addClass(label);
+    if (input) checkboxWrapper.find('input').addClass(input);
+    if (flex) checkboxWrapper.addClass(flex);
+    if (inputParent) checkboxWrapper.find('input').parent().addClass(inputParent);
 
-    return checkboxElement;
+    return checkboxWrapper;
 }
 
 type ButtonTypes = 'primary' | 'secondary' | 'danger' | 'muted' | 'link';
@@ -460,4 +426,62 @@ export function createButton(
     if (svgIcon) button.prepend(' ', svgIcon);
 
     return button;
+}
+
+function createDescription(descriptionText: string, classes?: string[]): JQuery {
+    const classesToAdd = classes || [];
+    classesToAdd.push('s-description');
+
+    const description = $('<p>')
+        .addClass(classesToAdd.join(' '))
+        .text(descriptionText);
+
+    return description;
+}
+
+export function createLabel(
+    labelText: string,
+    forAttr: string,
+    classes?: string[],
+    descriptionText?: string,
+    descriptionClasses?: string[]
+): JQuery {
+    const classesToAdd = classes || [];
+    classesToAdd.push('s-label');
+
+    const label = $('<label>')
+        .html(labelText)
+        .attr('for', forAttr)
+        .addClass(classesToAdd.join(' '));
+
+    if (descriptionText) {
+        const description = createDescription(descriptionText, descriptionClasses);
+        label.append(description);
+    }
+
+    return label;
+}
+
+export function createTextarea(
+    content: string,
+    textareaId: string,
+    labelText: string,
+    rows: number,
+    classes?: string[],
+): JQuery {
+    const classesToAdd = classes || [];
+    classesToAdd.push('s-textarea');
+
+    const textarea = $('<textarea>')
+        .attr('id', textareaId)
+        .attr('rows', rows)
+        .addClass(classesToAdd.join(' '))
+        .val(content);
+    const label = createLabel(labelText, textareaId, [ 'flex--item' ]);
+    const wrapper = $('<div>')
+        .addClass('d-flex gs4 gsy fd-column')
+        .attr('style', `display: ${content ? 'flex' : 'none'} !important`)
+        .append(label, textarea);
+
+    return wrapper;
 }

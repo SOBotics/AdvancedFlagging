@@ -271,28 +271,38 @@ function getAdminConfigItems(): JQuery {
       that will be used regardless of the OP's reputation. This appears to be the simplest approach
 */
 
-function getFeedbackRadio(botName: string, feedback: globals.AllFeedbacks, isChecked: boolean, flagId: number): string {
+function getFeedbackRadio(botName: string, feedback: globals.AllFeedbacks, isChecked: boolean, flagId: number): JQuery {
     const botNameToIdFormat = botName.replace(/\s/g, '-');
     const radioId = getDynamicAttributes.feedbackRadioId(botNameToIdFormat, flagId, feedback || 'none');
     const radioName = getDynamicAttributes.feedbackRadioName(flagId, botNameToIdFormat);
-    return `
+
+    const labelText = feedback || globals.noneString.replace('o50', '');
+    const label = globals.createLabel(labelText, radioId, [ 'flex--item', 'fw-normal' ]);
+    const feedbackRadio = $(`
 <div class="flex--item">
     <div class="d-flex gs8 gsx">
         <div class="flex--item">
             <input class="s-radio" data-feedback="${feedback}" type="radio"${isChecked ? ' checked' : ''}
                    name="${radioName}" id="${radioId}"/>
         </div>
-        <label class="flex--item s-label fw-normal" for="${radioId}">${feedback || globals.noneString.replace('o50', '')}</label>
     </div>
-</div>`;
+</div>`);
+    feedbackRadio.children(':first').append(label);
+
+    return feedbackRadio;
 }
 
-function getRadiosForBot(botName: globals.BotNames, currentFeedback: globals.AllFeedbacks, flagId: number): string {
+function getRadiosForBot(botName: globals.BotNames, currentFeedback: globals.AllFeedbacks, flagId: number): JQuery {
     const feedbacks = globals.possibleFeedbacks[botName];
-    const botFeedbacks = feedbacks
-        .map(feedback => getFeedbackRadio(botName, feedback, feedback === currentFeedback, flagId))
-        .join('\n');
-    return `<div class="d-flex gs16"><div class="flex--item fs-body2">Feedback to ${botName}:</div>${botFeedbacks}</div>`;
+    const botFeedbacks = feedbacks.map(feedback => getFeedbackRadio(botName, feedback, feedback === currentFeedback, flagId));
+
+    const botRadios = $(`
+<div class="d-flex gs16">
+    <div class="flex--item fs-body2">Feedback to ${botName}:</div>
+</div>`);
+    botRadios.append(botFeedbacks);
+
+    return botRadios;
 }
 
 function getExpandableContent(
@@ -306,7 +316,7 @@ function getExpandableContent(
     const feedbackRadios = Object.keys(globals.possibleFeedbacks).map(item => {
         const botName = item as globals.BotNames;
         return getRadiosForBot(botName, flagFeedbacks[botName], flagId);
-    }).join('\n');
+    });
     const sendFeedbackId = getDynamicAttributes.sendWhenFlagRaised(flagId), sendFeedbackClass = modalClasses.commentsSendWhenFlagRaised;
     const sendFeedbackText = 'Send feedback from this flag type when this type of flag is raised';
     const downvoteId = getDynamicAttributes.downvoteOption(flagId), downvoteClass = modalClasses.commentsDownvoteOption;
@@ -329,13 +339,15 @@ function getExpandableContent(
     <div class="s-select r32 flex--item">
         <select class="pl48" ${isDisabled ? 'disabled' : ''}>${getFlagOptions(reportType)}</select>
     </div>
-</div>
-<div class="${modalClasses.commentsSendFeedbackRadios} py8 ml2">${feedbackRadios}</div>`);
+</div>`);
+    const radiosWrapper = $('<div>')
+        .addClass(`${modalClasses.commentsSendFeedbackRadios} py8 ml2`)
+        .append(feedbackRadios);
 
-    if (!isModOrNoFlag(reportType)) content.eq(0).append(sendFeedbackCheckbox);
-    content.eq(0).append(downvoteCheckbox);
+    if (!isModOrNoFlag(reportType)) content.append(sendFeedbackCheckbox);
+    content.append(downvoteCheckbox);
 
-    return content;
+    return content.add(radiosWrapper);
 }
 
 function createFlagTypeDiv(flagType: globals.CachedFlag): JQuery {
@@ -425,21 +437,33 @@ function getCommentFlagsDivs(flagId: number, comments: globals.CachedFlag['Comme
         input: commentsToggleHighRep
     });
 
+    const leaveCommentLabel = globals.createLabel('Leave comment', toggleSwitchId, [ 'flex--item', 'mx0' ]);
     const commentOptions = $(`
 <div class="d-flex gsx gs12 ai-center">
-    <label class="flex--item s-label mx0" for="${toggleSwitchId}">Leave comment</label>
     <div class="flex--item s-toggle-switch">
         <input id="${toggleSwitchId}" class="${commentsToggleLeaveComment}" type="checkbox"${enableSwitch ? ' checked' : ''}>
         <div class="s-toggle-switch--indicator"></div>
     </div>
 </div>`);
+    commentOptions.prepend(leaveCommentLabel);
     commentOptions.append(checkbox);
 
     contentWrapper.append(commentOptions);
     const lowRepLabel = comments.High ? 'LowRep comment' : 'Comment text'; // if there are two comments, add label for LowRep
-    const flagEl = globals.getTextarea(flagText, 'Flag text', 'flag').append(getCharSpan(flagText, 'flag'));
-    const lowRepEl = globals.getTextarea(comments.Low, lowRepLabel, 'lowrep').append(getCharSpan(comments.Low, 'comment'));
-    const highRepEl = globals.getTextarea(comments.High, 'HighRep comment', 'highrep').append(getCharSpan(comments.High, 'comment'));
+
+    const getTextarea = (content: string, labelText: string, contentType: 'flag' | 'lowrep' | 'highrep'): JQuery => {
+        const textareaId = `advanced-flagging-${contentType}-textarea-${flagId}`;
+
+        return globals.createTextarea(content, textareaId, labelText, 4, [
+            'flex--item',
+            'fs-body2',
+            globals.getDynamicAttributes.textareaContent(contentType)
+        ]);
+    };
+
+    const flagEl = getTextarea(flagText, 'Flag text', 'flag').append(getCharSpan(flagText, 'flag'));
+    const lowRepEl = getTextarea(comments.Low, lowRepLabel, 'lowrep').append(getCharSpan(comments.Low, 'comment'));
+    const highRepEl = getTextarea(comments.High, 'HighRep comment', 'highrep').append(getCharSpan(comments.High, 'comment'));
     contentWrapper.append(flagEl, lowRepEl, highRepEl);
     // change the text counter information on keyup
     flagEl.add(lowRepEl).add(highRepEl).on('keyup', event => {

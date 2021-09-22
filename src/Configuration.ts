@@ -432,10 +432,10 @@ function getCommentFlagsDivs(flagId: number, comments: globals.CachedFlag['Comme
 
     const labelText = 'Include comment for high rep users';
     const checkbox = globals.createCheckbox(checkboxId, labelText, tickCheckbox, {
-        flex: `gsx ai-center${enableSwitch ? '' : ' is-disabled'}`,
+        flex: 'gsx ai-center',
         inputParent: 'pb2',
         input: commentsToggleHighRep
-    });
+    }, !enableSwitch);
 
     const leaveCommentLabel = globals.createLabel('Leave comment', toggleSwitchId, [ 'flex--item', 'mx0' ]);
     const commentOptions = $(`

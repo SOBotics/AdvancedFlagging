@@ -383,7 +383,8 @@ export function createCheckbox(
         input = '',
         flex = '',
         inputParent = ''
-    }: Partial<CheckboxClasses>
+    }: Partial<CheckboxClasses>,
+    disabled?: boolean
 ): JQuery {
     const id = checkboxId.toLowerCase().replace(/\s/g, '_');
     const labelElement = createLabel(labelText, id, [ 'flex--item', 'fw-normal' ]);
@@ -400,6 +401,11 @@ export function createCheckbox(
     if (input) checkboxWrapper.find('input').addClass(input);
     if (flex) checkboxWrapper.addClass(flex);
     if (inputParent) checkboxWrapper.find('input').parent().addClass(inputParent);
+
+    if (disabled) {
+        checkboxWrapper.addClass('is-disabled');
+        checkboxWrapper.find('input').prop('disabled', true);
+    }
 
     return checkboxWrapper;
 }
@@ -423,7 +429,7 @@ export function createButton(
         .addClass(classesToAdd.join(' '));
 
     // add icon, if one has been passes
-    if (svgIcon) button.prepend(' ', svgIcon);
+    if (svgIcon) button.prepend(svgIcon, ' ');
 
     return button;
 }

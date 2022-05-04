@@ -80,7 +80,7 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): vo
         // this won't work for community wiki posts and there's nothing that can be done about it
         const opReputation = parseAuthorReputation(element.find('.user-info .reputation-score').last());
         // in Flags page, authorName will be empty, but we aren't interested in it there anyways...
-        const opName = element.find('.user-info .user-details a').text().trim();
+        const opName = element.find('.user-info .user-details a').eq(-1).text().trim();
         const deleted = element.hasClass('deleted-answer');
 
         callback({ postType, element, iconLocation, page, postId, questionTime, answerTime, score, opReputation, opName, deleted });

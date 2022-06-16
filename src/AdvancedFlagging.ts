@@ -18,6 +18,8 @@ ${globals.idSelectors.snackbar} {
 }
 
 const reviewPostsInformation: ReviewQueuePostInfo[] = [];
+const popupWrapper = document.createElement('div');
+document.body.append(popupWrapper);
 
 function getFlagToRaise(flagName: Flags, qualifiesForVlq: boolean): Flags {
     const vlqFlag = globals.FlagNames.VLQ;
@@ -60,7 +62,7 @@ async function handleActions(
         const flagName = getFlagToRaise(flag.ReportType, qualifiesForVlq);
         try {
             const failedToFlagText = 'Failed to flag: ';
-            const flagPost = await fetch(`//${window.location.hostname}/flags/posts/${post.postId}/add/${flagName}`, {
+            const flagPost = await fetch(`/flags/posts/${post.postId}/add/${flagName}`, {
                 method: 'POST',
                 body: globals.getFormDataFromObject({ fkey: userFkey, otherText: flagText || '' })
             });
@@ -68,8 +70,9 @@ async function handleActions(
             // for some reason, the flag responses are inconsistent: some are in JSON, others in text
             // for example, if a user flags posts too quickly, then they get a text response
             // if the post has been flagged successfully, the response is in JSON format
+            const tooQuicklyRegex = /You may only flag a post every \d+ seconds?/;
             const responseText = await flagPost.text();
-            if (/You may only flag a post every \d+ seconds?/.test(responseText)) { // flagging posts too quickly
+            if (tooQuicklyRegex.test(responseText)) { // flagging posts too quickly
                 const rateLimitedSeconds = /\d+/.exec(responseText)?.[0] || 0;
                 const pluralS = rateLimitedSeconds > 1 ? 's' : '';
                 const message = `${failedToFlagText}rate-limited for ${rateLimitedSeconds} second${pluralS}`;
@@ -92,11 +95,12 @@ async function handleActions(
         }
     }
 
-    const downvoteButton = post.element.find('.js-vote-down-btn');
+    const downvoteButton = post.element.querySelector<HTMLButtonElement>('.js-vote-down-btn');
+    const hasDownvoted = downvoteButton?.classList.contains('fc-theme-primary');
     // only downvote if post hasn't already been downvoted
-    if (!downvoteRequired || !flag.Downvote || downvoteButton.hasClass('fc-theme-primary')) return;
+    if (!downvoteRequired || !flag.Downvote || hasDownvoted) return;
 
-    downvoteButton.trigger('click');
+    downvoteButton?.click();
 }
 
 async function handleFlag(
@@ -106,13 +110,15 @@ async function handleFlag(
 ): Promise<boolean> {
     let hasFailed = false;
 
-    // simultaneously send feedback to all bots and check if something goes wrong with the hasFailed boolean variable
+    // simultaneously send feedback to all bots
+    // hasFailed will be set to true if something goes wrong
     const allPromises = (Object.values(reporters) as Reporter[])
         .filter(item => flagType.Feedbacks[item.name])
         .map(reporter => {
+            const checkbox = checkboxesInformation?.[reporter.name][0].querySelector('input');
             // this may be undefined (the parameter is not passed or the checkbox is somehow not found)
             // hence the ?? instead of ||
-            const sendFeedbackToBot = checkboxesInformation?.[reporter.name].find('input').is(':checked') ?? true;
+            const sendFeedbackToBot = checkbox?.checked ?? true;
 
             return reporter.sendFeedback(flagType.Feedbacks[reporter.name], sendFeedbackToBot)
                 .then(promiseValue => promiseValue ? globals.displaySuccess(promiseValue) : '')
@@ -123,12 +129,17 @@ async function handleFlag(
         });
 
     await Promise.allSettled(allPromises);
+
     return !hasFailed;
 }
 
 export function displayToaster(message: string, state: string): void {
     const messageDiv = globals.getMessageDiv(message, state);
-    globals.popupWrapper.append(messageDiv.fadeIn());
+
+    popupWrapper.classList.add('fc-white', 'fs-body3', 'ta-center', 'z-modal', 'ps-fixed', 'l50');
+    popupWrapper.id = globals.modalIds.snackbar;
+    $(popupWrapper).append(messageDiv.fadeIn());
+
     window.setTimeout(() => messageDiv.fadeOut('slow', () => messageDiv.remove()), globals.popupDelay);
 }
 
@@ -158,13 +169,17 @@ function getStrippedComment(commentText: string): string {
         .replace(' - From Review', ''); // in case the comment was left via review, remove that part
 }
 
-function upvoteSameComments(postElement: JQuery, strippedCommentText: string): void {
-    postElement.find('.comment-body .comment-copy').each((_index, el) => {
-        const element = $(el), text = element.text();
-        if (text !== strippedCommentText) return;
+function upvoteSameComments(postElement: Element, strippedCommentText: string): void {
+    postElement
+        .querySelectorAll<HTMLSpanElement>('.comment-body .comment-copy')
+        .forEach(element => {
+            if (element.innerText !== strippedCommentText) return;
 
-        element.closest('li').find('a.comment-up.comment-up-off').trigger('click');
-    });
+            element
+                .closest('li') // find the parent
+                ?.querySelector<HTMLAnchorElement>('a.comment-up.comment-up-off') // select the voting button
+                ?.click(); // click it!
+        });
 }
 
 function getErrorMessage(responseJson: StackExchangeFlagResponse): string {
@@ -182,76 +197,41 @@ function showComments(postId: number, data: string): void {
     const commentUI = StackExchange.comments.uiForPost($(`#comments-${postId}`));
     commentUI.addShow(true, false);
     commentUI.showComments(data, null, false, true);
+
     $(document).trigger('comment', postId);
 }
 
-function setupNattyApi(postId: number, questionTime: Date | null, answerTime: Date | null, nattyIcon?: JQuery): NattyAPI {
-    const nattyApi = new NattyAPI(postId, questionTime || new Date(), answerTime || new Date());
-    const isReported = nattyApi.wasReported();
-
-    if (nattyIcon && isReported) {
-        globals.showInlineElement(nattyIcon);
-        nattyIcon.find('a').attr('href', `//sentinel.erwaysoftware.com/posts/aid/${postId}`).attr('target', '_blank');
-    }
-
-    return nattyApi;
+function increasePopoverWidth(reportLink: HTMLAnchorElement): void {
+    const popoverId = reportLink.parentElement?.getAttribute('aria-describedby') || '';
+    document
+        .querySelector(`#${popoverId}`)
+        ?.classList
+        .add('sm:wmn-initial', 'md:wmn-initial', 'wmn5');
 }
 
-function setupMetasmokeApi(postId: number, postType: globals.PostType, smokeyIcon: JQuery): MetaSmokeAPI {
-    const metasmokeApi = new MetaSmokeAPI(postId, postType);
-    const smokeyId = metasmokeApi.getSmokeyId();
-
-    if (smokeyId) {
-        smokeyIcon.find('a').attr('href', `https://metasmoke.erwaysoftware.com/post/${smokeyId}`).attr('target', '_blank');
-        globals.showInlineElement(smokeyIcon);
-    }
-
-    return metasmokeApi;
+function getAllBotIcons(): HTMLDivElement[] {
+    return ['Natty', 'Guttenberg', 'Smokey']
+        .map(bot => globals.createBotIcon(bot as globals.BotNames));
 }
 
-function setupGuttenbergApi(postId: number, copypastorIcon: JQuery): CopyPastorAPI {
-    const copypastorApi = new CopyPastorAPI(postId), copypastorId = copypastorApi.copypastorId;
-
-    if (copypastorId) {
-        globals.showInlineElement(copypastorIcon);
-        copypastorIcon.find('a').attr('href', `https://copypastor.sobotics.org/posts/${copypastorId}`).attr('target', '_blank');
-    }
-
-    return copypastorApi;
-}
-
-function increasePopoverWidth(reportLink: JQuery): void {
-    const popoverId = reportLink.parent().attr('aria-describedby') || '';
-    $(`#${popoverId}`).addClass('sm:wmn-initial md:wmn-initial wmn5');
-}
-
-function getAllBotIcons(): JQuery[] {
-    const nattyIcon = globals.getBotImageEl('Natty');
-    const copypastorIcon = globals.getBotImageEl('Guttenberg');
-    const smokeyIcon = globals.getBotImageEl('Smokey');
-
-    globals.attachPopover(nattyIcon.find('a')[0], 'Reported by Natty');
-    globals.attachPopover(copypastorIcon.find('a')[0], 'Reported by Guttenberg');
-    globals.attachPopover(smokeyIcon.find('a')[0], 'Reported by Smokey');
-
-    return [nattyIcon, copypastorIcon, smokeyIcon];
-}
-
-function addBotIconsToReview(post: PostInfo, botIcons?: JQuery[]): void {
+function addBotIconsToReview(post: PostInfo): void {
     if (post.postType !== 'Answer') return;
 
-    const botIconsToAppend = botIcons || getAllBotIcons();
+    const botIconsToAppend = getAllBotIcons();
     const [nattyIcon, copypastorIcon, smokeyIcon] = botIconsToAppend;
-    const iconLocation = post.element.find('.js-post-menu').children().first();
+    const iconLocation = post.element.querySelector('.js-post-menu')?.firstElementChild;
 
-    iconLocation.append(...botIconsToAppend);
-    if (botIcons) return;
+    iconLocation?.append(...botIconsToAppend);
 
     const reporters: ReporterInformation = {
-        Natty: setupNattyApi(post.postId, post.questionTime, post.answerTime, nattyIcon),
-        Smokey: setupMetasmokeApi(post.postId, post.postType, smokeyIcon),
-        Guttenberg: setupGuttenbergApi(post.postId, copypastorIcon)
+        Natty: new NattyAPI(post.postId, post.questionTime, post.answerTime, nattyIcon),
+        Smokey: new MetaSmokeAPI(post.postId, post.postType, smokeyIcon),
+        Guttenberg: new CopyPastorAPI(post.postId, copypastorIcon)
     };
+
+    Object
+        .values(reporters)
+        .forEach((reporter: ValueOfReporters) => reporter.setupIcon()); // setup all icons
 
     reviewPostsInformation.push({ postId: post.postId, post, reporters });
 }
@@ -263,8 +243,8 @@ function getFeedbackSpans(
     smokeyReported: boolean,
     guttenbergReported: boolean,
     postDeleted: boolean
-): string {
-    return (Object.entries(flagType.Feedbacks) as [keyof globals.FlagTypeFeedbacks, globals.AllFeedbacks][])
+): HTMLSpanElement[] {
+    const spans = (Object.entries(flagType.Feedbacks) as [keyof globals.FlagTypeFeedbacks, globals.AllFeedbacks][])
         .filter(([botName, feedback]) => {
             return feedback && // make sure there's actually a feedback
 
@@ -278,8 +258,17 @@ function getFeedbackSpans(
                 // there's no way to report a post to Guttenberg, so we just filter the posts that have been reported
                 || (botName === 'Guttenberg' && guttenbergReported
                 || (botName === 'Generic Bot' && feedback === 'track')); // only get bot names where there is feedback
-        }).map(([botName, feedback]) => {
-            if (feedback === 'track') return '<span><b>track </b>with Generic Bot</span>'; // different string for Generic Bot
+        })
+        .map(([botName, feedback]) => {
+            const feedbackSpan = document.createElement('span');
+            const strongElement = document.createElement('b');
+            feedbackSpan.append(strongElement);
+
+            if (feedback === 'track') {
+                strongElement.innerText = 'track ';
+                feedbackSpan.append('with Generic Bot');
+                return feedbackSpan; // different string for Generic Bot
+            }
 
             // determine the colour to add to the feedback using Stacks classes
             // https://stackoverflow.design/product/base/colors/#danger-and-error
@@ -293,23 +282,29 @@ function getFeedbackSpans(
             // make it clear that the post will be reported in the popover
             // again, this shouldn't happen if the post is deleted
             const shouldReport = (botName === 'Smokey' && !smokeyReported) || (botName === 'Natty' && !nattyReported);
+            feedbackSpan.classList.add(`fc-${className}`);
+            strongElement.innerHTML = shouldReport ? 'report' : feedback;
+            feedbackSpan.after(` to ${botName}`);
 
-            return `<span class="fc-${className}"><b>${shouldReport ? 'report' : feedback}</b></span> to ${botName}`;
-        }).filter(String).join(', ') || globals.noneString;
+            return feedbackSpan;
+        }).filter(String);
+
+    return spans.length ? spans : [globals.noneSpan];
 }
 
 function getPopoverOption(checkboxId: string, labelText: string, checked: boolean): JQuery {
     const checkbox = globals.createCheckbox(checkboxId, labelText, checked, {
         label: 'pt1 fs-body1'
     });
+
     return globals.dropdownItem
         .clone()
         .addClass('pl8')
         .append(checkbox);
 }
 
-function getOptionsRow(postElement: JQuery, postId: number): JQuery[] {
-    const postComments = postElement.find('.comment-body');
+function getOptionsRow(postElement: Element, postId: number): JQuery[] {
+    const postComments = postElement.querySelector('.comment-body');
 
     // check which of the checkboxes the user has chosen to uncheck by default
     const defaultNoComment = globals.cachedConfiguration[globals.ConfigurationDefaultNoComment];
@@ -317,7 +312,7 @@ function getOptionsRow(postElement: JQuery, postId: number): JQuery[] {
     const defaultNoDownvote = globals.cachedConfiguration[globals.ConfigurationDefaultNoDownvote];
 
     // check 'Leave comment' if there aren't more comments and user has selected to do so
-    const checkComment = !defaultNoComment && !postComments.length;
+    const checkComment = !defaultNoComment && !postComments;
 
     const commentCheckboxId = globals.getDynamicAttributes.optionCheckbox('comment', postId);
     const flagCheckboxId = globals.getDynamicAttributes.optionCheckbox('flag', postId);
@@ -340,9 +335,10 @@ function getBotFeedbackCheckboxesRow(reporters: ReporterInformation, postId: num
         // need the postId in the id to make it unique
         const botNameId = globals.getDynamicAttributes.popoverSendFeedbackTo(sanitisedBotName, postId);
         const defaultNoCheck = globals.cachedConfiguration[configCacheKey];
-        const botImageHtml = globals.getBotImageEl(botName).removeClass('d-none').addClass('d-inline-block')[0].outerHTML;
+        const botImage = globals.createBotIcon(botName);
+        globals.showInlineElement(botImage);
 
-        checkboxes[botName] = getPopoverOption(botNameId, `Feedback to ${botImageHtml}`, !defaultNoCheck);
+        checkboxes[botName] = getPopoverOption(botNameId, `Feedback to ${botImage.outerHTML}`, !defaultNoCheck);
         globals.attachPopover(checkboxes[botName][0], `Send feedback to ${botName}`, 'right-start');
     });
 
@@ -351,6 +347,7 @@ function getBotFeedbackCheckboxesRow(reporters: ReporterInformation, postId: num
 
 type Reporter = CopyPastorAPI | MetaSmokeAPI | NattyAPI | GenericBotAPI;
 type CheckboxesInformation = { [key in globals.BotNames]: JQuery }
+type ValueOfReporters = NattyAPI | MetaSmokeAPI | CopyPastorAPI; // Object.values() is broken :(
 
 interface ReporterInformation {
     Smokey?: MetaSmokeAPI;
@@ -394,7 +391,7 @@ function BuildFlaggingDialog(
 
     const copypastorApi = reporters.Guttenberg, nattyApi = reporters.Natty, metasmokeApi = reporters.Smokey;
     const smokeyId = metasmokeApi?.getSmokeyId();
-    const { copypastorId, repost, targetUrl } = copypastorApi as CopyPastorAPI;
+    const { copypastorId, repost, targetUrl } = copypastorApi || {};
 
     // add the flag types to the category they correspond to
     const newCategories = globals.cachedCategories
@@ -409,7 +406,7 @@ function BuildFlaggingDialog(
         const showGutReport = Boolean(copypastorId) && (flagType.DisplayName === 'Duplicate Answer' ? repost : !repost);
 
         // show the red flags and general items on every site, restrict the others to Stack Overflow
-        const showOnMainSite = ['Red flags', 'General'].includes(flagType.BelongsTo) ? true : globals.isStackOverflow;
+        const showOnMainSite = ['Red flags', 'General'].includes(flagType.BelongsTo) || globals.isStackOverflow;
 
         return flagType.Enabled && (isGuttenbergItem ? showGutReport : showOnMainSite);
     }).forEach(flagType => newCategories.find(category => flagType.BelongsTo === category.Name)?.FlagTypes.push(flagType));
@@ -429,8 +426,7 @@ function BuildFlaggingDialog(
             });
 
             const flagName = getFlagToRaise(flagType.ReportType, shouldRaiseVlq);
-            let reportTypeHuman: HumanFlags | string = globals.getHumanFromDisplayName(flagName);
-            const flagText = copypastorId && targetUrl ? globals.getFullFlag(flagType.Id, targetUrl, copypastorId) : null;
+            const flagText = copypastorId && targetUrl ? globals.getFullFlag(flagType.Id, targetUrl, copypastorId) : '';
             const feedbacksString = getFeedbackSpans(
                 flagType,
                 nattyApi?.wasReported() || false,
@@ -438,30 +434,40 @@ function BuildFlaggingDialog(
                 Boolean(smokeyId),
                 Boolean(copypastorId),
                 post.deleted
-            );
+            ).map(element => element.innerText).join('');
 
-            let tooltipCommentText = commentText;
-            let tooltipFlagText = flagText;
-            const postDeletedString = '<span class="fc-danger">- post is deleted</span>';
+            let reportTypeHuman = flagType.ReportType === 'NoFlag' || !post.deleted
+                ? globals.getHumanFromDisplayName(flagName)
+                : '';
+            const tooltipCommentText = (post.deleted ? '' : commentText) || '';
+            const tooltipFlagText = post.deleted ? '' : flagText;
 
             // if the flag changed from VLQ to NAA, let the user know why
             if (flagType.ReportType !== flagName) reportTypeHuman += ' (VLQ criteria weren\'t met)';
 
-            // there was a flag to be raised, but the post is deleted
-            else if (flagType.ReportType !== 'NoFlag' && post.deleted) reportTypeHuman = `${globals.noneString} ${postDeletedString}`;
-            else if (commentText && post.deleted) tooltipCommentText = `${globals.noneString} ${postDeletedString}`;
-            else if (flagText && post.deleted) tooltipFlagText = `${globals.noneString} ${postDeletedString}`;
-
             // the HTML that will be on the tooltip contains information regarding the flag that will be raised,
             // the comment that will be added, the flag text if the flag is PostOther and the feedbacks that will be sent to bots
-            const reportLinkInfo = `<div><b>Flag: </b>${reportTypeHuman || globals.noneString}</div>`
-                                 + `<div><b>Comment: </b>${tooltipCommentText || globals.noneString}</div>`
-                                 + (tooltipFlagText ? `<div><b>Flag text: </b>${tooltipFlagText}</div>` : '')
-                                 + `<div><b>Feedbacks: </b> ${feedbacksString}</div>`
-                                 + `<div>${flagType.Downvote ? '<b>Downvotes</b>' : 'Does <b>not</b> downvote'} the post</div>`;
+
+            const popoverParent = document.createElement('div');
+            
+            Object.entries({
+                'Flag': reportTypeHuman,
+                'Comment': tooltipCommentText,
+                'Flag text': tooltipFlagText,
+                'Feedbacks': feedbacksString
+            })
+                .filter(([, value]) => value)
+                .map(([boldText, value]) => globals.createPopoverToOption(boldText, value, post.deleted))
+                .forEach(element => popoverParent.append(element));
+
+            const downvoteWrapper = document.createElement('div');
+            const downvoteOrNot = flagType.Downvote ? '<b>Downvotes</b>' : 'Does <b>not</b> downvote'
+            downvoteWrapper.innerHTML = `${downvoteOrNot} the post`;
+
+            popoverParent.append(downvoteWrapper);
 
             // because the tooltips are originally too narrow, we need to increase min-width
-            globals.attachHtmlPopover(reportLink.parent()[0], reportLinkInfo, 'right-start');
+            globals.attachHtmlPopover(reportLink.parent()[0], popoverParent.innerHTML, 'right-start');
             setTimeout(() => increasePopoverWidth(reportLink));
 
             reportLink.on('click', async () => {
@@ -477,7 +483,16 @@ function BuildFlaggingDialog(
 
                     const flagPost = flagRow.find('.s-checkbox').is(':checked');
                     const downvoteBoxChecked = downvoteRow.find('.s-checkbox').is(':checked');
-                    await handleActions(post, flagType, flagPost, downvoteBoxChecked, reportedIcon, shouldRaiseVlq, flagText, commentText);
+                    await handleActions(
+                        post,
+                        flagType,
+                        flagPost,
+                        downvoteBoxChecked,
+                        reportedIcon,
+                        shouldRaiseVlq,
+                        flagText,
+                        commentText
+                    );
                 }
 
                 // feedback should however be sent
@@ -494,23 +509,24 @@ function BuildFlaggingDialog(
                 }
             });
         });
+
         actionsMenu.append(globals.categoryDivider.clone()); // add the divider
     });
 
     actionsMenu.append(globals.popoverArrow.clone());
+
     if (globals.isStackOverflow) actionsMenu.append(commentRow); // the user shouldn't be able to leave comments on non-SO sites
     actionsMenu.append(flagRow, downvoteRow);
 
-    const elementsToAppend = Object.entries(checkboxesInformation)
-        .map(([botName, element]) => {
-            // check if the posts have (or can) be reported to bots before adding them
-            if (botName === 'Natty' && !nattyApi?.wasReported() && !nattyApi?.canBeReported()) return;
-            else if (botName === 'Guttenberg' && !copypastorId) return;
-            else if (botName === 'Generic Bot' && !globals.isStackOverflow) return; // generic bot only works on SO
-
-            return element;
+    const elementsToAppend = Object
+        .entries(checkboxesInformation)
+        .filter(([botName]) => {
+            // a post that has been reported or can be reported
+            botName === 'Natty' && (nattyApi?.wasReported() || nattyApi?.canBeReported())
+         || botName === 'Guttenberg' && copypastorId
+         || botName === 'Generic Bot' && globals.isStackOverflow // generic only works on SO
         })
-        .filter(Boolean); // get rid of undefined's
+        .map(([, element]) => element);
 
     if (elementsToAppend.length) actionsMenu.append(globals.categoryDivider.clone(), ...elementsToAppend as JQuery[]);
 
@@ -521,16 +537,22 @@ let autoFlagging = false;
 function SetupPostPage(): void {
     const linkDisabled = globals.cachedConfiguration[globals.ConfigurationLinkDisabled];
     if (linkDisabled || globals.isLqpReviewPage) return; // do not add the buttons on review
+
     parseQuestionsAndAnswers(post => {
-        if (!post.element.length) return;
+        if (!post.element) return;
 
         const [nattyIcon, copypastorIcon, smokeyIcon] = getAllBotIcons();
-        const reporters: ReporterInformation = { Smokey: setupMetasmokeApi(post.postId, post.postType, smokeyIcon) };
+        const reporters: ReporterInformation = {
+            Smokey: new MetaSmokeAPI(post.postId, post.postType, smokeyIcon)
+        };
 
         if (post.postType === 'Answer' && globals.isStackOverflow) {
-            reporters.Natty = setupNattyApi(post.postId, post.questionTime, post.answerTime, nattyIcon);
-            reporters.Guttenberg = setupGuttenbergApi(post.postId, copypastorIcon);
+            reporters.Natty = new NattyAPI(post.postId, post.questionTime, post.answerTime, nattyIcon);
+            reporters.Guttenberg = new CopyPastorAPI(post.postId, copypastorIcon);
         }
+        // run before adding Generic Bot to the list
+        Object.values(reporters).forEach((reporter: ValueOfReporters) => reporter.setupIcon()); // setup all icons
+
         if (globals.isStackOverflow) reporters['Generic Bot'] = new GenericBotAPI(post.postId);
 
         // if we aren't in a question page, then we just insert the icons
@@ -545,7 +567,7 @@ function SetupPostPage(): void {
         const reportedIcon = globals.reportedIcon();
 
         // Now append the advanced flagging dialog
-        const shouldRaiseVlq = globals.qualifiesForVlq(post.score, post.answerTime || new Date());
+        const shouldRaiseVlq = globals.qualifiesForVlq(post.score, post.answerTime);
         const dropDown = BuildFlaggingDialog(post, reportedIcon, performedActionIcon, reporters, shouldRaiseVlq, failedActionIcon);
         advancedFlaggingLink.append(dropDown);
         post.iconLocation.append(performedActionIcon, reportedIcon, failedActionIcon, nattyIcon, copypastorIcon, smokeyIcon);
@@ -597,13 +619,16 @@ function Setup(): void {
         SetupStyles();
         setupConfiguration();
     });
-    $('body').append(globals.popupWrapper);
 
     const watchedQueuesEnabled = globals.cachedConfiguration[globals.ConfigurationWatchQueues];
     if (!watchedQueuesEnabled) return;
 
     globals.addXHRListener(xhr => {
-        if (xhr.status !== 200 || !globals.isReviewItemRegex.test(xhr.responseURL) || !$('#answer').length) return;
+        if (
+            xhr.status !== 200
+         || !globals.isReviewItemRegex.test(xhr.responseURL)
+         || !document.querySelector('#answer')
+        ) return;
 
         const reviewResponse = JSON.parse(xhr.responseText) as ReviewQueueResponse;
         if (reviewResponse.isAudit || reviewResponse.postTypeId !== 2) return; // shouldn't be an audit and should be an answer
@@ -631,8 +656,10 @@ function Setup(): void {
         if (!reviewCachedInfo || reviewCachedInfo.post.postType !== 'Answer') return; // something went wrong
 
         const reportersArray: ReporterInformation = {
-            Natty: setupNattyApi(postId, reviewCachedInfo.post.questionTime, reviewCachedInfo.post.answerTime)
+            Natty: new NattyAPI(postId, reviewCachedInfo.post.questionTime, reviewCachedInfo.post.answerTime)
         };
+        reportersArray.Natty?.setupIcon();
+
         const flagType = globals.cachedFlagTypes.find(item => item.DisplayName === 'Not an answer'); // the NAA cached flag type
         if (!flagType) return; // something went wrong
 

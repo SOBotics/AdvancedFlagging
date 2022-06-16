@@ -1,5 +1,13 @@
 import { ChatApi } from './ChatApi';
-import { isStackOverflow, nattyFeedbackUrl, dayMillis, FlagTypeFeedbacks, nattyReportedMessage, isPostDeleted } from '../GlobalVars';
+import {
+    isStackOverflow,
+    nattyFeedbackUrl,
+    dayMillis,
+    FlagTypeFeedbacks,
+    nattyReportedMessage,
+    isPostDeleted,
+    showInlineElement
+} from '../GlobalVars';
 import { getAllPostIds } from './sotools';
 
 interface NattyFeedback {
@@ -15,17 +23,16 @@ interface NattyFeedbackItem {
 export class NattyAPI {
     private static nattyIds: number[] = [];
     private readonly chat: ChatApi = new ChatApi();
-    private readonly answerId: number;
     private readonly feedbackMessage: string;
     private readonly reportMessage: string;
-    private readonly questionDate: Date;
-    private readonly answerDate: Date;
     public name: keyof FlagTypeFeedbacks = 'Natty';
 
-    constructor(answerId: number, questionDate: Date, answerDate: Date) {
-        this.answerId = answerId;
-        this.questionDate = questionDate;
-        this.answerDate = answerDate;
+    constructor(
+        private readonly answerId: number,
+        private readonly questionDate: Date,
+        private readonly answerDate: Date,
+        private readonly nattyIcon?: HTMLDivElement
+    ) {
         this.feedbackMessage = `@Natty feedback https://stackoverflow.com/a/${this.answerId}`;
         this.reportMessage = `@Natty report https://stackoverflow.com/a/${this.answerId}`;
     }
@@ -78,5 +85,17 @@ export class NattyAPI {
         return this.wasReported()
             ? await this.chat.sendMessage(`${this.feedbackMessage} ${feedback}`, this.name)
             : await this.reportNaa(feedback);
+    }
+
+    public setupIcon(): void {
+        if (!this.wasReported() || !this.nattyIcon) return;
+
+        const iconLink = this.nattyIcon.querySelector('a');
+        if (!iconLink) return;
+
+        iconLink.href = `//sentinel.erwaysoftware.com/posts/aid/${this.answerId}`;
+        iconLink.target = '_blank';
+
+        showInlineElement(this.nattyIcon);
     }
 }

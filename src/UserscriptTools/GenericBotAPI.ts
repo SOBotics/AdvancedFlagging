@@ -27,7 +27,10 @@ export class GenericBotAPI {
             const flaggerName = encodeURIComponent(username || '');
             if (!trackPost || !isStackOverflow || !flaggerName || !sendFeedback) return resolve('');
 
-            const contentHash = this.computeContentHash($(`#answer-${this.answerId} .js-post-body`).html().trim());
+            const answer = document.querySelector(`#answer-${this.answerId} .js-post-body`);
+            const answerBody = answer?.innerHTML.trim() || '';
+            const contentHash = this.computeContentHash(answerBody);
+
             GM_xmlhttpRequest({
                 method: 'POST',
                 url: 'https://so.floern.com/api/trackpost.php',

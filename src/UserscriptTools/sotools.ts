@@ -4,12 +4,12 @@ type Pages = 'Question' | 'NATO' | 'Flags';
 
 export interface PostInfo {
     postType: PostType;
-    element: JQuery;
-    iconLocation: JQuery;
+    element: Element;
+    iconLocation: Element;
     page: Pages;
     postId: number;
-    questionTime: Date | null; // not interested in that value on the Flags page
-    answerTime: Date | null;
+    questionTime: Date; // not interested in that value on the Flags page
+    answerTime: Date;
     score: number | null;
     opReputation: number | null; // null in the Flags page
     opName: string;
@@ -24,12 +24,20 @@ $.event.special.destroyed = {
     }
 };
 
-function getExistingElement(): JQuery | undefined {
+function getExistingElement(): Element[] | undefined {
     if (!isQuestionPage && !isNatoPage && !isFlagsPage) return;
-    const natoElements = $('.answer-hyperlink').parents('tr'), flagElements = $('.flagged-post');
-    const questionPageElements = $('.question, .answer');
-    const elementToUse = [natoElements, flagElements, questionPageElements].find(item => item.length);
-    return elementToUse;
+
+    const natoElements = document.querySelectorAll('.default-view-post-table > tbody > tr');
+    const flagElements = document.querySelectorAll('.flagged-post');
+    const questionPageElements = document.querySelectorAll('.question, .answer');
+
+    const elementToUse = [
+        natoElements,
+        flagElements,
+        questionPageElements
+    ].find(item => item.length);
+
+    return Array.from(elementToUse || []);
 }
 
 function getPage(): Pages | '' {
@@ -39,51 +47,92 @@ function getPage(): Pages | '' {
     else return '';
 }
 
-function getPostIdFromElement(postNode: JQuery, postType: PostType): number {
-    const elementHref = postNode.find('.answer-hyperlink, .question-hyperlink').attr('href');
-    // in the question page, questions/answers have a data-questionid/data-answerid with the post id
-    const postIdString = (postNode.attr('data-questionid') || postNode.attr('data-answerid'))
-        // in the flags/NATO page, we find the postId by parsing the post URL
-        || (postType === 'Answer' ? elementHref?.split('#')[1] : elementHref?.split('/')[2]);
+function getPostIdFromElement(postNode: Element, postType: PostType): number {
+    const postHyperlink = postNode.querySelector<HTMLAnchorElement>('.answer-hyperlink, .question-hyperlink');
+    const elementHref = postHyperlink?.href;
+
+    const postIdString =
+        (
+            // questions page: get value of data-questionid/data-answerid
+            postNode.getAttribute('data-questionid')
+         || postNode.getAttribute('data-answerid')
+        ) || (
+            postType === 'Answer'// flags/NATO page: parse the post URL
+                ? elementHref?.split('#')[1]
+                : elementHref?.split('/')[2]
+        );
+
     return Number(postIdString);
 }
 
-function parseAuthorReputation(reputationDiv: JQuery): number {
-    let reputationText = reputationDiv.text().replace(/,/g, '');
+function parseAuthorReputation(reputationDiv: HTMLElement): number {
+    let reputationText = reputationDiv.innerText.replace(/,/g, '');
     if (!reputationText) return 0;
 
     if (reputationText.includes('k')) {
-        reputationText = reputationText.replace(/\./g, '').replace(/k/, '');
-        return Number(reputationText) * 1000;
+        reputationText = reputationText
+            .replace(/\.\d/g, '') // 4.5k => 4k
+            .replace(/k/, ''); // 4k => 4
+        return Number(reputationText) * 1000; // 4 => 4000
     } else return Number(reputationText);
 }
 
-function getPostCreationDate(postNode: JQuery, postType: PostType): Date {
-    const dateString = (postType === 'Question' ? $('.question') : postNode).find('.user-info .relativetime').last();
-    return new Date(dateString.attr('title') || '');
+function getPostCreationDate(postNode: Element, postType: PostType): Date {
+    const postElement = postType === 'Question'
+        ? document.querySelector<HTMLElement>('.question')
+        : postNode;
+
+    const dateElements = postElement?.querySelectorAll<HTMLElement>('.user-info .relativetime');
+    const authorDateElement = Array.from(dateElements || []).pop();
+
+    return new Date(authorDateElement?.title || '');
 }
 
 export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): void {
-    getExistingElement()?.each((_index, node) => {
-        const element = $(node);
-        const postType: PostType = element.hasClass('question') || element.find('.question-hyperlink').length ? 'Question' : 'Answer';
+    getExistingElement()?.forEach(element => {
+        const postType: PostType =
+            element.classList.contains('question')
+         || element.querySelector('.question-hyperlink')
+                ? 'Question'
+                : 'Answer';
+
         const page = getPage();
         if (!page) return;
 
         const iconLocation = page === 'Question'
-            ? element.find('.js-post-menu').children().first()
-            : element.find('a.question-hyperlink, a.answer-hyperlink');
+            ? element.querySelector('.js-post-menu')?.firstElementChild as HTMLElement
+            : element.querySelector('a.question-hyperlink, a.answer-hyperlink') as HTMLElement;
+
         const postId = getPostIdFromElement(element, postType);
         const questionTime = getPostCreationDate(element, 'Question');
         const answerTime = getPostCreationDate(element, 'Answer');
-        const score = Number(element.attr('data-score')) || 0; // won't work for Flags, but we don't need that there
-        // this won't work for community wiki posts and there's nothing that can be done about it
-        const opReputation = parseAuthorReputation(element.find('.user-info .reputation-score').last());
-        // in Flags page, authorName will be empty, but we aren't interested in it there anyways...
-        const opName = element.find('.user-info .user-details a').text().trim();
-        const deleted = element.hasClass('deleted-answer');
 
-        callback({ postType, element, iconLocation, page, postId, questionTime, answerTime, score, opReputation, opName, deleted });
+        // won't work for Flags, but we don't need that there:
+        const score = Number(element.getAttribute('data-score')) || 0;
+
+        // this won't work for community wiki posts and there's nothing that can be done about it:
+        const reputationElement = [...element.querySelectorAll('.user-info .reputation-score')].pop();
+        const opReputation = parseAuthorReputation(reputationElement as HTMLElement);
+
+        // in Flags page, authorName will be empty, but we aren't interested in it there anyways...
+        const opName = element.querySelector('.user-info .user-details a')?.textContent?.trim() || '';
+
+        // (yes, even deleted questions have these class...)
+        const deleted = element.classList.contains('deleted-answer');
+
+        callback({
+            postType,
+            element,
+            iconLocation,
+            page,
+            postId,
+            questionTime,
+            answerTime,
+            score,
+            opReputation,
+            opName,
+            deleted
+        });
     });
 }
 
@@ -91,7 +140,7 @@ export function getAllPostIds(includeQuestion: boolean, urlForm: boolean): (numb
     const elementToUse = getExistingElement();
     if (!elementToUse) return [];
 
-    return elementToUse.get().map(item => {
+    return elementToUse.map(item => {
         const element = $(item);
         const isQuestionType = isQuestionPage ? element.attr('data-questionid') : element.find('.question-hyperlink').length;
         const postType: PostType = isQuestionType ? 'Question' : 'Answer';

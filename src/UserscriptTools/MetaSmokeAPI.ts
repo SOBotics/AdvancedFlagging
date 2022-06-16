@@ -20,14 +20,13 @@ export class MetaSmokeAPI {
     private static readonly appKey = globals.metasmokeKey;
     private static metasmokeIds: MetasmokeData = {};
     public static isDisabled: boolean = GreaseMonkeyCache.getFromCache<boolean>(globals.MetaSmokeDisabledConfig) || false;
-    private readonly postId: number;
-    private readonly postType: globals.PostType;
     public name: keyof globals.FlagTypeFeedbacks = 'Smokey';
 
-    constructor(postId: number, postType: globals.PostType) {
-        this.postId = postId;
-        this.postType = postType;
-    }
+    constructor(
+        private readonly postId: number,
+        private readonly postType: globals.PostType,
+        private readonly smokeyIcon?: HTMLDivElement
+    ) { }
 
     public static reset(): void {
         GreaseMonkeyCache.unset(globals.MetaSmokeDisabledConfig);
@@ -44,7 +43,9 @@ export class MetaSmokeAPI {
             metasmokeTokenModal,
         } = globals.modalIds;
 
-        const flexItemDiv = $('<div>').addClass('flex--item');
+        const flexItemDiv = document.createElement('<div>');
+        flexItemDiv.classList.add('flex--item');
+
         const authenticationLabel = globals.createLabel(
             'Metasmoke access token',
             metasmokeTokenInput,
@@ -54,14 +55,28 @@ export class MetaSmokeAPI {
         );
         flexItemDiv.append(authenticationLabel);
 
-        const metasmokePopupBody = $(`
-<div class="d-flex gs4 gsy fd-column">
-    <div class="d-flex ps-relative">
-        <input class="s-input" type="text" id="${metasmokeTokenInput}" placeholder="Enter the code here">
-    </div>
-</div>`);
+        const metasmokePopupBody = document.createElement('div');
+        metasmokePopupBody.classList.add('d-flex', 'gs4', 'gsy', 'fd-column');
+
+        const inputContainer = document.createElement('div');
+        inputContainer.classList.add('d-flex', 'ps-relative');
+
+        const codeInput = document.createElement('input');
+        codeInput.id = metasmokeTokenInput;
+        codeInput.classList.add('s-input');
+        codeInput.type = 'text';
+        codeInput.placeholder = 'Enter the code here';
+
+        inputContainer.append(codeInput);
+        metasmokePopupBody.append(inputContainer);
         metasmokePopupBody.prepend(flexItemDiv);
-        const metasmokeTokenPopup = globals.createModal(metasmokeTokenModal, 'Authenticate MS with AF', 'Submit', metasmokePopupBody);
+
+        const metasmokeTokenPopup = globals.createModal(
+            metasmokeTokenModal,
+            'Authenticate MS with AF',
+            'Submit',
+            metasmokePopupBody
+        );
 
         return metasmokeTokenPopup;
     }
@@ -181,5 +196,18 @@ export class MetaSmokeAPI {
             throw new Error(globals.getSentMessage(false, feedback, this.name));
         }
         return globals.getSentMessage(true, feedback, this.name);
+    }
+
+    public setupIcon(): void {
+        const smokeyId = this.getSmokeyId();
+        if (!smokeyId || !this.smokeyIcon) return;
+
+        const iconLink = this.smokeyIcon.querySelector('a');
+        if (!iconLink) return;
+
+        iconLink.href = `https://metasmoke.erwaysoftware.com/post/${smokeyId}`;
+        iconLink.target = '_blank';
+
+        globals.showInlineElement(this.smokeyIcon);
     }
 }

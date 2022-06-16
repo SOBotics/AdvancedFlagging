@@ -1,5 +1,13 @@
 import { ChatApi } from './ChatApi';
-import { isStackOverflow, copypastorServer, username, copypastorKey, getSentMessage, FlagTypeFeedbacks } from '../GlobalVars';
+import {
+    isStackOverflow,
+    copypastorServer,
+    username,
+    copypastorKey,
+    getSentMessage,
+    FlagTypeFeedbacks,
+    showInlineElement
+} from '../GlobalVars';
 import { getAllPostIds } from './sotools';
 
 interface CopyPastorFindTargetResponseItem {
@@ -32,13 +40,16 @@ export class CopyPastorAPI {
     public copypastorId: number;
     public repost: boolean;
     public targetUrl: string;
-    private readonly answerId: number;
 
-    constructor(id: number) {
-        this.answerId = id;
-        this.copypastorId = CopyPastorAPI.copypastorIds[this.answerId]?.copypastorId || 0;
-        this.repost = CopyPastorAPI.copypastorIds[this.answerId]?.repost || false;
-        this.targetUrl = CopyPastorAPI.copypastorIds[this.answerId]?.target_url || '';
+    constructor(
+        private readonly answerId: number,
+        private readonly copypastorIcon?: HTMLDivElement
+    ) {
+        const copypastorObject = CopyPastorAPI.copypastorIds[this.answerId];
+
+        this.copypastorId = copypastorObject?.copypastorId || 0;
+        this.repost = copypastorObject?.repost || false;
+        this.targetUrl = copypastorObject?.target_url || '';
     }
 
     public static async getAllCopyPastorIds(): Promise<void> {
@@ -99,5 +110,16 @@ export class CopyPastorAPI {
                 onerror: () => reject(failureMessage)
             });
         });
+    }
+
+    public setupIcon(): void {
+        if (!this.copypastorId || !this.copypastorIcon) return;
+
+        showInlineElement(this.copypastorIcon);
+        const iconLink = this.copypastorIcon.querySelector('a');
+        if (!iconLink) return;
+
+        iconLink.href = `//copypastor.sobotics.org/posts/${this.copypastorId}`;
+        iconLink.target = 'blank';
     }
 }

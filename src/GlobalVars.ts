@@ -96,8 +96,11 @@ export const isNatoPage = window.location.href.includes('/tools/new-answers-old-
 export const isFlagsPage = /\/users\/flag-summary\/\d+/.test(window.location.href);
 export const isLqpReviewPage = /\/review\/low-quality-posts\/\d+/.test(window.location.href);
 export const flexItemDiv = $('<div>').addClass('flex--item');
-export const noneString = '<span class="o50">(none)</span>';
-const botImages = {
+export const noneSpan = document.createElement('span');
+noneSpan.classList.add('o50');
+noneSpan.innerText = '(none)';
+
+export const botImages = {
     Natty: 'https://i.stack.imgur.com/aMUMt.jpg?s=32&g=1',
     Smokey: 'https://i.stack.imgur.com/7cmCt.png?s=32&g=1',
     'Generic Bot': 'https://i.stack.imgur.com/6DsXG.png?s=32&g=1',
@@ -210,10 +213,14 @@ export function getFlagsUrlRegex(postId: number): RegExp {
 
 // various helper functions
 export const showElement = (element: JQuery): JQuery => element.addClass('d-block').removeClass('d-none');
-export const showInlineElement = (element: JQuery): JQuery => element.addClass('d-inline-block').removeClass('d-none');
+export const showInlineElement = (element: HTMLElement): void => {
+    element.classList.add('d-inline-block');
+    element.classList.remove('d-none');
+};
 export const displaySuccess = (message: string): void => displayToaster(message, 'success');
 export const displayError = (message: string): void => displayToaster(message, 'danger');
-export const isPostDeleted = (postId: number): boolean => $(`#question-${postId}, #answer-${postId}`).hasClass('deleted-answer');
+export const isPostDeleted = (postId: number): boolean =>
+    document.querySelector(`#question-${postId}, #answer-${postId}`)?.classList.contains('deleted-answer') || false;
 
 export function getParamsFromObject<T>(object: T): string {
     return Object.entries(object).map(item => item.join('=')).join('&');
@@ -235,12 +242,8 @@ export function getSentMessage(success: boolean, feedback: string, bot: string):
     return success ? `Feedback ${feedback} sent to ${bot}` : `Failed to send feedback ${feedback} to ${bot}`;
 }
 
-// jQuery icon elements
-const sampleIcon = flexItemDiv.clone().addClass(`d-none ${isQuestionPage || isLqpReviewPage ? '' : ' ml8'}`)
-    .append($('<a>').addClass('s-avatar s-avatar__16 s-user-card--avatar').append($('<img>').addClass('s-avatar--image')));
-export const getBotImageEl = (botName: BotNames): JQuery => sampleIcon.clone().find('img').attr('src', botImages[botName]).parents('div');
-
 // dynamically generated jQuery elements
+/* TODO move these appropriately in AdvancedFlagging.ts */
 export const getMessageDiv = (text: string, state: string): JQuery => $('<div>').addClass(`p12 bg-${state}`).text(text).hide();
 export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').html(`<h2 class="flex--item">${name}</h2>`)
     .addClass('d-flex gs8 gsy fd-column').attr('id', getDynamicAttributes.configSection(name.toLowerCase()));
@@ -249,7 +252,6 @@ const iconWrapper = $('<div>').addClass('flex--item').css('display', 'none'); //
 export const performedActionIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Checkmark').addClass('fc-green-500'));
 export const failedActionIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Clear').addClass('fc-red-500'));
 export const reportedIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Flag').addClass('fc-red-500'));
-export const popupWrapper = $('<div>').addClass('fc-white fs-body3 ta-center z-modal ps-fixed l50').attr('id', modalIds.snackbar);
 
 export const popoverArrow = $('<div>').addClass('s-popover--arrow s-popover--arrow__tc');
 export const dropdown = $('<div>').addClass(`${modalClasses.dialog} s-popover s-anchors s-anchors__default mt2 c-default px0 py4`);
@@ -410,6 +412,24 @@ export function createCheckbox(
     return checkboxWrapper;
 }
 
+export function createBotIcon(botName: keyof (typeof botImages)): HTMLDivElement {
+    const iconWrapper = document.createElement('div');
+    iconWrapper.classList.add('flex--item', 'd-none');
+    if (!isQuestionPage && !isLqpReviewPage) iconWrapper.classList.add('ml8'); // flag pages
+
+    const iconLink = document.createElement('a');
+    iconLink.classList.add('s-avatar', 's-avatar__16', 's-user-card--avatar');
+    attachPopover(iconLink, `Reported by ${botName}`);
+    iconWrapper.append(iconLink);
+
+    const iconImage = document.createElement('img');
+    iconImage.classList.add('s-avatar--image');
+    iconImage.src = botImages[botName];
+    iconLink.append(iconImage);
+
+    return iconWrapper;
+}
+
 type ButtonTypes = 'primary' | 'secondary' | 'danger' | 'muted' | 'link';
 export function createButton(
     buttonText: string | JQuery,
@@ -488,6 +508,28 @@ export function createTextarea(
         .addClass('d-flex gs4 gsy fd-column')
         .attr('style', `display: ${content ? 'flex' : 'none'} !important`)
         .append(label, textarea);
+
+    return wrapper;
+}
+
+export function createPopoverToOption(
+    boldText: string,
+    value: string,
+    deleted: boolean
+): HTMLElement {
+    const wrapper = document.createElement('div');
+    const bold = document.createElement('strong');
+    bold.innerText = `${boldText}: `;
+
+    wrapper.append(bold, value || noneSpan);
+
+    if (deleted) {
+        const postDeletedSpan = document.createElement('span');
+        postDeletedSpan.classList.add('fc-danger');
+        postDeletedSpan.innerText = '- post is deleted';
+
+        wrapper.append(' ', postDeletedSpan);
+    }
 
     return wrapper;
 }

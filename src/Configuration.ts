@@ -276,7 +276,10 @@ function getFeedbackRadio(botName: string, feedback: globals.AllFeedbacks, isChe
     const radioId = getDynamicAttributes.feedbackRadioId(botNameToIdFormat, flagId, feedback || 'none');
     const radioName = getDynamicAttributes.feedbackRadioName(flagId, botNameToIdFormat);
 
-    const labelText = feedback || globals.noneString.replace('o50', '');
+    const noneSpan = globals.noneSpan.cloneNode(true) as HTMLSpanElement;
+    noneSpan.classList.remove('o50');
+
+    const labelText = feedback || noneSpan.outerHTML;
     const label = globals.createLabel(labelText, radioId, [ 'flex--item', 'fw-normal' ]);
     const feedbackRadio = $(`
 <div class="flex--item">

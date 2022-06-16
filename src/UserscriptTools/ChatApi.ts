@@ -19,9 +19,11 @@ export class ChatApi {
         return GreaseMonkeyCache.getAndCache<string>(CacheChatApiFkey, async () => {
             try {
                 const channelPage = await this.getChannelPage(roomId);
-                const fkeyElement = $(channelPage).filter('#fkey');
-                const fkey = fkeyElement.val();
-                return fkey?.toString() || '';
+                const parsedHtml = new DOMParser().parseFromString(channelPage, 'text/html');
+                const fkeyElement = parsedHtml.querySelector<HTMLInputElement>('input[name="fkey"]');
+                const fkey = fkeyElement?.value || '';
+
+                return fkey;
             } catch (error) {
                 console.error(error);
                 throw new Error('Failed to get chat fkey');
@@ -31,8 +33,8 @@ export class ChatApi {
 
     public getChatUserId(): number {
         // Because the script only sends messages to SO chat, the SO chat id is the same as the SO id.
-        // This is not the case for SE chat, so it needs to be changes when/if https://github.com/SOBotics/AdvancedFlagging/issues/31
-        // is implemented
+        // This is not the case for SE chat, so it needs to be changed
+        // when https://github.com/SOBotics/AdvancedFlagging/issues/31 is implemented
         return StackExchange.options.user.userId as number;
     }
 
@@ -41,26 +43,32 @@ export class ChatApi {
         let numTries = 0;
         const onFailure = async (): Promise<string> => {
             numTries++;
+
             if (numTries < 3) {
                 GreaseMonkeyCache.unset(CacheChatApiFkey);
                 if (!await makeRequest()) return onFailure();
             } else {
                 throw new Error(chatFailureMessage); // retry limit exceeded
             }
+
             return getSentMessage(true, message.split(' ').pop() || '', bot);
         };
 
         if (!await makeRequest()) return onFailure();
+
         return getSentMessage(true, message.split(' ').pop() || '', bot);
     }
 
     private async sendRequestToChat(message: string, roomId: number): Promise<boolean> {
         const fkey = await this.getChannelFKey(roomId);
+
         return new Promise(resolve => {
             GM_xmlhttpRequest({
                 method: 'POST',
                 url: `${this.chatRoomUrl}/chats/${roomId}/messages/new`,
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
                 data: 'text=' + encodeURIComponent(message) + '&fkey=' + fkey,
                 onload: (chatResponse: { status: number }) => resolve(chatResponse.status === 200),
                 onerror: () => resolve(false),
@@ -74,7 +82,9 @@ export class ChatApi {
                 method: 'GET',
                 url: `${this.chatRoomUrl}/rooms/${roomId}`,
                 onload: (response: { status: number; responseText: string }) => {
-                    response.status === 200 ? resolve(response.responseText) : reject();
+                    response.status === 200
+                        ? resolve(response.responseText)
+                        : reject();
                 },
                 onerror: () => reject()
             });

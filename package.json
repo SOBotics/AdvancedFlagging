@@ -8,7 +8,7 @@
   "author": "Robert Rudman <rjrudman@gmail.com> (https://github.com/rjrudman)",
   "license": "ISC",
   "devDependencies": {
-    "@types/jquery": "3.5.6",
+    "@types/jquery": "3.5.14",
     "@types/tampermonkey": "4.0.5",
     "@userscripters/stackexchange-global-types": "^2.2.1",
     "@typescript-eslint/eslint-plugin": "4.31.0",

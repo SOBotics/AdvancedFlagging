@@ -115,7 +115,7 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): vo
         const opReputation = parseAuthorReputation(reputationElement as HTMLElement);
 
         // in Flags page, authorName will be empty, but we aren't interested in it there anyways...
-        const opName = element.querySelector('.user-info .user-details a')?.textContent?.trim() || '';
+        const opName = $(element).find('.user-info .user-details a').text()?.trim() || '';
 
         // (yes, even deleted questions have these class...)
         const deleted = element.classList.contains('deleted-answer');

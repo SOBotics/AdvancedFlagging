@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.3.7
+// @version      1.3.8
 // @author       Robert Rudman
 // @contributor  double-beep
 // @match        *://*.stackexchange.com/*
@@ -353,7 +353,7 @@ function SetupPostPage() {
     const linkDisabled = globals.cachedConfiguration[globals.ConfigurationLinkDisabled];
     if (linkDisabled || globals.isLqpReviewPage)
         return;
-    sotools_1.parseQuestionsAndAnswers(post => {
+    (0, sotools_1.parseQuestionsAndAnswers)(post => {
         if (!post.element.length)
             return;
         const [nattyIcon, copypastorIcon, smokeyIcon] = getAllBotIcons();
@@ -417,7 +417,7 @@ function Setup() {
     ]).then(() => {
         SetupPostPage();
         SetupStyles();
-        Configuration_1.setupConfiguration();
+        (0, Configuration_1.setupConfiguration)();
     });
     $('body').append(globals.popupWrapper);
     const watchedQueuesEnabled = globals.cachedConfiguration[globals.ConfigurationWatchQueues];
@@ -431,7 +431,7 @@ function Setup() {
         if (reviewResponse.isAudit || reviewResponse.postTypeId !== 2)
             return;
         const cachedPost = (_a = reviewPostsInformation.find(item => item.postId === reviewResponse.postId)) === null || _a === void 0 ? void 0 : _a.post;
-        cachedPost ? addBotIconsToReview(cachedPost) : sotools_1.parseQuestionsAndAnswers(addBotIconsToReview);
+        cachedPost ? addBotIconsToReview(cachedPost) : (0, sotools_1.parseQuestionsAndAnswers)(addBotIconsToReview);
     });
     $(document).on('click', '.js-review-submit', () => {
         if (!$('#review-action-LooksGood').is(':checked'))
@@ -531,7 +531,7 @@ function parseQuestionsAndAnswers(callback) {
         const answerTime = getPostCreationDate(element, 'Answer');
         const score = Number(element.attr('data-score')) || 0;
         const opReputation = parseAuthorReputation(element.find('.user-info .reputation-score').last());
-        const opName = element.find('.user-info .user-details a').text().trim();
+        const opName = element.find('.user-info .user-details a').eq(-1).text().trim();
         const deleted = element.hasClass('deleted-answer');
         callback({ postType, element, iconLocation, page, postId, questionTime, answerTime, score, opReputation, opName, deleted });
     });
@@ -656,9 +656,9 @@ const showElement = (element) => element.addClass('d-block').removeClass('d-none
 exports.showElement = showElement;
 const showInlineElement = (element) => element.addClass('d-inline-block').removeClass('d-none');
 exports.showInlineElement = showInlineElement;
-const displaySuccess = (message) => AdvancedFlagging_1.displayToaster(message, 'success');
+const displaySuccess = (message) => (0, AdvancedFlagging_1.displayToaster)(message, 'success');
 exports.displaySuccess = displaySuccess;
-const displayError = (message) => AdvancedFlagging_1.displayToaster(message, 'danger');
+const displayError = (message) => (0, AdvancedFlagging_1.displayToaster)(message, 'danger');
 exports.displayError = displayError;
 const isPostDeleted = (postId) => $(`#question-${postId}, #answer-${postId}`).hasClass('deleted-answer');
 exports.isPostDeleted = isPostDeleted;
@@ -701,11 +701,11 @@ const getTextarea = (textareaContent, labelText, contentType) => $(`
 </div>`);
 exports.getTextarea = getTextarea;
 const iconWrapper = $('<div>').addClass('grid--cell').css('display', 'none');
-const performedActionIcon = () => iconWrapper.clone().append(exports.getStacksSvg('Checkmark').addClass('fc-green-500'));
+const performedActionIcon = () => iconWrapper.clone().append((0, exports.getStacksSvg)('Checkmark').addClass('fc-green-500'));
 exports.performedActionIcon = performedActionIcon;
-const failedActionIcon = () => iconWrapper.clone().append(exports.getStacksSvg('Clear').addClass('fc-red-500'));
+const failedActionIcon = () => iconWrapper.clone().append((0, exports.getStacksSvg)('Clear').addClass('fc-red-500'));
 exports.failedActionIcon = failedActionIcon;
-const reportedIcon = () => iconWrapper.clone().append(exports.getStacksSvg('Flag').addClass('fc-red-500'));
+const reportedIcon = () => iconWrapper.clone().append((0, exports.getStacksSvg)('Flag').addClass('fc-red-500'));
 exports.reportedIcon = reportedIcon;
 exports.popupWrapper = $('<div>').addClass('af-snackbar fc-white fs-body3 ta-center z-modal ps-fixed l50');
 exports.advancedFlaggingLink = $('<button>').attr('type', 'button').addClass('s-btn s-btn__link').text('Advanced Flagging');
@@ -914,7 +914,7 @@ class NattyAPI {
         this.reportMessage = `@Natty report https://stackoverflow.com/a/${this.answerId}`;
     }
     static getAllNattyIds() {
-        const postIds = sotools_1.getAllPostIds(false, false).join(',');
+        const postIds = (0, sotools_1.getAllPostIds)(false, false).join(',');
         if (!GlobalVars_1.isStackOverflow || !postIds)
             return Promise.resolve();
         return new Promise((resolve, reject) => {
@@ -938,7 +938,7 @@ class NattyAPI {
     canBeReported() {
         const answerAge = this.getDaysBetween(this.answerDate, new Date());
         const daysPostedAfterQuestion = this.getDaysBetween(this.questionDate, this.answerDate);
-        const isDeleted = GlobalVars_1.isPostDeleted(this.answerId);
+        const isDeleted = (0, GlobalVars_1.isPostDeleted)(this.answerId);
         return this.answerDate > this.questionDate && answerAge < 30 && daysPostedAfterQuestion > 30 && !isDeleted;
     }
     async reportNaa(feedback) {
@@ -1009,11 +1009,11 @@ class ChatApi {
             else {
                 throw new Error(GlobalVars_1.chatFailureMessage);
             }
-            return GlobalVars_1.getSentMessage(true, message.split(' ').pop() || '', bot);
+            return (0, GlobalVars_1.getSentMessage)(true, message.split(' ').pop() || '', bot);
         };
         if (!await makeRequest())
             return onFailure();
-        return GlobalVars_1.getSentMessage(true, message.split(' ').pop() || '', bot);
+        return (0, GlobalVars_1.getSentMessage)(true, message.split(' ').pop() || '', bot);
     }
     async sendRequestToChat(message, roomId) {
         const fkey = await this.getChannelFKey(roomId);
@@ -1098,6 +1098,7 @@ exports.GenericBotAPI = GenericBotAPI;
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 
+var _a;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.MetaSmokeAPI = void 0;
 const GreaseMonkeyCache_1 = __webpack_require__(3);
@@ -1119,7 +1120,7 @@ class MetaSmokeAPI {
     static async queryMetaSmokeInternal() {
         if (MetaSmokeAPI.isDisabled)
             return;
-        const urlString = sotools_1.getAllPostIds(true, true).join(',');
+        const urlString = (0, sotools_1.getAllPostIds)(true, true).join(',');
         if (!urlString)
             return;
         const parameters = globals.getParamsFromObject({
@@ -1132,8 +1133,8 @@ class MetaSmokeAPI {
             const metasmokeApiCall = await fetch(`https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls?${parameters}`);
             const metasmokeResult = await metasmokeApiCall.json();
             metasmokeResult.items.forEach(item => {
-                var _a;
-                const postId = Number((_a = /\d+$/.exec(item.link)) === null || _a === void 0 ? void 0 : _a[0]);
+                var _b;
+                const postId = Number((_b = /\d+$/.exec(item.link)) === null || _b === void 0 ? void 0 : _b[0]);
                 if (!postId)
                     return;
                 MetaSmokeAPI.metasmokeIds[postId] = item.id;
@@ -1198,6 +1199,7 @@ class MetaSmokeAPI {
     }
 }
 exports.MetaSmokeAPI = MetaSmokeAPI;
+_a = MetaSmokeAPI;
 MetaSmokeAPI.appKey = globals.metasmokeKey;
 MetaSmokeAPI.metasmokeIds = {};
 MetaSmokeAPI.isDisabled = GreaseMonkeyCache_1.GreaseMonkeyCache.getFromCache(globals.MetaSmokeDisabledConfig) || false;
@@ -1237,7 +1239,7 @@ class CopyPastorAPI {
     static async getAllCopyPastorIds() {
         if (!GlobalVars_1.isStackOverflow)
             return;
-        const postUrls = sotools_1.getAllPostIds(false, true);
+        const postUrls = (0, sotools_1.getAllPostIds)(false, true);
         if (!postUrls.length)
             return;
         await this.storeReportedPosts(postUrls);
@@ -1271,8 +1273,8 @@ class CopyPastorAPI {
         const chatId = new ChatApi_1.ChatApi().getChatUserId();
         if (!this.copypastorId)
             return Promise.resolve('');
-        const successMessage = GlobalVars_1.getSentMessage(true, feedback, this.name);
-        const failureMessage = GlobalVars_1.getSentMessage(false, feedback, this.name);
+        const successMessage = (0, GlobalVars_1.getSentMessage)(true, feedback, this.name);
+        const failureMessage = (0, GlobalVars_1.getSentMessage)(false, feedback, this.name);
         const payload = {
             post_id: this.copypastorId,
             feedback_type: feedback,

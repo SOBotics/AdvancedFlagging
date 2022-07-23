@@ -607,7 +607,7 @@ exports.isQuestionPage = /\/questions\/\d+.*/.test(window.location.href);
 exports.isNatoPage = window.location.href.includes('/tools/new-answers-old-questions');
 exports.isFlagsPage = /\/users\/flag-summary\/\d+/.test(window.location.href);
 exports.isLqpReviewPage = /\/review\/low-quality-posts\/\d+/.test(window.location.href);
-exports.gridCellDiv = $('<div>').addClass('grid--cell');
+exports.gridCellDiv = $('<div>').addClass('flex--item');
 exports.noneString = '<span class="o50">(none)</span>';
 exports.deletedAnswers = '/help/deleted-answers';
 exports.commentHelp = '/help/privileges/comment';
@@ -691,16 +691,16 @@ exports.guttenbergIcon = sampleIcon.clone().find('img').attr('src', guttenbergIm
 exports.smokeyIcon = sampleIcon.clone().find('img').attr('src', smokeyImage).parent().parent();
 const getMessageDiv = (text, state) => $('<div>').addClass(`p12 bg-${state}`).text(text).hide();
 exports.getMessageDiv = getMessageDiv;
-const getSectionWrapper = (name) => $('<fieldset>').html(`<h2 class="grid--cell">${name}</h2>`)
+const getSectionWrapper = (name) => $('<fieldset>').html(`<h2 class="flex--item">${name}</h2>`)
     .addClass(`grid gs8 gsy fd-column af-section-${name.toLowerCase()}`);
 exports.getSectionWrapper = getSectionWrapper;
 const getTextarea = (textareaContent, labelText, contentType) => $(`
 <div class="grid gs4 gsy fd-column" style="display: ${textareaContent ? 'flex' : 'none'};">
-    <label class="grid--cell s-label">${labelText}</label>
-    <textarea rows=4 class="grid--cell s-textarea fs-body2 af-${contentType}-content">${textareaContent}</textarea>
+    <label class="flex--item s-label">${labelText}</label>
+    <textarea rows=4 class="flex--item s-textarea fs-body2 af-${contentType}-content">${textareaContent}</textarea>
 </div>`);
 exports.getTextarea = getTextarea;
-const iconWrapper = $('<div>').addClass('grid--cell').css('display', 'none');
+const iconWrapper = $('<div>').addClass('flex--item').css('display', 'none');
 const performedActionIcon = () => iconWrapper.clone().append((0, exports.getStacksSvg)('Checkmark').addClass('fc-green-500'));
 exports.performedActionIcon = performedActionIcon;
 const failedActionIcon = () => iconWrapper.clone().append((0, exports.getStacksSvg)('Clear').addClass('fc-red-500'));
@@ -730,9 +730,9 @@ exports.configurationModal = $(`
         <h1 class="s-modal--header fw-body c-movey" id="af-modal-title">AdvancedFlagging configuration</h1>
         <div class="s-modal--body fs-body2" id="af-modal-description"></div>
         <div class="grid gs8 gsx s-modal--footer">
-            <button class="grid--cell s-btn s-btn__primary" type="button">Save changes</button>
-            <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
-            <button class="grid--cell s-btn s-btn__danger af-configuration-reset" type="button">Reset</button>
+            <button class="flex--item s-btn s-btn__primary" type="button">Save changes</button>
+            <button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button>
+            <button class="flex--item s-btn s-btn__danger af-configuration-reset" type="button">Reset</button>
         </div>
         <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
     </div>
@@ -743,7 +743,7 @@ const metasmokeTokenPopup = $(`
         <h1 class="s-modal--header fw-bold " id="af-modal-title">Authenticate MS with AF</h1>
         <div class="s-modal--body fs-body2" id="af-modal-description">
             <div class="grid gs4 gsy fd-column">
-                <div class="grid--cell">
+                <div class="flex--item">
                     <label class="s-label" for="example-item1">
                         Metasmoke access token
                         <p class="s-description mt2">
@@ -757,8 +757,8 @@ const metasmokeTokenPopup = $(`
             </div>
         </div>
         <div class="grid gs8 gsx s-modal--footer">
-            <button class="grid--cell s-btn s-btn__primary" id="advanced-flagging-save-ms-token" type="button">Submit</button>
-            <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
+            <button class="flex--item s-btn s-btn__primary" id="advanced-flagging-save-ms-token" type="button">Submit</button>
+            <button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button>
         </div>
         <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
     </div>
@@ -771,9 +771,9 @@ exports.editCommentsPopup = $(`
             <div class="grid fd-column gs16"></div>
         </div>
         <div class="grid gs8 gsx s-modal--footer">
-            <button class="grid--cell s-btn s-btn__primary" type="button" data-action="s-modal#hide">I'm done!</button>
-            <button class="grid--cell s-btn" type="button" data-action="s-modal#hide">Cancel</button>
-            <button class="grid--cell s-btn s-btn__danger af-comments-reset" type="button">Reset</button>
+            <button class="flex--item s-btn s-btn__primary" type="button" data-action="s-modal#hide">I'm done!</button>
+            <button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button>
+            <button class="flex--item s-btn s-btn__danger af-comments-reset" type="button">Reset</button>
         </div>
         <button class="s-modal--close s-btn s-btn__muted" href="#" aria-label="Close" data-action="s-modal#hide"></button>
     </div>
@@ -1464,8 +1464,8 @@ function createCheckbox(text, checkCheckbox) {
     const configHtml = $(`
 <div>
   <div class="grid gs4">
-    <div class="grid--cell"><input class="s-checkbox" type="checkbox" id="${optionId}"/></div>
-    <label class="grid--cell s-label fw-normal pt2" for="${optionId}">${text}</label>
+    <div class="flex--item"><input class="s-checkbox" type="checkbox" id="${optionId}"/></div>
+    <label class="flex--item s-label fw-normal pt2" for="${optionId}">${text}</label>
   </div>
 </div>`);
     if (checkCheckbox)
@@ -1476,13 +1476,13 @@ function getFeedbackRadio(botName, feedback, isChecked, flagId) {
     const radioId = `af-${botName.replace(/\s/g, '-')}-${flagId}-feedback-${feedback || 'none'}`;
     const radioName = `af-${flagId}-feedback-to-${botName.replace(/\s/g, '-')}`;
     return `
-<div class="grid--cell">
+<div class="flex--item">
     <div class="grid gs8 gsx">
-        <div class="grid--cell">
+        <div class="flex--item">
             <input class="s-radio" data-feedback="${feedback}" type="radio"${isChecked ? ' checked' : ''}
                    name="${radioName}" id="${radioId}"/>
         </div>
-        <label class="grid--cell s-label fw-normal" for="${radioId}">${feedback || globals.noneString.replace('o50', '')}</label>
+        <label class="flex--item s-label fw-normal" for="${radioId}">${feedback || globals.noneString.replace('o50', '')}</label>
     </div>
 </div>`;
 }
@@ -1491,7 +1491,7 @@ function getRadiosForBot(botName, currentFeedback, flagId) {
     const botFeedbacks = feedbacks
         .map(feedback => getFeedbackRadio(botName, feedback, feedback === currentFeedback, flagId))
         .join('\n');
-    return `<div class="grid gs16"><div class="grid--cell fs-body2">Feedback to ${botName}:</div>${botFeedbacks}</div>`;
+    return `<div class="grid gs16"><div class="flex--item fs-body2">Feedback to ${botName}:</div>${botFeedbacks}</div>`;
 }
 function createFlagTypeDiv(flagType) {
     const expandableId = `advanced-flagging-${flagType.Id}-${flagType.DisplayName}`.toLowerCase().replace(/\s/g, '');
@@ -1506,11 +1506,11 @@ function createFlagTypeDiv(flagType) {
     <div class="grid ai-center sm:fd-column sm:ai-start">
         <h3 class="mb0 mr-auto fs-body3">${flagType.DisplayName}</h3>
         <div class="grid gs8">
-            <button class="grid--cell s-btn s-btn__primary af-submit-content" type="button" style="display: none">Save</button>
-            <button class="grid--cell s-btn s-btn__icon af-expandable-trigger"
+            <button class="flex--item s-btn s-btn__primary af-submit-content" type="button" style="display: none">Save</button>
+            <button class="flex--item s-btn s-btn__icon af-expandable-trigger"
                     data-controller="s-expandable-control" aria-controls="${expandableId}" type="button">Edit</button>
-            <button class="grid--cell s-btn s-btn__danger s-btn__icon af-remove-expandable">Remove</button>
-            <div class="grid--cell s-toggle-switch pt6">
+            <button class="flex--item s-btn s-btn__danger s-btn__icon af-remove-expandable">Remove</button>
+            <div class="flex--item s-toggle-switch pt6">
                 <input class="advanced-flagging-flag-enabled" type="checkbox"${isFlagEnabled ? ' checked' : ''}>
                 <div class="s-toggle-switch--indicator"></div>
             </div>
@@ -1519,15 +1519,15 @@ function createFlagTypeDiv(flagType) {
     <div class="s-expandable" id="${expandableId}">
         <div class="s-expandable--content">
             <div class="advanced-flagging-flag-option grid ai-center gsx gs6">
-                <label class="fw-bold ps-relative z-selected l12 fs-body1 grid--cell">Flag:</label>
-                <div class="s-select r32 grid--cell">
+                <label class="fw-bold ps-relative z-selected l12 fs-body1 flex--item">Flag:</label>
+                <div class="s-select r32 flex--item">
                     <select class="pl48" ${isDisabled ? 'disabled' : ''}>${getFlagOptions(flagType.ReportType)}</select>
                 </div>
-                <div class="grid gsx gs4 ai-center grid--cell">
-                    <div class="grid--cell pb2 d-inline-block">
+                <div class="grid gsx gs4 ai-center flex--item">
+                    <div class="flex--item pb2 d-inline-block">
                         <input class="s-checkbox" type="checkbox">
                     </div>
-                    <label class="grid--cell s-label fw-normal">Send feedback from this flag type when this flag is raised</label>
+                    <label class="flex--item s-label fw-normal">Send feedback from this flag type when this flag is raised</label>
                 </div>
             </div>
             <div class="advanced-flagging-feedbacks-radios py8 ml2">${feedbackRadios}</div>
@@ -1540,7 +1540,7 @@ function createFlagTypeDiv(flagType) {
 }
 function createCategoryDiv(displayName) {
     const categoryHeader = $('<h2>').addClass('ta-center mb8 fs-title').html(displayName);
-    return $('<div>').addClass(`af-${displayName.toLowerCase().replace(/\s/g, '')}-content grid--cell`).append(categoryHeader);
+    return $('<div>').addClass(`af-${displayName.toLowerCase().replace(/\s/g, '')}-content flex--item`).append(categoryHeader);
 }
 function getCharSpan(textareaContent, contentType) {
     const minCharacters = contentType === 'flag' ? 10 : 15, maxCharacters = contentType === 'flag' ? 500 : 600;
@@ -1578,17 +1578,17 @@ function getCommentFlagsDivs(flagId, comments, flagText) {
     const checkboxId = `advanced-flagging-highrep-${flagId}-checkbox`;
     const commentOptions = $(`
 <div class="grid gsx gs12 ai-center">
-    <label class="grid--cell s-label mx0" for="${toggleSwitchId}">Leave comment</label>
-    <div class="grid--cell s-toggle-switch">
+    <label class="flex--item s-label mx0" for="${toggleSwitchId}">Leave comment</label>
+    <div class="flex--item s-toggle-switch">
         <input id="${toggleSwitchId}"${enableSwitch ? ' checked' : ''} class="af-toggle-comment" type="checkbox">
         <div class="s-toggle-switch--indicator"></div>
     </div>
     <div class="grid gsx gs4 ai-center${enableSwitch ? '' : ' is-disabled'}">
-        (<div class="grid--cell pb2">
+        (<div class="flex--item pb2">
             <input class="s-checkbox af-toggle-highrep" type="checkbox"${tickCheckbox ? ' checked' : ''}
             ${enableSwitch ? '' : ' disabled'} id="${checkboxId}">
         </div>
-    <label class="grid--cell s-label fw-normal" for="${checkboxId}">Include comment for high rep users</label>
+    <label class="flex--item s-label fw-normal" for="${checkboxId}">Include comment for high rep users</label>
     </div>
     <span class="ps-relative r8">)</span>
 </div>`);

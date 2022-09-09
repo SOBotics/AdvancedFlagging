@@ -1,22 +1,23 @@
 import { Flags } from './FlagTypes';
 import { parseQuestionsAndAnswers, PostInfo } from './UserscriptTools/sotools';
+import { setupConfiguration } from './Configuration';
+import { makeMenu } from './popover';
+
+import { setupReview } from './review';
+import * as shared from './shared';
+
 import { NattyAPI } from './UserscriptTools/NattyApi';
 import { GenericBotAPI } from './UserscriptTools/GenericBotAPI';
 import { MetaSmokeAPI } from './UserscriptTools/MetaSmokeAPI';
 import { CopyPastorAPI } from './UserscriptTools/CopyPastorAPI';
-import { setupConfiguration } from './Configuration';
-import * as globals from './shared';
+
 import { Buttons, } from '@userscripters/stacks-helpers';
-import { makeMenu } from './popover';
 
 // TODO publish & update stacks-helpers
-// TODO managing all those CapitalCased properties is annoying
-//      Convert to camelCase?? compatibility with older versions??
 // TODO how about creating a <nav> Config/Comments instead of 2 modals
-// TODO Menu should also handle checkboxes + radios
 
 type Reporter = CopyPastorAPI | MetaSmokeAPI | NattyAPI | GenericBotAPI;
-export type CheckboxesInformation = { [key in globals.BotNames]: HTMLElement }
+export type CheckboxesInformation = { [key in shared.BotNames]: HTMLElement }
 type ValueOfReporters = NattyAPI | MetaSmokeAPI | CopyPastorAPI; // Object.values() is broken :(
 
 export interface ReporterInformation {
@@ -34,19 +35,7 @@ interface StackExchangeFlagResponse {
     Success: boolean;
 }
 
-interface ReviewQueuePostInfo {
-    postId: number;
-    post: PostInfo;
-    reporters: ReporterInformation;
-}
-
-interface ReviewQueueResponse {
-    postId: number;
-    postTypeId: number; // see: StackOverflow.Models.PostTypeId
-    isAudit: boolean; // detect audits & avoid sending feedback to bots
-}
-
-function SetupStyles(): void {
+function setupStyles(): void {
     GM_addStyle(`
 .advanced-flagging-popover {
     min-width: 10rem !important;
@@ -62,8 +51,6 @@ function SetupStyles(): void {
 }`);
 
 }
-
-const reviewPostsInformation: ReviewQueuePostInfo[] = [];
 
 const popupWrapper = document.createElement('div');
 popupWrapper.classList.add(
@@ -82,8 +69,8 @@ export function getFlagToRaise(
     flagName: Flags,
     qualifiesForVlq: boolean
 ): Flags {
-    const vlqFlag = globals.FlagNames.VLQ;
-    const naaFlag = globals.FlagNames.NAA;
+    const vlqFlag = shared.FlagNames.VLQ;
+    const naaFlag = shared.FlagNames.NAA;
 
     // If the flag name is VLQ, check if the criteria are met.
     // If not, switch to NAA
@@ -97,7 +84,7 @@ async function postComment(
     fkey: string,
     comment: string,
 ): Promise<void> {
-    const data = globals.getFormDataFromObject({ fkey, comment });
+    const data = shared.getFormDataFromObject({ fkey, comment });
 
     const request = await fetch(`/posts/${postId}/comments`, {
         method: 'POST',
@@ -134,7 +121,7 @@ async function flagPost(
 
     const flagPost = await fetch(`/flags/posts/${postId}/add/${flagName}`, {
         method: 'POST',
-        body: globals.getFormDataFromObject({ fkey, otherText: flagText || '' })
+        body: shared.getFormDataFromObject({ fkey, otherText: flagText || '' })
     });
 
     // for some reason, the flag responses are inconsistent:
@@ -168,7 +155,7 @@ async function flagPost(
 
 export async function handleActions(
     { postId, element, flagged, raiseVlq }: PostInfo,
-    { ReportType, Downvote }: globals.CachedFlag,
+    { ReportType, Downvote }: shared.CachedFlag,
     flagRequired: boolean,
     downvoteRequired: boolean,
     flagText: string | null,
@@ -181,7 +168,7 @@ export async function handleActions(
         try {
             await postComment(postId, fkey, commentText);
         } catch (error) {
-            globals.displayError('Failed to comment on post');
+            shared.displayError('Failed to comment on post');
             console.error(error);
         }
     }
@@ -210,7 +197,7 @@ export async function handleActions(
 }
 
 export async function handleFlag(
-    flagType: globals.CachedFlag,
+    flagType: shared.CachedFlag,
     reporters: ReporterInformation,
     post?: PostInfo
 ): Promise<boolean> {
@@ -242,12 +229,12 @@ export async function handleFlag(
                 .then(message => {
                     // promise resolves to a success message
                     if (message) {
-                        globals.displaySuccess(message);
+                        shared.displaySuccess(message);
                     }
                 })
                 // otherwise throws an error caught here
                 .catch((promiseError: Error) => {
-                    globals.displayError(promiseError.message);
+                    shared.displayError(promiseError.message);
 
                     hasFailed = true;
                 });
@@ -273,21 +260,21 @@ export function displayToaster(
 
     window.setTimeout(() => {
         $(element).fadeOut('slow', () => $(element).remove());
-    }, globals.popupDelay);
+    }, shared.popupDelay);
 }
 
 function displaySuccessFlagged(icon: HTMLElement, reportType?: Flags): void {
     if (!reportType) return;
 
-    const flaggedMessage = `Flagged ${globals.getHumanFromDisplayName(reportType)}`;
-    globals.attachPopover(icon, flaggedMessage);
+    const flaggedMessage = `Flagged ${shared.getHumanFromDisplayName(reportType)}`;
+    shared.attachPopover(icon, flaggedMessage);
     $(icon).fadeIn();
 
-    globals.displaySuccess(flaggedMessage);
+    shared.displaySuccess(flaggedMessage);
 }
 
 function displayErrorFlagged(message: string, error: string): void {
-    globals.displayError(message);
+    shared.displayError(message);
 
     console.error(error);
 }
@@ -326,62 +313,25 @@ export function upvoteSameComments(
 }
 
 export function createBotIcon(
-    botName: keyof (typeof globals.botImages)
+    botName: keyof (typeof shared.botImages)
 ): HTMLDivElement {
     const iconWrapper = document.createElement('div');
     iconWrapper.classList.add('flex--item', 'd-none');
-    if (!globals.isQuestionPage && !globals.isLqpReviewPage) {
+    if (!shared.isQuestionPage && !shared.isLqpReviewPage) {
         iconWrapper.classList.add('ml8'); // flag pages
     }
 
     const iconLink = document.createElement('a');
     iconLink.classList.add('s-avatar', 's-avatar__16', 's-user-card--avatar');
-    globals.attachPopover(iconLink, `Reported by ${botName}`);
+    shared.attachPopover(iconLink, `Reported by ${botName}`);
     iconWrapper.append(iconLink);
 
     const iconImage = document.createElement('img');
     iconImage.classList.add('s-avatar--image');
-    iconImage.src = globals.botImages[botName];
+    iconImage.src = shared.botImages[botName];
     iconLink.append(iconImage);
 
     return iconWrapper;
-}
-
-function getAllBotIcons(): HTMLDivElement[] {
-    return [
-        'Natty',
-        'Guttenberg',
-        'Smokey'
-    ]
-        .map(bot => createBotIcon(bot as globals.BotNames));
-}
-
-function addBotIconsToReview(post: PostInfo): void {
-    const {
-        postType,
-        element,
-        postId,
-        questionTime,
-        answerTime
-    } = post;
-
-    if (postType !== 'Answer') return;
-
-    // TODO create bot icons in the same file/class, not here!
-    const botIconsToAppend = getAllBotIcons();
-    const iconLocation = element
-        .querySelector('.js-post-menu')
-        ?.firstElementChild;
-
-    iconLocation?.append(...botIconsToAppend);
-
-    const reporters: ReporterInformation = {
-        Natty: new NattyAPI(postId, questionTime, answerTime),
-        Smokey: new MetaSmokeAPI(postId, postType),
-        Guttenberg: new CopyPastorAPI(postId)
-    };
-
-    reviewPostsInformation.push({ postId, post, reporters });
 }
 
 function buildFlaggingDialog(
@@ -432,7 +382,7 @@ function setPopoverOpening(
 ): void {
     // Determine if the dropdown should be opened on hover
     // or on click based on what the user has chosen
-    const openOnHover = globals.cachedConfiguration[globals.ConfigurationOpenOnHover];
+    const openOnHover = shared.cachedConfiguration[shared.Cached.Configuration.openOnHover];
 
     if (openOnHover) {
         advancedFlaggingLink.addEventListener('mouseover', event => {
@@ -467,21 +417,21 @@ function setFlagWatch(
     reporters: ReporterInformation
 ): void {
     // Watch for manual flags if the user has chosen to do so
-    const watchFlags = globals.cachedConfiguration[globals.ConfigurationWatchFlags];
+    const watchFlags = shared.cachedConfiguration[shared.Cached.Configuration.watchFlags];
 
-    globals.addXHRListener(xhr => {
+    shared.addXHRListener(xhr => {
         const { status, responseURL } = xhr;
 
         if (!watchFlags // don't watch for flags
             || autoFlagging // post flagged via popover
             || status !== 200 // request failed
-            || !globals.flagsUrlRegex.test(responseURL) // not a flag
+            || !shared.flagsUrlRegex.test(responseURL) // not a flag
         ) return;
 
-        const matches = globals.getFlagsUrlRegex(postId).exec(responseURL);
+        const matches = shared.getFlagsUrlRegex(postId).exec(responseURL);
         const flag = (matches?.[1] as Flags);
 
-        const flagType = globals.cachedFlagTypes
+        const flagType = shared.cachedFlagTypes
             .find(item => item.SendWhenFlagRaised && item.ReportType === flag);
         if (!flagType) return;
 
@@ -492,10 +442,10 @@ function setFlagWatch(
 }
 
 let autoFlagging = false;
-function SetupPostPage(): void {
+function setupPostPage(): void {
     // check if the link + popover should be set up
-    const linkDisabled = globals.cachedConfiguration[globals.ConfigurationLinkDisabled];
-    if (linkDisabled || globals.isLqpReviewPage) return; // do not add the buttons on review
+    const linkDisabled = shared.cachedConfiguration[shared.Cached.Configuration.linkDisabled];
+    if (linkDisabled || shared.isLqpReviewPage) return; // do not add the buttons on review
 
     parseQuestionsAndAnswers(post => {
         const {
@@ -517,7 +467,7 @@ function SetupPostPage(): void {
         };
 
         // NAAs and plagiarised answers
-        if (postType === 'Answer' && globals.isStackOverflow) {
+        if (postType === 'Answer' && shared.isStackOverflow) {
             reporters.Natty = new NattyAPI(postId, questionTime, answerTime);
             reporters.Guttenberg = new CopyPastorAPI(postId);
         }
@@ -534,7 +484,7 @@ function SetupPostPage(): void {
         }
 
         // Guttenberg can only track Stack Overflow posts
-        if (globals.isStackOverflow) {
+        if (shared.isStackOverflow) {
             reporters['Generic Bot'] = new GenericBotAPI(postId);
         }
 
@@ -569,83 +519,10 @@ function Setup(): void {
         CopyPastorAPI.getAllCopyPastorIds(),
         NattyAPI.getAllNattyIds()
     ]).then(() => {
-        SetupPostPage();
-        SetupStyles();
+        setupPostPage();
+        setupStyles();
         setupConfiguration();
-    });
-
-    const watchReview = globals.cachedConfiguration[globals.ConfigurationWatchQueues];
-    if (!watchReview) return;
-
-    globals.addXHRListener(xhr => {
-        if (
-            xhr.status !== 200 // request failed
-         || !globals.isReviewItemRegex.test(xhr.responseURL) // not a review request
-         || !document.querySelector('#answer') // not an answer
-        ) return;
-
-        const reviewResponse = JSON.parse(xhr.responseText) as ReviewQueueResponse;
-        if (
-            reviewResponse.isAudit // an audit
-            || reviewResponse.postTypeId !== 2 // not an answer
-        ) return;
-
-        const cachedPost = reviewPostsInformation
-            .find(item => item.postId === reviewResponse.postId)?.post;
-
-        cachedPost
-            ? addBotIconsToReview(cachedPost) // post already stored, don't fetch again
-            : parseQuestionsAndAnswers(addBotIconsToReview);
-    });
-
-    $(document).on('click', '.js-review-submit', () => {
-        const looksGood = document.querySelector<HTMLInputElement>(
-            '#review-action-LooksGood'
-        );
-
-        // must have selected 'Looks OK' and clicked submit
-        if (!looksGood?.checked) return;
-
-        const postId = globals.getPostIdFromReview();
-        const reviewCachedInfo = reviewPostsInformation
-            .find(item => item.postId === postId);
-
-        const flagType = globals.cachedFlagTypes
-            // send 'Looks Fine' feedback:
-            // get the respective flagType, call handleFlag()
-            .find(item => item.DisplayName === 'Looks Fine');
-
-        if (!reviewCachedInfo || !flagType) return; // something went wrong
-
-        void handleFlag(flagType, reviewCachedInfo.reporters);
-    });
-
-    globals.addXHRListener(xhr => {
-        if (
-            xhr.status !== 200 // request failed
-            || !globals.isDeleteVoteRegex.test(xhr.responseURL) // didn't vote to delete
-            || !document.querySelector('#answer') // not an answer
-        ) return;
-
-        const postId = globals.getPostIdFromReview();
-        const cached = reviewPostsInformation
-            .find(item => item.postId === postId);
-
-        if (!cached) return;
-
-        const { postType, questionTime, answerTime } = cached.post;
-
-        if (postType !== 'Answer') return;
-
-        const reportersArray: ReporterInformation = {
-            Natty: new NattyAPI(postId, questionTime, answerTime)
-        };
-
-        const flagType = globals.cachedFlagTypes
-            .find(item => item.DisplayName === 'Not an answer'); // the NAA cached flag type
-        if (!flagType) return; // something went wrong
-
-        void handleFlag(flagType, reportersArray);
+        setupReview();
     });
 }
 

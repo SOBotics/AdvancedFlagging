@@ -1,5 +1,23 @@
-import { Menu } from '@userscripters/stacks-helpers';
-import * as globals from './shared';
+import {
+    CachedFlag,
+    FlagTypeFeedbacks,
+    AllFeedbacks,
+    StacksToastState,
+    attachPopover,
+    getHumanFromDisplayName,
+
+    cachedConfiguration,
+    cachedCategories,
+    cachedFlagTypes,
+
+    FlagNames,
+    isStackOverflow,
+    getFullFlag,
+    getCachedConfigBotKey,
+    showInlineElement,
+    Cached,
+    Configuration
+} from './shared';
 import {
     upvoteSameComments,
     ReporterInformation,
@@ -9,10 +27,13 @@ import {
     createBotIcon
 } from './AdvancedFlagging';
 import { PostInfo } from './UserscriptTools/sotools';
+
 import { MetaSmokeAPI } from './UserscriptTools/MetaSmokeAPI';
 import { NattyAPI } from './UserscriptTools/NattyApi';
 import { GenericBotAPI } from './UserscriptTools/GenericBotAPI';
 import { CopyPastorAPI } from './UserscriptTools/CopyPastorAPI';
+
+import { Menu } from '@userscripters/stacks-helpers';
 
 const noneSpan = document.createElement('span');
 noneSpan.classList.add('o50');
@@ -30,7 +51,7 @@ function increaseTooltipWidth(reportLink: HTMLAnchorElement): void {
 }
 
 function getFeedbackSpans(
-    flagType: globals.CachedFlag,
+    flagType: CachedFlag,
     reporters: ReporterInformation,
     postDeleted: boolean
 ): HTMLSpanElement[] {
@@ -46,13 +67,12 @@ function getFeedbackSpans(
     const nattyReported = natty?.wasReported() || false;
     const nattyCanReport = natty?.canBeReported() || false;
 
-    type FeedbackEntries = [keyof globals.FlagTypeFeedbacks, globals.AllFeedbacks][];
+    type FeedbackEntries = [keyof FlagTypeFeedbacks, AllFeedbacks][];
 
     const spans = (Object.entries(flagType.Feedbacks) as FeedbackEntries)
         // make sure there's actually a feedback
         .filter(([, feedback]) => feedback)
         .filter(([botName, feedback]) => {
-            // TODO? move these to each reporter separately?
             switch (botName) {
                 case 'Natty':
                     return nattyReported || ( // the post has been reported OR
@@ -94,7 +114,7 @@ function getFeedbackSpans(
                 isYellow
             ] = [/tp/, /fp/, /naa|ne/].map(regex => regex.test(feedback));
 
-            let className: globals.StacksToastState | '' = '';
+            let className: StacksToastState | '' = '';
             if (isGreen) className = 'success';
             else if (isRed) className = 'danger';
             else if (isYellow) className = 'warning';
@@ -122,7 +142,7 @@ function getFeedbackSpans(
 async function handleReportLinkClick(
     post: PostInfo,
     reporters: ReporterInformation,
-    flagType: globals.CachedFlag,
+    flagType: CachedFlag,
     flagText: string | null,
 ): Promise<void> {
     const { deleted, element } = post;
@@ -180,11 +200,11 @@ async function handleReportLinkClick(
     if (ReportType !== 'NoFlag') return;
 
     if (success) {
-        globals.attachPopover(done, `Performed action ${DisplayName}`);
+        attachPopover(done, `Performed action ${DisplayName}`);
 
         $(done).fadeIn();
     } else {
-        globals.attachPopover(failed, `Failed to perform action ${DisplayName}`);
+        attachPopover(failed, `Failed to perform action ${DisplayName}`);
 
         $(failed).fadeIn();
     }
@@ -222,7 +242,7 @@ export function createPopoverToOption(
 
 function getTooltipHtml(
     reporters: ReporterInformation,
-    flagType: globals.CachedFlag,
+    flagType: CachedFlag,
     post: PostInfo,
     flagText: string | null
 ): string {
@@ -258,7 +278,7 @@ function getTooltipHtml(
     const flagName = getFlagToRaise(ReportType, raiseVlq);
 
     let reportTypeHuman = ReportType === 'NoFlag' || !deleted
-        ? globals.getHumanFromDisplayName(flagName)
+        ? getHumanFromDisplayName(flagName)
         : '';
 
     if (ReportType !== flagName) {
@@ -294,11 +314,11 @@ function getTooltipHtml(
 
 function getCommentText(
     { opReputation, opName }: PostInfo,
-    { Comments }: globals.CachedFlag
+    { Comments }: CachedFlag
 ): string | null {
     // Adds the author name before the comment if the option is enabled
     // and determines if the comment should be low/high rep
-    const { AddAuthorName } = globals.cachedConfiguration;
+    const { addAuthorName: AddAuthorName } = cachedConfiguration;
 
     const commentType = (opReputation || 0) > 50 ? 'High' : 'Low';
     const comment = Comments?.[commentType] || Comments?.Low;
@@ -324,20 +344,19 @@ function getReportLinks(
     const { copypastorId, repost, targetUrl } = copypastor || {};
 
     // add the flag types to the category they correspond to
-    const categories = globals.cachedCategories
+    const categories = cachedCategories
         // exclude categories that do not apply to the current post type
         .filter(item => item.AppliesTo?.includes(postType))
         // create a new FlagType property to store cached flags
-        .map(item => ({ ...item, FlagTypes: [] as globals.CachedFlag[] }));
+        .map(item => ({ ...item, FlagTypes: [] as CachedFlag[] }));
 
     // loop through all flag types and push them,
     // based on their BelongsTo, to .FlagTypes
-    globals
-        .cachedFlagTypes
+    cachedFlagTypes
         // exclude disabled and non-SO flag types
         .filter(({ ReportType, DisplayName, BelongsTo, Enabled }) => {
             // only Guttenberg reports (can) have ReportType === 'PostOther' (for now)
-            const isGuttenbergItem = ReportType === globals.FlagNames.ModFlag;
+            const isGuttenbergItem = ReportType === FlagNames.ModFlag;
 
             const showGutReport = Boolean(copypastorId) // a CopyPastor id must exist
                 // https://github.com/SOBotics/AdvancedFlagging/issues/16
@@ -345,7 +364,7 @@ function getReportLinks(
 
             // show the red flags and general items on every site,
             // restrict the others to Stack Overflow
-            const showOnSo = ['Red flags', 'General'].includes(BelongsTo) || globals.isStackOverflow;
+            const showOnSo = ['Red flags', 'General'].includes(BelongsTo) || isStackOverflow;
 
             return Enabled && (isGuttenbergItem ? showGutReport : showOnSo);
         })
@@ -368,7 +387,7 @@ function getReportLinks(
                 const { DisplayName } = flagType;
 
                 const flagText = copypastorId && targetUrl
-                    ? globals.getFullFlag(flagType, targetUrl, copypastorId)
+                    ? getFullFlag(flagType, targetUrl, copypastorId)
                     : '';
 
                 const tooltipHtml = getTooltipHtml(
@@ -411,15 +430,15 @@ function getOptionsRow(
     const comments = element.querySelector('.comment-body');
 
     const config = [
-        ['Leave comment', globals.ConfigurationDefaultNoComment],
-        ['Flag', globals.ConfigurationDefaultNoFlag],
-        ['Downvote', globals.ConfigurationDefaultNoDownvote]
-    ] as [string, keyof globals.CachedConfiguration][];
+        ['Leave comment', Cached.Configuration.defaultNoComment],
+        ['Flag', Cached.Configuration.defaultNoFlag],
+        ['Downvote', Cached.Configuration.defaultNoDownvote]
+    ] as [string, keyof Configuration][];
 
     // ['label test', globals.cacheKey]
     return config
         .map(([text, cacheKey]) => {
-            const uncheck = globals.cachedConfiguration[cacheKey]
+            const uncheck = cachedConfiguration[cacheKey]
                 // extra requirement for the leave comment option:
                 // there shouldn't be any comments below the post
                 && (text === 'Leave comment' ? !comments : true);
@@ -464,22 +483,22 @@ function getSendFeedbackToRow(
                     return instance.copypastorId;
                 case 'Generic Bot':
                     // generic works on SO
-                    return globals.isStackOverflow;
+                    return isStackOverflow;
                 case 'Smokey':
                     // valid everywhere
                     return true;
             }
         })
         .map(([botName]) => {
-            const cacheKey = globals.getCachedConfigBotKey(botName);
+            const cacheKey = getCachedConfigBotKey(botName);
             const sanitised = botName.replace(/\s/g, '').toLowerCase();
 
             const botImage = createBotIcon(botName);
-            globals.showInlineElement(botImage);
+            showInlineElement(botImage);
 
             // need the postId in the id to make it unique
             const botNameId = `advanced-flagging-send-feedback-to-${sanitised}-${postId}`;
-            const defaultNoCheck = globals.cachedConfiguration[cacheKey];
+            const defaultNoCheck = cachedConfiguration[cacheKey];
 
             return {
                 checkbox: {
@@ -488,15 +507,12 @@ function getSendFeedbackToRow(
                         text: `Feedback to ${botImage.outerHTML}`
                     },
                     selected: !defaultNoCheck
+                },
+                popover: {
+                    html: `Send feedback to ${botName}`,
+                    position: 'right-start'
                 }
             };
-
-            // TODO something to do with this
-            /*globals.attachPopover(
-                item,
-                `Send feedback to ${botName}`,
-                'right-start'
-            );*/
         });
 }
 
@@ -506,7 +522,7 @@ export function makeMenu(
 ): HTMLUListElement {
     // actionsMenu.append(globals.popoverArrow.clone());
     // don't leave comments on non-SO sites
-    const actionBoxes = globals.isStackOverflow
+    const actionBoxes = isStackOverflow
         ? getOptionsRow(post)
         : [];
 

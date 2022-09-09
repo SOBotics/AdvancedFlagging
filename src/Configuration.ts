@@ -1,17 +1,15 @@
 import { flagCategories } from './FlagTypes';
-import { GreaseMonkeyCache } from './UserscriptTools/GreaseMonkeyCache';
+import { Store } from './UserscriptTools/Store';
 import { CachedFlag } from './shared';
 import { Flags } from './FlagTypes';
 
 import {
+    Cached,
     FlagNames,
-    FlagTypesKey,
-    FlagCategoriesKey,
     cachedFlagTypes,
     CachedCategory,
     cachedCategories,
     cachedConfiguration,
-    ConfigurationAddAuthorName,
     displayStacksToast
 } from './shared';
 
@@ -50,7 +48,7 @@ export function cacheFlags(): void {
     }) as CachedFlag[];
 
     // save new object in cache
-    GreaseMonkeyCache.storeInCache<CachedFlag[]>(FlagTypesKey, flagTypesToCache);
+    Store.set<CachedFlag[]>(Cached.FlagTypes, flagTypesToCache);
 
     // also update the variable to prevent breaking the config modal
     cachedFlagTypes.push(...flagTypesToCache);
@@ -67,7 +65,7 @@ function cacheCategories(): void {
             } as CachedCategory
         ));
 
-    GreaseMonkeyCache.storeInCache<CachedCategory[]>(FlagCategoriesKey, categories);
+    Store.set<CachedCategory[]>(Cached.FlagCategories, categories);
 
     cachedCategories.push(...categories);
 }
@@ -122,7 +120,7 @@ export function setupConfiguration(): void {
     // prompt to submit
     const propertyDoesNotExist = !Object.prototype.hasOwnProperty.call(
         cachedConfiguration,
-        ConfigurationAddAuthorName
+        Cached.Configuration.addAuthorName
     );
 
     if (propertyDoesNotExist) {

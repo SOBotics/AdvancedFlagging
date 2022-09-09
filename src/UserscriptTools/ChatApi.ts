@@ -1,5 +1,5 @@
-import { GreaseMonkeyCache } from './GreaseMonkeyCache';
-import { CacheChatApiFkey, soboticsRoomId, getSentMessage } from '../shared';
+import { Store } from './Store';
+import { Cached, soboticsRoomId, getSentMessage } from '../shared';
 
 export class ChatApi {
     private static getExpiryDate(): Date {
@@ -18,7 +18,7 @@ export class ChatApi {
     public getChannelFKey(roomId: number): Promise<string> {
         const expiryDate = ChatApi.getExpiryDate();
 
-        return GreaseMonkeyCache.getAndCache<string>(CacheChatApiFkey, async () => {
+        return Store.getAndCache<string>(Cached.Fkey, async () => {
             try {
                 const channelPage = await this.getChannelPage(roomId);
                 const parsed = new DOMParser().parseFromString(channelPage, 'text/html');
@@ -58,8 +58,11 @@ export class ChatApi {
             numTries++;
 
             if (numTries < 3) {
-                GreaseMonkeyCache.unset(CacheChatApiFkey);
-                if (!await makeRequest()) return onFailure();
+                Store.unset(Cached.Fkey);
+
+                if (!await makeRequest()) {
+                    return onFailure();
+                }
             } else {
                 throw new Error('Failed to send message to chat'); // retry limit exceeded
             }
@@ -67,7 +70,9 @@ export class ChatApi {
             return getSentMessage(true, feedback, bot);
         };
 
-        if (!await makeRequest()) return onFailure();
+        if (!await makeRequest()) {
+            return onFailure();
+        }
 
         return getSentMessage(true, feedback, bot);
     }

@@ -1,4 +1,4 @@
-import { GreaseMonkeyCache } from './UserscriptTools/GreaseMonkeyCache';
+import { Store } from './UserscriptTools/Store';
 import { Flags, FlagCategory, HumanFlags, FlagType } from './FlagTypes';
 import { displayToaster } from './AdvancedFlagging';
 
@@ -24,19 +24,19 @@ export interface CachedFlag extends FlagType {
 
 export type CachedCategory = Omit<FlagCategory, 'FlagTypes'>;
 
-export interface CachedConfiguration {
-    OpenOnHover: boolean;
-    DefaultNoFlag: boolean;
-    DefaultNoComment: boolean;
-    DefaultNoDownvote: boolean;
-    DefaultNoSmokey: boolean;
-    DefaultNoNatty: boolean;
-    DefaultNoGuttenberg: boolean;
-    DefaultNoGenericBot: boolean;
-    WatchFlags: boolean;
-    WatchQueues: boolean;
-    LinkDisabled: boolean;
-    AddAuthorName: boolean;
+export interface Configuration {
+    openOnHover: boolean;
+    defaultNoFlag: boolean;
+    defaultNoComment: boolean;
+    defaultNoDownvote: boolean;
+    defaultNoSmokey: boolean;
+    defaultNoNatty: boolean;
+    defaultNoGuttenberg: boolean;
+    defaultNoGenericBot: boolean;
+    watchFlags: boolean;
+    watchQueues: boolean;
+    linkDisabled: boolean;
+    addAuthorName: boolean;
 }
 
 export interface FlagTypeFeedbacks {
@@ -88,86 +88,30 @@ export const botImages = {
 };
 
 // Cache keys
-export const ConfigurationCacheKey = 'Configuration';
-export const ConfigurationOpenOnHover = 'OpenOnHover';
-export const ConfigurationDefaultNoFlag = 'DefaultNoFlag';
-export const ConfigurationDefaultNoComment = 'DefaultNoComment';
-export const ConfigurationDefaultNoDownvote = 'DefaultNoDownvote';
-export const ConfigurationWatchFlags = 'WatchFlags';
-export const ConfigurationWatchQueues = 'WatchQueues';
-export const ConfigurationLinkDisabled = 'LinkDisabled';
-export const ConfigurationAddAuthorName = 'AddAuthorName';
+export const Cached = {
+    Configuration: {
+        key: 'Configuration',
 
-export const CacheChatApiFkey = 'fkey';
-export const MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
-export const MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
+        openOnHover: 'openOnHover',
+        defaultNoFlag: 'defaultNoFlag',
+        defaultNoComment: 'defaultNoComment',
+        defaultNoDownvote: 'defaultNoDownvote',
 
-export const FlagTypesKey = 'FlagTypes';
-export const FlagCategoriesKey = 'FlagCategories';
+        watchFlags: 'watchFlags',
+        watchQueues: 'watchQueues',
 
-/*type ConfigObject<T> = { [key in keyof T]: string };
-const addPrefixToObjectValues = <T>(prefix: string, attributesObject: T): ConfigObject<T> => Object.fromEntries(
-    Object.entries(attributesObject).map(([key, value]) => ([key, `${prefix}${value as string}`]))
-) as ConfigObject<T>; // keys will remain the same
+        linkDisabled: 'linkDisabled',
+        addAuthorName: 'addAuthorName'
+    },
+    Fkey: 'fkey',
+    Metasmoke: {
+        userKey: 'Metasmoke.userKey',
+        disabled: 'Metasmoke.disabled'
+    },
 
-const prefix = 'advanced-flagging';
-const classesObj = {
-    dialog: 'dialog',
-    commentsSendFeedbackRadios: 'comments-send-feedback',
-    commentsSendWhenFlagRaised: 'comments-send-when-flag-raised',
-    commentsDownvoteOption: 'comments-downvote-option',
-    commentsFlagOptions: 'comments-flag-options',
-    commentsFeedbackRadios: 'comments-feedback-radios',
-    commentsSubmit: 'comments-submit',
-    commentsReset: 'comments-reset',
-    commentsExpandableTrigger: 'comments-expandable-trigger',
-    commentsRemoveExpandable: 'comments-expandable-remove',
-    commentsToggleSwitch: 'comments-enable-disable-flagtype',
-    commentsInvalid: 'comments-invalid-content',
-    commentsTextCounter: 'comments-text-counter',
-    commentsTextsContainer: 'comments-textareas-container',
-    commentsToggleLeaveComment: 'comments-toggle-leave-comment',
-    commentsToggleHighRep: 'comments-toggle-highrep-leave-comment',
-    commentsFlagContent: 'comments-flag-textarea-content',
-    commentsLowRepContent: 'comments-lowrep-textarea-content',
-    commentsHighRepContent: 'comments-highrep-textarea-content'
-};
-const idsObj = {
-    snackbar: 'snackbar',
-    configButton: 'configuration-button',
-    configButtonContainer: 'configuration-button-container',
-    configModal: 'configuration-modal',
-    configDescription: 'configuration-modal-description',
-    configGeneralSection: 'configuration-section-general',
-    configReset: 'configuration-reset',
-    commentsButton: 'comments-button',
-    commentsButtonContainer: 'comments-button-container',
-    commentsModal: 'comments',
-    metasmokeTokenModal: 'metasmoke-token-modal',
-    metasmokeTokenInput: 'metasmoke-token-input'
-};
-
-// prepend the prefix
-// *Selectors will already have the advanced-flagging- prefix, so we need # for ids and . for classes
-export const modalClasses = addPrefixToObjectValues<typeof classesObj>(`${prefix}-`, classesObj);
-export const classSelectors = addPrefixToObjectValues<typeof modalClasses>('.', modalClasses);
-export const modalIds = addPrefixToObjectValues<typeof idsObj>(`${prefix}-`, idsObj);
-export const idSelectors = addPrefixToObjectValues<typeof modalIds>('#', modalIds);
-
-export const getDynamicAttributes = {
-    feedbackRadioId: (botName: string, flagId: number, feedback: string): string => `${prefix}-${botName}-${flagId}-feedack-${feedback}`,
-    feedbackRadioName: (flagId: number, botName: string): string => `${prefix}-${flagId}-feedback-to-${botName}`,
-    sendWhenFlagRaised: (flagId: number): string => `${modalClasses.commentsSendWhenFlagRaised}-${flagId}`,
-    downvoteOption: (flagId: number): string => `${modalClasses.commentsDownvoteOption}-${flagId}`,
-    expandableId: (flagId: number, displayName: string): string => [prefix, flagId, displayName].join('-'),
-    categoryContent: (displayName: string): string => `${prefix}-comments-${displayName}-content`,
-    toggleSwitchId: (flagId: number): string => `${prefix}-comments-toggle-${flagId}`,
-    highRepCheckbox: (flagId: number): string => `${prefix}-highrep-${flagId}-checkbox`,
-    configSection: (sectionName: string): string => `${prefix}-configuration-section-${sectionName}`,
-    textareaContent: (contentType: string): string => `${prefix}-comments-${contentType}-textarea-content`,
-    popoverSendFeedbackTo: (botName: string, postId: number): string => `${prefix}-send-feedback-to-${botName}-${postId}`,
-    optionCheckbox: (checkboxType: string, postId: number): string => `${prefix}-${checkboxType}-checkbox-${postId}`
-};*/
+    FlagTypes: 'FlagTypes',
+    FlagCategories: 'FlagCategories'
+} as const;
 
 export const getIconPath = (name: string): string => {
     const element = GM_getResourceText(name);
@@ -246,38 +190,61 @@ export const showInlineElement = (element: HTMLElement): void => {
 
 export const displaySuccess = (message: string): void => displayToaster(message, 'success');
 export const displayError = (message: string): void => displayToaster(message, 'danger');
-export const isPostDeleted = (postId: number): boolean =>
-    document.querySelector(`#question-${postId}, #answer-${postId}`)?.classList.contains('deleted-answer') || false;
 
-export function getFormDataFromObject<T extends { [key: string]: string }>(object: T): FormData {
-    return Object.keys(object).reduce((formData, key) => {
-        formData.append(key, object[key]);
-        return formData;
-    }, new FormData());
+export function isPostDeleted(postId: number): boolean {
+    const post = document.querySelector(
+        `#question-${postId}, #answer-${postId}`
+    );
+
+    // yes, deleted questions do contain this class!
+    return post?.classList.contains('deleted-answer') || false;
 }
-const getCopypastorLink = (postId: number): string => `https://copypastor.sobotics.org/posts/${postId}`;
-export const getPostIdFromReview = (): number => Number($('[id^="answer-"]').attr('id')?.split('-')[1]);
-export const getCachedConfigBotKey = (botName: BotNames): keyof CachedConfiguration => {
-    const sanitised = botName.replace(/\s/g, '') as 'Smokey' | 'Natty' | 'GenericBot' | 'Guttenberg';
 
-    return `DefaultNo${sanitised}`;
+export function getFormDataFromObject<T extends { [key: string]: string }>(
+    object: T
+): FormData {
+    return Object
+        .keys(object)
+        .reduce((formData, key) => {
+            formData.append(key, object[key]);
+            return formData;
+        }, new FormData());
+}
+
+export const getCachedConfigBotKey = (
+    botName: BotNames
+): keyof Configuration => {
+    type Sanitised = 'Smokey' | 'Natty' | 'GenericBot' | 'Guttenberg';
+
+    const sanitised = botName.replace(/\s/g, '') as Sanitised;
+
+    return `defaultNo${sanitised}`;
 };
 
-export function getSentMessage(success: boolean, feedback: string, bot: string): string {
-    return success ? `Feedback ${feedback} sent to ${bot}` : `Failed to send feedback ${feedback} to ${bot}`;
+export function getSentMessage(
+    success: boolean,
+    feedback: string,
+    bot: string
+): string {
+    return success
+        ? `Feedback ${feedback} sent to ${bot}`
+        : `Failed to send feedback ${feedback} to ${bot}`;
 }
 
 //export const popoverArrow = $('<div>').addClass('s-popover--arrow s-popover--arrow__tc');
 //export const categoryDivider = $('<li>').addClass('s-menu--divider').attr('role', 'separator');
 
-export async function Delay(milliseconds: number): Promise<void> {
+export async function delay(milliseconds: number): Promise<void> {
     return await new Promise<void>(resolve => setTimeout(resolve, milliseconds));
 }
 
-export async function showConfirmModal(title: string, bodyHtml: string): Promise<boolean> {
+export async function showConfirmModal(
+    title: string,
+    bodyHtml: string
+): Promise<boolean> {
     return await StackExchange.helpers.showConfirmModal({
-        title: title,
-        bodyHtml: bodyHtml,
+        title,
+        bodyHtml,
         buttonLabel: 'Authenticate!'
     });
 }
@@ -303,11 +270,15 @@ export function addXHRListener(callback: (request: XMLHttpRequest) => void): voi
 // cache-related helpers/values
 // Some information from cache is stored on the variables as objects to make editing easier and simpler
 // Each time something is changed in the variables, update* must also be called to save the changes to the cache
-export const cachedConfiguration = GreaseMonkeyCache.getFromCache<CachedConfiguration>(ConfigurationCacheKey) || {} as Partial<CachedConfiguration>;
-export const updateConfiguration = (): void => GreaseMonkeyCache.storeInCache(ConfigurationCacheKey, cachedConfiguration);
-export const cachedFlagTypes = GreaseMonkeyCache.getFromCache<CachedFlag[]>(FlagTypesKey) || [];
-export const updateFlagTypes = (): void => GreaseMonkeyCache.storeInCache(FlagTypesKey, cachedFlagTypes);
-export const cachedCategories = GreaseMonkeyCache.getFromCache<CachedCategory[]>(FlagCategoriesKey) || [] as (Partial<CachedCategory>)[];
+export const cachedConfiguration = Store.get<Configuration>(Cached.Configuration.key)
+    || {} as Partial<Configuration>;
+export const updateConfiguration = (): void => Store.set(Cached.Configuration.key, cachedConfiguration);
+
+export const cachedFlagTypes = Store.get<CachedFlag[]>(Cached.FlagTypes) || [];
+export const updateFlagTypes = (): void => Store.set(Cached.FlagTypes, cachedFlagTypes);
+
+export const cachedCategories = Store.get<CachedCategory[]>(Cached.FlagCategories)
+    || [] as (Partial<CachedCategory>)[];
 // export const updateCategories = (): void => GreaseMonkeyCache.storeInCache(FlagCategoriesKey, cachedCategories);
 
 // Replaces the placeholders with actual values in the cached flag text
@@ -323,9 +294,11 @@ export function getFullFlag(
 
     if (!content) return null;
 
+    const copypastorLink = `https://copypastor.sobotics.org/posts/${postId}`;
+
     return content
         .replace(placeholderTarget, target)
-        .replace(placeholderCopypastorLink, getCopypastorLink(postId));
+        .replace(placeholderCopypastorLink, copypastorLink);
 }
 
 export function getFlagTypeFromFlagId(flagId: number): CachedFlag | null {
@@ -349,161 +322,3 @@ export function getHumanFromDisplayName(displayName: Flags): HumanFlags {
             return '';
     }
 }
-/*
-// Stacks helpers
-export function createModal(
-    id: string,
-    title: string,
-    buttonPrimaryText: string,
-    bodyHtml: JQuery,
-    resetButton?: JQuery,
-    classes?: string // space-separated
-): JQuery {
-    const iconClear = getStacksSvg('Clear');
-    const buttonPrimary = createButton(buttonPrimaryText, [ 'primary' ], [ 'flex--item' ]);
-    const buttonCancel = createButton('Cancel', [], [ 'flex--item' ])
-        .attr('data-action', 's-modal#hide');
-    const buttonClose = createButton(iconClear, [ 'muted' ], [ 's-modal--close' ])
-        .attr('data-action', 's-modal#hide');
-
-    const modalElement = $(`
-<aside class="s-modal" id="${id}" tabindex="-1" role="dialog" aria-hidden="true" data-s-modal-target="modal" data-controller="s-modal">
-    <div class="s-modal--dialog ps-relative s-modal__full" role="document">
-        <h1 class="s-modal--header">${title}</h1>
-        <div class="s-modal--body fs-body2"></div>
-
-        <div class="d-flex gs8 gsx s-modal--footer"></div>
-    </div>
-</aside>
-    `);
-
-    modalElement.find('.s-modal--body').append(bodyHtml);
-    modalElement.find('.s-modal--footer')
-        .append(buttonPrimary, buttonCancel)
-        .after(buttonClose);
-
-    if (resetButton) modalElement.find('.s-modal--footer').append(resetButton);
-    if (classes) modalElement.find('.s-modal--dialog').addClass(classes);
-
-    return modalElement;
-}
-
-type CheckboxClasses = { [key in 'label' | 'input' | 'flex' | 'inputParent']: string };
-export function createCheckbox(
-    checkboxId: string,
-    labelText: string,
-    checked: boolean,
-    {
-        label = '',
-        input = '',
-        flex = '',
-        inputParent = ''
-    }: Partial<CheckboxClasses>,
-    disabled?: boolean
-): JQuery {
-    const id = checkboxId.toLowerCase().replace(/\s/g, '_');
-    const labelElement = createLabel(labelText, id, [ 'flex--item', 'fw-normal' ]);
-    const checkboxWrapper = $(`
-<div class="d-flex gs4">
-    <div class="flex--item">
-        <input class="s-checkbox" type="checkbox" id="${id}"/>
-    </div>
-</div>`);
-    checkboxWrapper.find('input').prop('checked', checked);
-    checkboxWrapper.append(labelElement);
-
-    if (label) labelElement.addClass(label);
-    if (input) checkboxWrapper.find('input').addClass(input);
-    if (flex) checkboxWrapper.addClass(flex);
-    if (inputParent) checkboxWrapper.find('input').parent().addClass(inputParent);
-
-    if (disabled) {
-        checkboxWrapper.addClass('is-disabled');
-        checkboxWrapper.find('input').prop('disabled', true);
-    }
-
-    return checkboxWrapper;
-}
-
-type ButtonTypes = 'primary' | 'secondary' | 'danger' | 'muted' | 'link';
-export function createButton(
-    buttonText: string | JQuery,
-    buttonTypes?: ButtonTypes[],
-    classes?: string[],
-    svgIcon?: JQuery,
-): JQuery {
-    const classesToAdd = classes || [];
-    classesToAdd.push('s-btn');
-    buttonTypes?.forEach(type => classesToAdd.push(`s-btn__${type}`));
-
-    if (svgIcon) classesToAdd.push('s-btn__icon');
-
-    const button = $('<button>')
-        .attr('type', 'button')
-        .append(buttonText)
-        .addClass(classesToAdd.join(' '));
-
-    // add icon, if one has been passes
-    if (svgIcon) button.prepend(svgIcon, ' ');
-
-    return button;
-}
-
-function createDescription(descriptionText: string, classes?: string[]): JQuery {
-    const classesToAdd = classes || [];
-    classesToAdd.push('s-description');
-
-    const description = $('<p>')
-        .addClass(classesToAdd.join(' '))
-        .text(descriptionText);
-
-    return description;
-}
-
-export function createLabel(
-    labelText: string,
-    forAttr: string,
-    classes?: string[],
-    descriptionText?: string,
-    descriptionClasses?: string[]
-): JQuery {
-    const classesToAdd = classes || [];
-    classesToAdd.push('s-label');
-
-    const label = $('<label>')
-        .html(labelText)
-        .attr('for', forAttr)
-        .addClass(classesToAdd.join(' '));
-
-    if (descriptionText) {
-        const description = createDescription(descriptionText, descriptionClasses);
-        label.append(description);
-    }
-
-    return label;
-}
-
-export function createTextarea(
-    content: string,
-    textareaId: string,
-    labelText: string,
-    rows: number,
-    classes?: string[],
-): JQuery {
-    const classesToAdd = classes || [];
-    classesToAdd.push('s-textarea');
-
-    const textarea = $('<textarea>')
-        .attr('id', textareaId)
-        .attr('rows', rows)
-        .addClass(classesToAdd.join(' '))
-        .val(content);
-    const label = createLabel(labelText, textareaId, [ 'flex--item' ]);
-    const wrapper = $('<div>')
-        .addClass('d-flex gs4 gsy fd-column')
-        .attr('style', `display: ${content ? 'flex' : 'none'} !important`)
-        .append(label, textarea);
-
-    return wrapper;
-}
-*/

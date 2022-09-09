@@ -34,7 +34,8 @@ $.event.special.destroyed = {
     remove: (o: any): void => {
         /* eslint-disable-next-line
                @typescript-eslint/no-unsafe-member-access,
-               @typescript-eslint/no-unsafe-call */
+               @typescript-eslint/no-unsafe-call
+        */
         o.handler?.();
     }
 };
@@ -50,11 +51,9 @@ function getExistingElement(): HTMLElement[] | undefined {
         nato,
         flag,
         questionPage
-    ].find(item => item.length);
+    ].find(item => item.length) || [];
 
-    const htmlElements = Array.from(elementToUse || []) as HTMLElement[];
-
-    return htmlElements;
+    return [...elementToUse] as HTMLElement[];
 }
 
 function getPage(): Pages | '' {
@@ -64,21 +63,20 @@ function getPage(): Pages | '' {
     else return '';
 }
 
-function getPostIdFromElement(postNode: Element, postType: PostType): number {
-    const postHyperlink = postNode.querySelector<HTMLAnchorElement>(
+function getPostIdFromElement(postNode: HTMLElement, postType: PostType): number {
+    const href = postNode.querySelector<HTMLAnchorElement>(
         '.answer-hyperlink, .question-hyperlink'
-    );
-    const elementHref = postHyperlink?.href;
+    )?.href;
 
     const postIdString =
         (
             // questions page: get value of data-questionid/data-answerid
-            postNode.getAttribute('data-questionid')
-         || postNode.getAttribute('data-answerid')
+            postNode.dataset.questionid
+         || postNode.dataset.answerid
         ) || (
             postType === 'Answer'// flags/NATO page: parse the post URL
-                ? elementHref?.split('#')[1]
-                : elementHref?.split('/')[2]
+                ? href?.split('#')[1]
+                : href?.split('/')[2]
         );
 
     return Number(postIdString);
@@ -160,7 +158,7 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): vo
         const answerTime = getPostCreationDate(element, 'Answer');
 
         // won't work for Flags, but we don't need that there:
-        const score = Number(element.getAttribute('data-score')) || 0;
+        const score = Number(element.dataset.score) || 0;
 
         // this won't work for community wiki posts and there's nothing that can be done about it:
         const reputationEl = [...element.querySelectorAll('.user-info .reputation-score')].pop();

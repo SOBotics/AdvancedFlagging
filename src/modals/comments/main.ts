@@ -1,10 +1,13 @@
-import { GreaseMonkeyCache } from '../../UserscriptTools/GreaseMonkeyCache';
-import * as globals from '../../shared';
+import { Store } from '../../UserscriptTools/Store';
 import {
-    Buttons,
-    Modals,
-    Toggle,
-} from '@userscripters/stacks-helpers';
+    getIconPath,
+    cachedFlagTypes,
+    updateFlagTypes,
+    displayStacksToast,
+    getFlagTypeFromFlagId,
+    cachedCategories,
+    Cached
+} from '../../shared';
 
 import { submitChanges } from './submit';
 import {
@@ -16,6 +19,12 @@ import {
 
 import { CachedFlag } from '../../shared';
 import { wrapInFlexItem, cacheFlags } from '../../Configuration';
+
+import {
+    Buttons,
+    Modals,
+    Toggle,
+} from '@userscripters/stacks-helpers';
 
 /* In this case, we are caching a FlagType, but removing unnecessary properties.
    Only the Id, FlagText, and Comments (both LowRep and HighRep) and the flag's name
@@ -100,8 +109,8 @@ function expandableToggled(edit: HTMLElement): void {
 
     const isExpanded = expandable.classList.contains('is-expanded');
 
-    const pencil = globals.getIconPath('Pencil');
-    const eyeOff = globals.getIconPath('EyeOff');
+    const pencil = getIconPath('Pencil');
+    const eyeOff = getIconPath('EyeOff');
 
     const [svg, text] = [...edit.childNodes] as HTMLElement[];
 
@@ -140,7 +149,7 @@ function getActionItems(
         {
             iconConfig: {
                 name: 'iconPencil',
-                path: globals.getIconPath('iconPencil')
+                path: getIconPath('iconPencil')
             }
         }
     );
@@ -158,7 +167,7 @@ function getActionItems(
             type: ['danger'],
             iconConfig: {
                 name: 'iconTrash',
-                path: globals.getIconPath('iconTrash')
+                path: getIconPath('iconTrash')
             }
         }
     );
@@ -168,12 +177,12 @@ function getActionItems(
         const flagId = Number(wrapper.dataset.flagId);
 
         // find index of current flag type
-        const index = globals.cachedFlagTypes.findIndex(item => item.Id === flagId);
+        const index = cachedFlagTypes.findIndex(item => item.Id === flagId);
         // remove the flag type from the list
-        globals.cachedFlagTypes.splice(index, 1);
+        cachedFlagTypes.splice(index, 1);
 
         // update the storage
-        globals.updateFlagTypes();
+        updateFlagTypes();
 
         $(wrapper).fadeOut('fast', () => {
             wrapper.remove();
@@ -185,7 +194,7 @@ function getActionItems(
             }
         });
 
-        globals.displayStacksToast('Successfully removed flag type', 'success', true);
+        displayStacksToast('Successfully removed flag type', 'success', true);
     });
 
     // (exclude label)
@@ -202,10 +211,10 @@ function getActionItems(
         const wrapper = input.closest<HTMLElement>('.s-card');
         const flagId = Number(wrapper?.dataset.flagId);
 
-        const current = globals.getFlagTypeFromFlagId(flagId);
+        const current = getFlagTypeFromFlagId(flagId);
 
         if (!current) {
-            globals.displayStacksToast('Failed to toggle flag type', 'danger', true);
+            displayStacksToast('Failed to toggle flag type', 'danger', true);
 
             return;
         }
@@ -213,12 +222,12 @@ function getActionItems(
         // update the Enabled property depending on the switch
         // and store the updated object in cache
         current.Enabled = input.checked;
-        globals.updateFlagTypes();
+        updateFlagTypes();
 
         // update the card's style
         wrapper?.classList.remove('s-card__muted');
 
-        globals.displayStacksToast(
+        displayStacksToast(
             `Successfully ${input.checked ? 'en' : 'dis'}abled flag type`,
             'success',
             true
@@ -228,11 +237,15 @@ function getActionItems(
     return [save, edit, remove, toggle];
 }
 
-function createFlagTypeDiv({
-    Id,
-    DisplayName,
-    Enabled,
-}: CachedFlag): HTMLDivElement {
+function createFlagTypeDiv(
+    flagType: CachedFlag
+): HTMLDivElement {
+    const {
+        Id,
+        DisplayName,
+        Enabled,
+    } = flagType;
+
     // concatenate all 4 rows
     // since they have a .d-flex class,
     // they should be wrapped in a div.flex--item first
@@ -262,8 +275,7 @@ function createFlagTypeDiv({
     actions.append(...getActionItems(Id, Enabled, expandableId));
 
     // expandable
-    // eslint-disable-next-line prefer-rest-params
-    const expandableContent = getExpandableContent(arguments[0] as CachedFlag);
+    const expandableContent = getExpandableContent(flagType);
 
     const expandable = document.createElement('div');
     expandable.classList.add('s-expandable-control');
@@ -293,13 +305,12 @@ function getCommentsModalBody(): HTMLElement {
     const container = document.createElement('div');
     container.classList.add('d-flex', 'fd-column', 'gs16');
 
-    const categories = globals.cachedCategories
+    const categories = cachedCategories
         .filter(({ Name }) => Name)
         .map(({ Name: name }) => {
             const div = createCategoryDiv(name || '');
 
-            const flagTypes = globals
-                .cachedFlagTypes
+            const flagTypes = cachedFlagTypes
                 // only those belonging to "Name" category
                 .filter(({ BelongsTo }) => BelongsTo === name)
                 // create the s-card
@@ -360,10 +371,10 @@ export function setupCommentsAndFlagsModal(): void {
     modal
         .querySelector('.s-btn__danger')
         ?.addEventListener('click', () => {
-            GreaseMonkeyCache.unset(globals.FlagTypesKey);
+            Store.unset(Cached.FlagTypes);
             cacheFlags();
 
-            globals.displayStacksToast(
+            displayStacksToast(
                 'Comments and flags have been reset to defaults',
                 'success'
             );

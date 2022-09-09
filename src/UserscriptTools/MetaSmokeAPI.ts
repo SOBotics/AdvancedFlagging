@@ -1,11 +1,10 @@
-import { GreaseMonkeyCache } from './GreaseMonkeyCache';
+import { Store } from './Store';
 import {
-    MetaSmokeDisabledConfig,
+    Cached,
     FlagTypeFeedbacks,
     PostType,
-    MetaSmokeUserKeyConfig,
     showConfirmModal,
-    Delay,
+    delay,
     displayError,
     getFormDataFromObject,
     isPostDeleted,
@@ -37,7 +36,7 @@ interface MetasmokeData {
 
 export class MetaSmokeAPI {
     public static accessToken: string;
-    public static isDisabled: boolean = GreaseMonkeyCache.getFromCache<boolean>(MetaSmokeDisabledConfig) || false;
+    public static isDisabled: boolean = Store.get<boolean>(Cached.Metasmoke.disabled) || false;
 
     private static readonly appKey = metasmokeKey;
     private static metasmokeIds: MetasmokeData = {};
@@ -53,8 +52,8 @@ export class MetaSmokeAPI {
     }
 
     public static reset(): void {
-        GreaseMonkeyCache.unset(MetaSmokeDisabledConfig);
-        GreaseMonkeyCache.unset(MetaSmokeUserKeyConfig);
+        Store.unset(Cached.Metasmoke.disabled);
+        Store.unset(Cached.Metasmoke.userKey);
     }
 
     public static async setup(): Promise<void> {
@@ -138,12 +137,12 @@ export class MetaSmokeAPI {
 
         // user doesn't wish to connect
         if (!authenticate) {
-            GreaseMonkeyCache.storeInCache('MetaSmoke.Disabled', true);
+            Store.set('MetaSmoke.Disabled', true);
             return;
         }
 
         window.open(metaSmokeOAuthUrl, '_blank');
-        await Delay(100);
+        await delay(100);
 
         return await this.showMSTokenPopupAndGet();
     }
@@ -192,14 +191,14 @@ export class MetaSmokeAPI {
     private static async getUserKey(): Promise<string> {
         while (typeof StackExchange.helpers.showConfirmModal === 'undefined') {
             // eslint-disable-next-line no-await-in-loop
-            await Delay(100);
+            await delay(100);
         }
 
         const { appKey } = MetaSmokeAPI;
         const url = `https://metasmoke.erwaysoftware.com/oauth/request?key=${appKey}`;
 
-        return await GreaseMonkeyCache.getAndCache<string>(
-            MetaSmokeUserKeyConfig,
+        return await Store.getAndCache<string>(
+            Cached.Metasmoke.userKey,
             async (): Promise<string> => {
                 const code = await MetaSmokeAPI.codeGetter(url);
                 if (!code) return '';

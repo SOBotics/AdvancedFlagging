@@ -1,11 +1,4 @@
 import {
-    Checkbox,
-    Toggle,
-    Textarea,
-    Select,
-    Radio
-} from '@userscripters/stacks-helpers';
-import {
     CachedFlag,
     getHumanFromDisplayName,
     BotNames,
@@ -14,6 +7,14 @@ import {
 } from '../../shared';
 import { flagCategories } from '../../FlagTypes';
 import { wrapInFlexItem, isModOrNoFlag } from '../../Configuration';
+
+import {
+    Checkbox,
+    Toggle,
+    Textarea,
+    Select,
+    Radio
+} from '@userscripters/stacks-helpers';
 
 const flagTypes = flagCategories.flatMap(category => category.FlagTypes);
 const flagNames = [...new Set(flagTypes.map(flagType => flagType.ReportType))];

@@ -8,11 +8,7 @@ import {
     isDeleteVoteRegex
 } from './shared';
 
-import {
-    ReporterInformation,
-    createBotIcon,
-    handleFlag
-} from './AdvancedFlagging';
+import * as AdvancedFlagging from './AdvancedFlagging';
 import {
     PostInfo,
     parseQuestionsAndAnswers
@@ -31,7 +27,7 @@ interface ReviewQueueResponse {
 interface ReviewQueuePostInfo {
     postId: number;
     post: PostInfo;
-    reporters: ReporterInformation;
+    reporters: AdvancedFlagging.ReporterInformation;
 }
 
 const reviewPostsInformation: ReviewQueuePostInfo[] = [];
@@ -49,7 +45,7 @@ function getAllBotIcons(): HTMLDivElement[] {
         'Guttenberg',
         'Smokey'
     ]
-        .map(bot => createBotIcon(bot as BotNames));
+        .map(bot => AdvancedFlagging.createBotIcon(bot as BotNames));
 }
 
 function addBotIconsToReview(post: PostInfo): void {
@@ -71,7 +67,7 @@ function addBotIconsToReview(post: PostInfo): void {
 
     iconLocation?.append(...botIconsToAppend);
 
-    const reporters: ReporterInformation = {
+    const reporters: AdvancedFlagging.ReporterInformation = {
         Natty: new NattyAPI(postId, questionTime, answerTime),
         Smokey: new MetaSmokeAPI(postId, postType),
         Guttenberg: new CopyPastorAPI(postId)
@@ -125,7 +121,7 @@ export function setupReview(): void {
 
         if (!reviewCachedInfo || !flagType) return; // something went wrong
 
-        void handleFlag(flagType, reviewCachedInfo.reporters);
+        void AdvancedFlagging.handleFlag(flagType, reviewCachedInfo.reporters);
     });
 
     addXHRListener(xhr => {
@@ -145,7 +141,7 @@ export function setupReview(): void {
 
         if (postType !== 'Answer') return;
 
-        const reportersArray: ReporterInformation = {
+        const reportersArray: AdvancedFlagging.ReporterInformation = {
             Natty: new NattyAPI(postId, questionTime, answerTime)
         };
 
@@ -153,6 +149,6 @@ export function setupReview(): void {
             .find(item => item.DisplayName === 'Not an answer'); // the NAA cached flag type
         if (!flagType) return; // something went wrong
 
-        void handleFlag(flagType, reportersArray);
+        void AdvancedFlagging.handleFlag(flagType, reportersArray);
     });
 }

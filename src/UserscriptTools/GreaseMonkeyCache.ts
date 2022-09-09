@@ -4,12 +4,17 @@ interface ExpiryingCacheItem<T> {
 }
 
 export class GreaseMonkeyCache {
-    public static async getAndCache<T>(cacheKey: string, getterPromise: () => Promise<T>, expiresAt?: Date): Promise<T> {
+    public static async getAndCache<T>(
+        cacheKey: string,
+        getterPromise: () => Promise<T>,
+        expiresAt?: Date
+    ): Promise<T> {
         const cachedItem = GreaseMonkeyCache.getFromCache<T>(cacheKey);
         if (cachedItem) return cachedItem;
 
         const result = await getterPromise();
         GreaseMonkeyCache.storeInCache(cacheKey, result, expiresAt);
+
         return result;
     }
 
@@ -22,17 +27,24 @@ export class GreaseMonkeyCache {
     // To make TS happy and avoid runtime errors, we need to take into account both cases.
     public static getFromCache<T>(cacheKey: string): T | null {
         const cachedItem = GM_getValue<T | ExpiryingCacheItem<T>>(cacheKey);
+        if (!cachedItem) return null;
+
         const isItemExpired = typeof cachedItem === 'object'
                           && 'Data' in cachedItem // is expirable
                           && new Date(cachedItem.Expires) < new Date(); // and has not expired
 
-        if (!cachedItem || isItemExpired) return null;
+        if (isItemExpired) return null;
 
-        return typeof cachedItem === 'object' && 'Data' in cachedItem ? cachedItem.Data : cachedItem;
+        return typeof cachedItem === 'object' && 'Data' in cachedItem
+            ? cachedItem.Data
+            : cachedItem;
     }
 
     public static storeInCache<T>(cacheKey: string, item: T, expiresAt?: Date): void {
-        const jsonObject = expiresAt ? { Expires: expiresAt, Data: item } : item;
+        const jsonObject = expiresAt
+            ? { Expires: expiresAt, Data: item }
+            : item;
+
         GM_setValue(cacheKey, jsonObject);
     }
 

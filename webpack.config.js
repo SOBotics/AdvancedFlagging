@@ -3,7 +3,7 @@ const webpack = require('webpack'); // for the banner plugin
 const userscriptInfo = require('./package.json');
 
 const svgsNeeded = ['Checkmark', 'Clear', 'EyeOff', 'Flag', 'Pencil', 'Trash'];
-const svgsUrls = svgsNeeded.map(svgName => `// @resource     ${svgName} https://cdn.sstatic.net/Img/stacks-icons/${svgName}.svg`);
+const svgsUrls = svgsNeeded.map(svgName => `// @resource     icon${svgName} https://cdn.sstatic.net/Img/stacks-icons/${svgName}.svg`);
 
 module.exports = {
     entry: './src/AdvancedFlagging.ts',
@@ -63,4 +63,4 @@ module.exports = {
             }
         ]
     }
-}
+};

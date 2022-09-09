@@ -1,6 +1,25 @@
 import { GreaseMonkeyCache } from './GreaseMonkeyCache';
-import * as globals from '../GlobalVars';
+import {
+    MetaSmokeDisabledConfig,
+    FlagTypeFeedbacks,
+    PostType,
+    MetaSmokeUserKeyConfig,
+    showConfirmModal,
+    Delay,
+    displayError,
+    getFormDataFromObject,
+    isPostDeleted,
+    getSentMessage,
+    showInlineElement,
+} from '../shared';
 import { getAllPostIds } from './sotools';
+import { Modals, Input, Buttons } from '@userscripters/stacks-helpers';
+import { createBotIcon } from '../AdvancedFlagging';
+
+const metasmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
+const metasmokeApiFilter = 'GGJFNNKKJFHFKJFLJLGIJMFIHNNJNINJ';
+const metasmokeReportedMessage = 'Post reported to Smokey';
+const metasmokeFailureMessage = 'Failed to report post to Smokey';
 
 interface MetaSmokeApiItem {
     id: number;
@@ -12,150 +31,186 @@ interface MetaSmokeApiWrapper {
 }
 
 interface MetasmokeData {
-    [key: number]: number; // key is the sitePostId, the value is the metasmokeId. That's all we need!
+    // key is the sitePostId, the value is the metasmokeId. That's all we need!
+    [key: number]: number;
 }
 
 export class MetaSmokeAPI {
     public static accessToken: string;
-    private static readonly appKey = globals.metasmokeKey;
+    public static isDisabled: boolean = GreaseMonkeyCache.getFromCache<boolean>(MetaSmokeDisabledConfig) || false;
+
+    private static readonly appKey = metasmokeKey;
     private static metasmokeIds: MetasmokeData = {};
-    public static isDisabled: boolean = GreaseMonkeyCache.getFromCache<boolean>(globals.MetaSmokeDisabledConfig) || false;
-    public name: keyof globals.FlagTypeFeedbacks = 'Smokey';
+
+    public name: keyof FlagTypeFeedbacks = 'Smokey';
+    public icon?: HTMLDivElement | undefined;
 
     constructor(
         private readonly postId: number,
-        private readonly postType: globals.PostType,
-        private readonly smokeyIcon?: HTMLDivElement
-    ) { }
+        private readonly postType: PostType,
+    ) {
+        this.icon = this.getIcon();
+    }
 
     public static reset(): void {
-        GreaseMonkeyCache.unset(globals.MetaSmokeDisabledConfig);
-        GreaseMonkeyCache.unset(globals.MetaSmokeUserKeyConfig);
+        GreaseMonkeyCache.unset(MetaSmokeDisabledConfig);
+        GreaseMonkeyCache.unset(MetaSmokeUserKeyConfig);
     }
 
     public static async setup(): Promise<void> {
-        MetaSmokeAPI.accessToken = await MetaSmokeAPI.getUserKey(); // Make sure we request it immediately
+        // Make sure we request it immediately
+        MetaSmokeAPI.accessToken = await MetaSmokeAPI.getUserKey();
     }
 
-    private static getMetasmokeTokenPopup(): JQuery {
-        const {
-            metasmokeTokenInput,
-            metasmokeTokenModal,
-        } = globals.modalIds;
-
-        const flexItemDiv = document.createElement('<div>');
-        flexItemDiv.classList.add('flex--item');
-
-        const authenticationLabel = globals.createLabel(
-            'Metasmoke access token',
-            metasmokeTokenInput,
-            [ 'd-block' ],
-            'Once you\'ve authenticated Advanced Flagging with metasmoke, you\'ll be given a code; enter it below:',
-            [ 'mt2' ]
-        );
-        flexItemDiv.append(authenticationLabel);
-
-        const metasmokePopupBody = document.createElement('div');
-        metasmokePopupBody.classList.add('d-flex', 'gs4', 'gsy', 'fd-column');
-
-        const inputContainer = document.createElement('div');
-        inputContainer.classList.add('d-flex', 'ps-relative');
-
-        const codeInput = document.createElement('input');
-        codeInput.id = metasmokeTokenInput;
-        codeInput.classList.add('s-input');
-        codeInput.type = 'text';
-        codeInput.placeholder = 'Enter the code here';
-
-        inputContainer.append(codeInput);
-        metasmokePopupBody.append(inputContainer);
-        metasmokePopupBody.prepend(flexItemDiv);
-
-        const metasmokeTokenPopup = globals.createModal(
-            metasmokeTokenModal,
-            'Authenticate MS with AF',
-            'Submit',
-            metasmokePopupBody
+    private static getMetasmokeTokenPopup(): HTMLElement {
+        const codeInput = Input.makeStacksInput(
+            'advanced-flagging-metasmoke-token-input',
+            { placeholder: 'Enter the code here', },
+            {
+                text: 'Metasmoke access token',
+                description: 'Once you\'ve authenticated Advanced Flagging with '
+                           + 'metasmoke, you\'ll be given a code; enter it below:'
+            }
         );
 
-        return metasmokeTokenPopup;
+        const authModal = Modals.makeStacksModal(
+            'advanced-flagging-metasmoke-token-modal',
+            {
+                title: {
+                    text: 'Authenticate MS with AF'
+                },
+                body: {
+                    bodyHtml: codeInput
+                },
+                footer: {
+                    buttons: [
+                        {
+                            element: Buttons.makeStacksButton(
+                                'advanced-flagging-submit-code',
+                                'Submit',
+                                { primary: true }
+                            )
+                        },
+                        {
+                            element: Buttons.makeStacksButton(
+                                'advanced-flagging-dismiss-code-modal',
+                                'Cancel',
+                            ),
+                            hideOnClick: true
+                        }
+                    ]
+                }
+            }
+        );
+
+        return authModal;
     }
 
     private static showMSTokenPopupAndGet(): Promise<string | undefined> {
         return new Promise<string>(resolve => {
-            const metasmokeTokenPopup = this.getMetasmokeTokenPopup();
-            StackExchange.helpers.showModal(metasmokeTokenPopup);
+            const popup = this.getMetasmokeTokenPopup();
+            StackExchange.helpers.showModal(popup);
 
-            metasmokeTokenPopup.find('.s-btn__primary').on('click', () => {
-                const token = metasmokeTokenPopup.find(globals.idSelectors.metasmokeTokenInput).val();
-                metasmokeTokenPopup.remove(); // dismiss modal
-                if (!token) return;
-                resolve(token.toString());
-            });
+            popup
+                .querySelector('.s-btn__primary')
+                ?.addEventListener('click', () => {
+                    const input = popup.querySelector('input');
+                    const token = input?.value;
+
+                    // dismiss modal
+                    popup.remove();
+
+                    if (!token) return;
+
+                    resolve(token.toString());
+                });
         });
     }
 
-    private static readonly codeGetter: (metaSmokeOAuthUrl: string) => Promise<string | undefined> = async (metaSmokeOAuthUrl?: string) => {
+    private static async codeGetter(metaSmokeOAuthUrl: string): Promise<string | undefined> {
         if (MetaSmokeAPI.isDisabled) return;
 
-        const userDisableMetasmoke = await globals.showConfirmModal(globals.settingUpTitle, globals.settingUpBody);
-        if (!userDisableMetasmoke) {
-            GreaseMonkeyCache.storeInCache(globals.MetaSmokeDisabledConfig, true);
+        const authenticate = await showConfirmModal(
+            'Setting up metasmoke',
+            'If you do not wish to connect, press cancel and this popup won\'t show up again. '
+            + 'To reset configuration, see the footer of Stack Overflow.',
+        );
+
+        // user doesn't wish to connect
+        if (!authenticate) {
+            GreaseMonkeyCache.storeInCache('MetaSmoke.Disabled', true);
             return;
         }
 
         window.open(metaSmokeOAuthUrl, '_blank');
-        await globals.Delay(100);
+        await Delay(100);
+
         return await this.showMSTokenPopupAndGet();
-    };
+    }
 
     public static async queryMetaSmokeInternal(): Promise<void> {
         if (MetaSmokeAPI.isDisabled) return;
 
-        const urlString = getAllPostIds(true, true).join(','); // postIds as URLs, including questions
-        if (!urlString) return; // don't make the request if there aren't URLs
+        // postIds as URLs, including questions
+        const urlString = getAllPostIds(true, true).join(',');
 
-        const parameters = globals.getParamsFromObject({
+        // don't make the request if there aren't URLs
+        if (!urlString) return;
+
+        const parameters = Object.entries({
             urls: urlString,
-            key: `${MetaSmokeAPI.appKey}`,
+            key: MetaSmokeAPI.appKey,
             per_page: 1000,
-            filter: globals.metasmokeApiFilter // only include id and link fields
-        });
+            filter: metasmokeApiFilter // only include id and link fields
+        })
+            .map(item => item.join('='))
+            .join('&');
 
         try {
-            const metasmokeApiCall = await fetch(`https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls?${parameters}`);
-            const metasmokeResult = await metasmokeApiCall.json() as MetaSmokeApiWrapper;
-            metasmokeResult.items.forEach(item => {
-                const postId = Number(/\d+$/.exec(item.link)?.[0]);
+            const url = `https://metasmoke.erwaysoftware.com/api/v2.0/posts/urls?${parameters}`;
+            const call = await fetch(url);
+            const result = await call.json() as MetaSmokeApiWrapper;
+
+            result.items.forEach(({ link, id }) => {
+                const postId = Number(/\d+$/.exec(link)?.[0]);
                 if (!postId) return;
 
-                MetaSmokeAPI.metasmokeIds[postId] = item.id;
+                MetaSmokeAPI.metasmokeIds[postId] = id;
             });
         } catch (error) {
-            globals.displayError('Failed to get Metasmoke URLs.');
+            displayError('Failed to get Metasmoke URLs.');
             console.error(error);
         }
     }
 
-    public static getQueryUrl(postId: number, postType: globals.PostType): string {
-        return `//${window.location.hostname}/${postType === 'Answer' ? 'a' : 'questions'}/${postId}`;
+    public static getQueryUrl(postId: number, postType: PostType): string {
+        const path = postType === 'Answer' ? 'a' : 'questions';
+
+        return `//${window.location.hostname}/${path}/${postId}`;
     }
 
     private static async getUserKey(): Promise<string> {
         while (typeof StackExchange.helpers.showConfirmModal === 'undefined') {
             // eslint-disable-next-line no-await-in-loop
-            await globals.Delay(100);
+            await Delay(100);
         }
 
-        return await GreaseMonkeyCache.getAndCache<string>(globals.MetaSmokeUserKeyConfig, async (): Promise<string> => {
-            const keyUrl = `https://metasmoke.erwaysoftware.com/oauth/request?key=${MetaSmokeAPI.appKey}`;
-            const code = await MetaSmokeAPI.codeGetter(keyUrl);
-            if (!code) return '';
+        const { appKey } = MetaSmokeAPI;
+        const url = `https://metasmoke.erwaysoftware.com/oauth/request?key=${appKey}`;
 
-            const tokenCall = await fetch(`https://metasmoke.erwaysoftware.com/oauth/token?key=${MetaSmokeAPI.appKey}&code=${code}`);
-            const data = await tokenCall.json() as { token: string };
-            return data.token;
-        });
+        return await GreaseMonkeyCache.getAndCache<string>(
+            MetaSmokeUserKeyConfig,
+            async (): Promise<string> => {
+                const code = await MetaSmokeAPI.codeGetter(url);
+                if (!code) return '';
+
+                const tokenUrl = `//metasmoke.erwaysoftware.com/oauth/token?key=${appKey}&code=${code}`;
+                const tokenCall = await fetch(tokenUrl);
+
+                const { token } = await tokenCall.json() as { token: string };
+
+                return token;
+            });
     }
 
     public getSmokeyId(): number {
@@ -166,48 +221,82 @@ export class MetaSmokeAPI {
         const smokeyId = this.getSmokeyId();
         const urlString = MetaSmokeAPI.getQueryUrl(this.postId, this.postType);
 
-        const reportRequest = await fetch('https://metasmoke.erwaysoftware.com/api/w/post/report', {
-            method: 'POST',
-            body: globals.getFormDataFromObject({ post_link: urlString, key: MetaSmokeAPI.appKey, token: MetaSmokeAPI.accessToken })
+        const { appKey, accessToken } = MetaSmokeAPI;
+        const body = getFormDataFromObject({
+            post_link: urlString,
+            key: appKey,
+            token: accessToken
         });
+
+        const reportRequest = await fetch(
+            'https://metasmoke.erwaysoftware.com/api/w/post/report',
+            {
+                method: 'POST',
+                body
+            }
+        );
+
         const requestResponse = await reportRequest.text();
-        if (!reportRequest.ok || requestResponse !== 'OK') { // if the post is successfully reported, the response is a plain OK
-            console.error(`Failed to report post to Smokey (postId: ${smokeyId})`, requestResponse);
-            throw new Error(globals.metasmokeFailureMessage);
+
+        // if the post is successfully reported, the response is a plain OK
+        if (!reportRequest.ok || requestResponse !== 'OK') {
+            console.error(`Failed to report post ${smokeyId} to Smokey`, requestResponse);
+
+            throw new Error(metasmokeFailureMessage);
         }
-        return globals.metasmokeReportedMessage;
+
+        return metasmokeReportedMessage;
     }
 
-    public async sendFeedback(feedback: string, sendFeedback: boolean): Promise<string> {
-        if (!sendFeedback) return '';
+    public async sendFeedback(feedback: string): Promise<string> {
+        const { appKey, accessToken } = MetaSmokeAPI;
+
         const smokeyId = this.getSmokeyId();
-        const isPostDeleted = globals.isPostDeleted(this.postId);
+        const deleted = isPostDeleted(this.postId);
+
         // not reported, feedback is tpu AND the post isn't deleted => report it!
-        if (!smokeyId && feedback === 'tpu-' && !isPostDeleted) return await this.reportRedFlag();
-        else if (!MetaSmokeAPI.accessToken || !smokeyId) return '';
-
-        const feedbackRequest = await fetch(`https://metasmoke.erwaysoftware.com/api/w/post/${smokeyId}/feedback`, {
-            method: 'POST',
-            body: globals.getFormDataFromObject({ type: feedback, key: MetaSmokeAPI.appKey, token: MetaSmokeAPI.accessToken })
-        });
-        const feedbackResponse = await feedbackRequest.json() as unknown;
-        if (!feedbackRequest.ok) {
-            console.error(`Failed to send feedback to Smokey (postId: ${smokeyId})`, feedbackResponse);
-            throw new Error(globals.getSentMessage(false, feedback, this.name));
+        if (!smokeyId && feedback === 'tpu-' && !deleted) {
+            return await this.reportRedFlag();
+        } else if (!accessToken || !smokeyId) {
+            // user hasn't authenticated or the post hasn't been reported => don't send feedback
+            return '';
         }
-        return globals.getSentMessage(true, feedback, this.name);
+
+        // otherwise, send feedback
+        const body = getFormDataFromObject({
+            type: feedback,
+            key: appKey,
+            token: accessToken
+        });
+
+        const feedbackRequest = await fetch(
+            `//metasmoke.erwaysoftware.com/api/w/post/${smokeyId}/feedback`,
+            { method: 'POST', body }
+        );
+        const feedbackResponse = await feedbackRequest.json() as unknown;
+
+        if (!feedbackRequest.ok) {
+            console.error(`Failed to send feedback for ${smokeyId} to Smokey`, feedbackResponse);
+
+            throw new Error(getSentMessage(false, feedback, this.name));
+        }
+
+        return getSentMessage(true, feedback, this.name);
     }
 
-    public setupIcon(): void {
+    private getIcon(): HTMLDivElement | undefined {
         const smokeyId = this.getSmokeyId();
-        if (!smokeyId || !this.smokeyIcon) return;
+        if (!smokeyId) return;
 
-        const iconLink = this.smokeyIcon.querySelector('a');
-        if (!iconLink) return;
+        const icon = createBotIcon('Smokey');
 
-        iconLink.href = `https://metasmoke.erwaysoftware.com/post/${smokeyId}`;
+        const iconLink = icon.querySelector('a') as HTMLAnchorElement;
+
+        iconLink.href = `//metasmoke.erwaysoftware.com/post/${smokeyId}`;
         iconLink.target = '_blank';
 
-        globals.showInlineElement(this.smokeyIcon);
+        showInlineElement(icon);
+
+        return icon;
     }
 }

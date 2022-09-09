@@ -1,12 +1,12 @@
 import { GreaseMonkeyCache } from './UserscriptTools/GreaseMonkeyCache';
-import { Flags, FlagCategory, HumanFlags } from './FlagTypes';
+import { Flags, FlagCategory, HumanFlags, FlagType } from './FlagTypes';
 import { displayToaster } from './AdvancedFlagging';
 
 export type StacksToastState = 'success' | 'danger' | 'info' | 'warning';
 export type PostType = 'Question' | 'Answer';
 
-export interface CachedFlag {
-    Id: number;
+export interface CachedFlag extends FlagType {
+    /*Id: number;
     DisplayName: string;
     FlagText: string;
     Comments: {
@@ -15,11 +15,11 @@ export interface CachedFlag {
     };
     ReportType: Flags;
     Feedbacks: FlagTypeFeedbacks;
-    BelongsTo: string; // the Name of the category it belongs to
-    IsDefault: boolean;
-    SendWhenFlagRaised: boolean;
+    SendWhenFlagRaised: boolean;*/
     Downvote: boolean;
     Enabled: boolean;
+    BelongsTo: string; // the Name of the category it belongs to
+    IsDefault: boolean;
 }
 
 export type CachedCategory = Omit<FlagCategory, 'FlagTypes'>;
@@ -45,19 +45,16 @@ export interface FlagTypeFeedbacks {
     Guttenberg: 'tp' | 'fp' | '';
     'Generic Bot': 'track' | ''; // 'track' => track the post, '' => don't
 }
+
 export type BotNames = keyof FlagTypeFeedbacks;
 export type AllFeedbacks = FlagTypeFeedbacks[BotNames] | '(none)';
+
 export const possibleFeedbacks: { [key in BotNames]: AllFeedbacks[] } = {
     Smokey: ['tpu-', 'tp-', 'fp-', 'naa-', ''],
     Natty: ['tp', 'fp', 'ne', ''],
     Guttenberg: ['tp', 'fp', ''],
     'Generic Bot' : ['track', '']
 };
-
-interface UserDetails {
-    authorReputation: number;
-    authorName: string;
-}
 
 export enum FlagNames {
     Spam = 'PostSpam',
@@ -70,35 +67,18 @@ export enum FlagNames {
 
 // Constants
 export const soboticsRoomId = 111347;
-export const metasmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
-export const metasmokeApiFilter = 'GGJFNNKKJFHFKJFLJLGIJMFIHNNJNINJ';
-export const copypastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
-export const copypastorServer = 'https://copypastor.sobotics.org';
-export const genericBotKey = 'Cm45BSrt51FR3ju';
-const placeholderTarget = /\$TARGET\$/g;
-const placeholderCopypastorLink = /\$COPYPASTOR\$/g;
-export const nattyFeedbackUrl = 'https://logs.sobotics.org/napi-1.1/api/stored/';
-export const username = $('.top-bar .my-profile .gravatar-wrapper-24').attr('title');
-export const dayMillis = 1000 * 60 * 60 * 24;
+
+
+export const username = document.querySelector<HTMLDivElement>(
+    'a[href^="/users/"] div[title]'
+)?.title || '';
 export const popupDelay = 4 * 1000;
-export const settingUpTitle = 'Setting up MetaSmoke';
-export const settingUpBody = 'If you do not wish to connect, press cancel and this popup won\'t show up again. '
-                           + 'To reset configuration, see the footer of Stack Overflow.';
-export const genericBotSuccess = 'Post tracked with Generic Bot';
-export const genericBotFailure = 'Server refused to track the post';
-export const metasmokeReportedMessage = 'Post reported to Smokey';
-export const metasmokeFailureMessage = 'Failed to report post to Smokey';
-export const nattyReportedMessage = 'Post reported to Natty';
-export const chatFailureMessage = 'Failed to send message to chat';
+
 export const isStackOverflow = /^https:\/\/stackoverflow.com/.test(window.location.href);
 export const isQuestionPage = /\/questions\/\d+.*/.test(window.location.href);
 export const isNatoPage = window.location.href.includes('/tools/new-answers-old-questions');
 export const isFlagsPage = /\/users\/flag-summary\/\d+/.test(window.location.href);
 export const isLqpReviewPage = /\/review\/low-quality-posts\/\d+/.test(window.location.href);
-export const flexItemDiv = $('<div>').addClass('flex--item');
-export const noneSpan = document.createElement('span');
-noneSpan.classList.add('o50');
-noneSpan.innerText = '(none)';
 
 export const botImages = {
     Natty: 'https://i.stack.imgur.com/aMUMt.jpg?s=32&g=1',
@@ -117,13 +97,15 @@ export const ConfigurationWatchFlags = 'WatchFlags';
 export const ConfigurationWatchQueues = 'WatchQueues';
 export const ConfigurationLinkDisabled = 'LinkDisabled';
 export const ConfigurationAddAuthorName = 'AddAuthorName';
+
 export const CacheChatApiFkey = 'fkey';
 export const MetaSmokeUserKeyConfig = 'MetaSmoke.UserKey';
 export const MetaSmokeDisabledConfig = 'MetaSmoke.Disabled';
+
 export const FlagTypesKey = 'FlagTypes';
 export const FlagCategoriesKey = 'FlagCategories';
 
-type ConfigObject<T> = { [key in keyof T]: string };
+/*type ConfigObject<T> = { [key in keyof T]: string };
 const addPrefixToObjectValues = <T>(prefix: string, attributesObject: T): ConfigObject<T> => Object.fromEntries(
     Object.entries(attributesObject).map(([key, value]) => ([key, `${prefix}${value as string}`]))
 ) as ConfigObject<T>; // keys will remain the same
@@ -173,8 +155,8 @@ export const modalIds = addPrefixToObjectValues<typeof idsObj>(`${prefix}-`, ids
 export const idSelectors = addPrefixToObjectValues<typeof modalIds>('#', modalIds);
 
 export const getDynamicAttributes = {
-    feedbackRadioId: (botName: string, flagId: number, feedback: string): string => `${prefix}${botName}-${flagId}-feedack-${feedback}`,
-    feedbackRadioName: (flagId: number, botName: string): string => `${prefix}${flagId}-feedback-to-${botName}`,
+    feedbackRadioId: (botName: string, flagId: number, feedback: string): string => `${prefix}-${botName}-${flagId}-feedack-${feedback}`,
+    feedbackRadioName: (flagId: number, botName: string): string => `${prefix}-${flagId}-feedback-to-${botName}`,
     sendWhenFlagRaised: (flagId: number): string => `${modalClasses.commentsSendWhenFlagRaised}-${flagId}`,
     downvoteOption: (flagId: number): string => `${modalClasses.commentsDownvoteOption}-${flagId}`,
     expandableId: (flagId: number, displayName: string): string => [prefix, flagId, displayName].join('-'),
@@ -185,46 +167,88 @@ export const getDynamicAttributes = {
     textareaContent: (contentType: string): string => `${prefix}-comments-${contentType}-textarea-content`,
     popoverSendFeedbackTo: (botName: string, postId: number): string => `${prefix}-send-feedback-to-${botName}-${postId}`,
     optionCheckbox: (checkboxType: string, postId: number): string => `${prefix}-${checkboxType}-checkbox-${postId}`
+};*/
+
+export const getIconPath = (name: string): string => {
+    const element = GM_getResourceText(name);
+    const parsed = new DOMParser().parseFromString(element, 'text/html');
+    const path = parsed.body.querySelector('path') as SVGPathElement;
+
+    return path.getAttribute('d') || '';
 };
 
-export const getStacksSvg = (svgName: string): JQuery => $(GM_getResourceText(svgName));
+export const getSvg = (name: string): SVGElement => {
+    const element = GM_getResourceText(name);
+    const parsed = new DOMParser().parseFromString(element, 'text/html');
 
-export const displayStacksToast = (message: string, type: StacksToastState, addParent?: boolean): void =>
+    return parsed.body.firstElementChild as SVGElement;
+};
+
+export function displayStacksToast(
+    message: string,
+    type: StacksToastState,
+    addParent?: boolean
+): void {
+    const parent = document.querySelector(
+        '.s-modal[aria-hidden="false"] > .s-modal--dialog'
+    ) as HTMLElement;
+
     StackExchange.helpers.showToast(message, {
         type: type,
         transientTimeout: popupDelay,
         // so that dismissing the toast won't close the modal
-        $parent: addParent ? $('.s-modal[aria-hidden="false"] > .s-modal--dialog') : $()
+        $parent: addParent ? $(parent) : $()
     });
-export const attachPopover = (element: Element, text: string, position = 'bottom-start'): void => {
-    Stacks.setTooltipText(element, text, { placement: position as Stacks.TooltipOptions['placement'] });
-};
-export const attachHtmlPopover = (element: Element, text: string, position = 'bottom-start'): void => {
-    Stacks.setTooltipHtml(element, text, { placement: position as Stacks.TooltipOptions['placement'] });
-};
+}
+
+export function attachPopover(
+    element: Element,
+    text: string,
+    position: Stacks.TooltipOptions['placement'] = 'bottom-start'
+): void {
+    Stacks.setTooltipText(
+        element,
+        text,
+        { placement: position }
+    );
+}
+
+export function attachHtmlPopover(
+    element: Element,
+    text: string,
+    position: Stacks.TooltipOptions['placement'] = 'bottom-start'
+): void {
+    Stacks.setTooltipHtml(
+        element,
+        text, { placement: position }
+    );
+}
 
 // regexes
 export const isReviewItemRegex = /\/review\/(next-task|task-reviewed\/)/;
 export const isDeleteVoteRegex = /(\d+)\/vote\/10|(\d+)\/recommend-delete/;
 export const flagsUrlRegex = /flags\/posts\/\d+\/add\/[a-zA-Z]+/;
+
 export function getFlagsUrlRegex(postId: number): RegExp {
-    return new RegExp(`/flags/posts/${postId}/add/(AnswerNotAnAnswer|PostOffensive|PostSpam|NoFlag|PostOther|PostLowQuality)`);
+    const flagNames = Object.values(FlagNames).join('|');
+    const regex = new RegExp(
+        `/flags/posts/${postId}/add/(${flagNames})`
+    );
+
+    return regex;
 }
 
 // various helper functions
-export const showElement = (element: JQuery): JQuery => element.addClass('d-block').removeClass('d-none');
 export const showInlineElement = (element: HTMLElement): void => {
     element.classList.add('d-inline-block');
     element.classList.remove('d-none');
 };
+
 export const displaySuccess = (message: string): void => displayToaster(message, 'success');
 export const displayError = (message: string): void => displayToaster(message, 'danger');
 export const isPostDeleted = (postId: number): boolean =>
     document.querySelector(`#question-${postId}, #answer-${postId}`)?.classList.contains('deleted-answer') || false;
 
-export function getParamsFromObject<T>(object: T): string {
-    return Object.entries(object).map(item => item.join('=')).join('&');
-}
 export function getFormDataFromObject<T extends { [key: string]: string }>(object: T): FormData {
     return Object.keys(object).reduce((formData, key) => {
         formData.append(key, object[key]);
@@ -233,37 +257,18 @@ export function getFormDataFromObject<T extends { [key: string]: string }>(objec
 }
 const getCopypastorLink = (postId: number): string => `https://copypastor.sobotics.org/posts/${postId}`;
 export const getPostIdFromReview = (): number => Number($('[id^="answer-"]').attr('id')?.split('-')[1]);
-export const getCachedConfigBotKey = (botName: BotNames): string => `DefaultNo${botName.replace(/\s/g, '')}`;
-export function qualifiesForVlq(postScore: number, creationDate: Date): boolean {
-    return postScore <= 0 && (new Date().valueOf() - creationDate.valueOf()) < dayMillis;
-}
+export const getCachedConfigBotKey = (botName: BotNames): keyof CachedConfiguration => {
+    const sanitised = botName.replace(/\s/g, '') as 'Smokey' | 'Natty' | 'GenericBot' | 'Guttenberg';
+
+    return `DefaultNo${sanitised}`;
+};
 
 export function getSentMessage(success: boolean, feedback: string, bot: string): string {
     return success ? `Feedback ${feedback} sent to ${bot}` : `Failed to send feedback ${feedback} to ${bot}`;
 }
 
-// dynamically generated jQuery elements
-/* TODO move these appropriately in AdvancedFlagging.ts */
-export const getMessageDiv = (text: string, state: string): JQuery => $('<div>').addClass(`p12 bg-${state}`).text(text).hide();
-export const getSectionWrapper = (name: string): JQuery => $('<fieldset>').html(`<h2 class="flex--item">${name}</h2>`)
-    .addClass('d-flex gs8 gsy fd-column').attr('id', getDynamicAttributes.configSection(name.toLowerCase()));
-
-const iconWrapper = $('<div>').addClass('flex--item').css('display', 'none'); // the element that will contain the bot icons
-export const performedActionIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Checkmark').addClass('fc-green-500'));
-export const failedActionIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Clear').addClass('fc-red-500'));
-export const reportedIcon = (): JQuery => iconWrapper.clone().append(getStacksSvg('Flag').addClass('fc-red-500'));
-
-export const popoverArrow = $('<div>').addClass('s-popover--arrow s-popover--arrow__tc');
-export const dropdown = $('<div>').addClass(`${modalClasses.dialog} s-popover s-anchors s-anchors__default mt2 c-default px0 py4`);
-export const actionsMenu = $('<ul>').addClass('s-menu').attr('role', 'menu');
-export const dropdownItem = $('<li>').attr('role', 'menuitem');
-export const reportLink = $('<a>').addClass('s-block-link py4');
-export const categoryDivider = $('<li>').addClass('s-menu--divider').attr('role', 'separator');
-
-export const configurationDiv = $('<div>').addClass('ta-left pt6').attr('id', modalIds.configButtonContainer);
-export const configurationLink = $('<a>').attr('id', modalIds.configButton).text('AdvancedFlagging configuration');
-export const commentsDiv = configurationDiv.clone().attr('id', modalIds.configButtonContainer);
-export const commentsLink = configurationLink.clone().attr('id', modalIds.commentsButton).text('AdvancedFlagging: edit comments and flags');
+//export const popoverArrow = $('<div>').addClass('s-popover--arrow s-popover--arrow__tc');
+//export const categoryDivider = $('<li>').addClass('s-menu--divider').attr('role', 'separator');
 
 export async function Delay(milliseconds: number): Promise<void> {
     return await new Promise<void>(resolve => setTimeout(resolve, milliseconds));
@@ -305,20 +310,22 @@ export const updateFlagTypes = (): void => GreaseMonkeyCache.storeInCache(FlagTy
 export const cachedCategories = GreaseMonkeyCache.getFromCache<CachedCategory[]>(FlagCategoriesKey) || [] as (Partial<CachedCategory>)[];
 // export const updateCategories = (): void => GreaseMonkeyCache.storeInCache(FlagCategoriesKey, cachedCategories);
 
-// Adds the author name before the comment if the option is enabled and determines if the comment should be low/high rep
-export function getFullComment(flagId: number, { authorReputation, authorName }: UserDetails): string | null {
-    const shouldAddAuthorName = cachedConfiguration.AddAuthorName;
-    const flagType = getFlagTypeFromFlagId(flagId);
-    const comment = flagType?.Comments[authorReputation > 50 ? 'High' : 'Low'] || flagType?.Comments.Low;
-    return (comment && shouldAddAuthorName ? `${authorName}, ${comment[0].toLowerCase()}${comment.slice(1)}` : comment) || null;
-}
-
 // Replaces the placeholders with actual values in the cached flag text
-export function getFullFlag(flagId: number, target: string, postId: number): string {
-    const flagType = getFlagTypeFromFlagId(flagId);
-    const flagContent = flagType?.FlagText;
-    if (!flagContent) return '';
-    return flagContent.replace(placeholderTarget, target).replace(placeholderCopypastorLink, getCopypastorLink(postId));
+export function getFullFlag(
+    flagType: CachedFlag,
+    target: string,
+    postId: number
+): string | null {
+    const placeholderTarget = /\$TARGET\$/g;
+    const placeholderCopypastorLink = /\$COPYPASTOR\$/g;
+
+    const content = flagType.FlagText;
+
+    if (!content) return null;
+
+    return content
+        .replace(placeholderTarget, target)
+        .replace(placeholderCopypastorLink, getCopypastorLink(postId));
 }
 
 export function getFlagTypeFromFlagId(flagId: number): CachedFlag | null {
@@ -327,16 +334,22 @@ export function getFlagTypeFromFlagId(flagId: number): CachedFlag | null {
 
 export function getHumanFromDisplayName(displayName: Flags): HumanFlags {
     switch (displayName) {
-        case FlagNames.NAA: return 'as NAA';
-        case FlagNames.Rude: return 'as R/A';
-        case FlagNames.Spam: return 'as spam';
-        case FlagNames.ModFlag: return 'for moderator attention';
-        case FlagNames.VLQ: return 'as VLQ';
+        case FlagNames.NAA:
+            return 'as NAA';
+        case FlagNames.Rude:
+            return 'as R/A';
+        case FlagNames.Spam:
+            return 'as spam';
+        case FlagNames.ModFlag:
+            return 'for moderator attention';
+        case FlagNames.VLQ:
+            return 'as VLQ';
         case FlagNames.NoFlag:
-        default: return '';
+        default:
+            return '';
     }
 }
-
+/*
 // Stacks helpers
 export function createModal(
     id: string,
@@ -410,24 +423,6 @@ export function createCheckbox(
     }
 
     return checkboxWrapper;
-}
-
-export function createBotIcon(botName: keyof (typeof botImages)): HTMLDivElement {
-    const iconWrapper = document.createElement('div');
-    iconWrapper.classList.add('flex--item', 'd-none');
-    if (!isQuestionPage && !isLqpReviewPage) iconWrapper.classList.add('ml8'); // flag pages
-
-    const iconLink = document.createElement('a');
-    iconLink.classList.add('s-avatar', 's-avatar__16', 's-user-card--avatar');
-    attachPopover(iconLink, `Reported by ${botName}`);
-    iconWrapper.append(iconLink);
-
-    const iconImage = document.createElement('img');
-    iconImage.classList.add('s-avatar--image');
-    iconImage.src = botImages[botName];
-    iconLink.append(iconImage);
-
-    return iconWrapper;
 }
 
 type ButtonTypes = 'primary' | 'secondary' | 'danger' | 'muted' | 'link';
@@ -511,25 +506,4 @@ export function createTextarea(
 
     return wrapper;
 }
-
-export function createPopoverToOption(
-    boldText: string,
-    value: string,
-    deleted: boolean
-): HTMLElement {
-    const wrapper = document.createElement('div');
-    const bold = document.createElement('strong');
-    bold.innerText = `${boldText}: `;
-
-    wrapper.append(bold, value || noneSpan);
-
-    if (deleted) {
-        const postDeletedSpan = document.createElement('span');
-        postDeletedSpan.classList.add('fc-danger');
-        postDeletedSpan.innerText = '- post is deleted';
-
-        wrapper.append(' ', postDeletedSpan);
-    }
-
-    return wrapper;
-}
+*/

@@ -1,10 +1,11 @@
 import { GreaseMonkeyCache } from './GreaseMonkeyCache';
-import { CacheChatApiFkey, soboticsRoomId, getSentMessage, chatFailureMessage } from '../GlobalVars';
+import { CacheChatApiFkey, soboticsRoomId, getSentMessage } from '../shared';
 
 export class ChatApi {
     private static getExpiryDate(): Date {
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 1);
+
         return expiryDate;
     }
 
@@ -16,12 +17,14 @@ export class ChatApi {
 
     public getChannelFKey(roomId: number): Promise<string> {
         const expiryDate = ChatApi.getExpiryDate();
+
         return GreaseMonkeyCache.getAndCache<string>(CacheChatApiFkey, async () => {
             try {
                 const channelPage = await this.getChannelPage(roomId);
-                const parsedHtml = new DOMParser().parseFromString(channelPage, 'text/html');
-                const fkeyElement = parsedHtml.querySelector<HTMLInputElement>('input[name="fkey"]');
-                const fkey = fkeyElement?.value || '';
+                const parsed = new DOMParser().parseFromString(channelPage, 'text/html');
+
+                const fkeyInput = parsed.querySelector<HTMLInputElement>('input[name="fkey"]');
+                const fkey = fkeyInput?.value || '';
 
                 return fkey;
             } catch (error) {
@@ -32,15 +35,25 @@ export class ChatApi {
     }
 
     public getChatUserId(): number {
-        // Because the script only sends messages to SO chat, the SO chat id is the same as the SO id.
-        // This is not the case for SE chat, so it needs to be changed
-        // when https://github.com/SOBotics/AdvancedFlagging/issues/31 is implemented
+        // Because the script only sends messages to SO chat,
+        // the SO chat id is the same as the SO id.
+        // This is not the case for SE chat, so it needs to be changed when
+        // https://github.com/SOBotics/AdvancedFlagging/issues/31 is implemented
         return StackExchange.options.user.userId as number;
     }
 
-    public async sendMessage(message: string, bot: string, roomId: number = soboticsRoomId): Promise<string> {
-        const makeRequest = async (): Promise<boolean> => await this.sendRequestToChat(message, roomId);
+    public async sendMessage(
+        message: string,
+        bot: string,
+        roomId = soboticsRoomId
+    ): Promise<string> {
         let numTries = 0;
+        const feedback = message.split(' ').pop() || '';
+
+        const makeRequest = async (): Promise<boolean> => {
+            return await this.sendRequestToChat(message, roomId);
+        };
+
         const onFailure = async (): Promise<string> => {
             numTries++;
 
@@ -48,15 +61,15 @@ export class ChatApi {
                 GreaseMonkeyCache.unset(CacheChatApiFkey);
                 if (!await makeRequest()) return onFailure();
             } else {
-                throw new Error(chatFailureMessage); // retry limit exceeded
+                throw new Error('Failed to send message to chat'); // retry limit exceeded
             }
 
-            return getSentMessage(true, message.split(' ').pop() || '', bot);
+            return getSentMessage(true, feedback, bot);
         };
 
         if (!await makeRequest()) return onFailure();
 
-        return getSentMessage(true, message.split(' ').pop() || '', bot);
+        return getSentMessage(true, feedback, bot);
     }
 
     private async sendRequestToChat(message: string, roomId: number): Promise<boolean> {
@@ -69,8 +82,8 @@ export class ChatApi {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                data: 'text=' + encodeURIComponent(message) + '&fkey=' + fkey,
-                onload: (chatResponse: { status: number }) => resolve(chatResponse.status === 200),
+                data: `text=${encodeURIComponent(message)}&fkey=${fkey}`,
+                onload: ({ status }) => resolve(status === 200),
                 onerror: () => resolve(false),
             });
         });
@@ -81,9 +94,9 @@ export class ChatApi {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: `${this.chatRoomUrl}/rooms/${roomId}`,
-                onload: (response: { status: number; responseText: string }) => {
-                    response.status === 200
-                        ? resolve(response.responseText)
+                onload: ({ status, responseText }) => {
+                    status === 200
+                        ? resolve(responseText)
                         : reject();
                 },
                 onerror: () => reject()

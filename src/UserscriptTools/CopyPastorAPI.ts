@@ -4,7 +4,8 @@ import {
     username,
     getSentMessage,
     FlagTypeFeedbacks,
-    showInlineElement
+    showInlineElement,
+    debugMode
 } from '../shared';
 import { getAllPostIds } from './sotools';
 import { createBotIcon } from '../AdvancedFlagging';
@@ -128,9 +129,17 @@ export class CopyPastorAPI {
             .join('&');
 
         return new Promise<string>((resolve, reject) => {
+            const url = `${copypastorServer}/feedback/create`;
+
+            if (debugMode) {
+                console.log('Feedback to Guttenberg via', url, data);
+
+                reject('Didn\'t send feedback: debug mode');
+            }
+
             GM_xmlhttpRequest({
                 method: 'POST',
-                url: `${copypastorServer}/feedback/create`,
+                url,
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },

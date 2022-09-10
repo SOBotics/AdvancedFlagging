@@ -115,6 +115,7 @@ export function setupConfiguration(): void {
     bottomBox?.after(configDiv, commentsDiv);
 
     // TODO switch to Object.hasOwn() when available
+
     // if the user hasn't set up the config
     // or is using an older version of AF,
     // prompt to submit

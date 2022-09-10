@@ -182,6 +182,10 @@ function getGeneralConfigItems(): HTMLElement {
             text: 'Don\'t send feedback to Generic Bot by default',
             configValue: getCachedConfigBotKey('Generic Bot')
         },
+        {
+            text: 'Enable debug mode',
+            configValue: Cached.Configuration.debug
+        }
     ].map(({ text, configValue, tooltipText }) => {
         const selected = cachedConfiguration[configValue as GeneralItems];
 

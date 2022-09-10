@@ -10,6 +10,7 @@ import {
     isPostDeleted,
     getSentMessage,
     showInlineElement,
+    debugMode,
 } from '../shared';
 import { getAllPostIds } from './sotools';
 import { Modals, Input, Buttons } from '@userscripters/stacks-helpers';
@@ -221,14 +222,22 @@ export class MetaSmokeAPI {
         const urlString = MetaSmokeAPI.getQueryUrl(this.postId, this.postType);
 
         const { appKey, accessToken } = MetaSmokeAPI;
+
+        const url = 'https://metasmoke.erwaysoftware.com/api/w/post/report';
         const body = getFormDataFromObject({
             post_link: urlString,
             key: appKey,
             token: accessToken
         });
 
+        if (debugMode) {
+            console.log('Report post via', url, body);
+
+            throw new Error('Didn\'t report post: in debug mode');
+        }
+
         const reportRequest = await fetch(
-            'https://metasmoke.erwaysoftware.com/api/w/post/report',
+            url,
             {
                 method: 'POST',
                 body
@@ -267,9 +276,16 @@ export class MetaSmokeAPI {
             key: appKey,
             token: accessToken
         });
+        const url = `//metasmoke.erwaysoftware.com/api/w/post/${smokeyId}/feedback`;
+
+        if (debugMode) {
+            console.log('Feedback to Smokey via', url, body);
+
+            throw new Error('Didn\'t send feedback: debug mode');
+        }
 
         const feedbackRequest = await fetch(
-            `//metasmoke.erwaysoftware.com/api/w/post/${smokeyId}/feedback`,
+            url,
             { method: 'POST', body }
         );
         const feedbackResponse = await feedbackRequest.json() as unknown;

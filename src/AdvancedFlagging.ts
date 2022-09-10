@@ -13,6 +13,7 @@ import {
     cachedConfiguration,
     CachedFlag,
     cachedFlagTypes,
+    debugMode,
     displayError,
     displaySuccess,
     FlagNames,
@@ -105,8 +106,15 @@ async function postComment(
     comment: string,
 ): Promise<void> {
     const data = getFormDataFromObject({ fkey, comment });
+    const url = `/posts/${postId}/comments`;
 
-    const request = await fetch(`/posts/${postId}/comments`, {
+    if (debugMode) {
+        console.log('Post comment via', url, data);
+
+        return;
+    }
+
+    const request = await fetch(url, {
         method: 'POST',
         body: data
     });
@@ -139,9 +147,17 @@ async function flagPost(
 ): Promise<void> {
     const failedToFlag = 'Failed to flag: ';
 
-    const flagPost = await fetch(`/flags/posts/${postId}/add/${flagName}`, {
+    const url = `/flags/posts/${postId}/add/${flagName}`;
+    const data = getFormDataFromObject({ fkey, otherText: flagText || '' });
+
+    if (debugMode) {
+        console.log(`Flag post as ${flagName} via`, url, data);
+        return;
+    }
+
+    const flagPost = await fetch(url, {
         method: 'POST',
-        body: getFormDataFromObject({ fkey, otherText: flagText || '' })
+        body: data
     });
 
     // for some reason, the flag responses are inconsistent:

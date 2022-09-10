@@ -135,7 +135,7 @@ function getActionIcons(): HTMLElement[] {
         ['Clear', 'fc-red-500'],
         ['Flag', 'fc-red-500']
     ]
-        .map(([svg, classname]) => getIcon(getSvg(svg), classname));
+        .map(([svg, classname]) => getIcon(getSvg(`icon${svg}`), classname));
 }
 
 export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): void {

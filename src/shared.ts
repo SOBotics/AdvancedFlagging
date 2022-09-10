@@ -24,19 +24,18 @@ export interface CachedFlag extends FlagType {
 
 export type CachedCategory = Omit<FlagCategory, 'FlagTypes'>;
 
-export interface Configuration {
-    openOnHover: boolean;
-    defaultNoFlag: boolean;
-    defaultNoComment: boolean;
-    defaultNoDownvote: boolean;
+type Mutable<Type> = {
+    -readonly [Key in keyof Type]: Type[Key];
+};
+
+export type Configuration = Mutable<{
+    // so that cache keys aren't duplicated
+    [key in keyof (Omit<typeof Cached.Configuration, 'key'>)]: boolean
+}> & { // add bot values that don't exist in Cached
     defaultNoSmokey: boolean;
     defaultNoNatty: boolean;
     defaultNoGuttenberg: boolean;
     defaultNoGenericBot: boolean;
-    watchFlags: boolean;
-    watchQueues: boolean;
-    linkDisabled: boolean;
-    addAuthorName: boolean;
 }
 
 export interface FlagTypeFeedbacks {
@@ -101,7 +100,8 @@ export const Cached = {
         watchQueues: 'watchQueues',
 
         linkDisabled: 'linkDisabled',
-        addAuthorName: 'addAuthorName'
+        addAuthorName: 'addAuthorName',
+        debug: 'debug',
     },
     Fkey: 'fkey',
     Metasmoke: {
@@ -273,6 +273,7 @@ export function addXHRListener(callback: (request: XMLHttpRequest) => void): voi
 export const cachedConfiguration = Store.get<Configuration>(Cached.Configuration.key)
     || {} as Partial<Configuration>;
 export const updateConfiguration = (): void => Store.set(Cached.Configuration.key, cachedConfiguration);
+export const debugMode = cachedConfiguration[Cached.Configuration.debug];
 
 export const cachedFlagTypes = Store.get<CachedFlag[]>(Cached.FlagTypes) || [];
 export const updateFlagTypes = (): void => Store.set(Cached.FlagTypes, cachedFlagTypes);

@@ -138,7 +138,7 @@ export class MetaSmokeAPI {
 
         // user doesn't wish to connect
         if (!authenticate) {
-            Store.set('MetaSmoke.Disabled', true);
+            Store.set(Cached.Metasmoke.disabled, true);
             return;
         }
 
@@ -224,14 +224,14 @@ export class MetaSmokeAPI {
         const { appKey, accessToken } = MetaSmokeAPI;
 
         const url = 'https://metasmoke.erwaysoftware.com/api/w/post/report';
-        const body = getFormDataFromObject({
+        const data = {
             post_link: urlString,
             key: appKey,
             token: accessToken
-        });
+        };
 
         if (debugMode) {
-            console.log('Report post via', url, body);
+            console.log('Report post via', url, data);
 
             throw new Error('Didn\'t report post: in debug mode');
         }
@@ -240,7 +240,7 @@ export class MetaSmokeAPI {
             url,
             {
                 method: 'POST',
-                body
+                body: getFormDataFromObject(data)
             }
         );
 
@@ -257,6 +257,8 @@ export class MetaSmokeAPI {
     }
 
     public async sendFeedback(feedback: string): Promise<string> {
+        if (MetaSmokeAPI.isDisabled) return '';
+
         const { appKey, accessToken } = MetaSmokeAPI;
 
         const smokeyId = this.getSmokeyId();
@@ -271,22 +273,25 @@ export class MetaSmokeAPI {
         }
 
         // otherwise, send feedback
-        const body = getFormDataFromObject({
+        const data = {
             type: feedback,
             key: appKey,
             token: accessToken
-        });
+        };
         const url = `//metasmoke.erwaysoftware.com/api/w/post/${smokeyId}/feedback`;
 
         if (debugMode) {
-            console.log('Feedback to Smokey via', url, body);
+            console.log('Feedback to Smokey via', url, data);
 
             throw new Error('Didn\'t send feedback: debug mode');
         }
 
         const feedbackRequest = await fetch(
             url,
-            { method: 'POST', body }
+            {
+                method: 'POST',
+                body: getFormDataFromObject(data)
+            }
         );
         const feedbackResponse = await feedbackRequest.json() as unknown;
 

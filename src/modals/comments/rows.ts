@@ -7,6 +7,7 @@ import {
 } from '../../shared';
 import { flagCategories } from '../../FlagTypes';
 import { wrapInFlexItem, isModOrNoFlag } from '../../Configuration';
+import { toggleHideIfNeeded } from './main';
 
 import {
     Checkbox,
@@ -59,9 +60,7 @@ function getCharSpan(
 
     // the form is invalid if there are more or less characters than the limit
     const isInvalid = classname === 'fc-red-400' || /more|at least/.test(spanText);
-    if (isInvalid) {
-        textarea.classList.add('is-invalid');
-    }
+    textarea.classList[isInvalid ? 'add' : 'remove']('is-invalid');
 
     const span = document.createElement('span');
     span.classList.add('ml-auto', classname);
@@ -75,15 +74,20 @@ function toggleTextarea(
     comment: 'low' | 'high',
     type: 'In' | 'Out'
 ): void {
-    const wrapper = element.closest('.s-card');
-    const textarea = wrapper
-        ?.querySelector(`[id*="-comment-${comment}rep"]`);
+    const wrapper = element
+        .closest('.s-card')
+        ?.querySelector(`[id*="-comment-${comment}rep"]`)
+        ?.closest('div.flex--item');
 
-    if (!textarea) return;
+    if (!wrapper) return;
 
-    $(textarea)[`fade${type}`](400, () => {
-        textarea.classList.toggle('d-none');
-        textarea.classList.toggle('d-flex');
+    $(wrapper)[`fade${type}`](400, () => {
+        wrapper.classList.toggle('d-none');
+        wrapper.classList.toggle('d-block');
+
+        const row = wrapper.parentElement?.parentElement as HTMLDivElement;
+
+        toggleHideIfNeeded(row);
     });
 }
 
@@ -96,7 +100,7 @@ export function getCommentInputs(
     // - HighRep checkbox, disabled when the switch is off
 
     const container = document.createElement('div');
-    container.classList.add('d-flex', 'ai-center', 'gs12');
+    container.classList.add('d-flex', 'ai-center', 'g16');
 
     const toggleContainer = document.createElement('div');
     toggleContainer.classList.add('flex--item');
@@ -115,26 +119,28 @@ export function getCommentInputs(
                 text: 'Add a different comment for high reputation users'
             },
             selected: Boolean(Comments?.High),
-            disabled: !Comments?.Low
+            disabled: !Comments?.Low,
         },
     ]);
+    checkbox.classList.add('fs-body2', 'pt1');
 
     // event listener after checkbox has been defined, so we can use it
-    const input = toggle.querySelector('input') as HTMLInputElement;
+    const toggleInput = toggle.querySelector('input') as HTMLInputElement;
 
-    input.addEventListener('change', () => {
-        // toggle disabled class
-        checkbox.classList.toggle('is-disabled');
-
+    toggleInput.addEventListener('change', () => {
         const cbInput = checkbox.querySelector('input') as HTMLInputElement;
         // leave comment checked => disabled = false
-        cbInput.disabled = !input.checked;
+        cbInput.disabled = !toggleInput.checked;
 
-        if (input.checked) {
-            toggleTextarea(input, 'low', 'In');
+        if (toggleInput.checked) {
+            toggleTextarea(toggleInput, 'low', 'In');
+
+            checkbox.classList.remove('is-disabled');
         } else {
-            toggleTextarea(input, 'low', 'Out');
-            toggleTextarea(input, 'high', 'Out');
+            toggleTextarea(toggleInput, 'low', 'Out');
+            toggleTextarea(toggleInput, 'high', 'Out');
+
+            checkbox.classList.add('is-disabled');
         }
     });
 
@@ -155,7 +161,7 @@ export function getCommentInputs(
             : 'Comment text';
     });
 
-    container.append(toggleContainer, checkbox);
+    container.append(toggleContainer, wrapInFlexItem(checkbox));
 
     return container;
 }
@@ -192,9 +198,12 @@ export function getTextareas({
     const wrappers = [flag, lowRep, highRep].map(element => {
         const textarea = element.querySelector('textarea') as HTMLTextAreaElement;
         textarea.classList.add('fs-body2'); // increase font size
-        textarea.style.height = `${textarea.scrollHeight + 2}px`; // fit to content
+        //textarea.style.height = `${textarea.scrollHeight + 2}px`; // fit to content
+        textarea.rows = 4;
 
-        const contentType = textarea.id.includes('flag') ? 'flag' : 'comment';
+        const contentType = textarea.id.includes('comment')
+            ? 'comment'
+            : 'flag';
 
         // append chataracters string
         const charsLeft = getCharSpan(textarea, contentType);
@@ -207,7 +216,13 @@ export function getTextareas({
             this.nextElementSibling?.replaceWith(newCharsLeft);
         });
 
-        return wrapInFlexItem(element);
+        const wrapper = wrapInFlexItem(element);
+
+        textarea.value
+            ? wrapper.classList.add('d-block')
+            : wrapper.classList.add('d-none');
+
+        return wrapper;
     });
 
     const container = document.createElement('div');
@@ -234,19 +249,22 @@ function getFlagSelect(
     const select = Select.makeStacksSelect(
         `advanced-flagging-select-flag-${Id}`,
         options,
-        { text: 'test' }, // TODO replace functionality, check stacks-helpers
         { disabled: ReportType === 'PostOther' }
     );
     select.className = 'd-flex ai-center';
 
     // correctly position container & select
-    const sSelect = select.children[1] as HTMLDivElement;
-    sSelect.style.right = '28px';
+    const sSelect = select.querySelector('.s-select') as HTMLDivElement;
+    sSelect.style.right = '35px';
     select.querySelector('select')?.classList.add('pl48');
 
     const flagLabel = document.createElement('label');
     flagLabel.classList.add('fw-bold', 'ps-relative', 'z-selected', 'l12', 'fs-body1', 'flex--item');
     flagLabel.innerText = 'Flag:';
+
+    if (ReportType === 'PostOther') {
+        flagLabel.classList.add('o50');
+    }
 
     return [flagLabel, select];
 }
@@ -323,10 +341,13 @@ function getRadiosForBot(
         };
     });
 
-    const [fieldset] = Radio.makeStacksRadios(config, name, { horizontal: true });
+    const [fieldset] = Radio.makeStacksRadios(config, name, {
+        horizontal: true,
+        classes: [ 'fs-body2' ]
+    });
     // add data-feedback attribute
     fieldset.querySelectorAll('input').forEach(radio => {
-        const feedback = radio.id.split('-').pop();
+        const [feedback] = radio.id.split('-').slice(-2, -1);
 
         radio.dataset.feedback = feedback;
     });
@@ -342,7 +363,7 @@ function getRadiosForBot(
 
 export function getRadioRow({ Id, Feedbacks }: CachedFlag): HTMLElement {
     const container = document.createElement('div');
-    container.classList.add('d-flex', 'fd-column', 'gsy', 'gs8');
+    container.classList.add('d-flex', 'fd-column', 'gsy', 'gs4');
 
     const feedbackRadios = Object
         .keys(possibleFeedbacks)

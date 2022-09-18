@@ -83,6 +83,13 @@ import {
       This appears to be the simplest approach
 */
 
+export function toggleHideIfNeeded(parent: HTMLElement): void {
+    const shouldHide = [...parent.firstElementChild?.children as HTMLCollection]
+        .every(element => element.classList.contains('d-none'));
+
+    parent.classList[shouldHide ? 'add' : 'remove']('d-none');
+}
+
 function getExpandableContent(flagType: CachedFlag): HTMLElement[] {
     // four things:
     // - Leave comment toggle + include highrep checkbox
@@ -95,7 +102,12 @@ function getExpandableContent(flagType: CachedFlag): HTMLElement[] {
         getTextareas(flagType),
         getSelectRow(flagType),
         getRadioRow(flagType)
-    ].map(row => wrapInFlexItem(row));
+    ].map(row => {
+        const flexItem = wrapInFlexItem(row);
+        toggleHideIfNeeded(flexItem);
+
+        return flexItem;
+    });
 
     return content;
 }
@@ -104,15 +116,17 @@ function getExpandableContent(flagType: CachedFlag): HTMLElement[] {
 
 function expandableToggled(edit: HTMLElement): void {
     const save = edit.previousElementSibling;
-    const expandable = edit.closest('.s-expandable');
+    const expandable = edit
+        .closest('.s-card') // get the parent
+        ?.querySelector('.s-expandable'); // then the expandable
     if (!save || !expandable) return;
 
     const isExpanded = expandable.classList.contains('is-expanded');
 
-    const pencil = getIconPath('Pencil');
-    const eyeOff = getIconPath('EyeOff');
+    const pencil = getIconPath('iconPencil');
+    const eyeOff = getIconPath('iconEyeOff');
 
-    const [svg, text] = [...edit.childNodes] as HTMLElement[];
+    const [svg,, text] = [...edit.childNodes] as HTMLElement[];
 
     svg.classList.toggle('iconPencil');
     svg.classList.toggle('iconEyeOff');
@@ -138,7 +152,10 @@ function getActionItems(
     const save = Buttons.makeStacksButton(
         `advanced-flagging-save-flagtype-${flagId}`,
         'Save',
-        { primary: true, classes: ['flex--item'] }
+        {
+            primary: true,
+            classes: [ 'flex--item' ]
+        }
     );
     save.style.display = 'none';
     save.addEventListener('click', () => submitChanges(save));
@@ -149,8 +166,11 @@ function getActionItems(
         {
             iconConfig: {
                 name: 'iconPencil',
-                path: getIconPath('iconPencil')
-            }
+                path: getIconPath('iconPencil'),
+                height: 18,
+                width: 18
+            },
+            classes: [ 'flex--item' ]
         }
     );
     edit.dataset.controller = 's-expandable-control';
@@ -167,8 +187,11 @@ function getActionItems(
             type: ['danger'],
             iconConfig: {
                 name: 'iconTrash',
-                path: getIconPath('iconTrash')
-            }
+                path: getIconPath('iconTrash'),
+                width: 18,
+                height: 18
+            },
+            classes: [ 'flex--item' ]
         }
     );
 
@@ -185,9 +208,10 @@ function getActionItems(
         updateFlagTypes();
 
         $(wrapper).fadeOut('fast', () => {
+            const category = wrapper.parentElement;
+
             wrapper.remove();
 
-            const category = wrapper.parentElement;
             // if length is 1, then only the category header remains
             if (category?.childElementCount === 1) {
                 $(category).fadeOut('fast', () => category.remove());
@@ -225,7 +249,7 @@ function getActionItems(
         updateFlagTypes();
 
         // update the card's style
-        wrapper?.classList.remove('s-card__muted');
+        wrapper?.classList.toggle('s-card__muted');
 
         displayStacksToast(
             `Successfully ${input.checked ? 'en' : 'dis'}abled flag type`,
@@ -274,16 +298,28 @@ function createFlagTypeDiv(
 
     actions.append(...getActionItems(Id, Enabled, expandableId));
 
+    content.append(h3, actions);
+
     // expandable
     const expandableContent = getExpandableContent(flagType);
 
     const expandable = document.createElement('div');
-    expandable.classList.add('s-expandable-control');
+    expandable.classList.add('s-expandable');
     expandable.id = expandableId;
 
     const expandableDiv = document.createElement('div');
-    expandableDiv.classList.add('s-expandable--content');
+    expandableDiv.classList.add(
+        's-expandable--content',
+        'd-flex',
+        'fd-column',
+        'g16',
+        'py12'
+    );
     expandableDiv.append(...expandableContent);
+
+    expandable.append(expandableDiv);
+
+    card.append(content, expandable);
 
     return card;
 }
@@ -328,6 +364,18 @@ function getCommentsModalBody(): HTMLElement {
     return container;
 }
 
+function resetFlagTypes(): void {
+    Store.unset(Cached.FlagTypes);
+    cacheFlags();
+
+    displayStacksToast(
+        'Comments and flags have been reset to defaults',
+        'success'
+    );
+
+    setTimeout(() => window.location.reload(), 500);
+}
+
 export function setupCommentsAndFlagsModal(): void {
     const modal = Modals.makeStacksModal(
         'advanced-flagging-comments-modal',
@@ -359,28 +407,20 @@ export function setupCommentsAndFlagsModal(): void {
                         element: Buttons.makeStacksButton(
                             'advanced-flagging-configuration-modal-reset',
                             'Reset',
-                            { type: ['danger'] }
-                        )
+                            {
+                                type: [ 'danger' ],
+                                click: {
+                                    handler: resetFlagTypes
+                                }
+                            }
+                        ),
                     }
                 ]
             },
             fullscreen: true,
         }
     );
-
-    modal
-        .querySelector('.s-btn__danger')
-        ?.addEventListener('click', () => {
-            Store.unset(Cached.FlagTypes);
-            cacheFlags();
-
-            displayStacksToast(
-                'Comments and flags have been reset to defaults',
-                'success'
-            );
-
-            setTimeout(() => window.location.reload(), 500);
-        });
+    modal.firstElementChild?.classList.add('w80', 'sm:w100', 'md:w100');
 
     document.body.append(modal);
 }

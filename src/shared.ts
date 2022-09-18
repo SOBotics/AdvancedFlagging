@@ -131,17 +131,19 @@ export const getSvg = (name: string): SVGElement => {
 export function displayStacksToast(
     message: string,
     type: StacksToastState,
-    addParent?: boolean
+    dismissable?: boolean
 ): void {
-    const parent = document.querySelector(
+    /*const parent = document.querySelector(
         '.s-modal[aria-hidden="false"] > .s-modal--dialog'
-    ) as HTMLElement;
+    ) as HTMLElement;*/
 
     StackExchange.helpers.showToast(message, {
         type: type,
         transientTimeout: popupDelay,
+        // disallow dismissing the popup if inside modal
+        dismissable,
         // so that dismissing the toast won't close the modal
-        $parent: addParent ? $(parent) : $()
+        //$parent: addParent ? $(parent) : $()
     });
 }
 

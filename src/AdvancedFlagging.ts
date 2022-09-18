@@ -36,6 +36,7 @@ import { Buttons } from '@userscripters/stacks-helpers';
 
 // TODO publish & update stacks-helpers
 // TODO how about creating a <nav> Config/Comments instead of 2 modals
+// TODO classes to s-...-control in stacks-helpers
 
 type Reporter = CopyPastorAPI | MetaSmokeAPI | NattyAPI | GenericBotAPI;
 export type CheckboxesInformation = { [key in BotNames]: HTMLElement }
@@ -69,7 +70,148 @@ function setupStyles(): void {
 #advanced-flagging-snackbar {
     transform: translate(-50%, 0); /* correctly centre the element */
     min-width: 19rem;
-}`);
+}
+
+.advanced-flagging-link:focus {
+    outline: none;
+}
+
+.advanced-flagging-link li > a {
+    padding-block: 4px;
+}
+
+.advanced-flagging-link li > .s-checkbox-control {
+    padding-inline: 6px;
+    gap: 4px;
+}
+
+/* ------------------------------------------- */
+/* -- TODO remove when natively implemented -- */
+/* ------------------------------------------- */
+.s-checkbox-control,
+.s-radio-control {
+  display: flex;
+  gap: var(--su8);
+  align-items: center;
+}
+.s-checkbox-control .s-label,
+.s-radio-control .s-label {
+  font-weight: normal;
+}
+.s-checkbox-group,
+.s-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--su8);
+}
+.s-checkbox-group.s-checkbox-group__horizontal,
+.s-checkbox-group.s-radio-group__horizontal,
+.s-radio-group.s-checkbox-group__horizontal,
+.s-radio-group.s-radio-group__horizontal {
+  flex-direction: row;
+}
+.s-checkbox-group legend.s-label,
+.s-radio-group legend.s-label {
+  margin-bottom: var(--su8);
+}
+@supports ((-webkit-appearance: none) or (-moz-appearance: none) or (appearance: none)) {
+  .s-checkbox,
+  .s-radio {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    margin: 0;
+    width: 1em;
+    height: 1em;
+    border: 1px solid var(--bc-darker);
+    background-color: var(--white);
+    outline: 0;
+    font-size: inherit;
+    vertical-align: middle;
+    cursor: pointer;
+  }
+  .s-checkbox::-ms-check,
+  .s-radio::-ms-check {
+    display: none;
+  }
+}
+.s-checkbox[disabled],
+.s-radio[disabled] {
+  opacity: var(--_o-disabled-static);
+  cursor: not-allowed;
+}
+@supports ((-webkit-appearance: none) or (-moz-appearance: none) or (appearance: none)) {
+  .s-checkbox {
+    border-radius: var(--br-sm);
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: contain;
+  }
+  .s-checkbox:checked,
+  .s-checkbox:indeterminate {
+    border-color: var(--theme-secondary-400) !important;
+    background-color: var(--theme-secondary-400);
+  }
+  @media (prefers-color-scheme: dark) {
+    body.theme-highcontrast.theme-system .s-checkbox:checked,
+    body.theme-highcontrast.theme-system .s-checkbox:indeterminate {
+      border-color: var(--blue-700) !important;
+      background-color: var(--blue-300);
+    }
+  }
+  body.theme-highcontrast.theme-dark .s-checkbox:checked,
+  body.theme-highcontrast.theme-dark .s-checkbox:indeterminate {
+    border-color: var(--blue-700) !important;
+    background-color: var(--blue-300);
+  }
+  .s-checkbox:checked:focus,
+  .s-checkbox:indeterminate:focus {
+    border-color: var(--theme-secondary-400);
+  }
+  .s-checkbox:checked {
+    background-image: url("data:image/svg+xml,%3Csvg width='11' height='11' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 3.41L8.59 2 4 6.59 2.41 5 1 6.41l3 3z' fill='%23fff'/%3E%3C/svg%3E");
+  }
+  .s-checkbox:indeterminate {
+    background-image: url("data:image/svg+xml,%3Csvg width='11' height='11' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 4.5 h7 v2 h-7 z' fill='%23fff'/%3E%3C/svg%3E");
+  }
+  .s-checkbox:focus {
+    border-color: var(--theme-secondary-300);
+    box-shadow: 0 0 0 var(--su-static4) var(--focus-ring);
+  }
+}
+@supports ((-webkit-appearance: none) or (-moz-appearance: none) or (appearance: none)) {
+  .s-radio {
+    border-radius: var(--br-circle);
+  }
+  .s-radio:checked {
+    border-color: var(--theme-secondary-400);
+    border-width: 0.30769231em;
+    background-color: hsl(0, 0%, 100%);
+  }
+  @media (prefers-color-scheme: dark) {
+    body.theme-highcontrast.theme-system .s-radio:checked {
+      border-color: var(--blue-300);
+      outline: 1px solid var(--black);
+    }
+  }
+  body.theme-highcontrast.theme-dark .s-radio:checked {
+    border-color: var(--blue-300);
+    outline: 1px solid var(--black);
+  }
+  .s-radio:focus {
+    box-shadow: 0 0 0 var(--su-static4) var(--focus-ring);
+  }
+}
+.s-input:focus,
+.s-input.has-focus,
+.s-textarea:focus,
+.s-select > select:focus {
+  border-color: var(--theme-secondary-300);
+  box-shadow: 0 0 0 var(--su-static4) var(--focus-ring);
+  color: var(--black);
+  outline: 0;
+}
+`);
 
 }
 
@@ -105,7 +247,7 @@ async function postComment(
     fkey: string,
     comment: string,
 ): Promise<void> {
-    const data = getFormDataFromObject({ fkey, comment });
+    const data = { fkey, comment };
     const url = `/posts/${postId}/comments`;
 
     if (debugMode) {
@@ -116,7 +258,7 @@ async function postComment(
 
     const request = await fetch(url, {
         method: 'POST',
-        body: data
+        body: getFormDataFromObject(data)
     });
     const result = await request.text();
 
@@ -148,7 +290,7 @@ async function flagPost(
     const failedToFlag = 'Failed to flag: ';
 
     const url = `/flags/posts/${postId}/add/${flagName}`;
-    const data = getFormDataFromObject({ fkey, otherText: flagText || '' });
+    const data = { fkey, otherText: flagText || '' };
 
     if (debugMode) {
         console.log(`Flag post as ${flagName} via`, url, data);
@@ -157,7 +299,7 @@ async function flagPost(
 
     const flagPost = await fetch(url, {
         method: 'POST',
-        body: data
+        body: getFormDataFromObject(data)
     });
 
     // for some reason, the flag responses are inconsistent:
@@ -429,7 +571,7 @@ function setPopoverOpening(
             }
         });
 
-        advancedFlaggingLink.addEventListener('mouseout', event => {
+        advancedFlaggingLink.addEventListener('mouseleave', event => {
             event.stopPropagation();
 
             // avoid immediate closing of the popover
@@ -527,9 +669,12 @@ function setupPostPage(): void {
         if (score === null) return; // can't use !score, because score might be 0
 
         const advancedFlaggingLink = Buttons.makeStacksButton(
-            'advanced-flagging-link',
+            `advanced-flagging-link-${postId}`,
             'Advanced Flagging',
-            { type: [ 'link' ] }
+            {
+                type: [ 'link' ],
+                classes: [ 'advanced-flagging-link' ]
+            }
         );
 
         const flexItem = document.createElement('div');

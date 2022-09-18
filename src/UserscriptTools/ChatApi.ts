@@ -1,5 +1,5 @@
 import { Store } from './Store';
-import { Cached, soboticsRoomId, getSentMessage } from '../shared';
+import { Cached, soboticsRoomId, getSentMessage, debugMode } from '../shared';
 
 export class ChatApi {
     private static getExpiryDate(): Date {
@@ -78,12 +78,20 @@ export class ChatApi {
     }
 
     private async sendRequestToChat(message: string, roomId: number): Promise<boolean> {
+        const url = `${this.chatRoomUrl}/chats/${roomId}/messages/new`;
+
+        if (debugMode) {
+            console.log('Send', message, `to ${roomId} via`, url);
+
+            return new Promise(resolve => resolve(true));
+        }
+
         const fkey = await this.getChannelFKey(roomId);
 
         return new Promise(resolve => {
             GM_xmlhttpRequest({
                 method: 'POST',
-                url: `${this.chatRoomUrl}/chats/${roomId}/messages/new`,
+                url,
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },

@@ -1,7 +1,8 @@
 import {
     isStackOverflow,
     username,
-    FlagTypeFeedbacks
+    FlagTypeFeedbacks,
+    debugMode
 } from '../shared';
 
 const genericBotKey = 'Cm45BSrt51FR3ju';
@@ -41,6 +42,7 @@ export class GenericBotAPI {
         const answerBody = answer?.innerHTML.trim() || '';
         const contentHash = this.computeContentHash(answerBody);
 
+        const url = 'https://so.floern.com/api/trackpost.php';
         const payload = {
             key: genericBotKey,
             postId: this.answerId,
@@ -52,10 +54,14 @@ export class GenericBotAPI {
             .map(item => item.join('='))
             .join('&');
 
+        if (debugMode) {
+            console.log('Track post via', url, payload);
+        }
+
         return new Promise<string>((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'POST',
-                url: 'https://so.floern.com/api/trackpost.php',
+                url,
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },

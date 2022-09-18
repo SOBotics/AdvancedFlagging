@@ -19,13 +19,12 @@ function saveChanges(): void {
     // find the option id (it's the data-option-id attribute)
     // and store whether the box is checked or not
     document
-        .querySelectorAll('#advanced-flagging-configuration-section-general')
+        .querySelectorAll('#advanced-flagging-configuration-section-general > div > input')
         .forEach(element => {
-            const container = element.closest<HTMLElement>('.d-flex');
-            const optionId = container?.dataset.optionId as GeneralItems;
+            const id = element.id as GeneralItems;
+            const checked = (element as HTMLInputElement).checked;
 
-            const isChecked = (element as HTMLInputElement).checked;
-            cachedConfiguration[optionId] = isChecked;
+            cachedConfiguration[id] = checked;
         });
 
     updateConfiguration();
@@ -112,9 +111,11 @@ export function buildConfigurationOverlay(): void {
                         )
                     }
                 ]
-            }
+            },
+            fullscreen: true
         }
     );
+    modal.firstElementChild?.classList.add('w60');
 
     document.body.append(modal);
 
@@ -202,19 +203,13 @@ function getGeneralConfigItems(): HTMLElement {
     const [fieldset] = Checkbox.makeStacksCheckboxes(checkboxes);
     fieldset.id = 'advanced-flagging-configuration-section-general';
 
-    const header = document.createElement('h2');
-    header.innerText = 'General';
-    header.classList.add('flex--item');
-
-    fieldset.prepend(header);
-
     return fieldset;
 }
 
 function getAdminConfigItems(): HTMLElement {
     const section = document.createElement('fieldset');
     section.id = 'advanced-flagging-configuration-section-admin';
-    section.classList.add('d-flex', 'gs8', 'gsy', 'fd-column');
+    section.classList.add('d-flex', 'gs8', 'gsy', 'fd-column', 'fs-body2');
 
     const header = document.createElement('h2');
     header.innerText = 'Admin';
@@ -263,7 +258,7 @@ function getAdminConfigItems(): HTMLElement {
     const msAccessTokenText = MetaSmokeAPI.accessToken
         // truncate the string because it's too long
         ? `token: ${MetaSmokeAPI.accessToken.substring(0, 32)}...`
-        : 'access token is not stored in cache';
+        : 'no access token found in storage';
 
     const metasmokeTooltip = `This will remove your metasmoke access token (${msAccessTokenText})`;
     const fkeyClearTooltip = 'This will clear the chat fkey. It will be regenerated '
@@ -282,9 +277,17 @@ function getConfigModalBody(): HTMLDivElement {
     const divider = document.createElement('hr');
     divider.classList.add('my16');
 
+    const general = document.createElement('h2');
+    general.innerText = 'General';
+
+    const admin = document.createElement('h2');
+    admin.innerText = 'Admin';
+
     div.append(
+        general,
         getGeneralConfigItems(),
         divider,
+        admin,
         getAdminConfigItems()
     );
 

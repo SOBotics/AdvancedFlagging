@@ -125,7 +125,7 @@ export function submitChanges(element: HTMLElement): void {
 
     // search for invalid forms in visible textareas only!
     const invalids = [...wrapper.querySelectorAll<HTMLElement>('textarea.is-invalid')]
-        .filter(textarea => textarea.style.display !== 'none');
+        .filter(textarea => textarea.offsetParent !== null);
 
     if (invalids.length) {
         // similar to what happens when add comment is clicked but the form is invalid

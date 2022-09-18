@@ -39,15 +39,20 @@ const noneSpan = document.createElement('span');
 noneSpan.classList.add('o50');
 noneSpan.innerText = '(none)';
 
-function increaseTooltipWidth(reportLink: HTMLAnchorElement): void {
-    const popoverId = reportLink
-        .parentElement
-        ?.getAttribute('aria-describedby') || '';
+function increaseTooltipWidth(menu: HTMLUListElement): void {
+    [...menu.querySelectorAll('li')]
+        .filter(li => li.firstElementChild?.classList.contains('s-block-link'))
+        .map(reportLink => reportLink.nextElementSibling)
+        .forEach(tooltip => {
+            const textLength = tooltip?.textContent?.length;
+            if (!textLength) return;
 
-    document
-        .getElementById(popoverId)
-        ?.classList
-        .add('sm:wmn-initial', 'md:wmn-initial', 'wmn5');
+            tooltip.classList.add(
+                textLength > 100
+                    ? 'wmn5'
+                    : 'wmn2'
+            );
+        });
 }
 
 function getFeedbackSpans(
@@ -62,6 +67,7 @@ function getFeedbackSpans(
     } = reporters;
 
     const smokeyId = metasmoke?.getSmokeyId();
+    const smokeyDisabled = MetaSmokeAPI.isDisabled;
     const { copypastorId } = copypastor || {};
 
     const nattyReported = natty?.wasReported() || false;
@@ -75,14 +81,18 @@ function getFeedbackSpans(
         .filter(([botName, feedback]) => {
             switch (botName) {
                 case 'Natty':
-                    return nattyReported || ( // the post has been reported OR
+                    return (
+                        nattyReported // the post has been reported
+                        && !postDeleted // AND is not deleted
+                    ) || ( // OR
                         nattyCanReport // it can be reported
                         && feedback === 'tp' // AND the feedback is tp
                     );
                 case 'Smokey':
-                    return smokeyId || ( // either the post has been reported OR
+                    return smokeyId || ( // the post has been reported OR:
                         feedback === 'tpu-' // the feedback is tpu-
                         && !postDeleted // AND the post is not deleted
+                        && !smokeyDisabled // AND SD info is stored in cache
                     );
                 case 'Guttenberg':
                     // there's no way to report a post to Guttenberg,
@@ -100,8 +110,8 @@ function getFeedbackSpans(
             feedbackSpan.append(strong);
 
             if (feedback === 'track') {
-                strong.innerText = 'track ';
-                feedbackSpan.append('with Generic Bot');
+                strong.innerText = 'track';
+                feedbackSpan.append(' with Generic Bot');
 
                 return feedbackSpan; // different string for Generic Bot
             }
@@ -127,7 +137,7 @@ function getFeedbackSpans(
             feedbackSpan.classList.add(`fc-${className}`);
             strong.innerHTML = shouldReport ? 'report' : feedback;
 
-            feedbackSpan.after(` to ${botName}`);
+            feedbackSpan.append(` to ${botName}`);
 
             return feedbackSpan;
         }).filter(String);
@@ -265,7 +275,9 @@ function getTooltipHtml(
         flagType,
         reporters,
         deleted
-    );
+    )
+        .map(span => span.outerHTML)
+        .join(', '); // separate the feedbacks
 
     // Flag text: ...
     const tooltipFlagText = deleted ? '' : flagText;
@@ -397,10 +409,17 @@ function getReportLinks(
                     flagText
                 );
 
+                const classes = IsDangerous
+                    ? [ 'fc-red-500' ]
+                    : '';
+
                 return {
                     text: DisplayName,
-                    type: IsDangerous ? 'danger' : 'inherit' as 'danger' | 'inherit',
+                    // unfortunately, danger: IsDangerous won't work
+                    // since SE uses s-anchors__muted
                     blockLink: { selected: false },
+                    // use this trick instead
+                    ...(classes ? { classes } : {}),
                     click: {
                         handler: function (): void {
                             void handleReportLinkClick(
@@ -412,7 +431,6 @@ function getReportLinks(
                         }
                     },
                     popover: {
-                        // TODO remember to increase tooltip width!
                         html: tooltipHtml,
                         position: 'right-start' as const
                     }
@@ -504,9 +522,13 @@ function getSendFeedbackToRow(
                 checkbox: {
                     id: botNameId,
                     labelConfig: {
-                        text: `Feedback to ${botImage.outerHTML}`
+                        text: `Feedback to ${botImage.outerHTML}`,
+                        classes: [ 'fs-body1' ]
                     },
-                    selected: !defaultNoCheck
+                    selected: !defaultNoCheck,
+                },
+                checkboxOptions: {
+                    classes: [ 'px6' ]
                 },
                 popover: {
                     html: `Send feedback to ${botName}`,
@@ -532,8 +554,9 @@ export function makeMenu(
             navItems: [
                 ...getReportLinks(reporters, post),
                 ...actionBoxes,
+                { separatorType: 'divider' },
                 ...getSendFeedbackToRow(reporters, post)
-            ]
+            ],
         }
     );
 
@@ -541,6 +564,8 @@ export function makeMenu(
     arrow.classList.add('s-popover--arrow', 's-popover--arrow__tc');
 
     menu.prepend(arrow);
+
+    setTimeout(() => increaseTooltipWidth(menu));
 
     return menu;
 }

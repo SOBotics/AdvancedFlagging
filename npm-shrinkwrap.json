@@ -9,7 +9,7 @@
       "version": "1.3.8",
       "license": "ISC",
       "dependencies": {
-        "@userscripters/stacks-helpers": "1.0.0-beta.8"
+        "@userscripters/stacks-helpers": "1.0.0-beta.9"
       },
       "devDependencies": {
         "@types/jquery": "3.5.14",
@@ -477,9 +477,9 @@
       }
     },
     "node_modules/@userscripters/stacks-helpers": {
-      "version": "1.0.0-beta.8",
-      "resolved": "https://registry.npmjs.org/@userscripters/stacks-helpers/-/stacks-helpers-1.0.0-beta.8.tgz",
-      "integrity": "sha512-BNwspjE+P2dqj0EgnecNOI/VxtAXLN7+AHXRqKfNg3z4wnCiCU1Y8VpEJwiDbLVLPb5kbBe0zw2JEAdruW8/sQ=="
+      "version": "1.0.0-beta.9",
+      "resolved": "https://registry.npmjs.org/@userscripters/stacks-helpers/-/stacks-helpers-1.0.0-beta.9.tgz",
+      "integrity": "sha512-WrdbD30wTaQ9LSnvANNS98wdnYJehkyM8MMYs2rrf0+RftlUUTHkfQqPoXGaJSwjqwAR4sT6WDvGuwCRRPfvrw=="
     },
     "node_modules/@webassemblyjs/ast": {
       "version": "1.11.1",
@@ -3063,9 +3063,9 @@
       }
     },
     "@userscripters/stacks-helpers": {
-      "version": "1.0.0-beta.8",
-      "resolved": "https://registry.npmjs.org/@userscripters/stacks-helpers/-/stacks-helpers-1.0.0-beta.8.tgz",
-      "integrity": "sha512-BNwspjE+P2dqj0EgnecNOI/VxtAXLN7+AHXRqKfNg3z4wnCiCU1Y8VpEJwiDbLVLPb5kbBe0zw2JEAdruW8/sQ=="
+      "version": "1.0.0-beta.9",
+      "resolved": "https://registry.npmjs.org/@userscripters/stacks-helpers/-/stacks-helpers-1.0.0-beta.9.tgz",
+      "integrity": "sha512-WrdbD30wTaQ9LSnvANNS98wdnYJehkyM8MMYs2rrf0+RftlUUTHkfQqPoXGaJSwjqwAR4sT6WDvGuwCRRPfvrw=="
     },
     "@webassemblyjs/ast": {
       "version": "1.11.1",

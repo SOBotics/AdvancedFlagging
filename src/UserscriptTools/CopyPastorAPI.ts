@@ -4,7 +4,6 @@ import {
     username,
     getSentMessage,
     FlagTypeFeedbacks,
-    showInlineElement,
     debugMode
 } from '../shared';
 import { getAllPostIds } from './sotools';
@@ -157,13 +156,10 @@ export class CopyPastorAPI {
     private getIcon(): HTMLDivElement | undefined {
         if (!this.copypastorId) return;
 
-        const icon = createBotIcon('Guttenberg');
-
-        showInlineElement(icon);
-        const iconLink = icon.querySelector('a') as HTMLAnchorElement;
-
-        iconLink.href = `${copypastorServer}/posts/${this.copypastorId}`;
-        iconLink.target = 'blank';
+        const icon = createBotIcon(
+            'Guttenberg',
+            `${copypastorServer}/posts/${this.copypastorId}`
+        );
 
         return icon;
     }

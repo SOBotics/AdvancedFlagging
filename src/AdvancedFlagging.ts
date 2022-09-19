@@ -7,18 +7,12 @@ import { setupReview } from './review';
 import {
     addXHRListener,
     attachPopover,
-    botImages,
-    BotNames,
     Cached,
     cachedConfiguration,
     CachedFlag,
     cachedFlagTypes,
     debugMode,
-    displayError,
-    displaySuccess,
     FlagNames,
-    flagsUrlRegex,
-    getFlagsUrlRegex,
     getFormDataFromObject,
     getHumanFromDisplayName,
     isLqpReviewPage,
@@ -38,9 +32,8 @@ import { Buttons } from '@userscripters/stacks-helpers';
 // TODO how about creating a <nav> Config/Comments instead of 2 modals
 // TODO classes to s-...-control in stacks-helpers
 
+export type ValueOfReporters = NattyAPI | MetaSmokeAPI | CopyPastorAPI; // Object.values() is broken :(
 type Reporter = CopyPastorAPI | MetaSmokeAPI | NattyAPI | GenericBotAPI;
-export type CheckboxesInformation = { [key in BotNames]: HTMLElement }
-type ValueOfReporters = NattyAPI | MetaSmokeAPI | CopyPastorAPI; // Object.values() is broken :(
 
 export interface ReporterInformation {
     Smokey?: MetaSmokeAPI;
@@ -346,7 +339,7 @@ export async function handleActions(
         try {
             await postComment(postId, fkey, commentText);
         } catch (error) {
-            displayError('Failed to comment on post');
+            displayToaster('Failed to comment on post', 'danger');
             console.error(error);
         }
     }
@@ -413,12 +406,12 @@ export async function handleFlag(
                 .then(message => {
                     // promise resolves to a success message
                     if (message) {
-                        displaySuccess(message);
+                        displayToaster(message, 'success');
                     }
                 })
                 // otherwise throws an error caught here
                 .catch((promiseError: Error) => {
-                    displayError(promiseError.message);
+                    displayToaster(promiseError.message, 'danger');
 
                     hasFailed = true;
                 });
@@ -454,11 +447,11 @@ function displaySuccessFlagged(icon: HTMLElement, reportType?: Flags): void {
     attachPopover(icon, flaggedMessage);
     $(icon).fadeIn();
 
-    displaySuccess(flaggedMessage);
+    displayToaster(flaggedMessage, 'success');
 }
 
 function displayErrorFlagged(message: string, error: string): void {
-    displayError(message);
+    displayToaster(message, 'danger');
 
     console.error(error);
 }
@@ -496,17 +489,32 @@ export function upvoteSameComments(
         });
 }
 
+const botImages = {
+    Natty: 'https://i.stack.imgur.com/aMUMt.jpg?s=32&g=1',
+    Smokey: 'https://i.stack.imgur.com/7cmCt.png?s=32&g=1',
+    'Generic Bot': 'https://i.stack.imgur.com/6DsXG.png?s=32&g=1',
+    Guttenberg: 'https://i.stack.imgur.com/tzKAI.png?s=32&g=1'
+};
+
 export function createBotIcon(
-    botName: keyof (typeof botImages)
+    botName: keyof (typeof botImages),
+    href?: string
 ): HTMLDivElement {
     const iconWrapper = document.createElement('div');
-    iconWrapper.classList.add('flex--item', 'd-none');
+    iconWrapper.classList.add('flex--item', 'd-inline-block');
+
     if (!isQuestionPage && !isLqpReviewPage) {
         iconWrapper.classList.add('ml8'); // flag pages
     }
 
     const iconLink = document.createElement('a');
     iconLink.classList.add('s-avatar', 's-avatar__16', 's-user-card--avatar');
+
+    if (href) {
+        iconLink.href = href;
+        iconLink.target = '_blank';
+    }
+
     attachPopover(iconLink, `Reported by ${botName}`);
     iconWrapper.append(iconLink);
 
@@ -522,11 +530,6 @@ function buildFlaggingDialog(
     post: PostInfo,
     reporters: ReporterInformation,
 ): HTMLElement {
-    //const { element, postId } = post;
-
-    //const [commentRow, flagRow, downvoteRow] = getOptionsRow(element, postId);
-    //const checkboxes = getSendFeedbackToRow(reporters, postId);
-
     const dropdown = document.createElement('div');
     dropdown.classList.add(
         's-popover',
@@ -540,22 +543,7 @@ function buildFlaggingDialog(
     );
 
     const actionsMenu = makeMenu(reporters, post);
-
     dropdown.append(actionsMenu);
-
-    /*const {
-        Guttenberg: copypastor,
-        Natty: natty
-    } = reporters;
-
-    const { copypastorId } = copypastor || {};*/
-
-    //if (globals.isStackOverflow) actionsMenu.append(commentRow); // the user shouldn't be able to leave comments on non-SO sites
-    //actionsMenu.append(flagRow, downvoteRow);
-
-    //if (elementsToAppend.length) {
-    //    actionsMenu.append(globals.categoryDivider.clone(), ...elementsToAppend as JQuery[]);
-    //}
 
     return dropdown;
 }
@@ -606,18 +594,27 @@ function setFlagWatch(
     addXHRListener(xhr => {
         const { status, responseURL } = xhr;
 
+        const flagNames = Object.values(FlagNames).join('|');
+        const regex = new RegExp(
+            `/flags/posts/${postId}/add/(${flagNames})`
+        );
+
         if (!watchFlags // don't watch for flags
             || autoFlagging // post flagged via popover
             || status !== 200 // request failed
-            || !flagsUrlRegex.test(responseURL) // not a flag
+            || !regex.test(responseURL) // not a flag
         ) return;
 
-        const matches = getFlagsUrlRegex(postId).exec(responseURL);
+        const matches = regex.exec(responseURL);
         const flag = (matches?.[1] as Flags);
 
         const flagType = cachedFlagTypes
             .find(item => item.SendWhenFlagRaised && item.ReportType === flag);
         if (!flagType) return;
+
+        if (debugMode) {
+            console.log('Post', postId, 'manually flagged as', flag, flagType);
+        }
 
         displaySuccessFlagged(flagged, flagType.ReportType);
 
@@ -640,6 +637,7 @@ function setupPostPage(): void {
             page,
             iconLocation,
             score,
+            deleted,
         } = post;
 
         // complicated process of setting up reporters:
@@ -647,12 +645,12 @@ function setupPostPage(): void {
 
         // every site & post type
         const reporters: ReporterInformation = {
-            Smokey: new MetaSmokeAPI(postId, postType)
+            Smokey: new MetaSmokeAPI(postId, postType, deleted)
         };
 
         // NAAs and plagiarised answers
         if (postType === 'Answer' && isStackOverflow) {
-            reporters.Natty = new NattyAPI(postId, questionTime, answerTime);
+            reporters.Natty = new NattyAPI(postId, questionTime, answerTime, deleted);
             reporters.Guttenberg = new CopyPastorAPI(postId);
         }
 

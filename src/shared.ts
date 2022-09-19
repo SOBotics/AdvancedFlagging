@@ -1,21 +1,10 @@
 import { Store } from './UserscriptTools/Store';
 import { Flags, FlagCategory, HumanFlags, FlagType } from './FlagTypes';
-import { displayToaster } from './AdvancedFlagging';
 
 export type StacksToastState = 'success' | 'danger' | 'info' | 'warning';
 export type PostType = 'Question' | 'Answer';
 
 export interface CachedFlag extends FlagType {
-    /*Id: number;
-    DisplayName: string;
-    FlagText: string;
-    Comments: {
-        Low: string;
-        High: string;
-    };
-    ReportType: Flags;
-    Feedbacks: FlagTypeFeedbacks;
-    SendWhenFlagRaised: boolean;*/
     Downvote: boolean;
     Enabled: boolean;
     BelongsTo: string; // the Name of the category it belongs to
@@ -65,26 +54,14 @@ export enum FlagNames {
 }
 
 // Constants
-export const soboticsRoomId = 111347;
-
-
 export const username = document.querySelector<HTMLDivElement>(
     'a[href^="/users/"] div[title]'
 )?.title || '';
 export const popupDelay = 4 * 1000;
 
-export const isStackOverflow = /^https:\/\/stackoverflow.com/.test(window.location.href);
-export const isQuestionPage = /\/questions\/\d+.*/.test(window.location.href);
-export const isNatoPage = window.location.href.includes('/tools/new-answers-old-questions');
-export const isFlagsPage = /\/users\/flag-summary\/\d+/.test(window.location.href);
-export const isLqpReviewPage = /\/review\/low-quality-posts\/\d+/.test(window.location.href);
-
-export const botImages = {
-    Natty: 'https://i.stack.imgur.com/aMUMt.jpg?s=32&g=1',
-    Smokey: 'https://i.stack.imgur.com/7cmCt.png?s=32&g=1',
-    'Generic Bot': 'https://i.stack.imgur.com/6DsXG.png?s=32&g=1',
-    Guttenberg: 'https://i.stack.imgur.com/tzKAI.png?s=32&g=1'
-};
+export const isStackOverflow = /^https:\/\/stackoverflow.com/.test(location.href);
+export const isQuestionPage = /\/questions\/\d+.*/.test(location.href);
+export const isLqpReviewPage = /\/review\/low-quality-posts\/\d+/.test(location.href);
 
 // Cache keys
 export const Cached = {
@@ -105,8 +82,8 @@ export const Cached = {
     },
     Fkey: 'fkey',
     Metasmoke: {
-        userKey: 'Metasmoke.userKey',
-        disabled: 'Metasmoke.disabled'
+        userKey: 'MetaSmoke.userKey',
+        disabled: 'MetaSmoke.disabled'
     },
 
     FlagTypes: 'FlagTypes',
@@ -159,49 +136,6 @@ export function attachPopover(
     );
 }
 
-export function attachHtmlPopover(
-    element: Element,
-    text: string,
-    position: Stacks.TooltipOptions['placement'] = 'bottom-start'
-): void {
-    Stacks.setTooltipHtml(
-        element,
-        text, { placement: position }
-    );
-}
-
-// regexes
-export const isReviewItemRegex = /\/review\/(next-task|task-reviewed\/)/;
-export const isDeleteVoteRegex = /(\d+)\/vote\/10|(\d+)\/recommend-delete/;
-export const flagsUrlRegex = /flags\/posts\/\d+\/add\/[a-zA-Z]+/;
-
-export function getFlagsUrlRegex(postId: number): RegExp {
-    const flagNames = Object.values(FlagNames).join('|');
-    const regex = new RegExp(
-        `/flags/posts/${postId}/add/(${flagNames})`
-    );
-
-    return regex;
-}
-
-// various helper functions
-export const showInlineElement = (element: HTMLElement): void => {
-    element.classList.add('d-inline-block');
-    element.classList.remove('d-none');
-};
-
-export const displaySuccess = (message: string): void => displayToaster(message, 'success');
-export const displayError = (message: string): void => displayToaster(message, 'danger');
-
-export function isPostDeleted(postId: number): boolean {
-    const post = document.querySelector(
-        `#question-${postId}, #answer-${postId}`
-    );
-
-    // yes, deleted questions do contain this class!
-    return post?.classList.contains('deleted-answer') || false;
-}
-
 export function getFormDataFromObject<T extends { [key: string]: string }>(
     object: T
 ): FormData {
@@ -233,39 +167,30 @@ export function getSentMessage(
         : `Failed to send feedback ${feedback} to ${bot}`;
 }
 
-//export const popoverArrow = $('<div>').addClass('s-popover--arrow s-popover--arrow__tc');
-//export const categoryDivider = $('<li>').addClass('s-menu--divider').attr('role', 'separator');
-
 export async function delay(milliseconds: number): Promise<void> {
     return await new Promise<void>(resolve => setTimeout(resolve, milliseconds));
-}
-
-export async function showConfirmModal(
-    title: string,
-    bodyHtml: string
-): Promise<boolean> {
-    return await StackExchange.helpers.showConfirmModal({
-        title,
-        bodyHtml,
-        buttonLabel: 'Authenticate!'
-    });
 }
 
 // Credits: https://github.com/SOBotics/Userscripts/blob/master/Natty/NattyReporter.user.js#L101
 let initialized = false;
 const callbacks: ((request: XMLHttpRequest) => void)[] = [];
+
 export function addXHRListener(callback: (request: XMLHttpRequest) => void): void {
     callbacks.push(callback);
+
     if (initialized) return;
+
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const open = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function(): void {
         this.addEventListener('load', () => {
             callbacks.forEach(cb => cb(this));
         }, false);
+
         // eslint-disable-next-line prefer-rest-params
         open.apply(this, arguments);
     };
+
     initialized = true;
 }
 
@@ -309,19 +234,14 @@ export function getFlagTypeFromFlagId(flagId: number): CachedFlag | null {
 }
 
 export function getHumanFromDisplayName(displayName: Flags): HumanFlags {
-    switch (displayName) {
-        case FlagNames.NAA:
-            return 'as NAA';
-        case FlagNames.Rude:
-            return 'as R/A';
-        case FlagNames.Spam:
-            return 'as spam';
-        case FlagNames.ModFlag:
-            return 'for moderator attention';
-        case FlagNames.VLQ:
-            return 'as VLQ';
-        case FlagNames.NoFlag:
-        default:
-            return '';
-    }
+    const flags = {
+        [FlagNames.Spam]: 'as spam',
+        [FlagNames.Rude]: 'as R/A',
+        [FlagNames.NAA]: 'as NAA',
+        [FlagNames.VLQ]: 'as VLQ',
+        [FlagNames.ModFlag]: 'for moderator attention',
+        [FlagNames.NoFlag]: ''
+    } as const;
+
+    return flags[displayName] || '';
 }

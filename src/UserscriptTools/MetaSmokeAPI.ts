@@ -3,18 +3,14 @@ import {
     Cached,
     FlagTypeFeedbacks,
     PostType,
-    showConfirmModal,
     delay,
-    displayError,
     getFormDataFromObject,
-    isPostDeleted,
     getSentMessage,
-    showInlineElement,
     debugMode,
 } from '../shared';
 import { getAllPostIds } from './sotools';
 import { Modals, Input, Buttons } from '@userscripters/stacks-helpers';
-import { createBotIcon } from '../AdvancedFlagging';
+import { createBotIcon, displayToaster } from '../AdvancedFlagging';
 
 const metasmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
 const metasmokeApiFilter = 'GGJFNNKKJFHFKJFLJLGIJMFIHNNJNINJ';
@@ -48,6 +44,7 @@ export class MetaSmokeAPI {
     constructor(
         private readonly postId: number,
         private readonly postType: PostType,
+        private readonly deleted: boolean
     ) {
         this.icon = this.getIcon();
     }
@@ -130,11 +127,12 @@ export class MetaSmokeAPI {
     private static async codeGetter(metaSmokeOAuthUrl: string): Promise<string | undefined> {
         if (MetaSmokeAPI.isDisabled) return;
 
-        const authenticate = await showConfirmModal(
-            'Setting up metasmoke',
-            'If you do not wish to connect, press cancel and this popup won\'t show up again. '
-            + 'To reset configuration, see the footer of Stack Overflow.',
-        );
+        const authenticate = await StackExchange.helpers.showConfirmModal({
+            title: 'Setting up metasmoke',
+            bodyHtml: 'If you do not wish to connect, press cancel and this popup won\'t show up again. '
+                    + 'To reset configuration, see the footer of Stack Overflow.',
+            buttonLabel: 'Authenticate!'
+        });
 
         // user doesn't wish to connect
         if (!authenticate) {
@@ -178,7 +176,7 @@ export class MetaSmokeAPI {
                 MetaSmokeAPI.metasmokeIds[postId] = id;
             });
         } catch (error) {
-            displayError('Failed to get Metasmoke URLs.');
+            displayToaster('Failed to get Metasmoke URLs.', 'success');
             console.error(error);
         }
     }
@@ -262,10 +260,9 @@ export class MetaSmokeAPI {
         const { appKey, accessToken } = MetaSmokeAPI;
 
         const smokeyId = this.getSmokeyId();
-        const deleted = isPostDeleted(this.postId);
 
         // not reported, feedback is tpu AND the post isn't deleted => report it!
-        if (!smokeyId && feedback === 'tpu-' && !deleted) {
+        if (!smokeyId && feedback === 'tpu-' && !this.deleted) {
             return await this.reportRedFlag();
         } else if (!accessToken || !smokeyId) {
             // user hasn't authenticated or the post hasn't been reported => don't send feedback
@@ -308,14 +305,10 @@ export class MetaSmokeAPI {
         const smokeyId = this.getSmokeyId();
         if (!smokeyId) return;
 
-        const icon = createBotIcon('Smokey');
-
-        const iconLink = icon.querySelector('a') as HTMLAnchorElement;
-
-        iconLink.href = `//metasmoke.erwaysoftware.com/post/${smokeyId}`;
-        iconLink.target = '_blank';
-
-        showInlineElement(icon);
+        const icon = createBotIcon(
+            'Smokey',
+            `//metasmoke.erwaysoftware.com/post/${smokeyId}`
+        );
 
         return icon;
     }

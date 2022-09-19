@@ -1,7 +1,5 @@
 import {
     isQuestionPage,
-    isNatoPage,
-    isFlagsPage,
     getSvg,
     PostType
 } from '../shared';
@@ -39,6 +37,9 @@ $.event.special.destroyed = {
         o.handler?.();
     }
 };
+
+const isNatoPage = location.href.includes('/tools/new-answers-old-questions');
+const isFlagsPage = /\/users\/flag-summary\/\d+/.test(location.href);
 
 function getExistingElement(): HTMLElement[] | undefined {
     if (!isQuestionPage && !isNatoPage && !isFlagsPage) return;

@@ -2,13 +2,14 @@ import {
     Cached,
     cachedConfiguration,
     addXHRListener,
-    isReviewItemRegex,
-    BotNames,
     cachedFlagTypes,
-    isDeleteVoteRegex
 } from './shared';
 
-import * as AdvancedFlagging from './AdvancedFlagging';
+import {
+    ReporterInformation,
+    ValueOfReporters,
+    handleFlag,
+} from './AdvancedFlagging';
 import {
     PostInfo,
     parseQuestionsAndAnswers
@@ -27,7 +28,7 @@ interface ReviewQueueResponse {
 interface ReviewQueuePostInfo {
     postId: number;
     post: PostInfo;
-    reporters: AdvancedFlagging.ReporterInformation;
+    reporters: ReporterInformation;
 }
 
 const reviewPostsInformation: ReviewQueuePostInfo[] = [];
@@ -39,39 +40,33 @@ function getPostIdFromReview(): number {
     return Number(id);
 }
 
-function getAllBotIcons(): HTMLDivElement[] {
-    return [
-        'Natty',
-        'Guttenberg',
-        'Smokey'
-    ]
-        .map(bot => AdvancedFlagging.createBotIcon(bot as BotNames));
-}
-
 function addBotIconsToReview(post: PostInfo): void {
     const {
         postType,
         element,
         postId,
         questionTime,
-        answerTime
+        answerTime,
+        deleted
     } = post;
 
     if (postType !== 'Answer') return;
 
-    // TODO create bot icons in the same file/class, not here!
-    const botIconsToAppend = getAllBotIcons();
+    const reporters: ReporterInformation = {
+        Natty: new NattyAPI(postId, questionTime, answerTime, deleted),
+        Smokey: new MetaSmokeAPI(postId, postType, deleted),
+        Guttenberg: new CopyPastorAPI(postId)
+    };
+
     const iconLocation = element
         .querySelector('.js-post-menu')
         ?.firstElementChild;
 
-    iconLocation?.append(...botIconsToAppend);
+    const icons = (Object.values(reporters) as ValueOfReporters[])
+        .map(reporter => reporter.icon)
+        .filter(Boolean) as HTMLElement[];
 
-    const reporters: AdvancedFlagging.ReporterInformation = {
-        Natty: new NattyAPI(postId, questionTime, answerTime),
-        Smokey: new MetaSmokeAPI(postId, postType),
-        Guttenberg: new CopyPastorAPI(postId)
-    };
+    iconLocation?.append(...icons);
 
     reviewPostsInformation.push({ postId, post, reporters });
 }
@@ -80,10 +75,12 @@ export function setupReview(): void {
     const watchReview = cachedConfiguration[Cached.Configuration.watchQueues];
     if (!watchReview) return;
 
+    const regex = /\/review\/(next-task|task-reviewed\/)/;
+
     addXHRListener(xhr => {
         if (
             xhr.status !== 200 // request failed
-         || !isReviewItemRegex.test(xhr.responseURL) // not a review request
+         || !regex.test(xhr.responseURL) // not a review request
          || !document.querySelector('#answer') // not an answer
         ) return;
 
@@ -121,13 +118,15 @@ export function setupReview(): void {
 
         if (!reviewCachedInfo || !flagType) return; // something went wrong
 
-        void AdvancedFlagging.handleFlag(flagType, reviewCachedInfo.reporters);
+        void handleFlag(flagType, reviewCachedInfo.reporters);
     });
 
     addXHRListener(xhr => {
+        const regex = /(\d+)\/vote\/10|(\d+)\/recommend-delete/;
+
         if (
             xhr.status !== 200 // request failed
-            || !isDeleteVoteRegex.test(xhr.responseURL) // didn't vote to delete
+            || !regex.test(xhr.responseURL) // didn't vote to delete
             || !document.querySelector('#answer') // not an answer
         ) return;
 
@@ -137,18 +136,23 @@ export function setupReview(): void {
 
         if (!cached) return;
 
-        const { postType, questionTime, answerTime } = cached.post;
+        const {
+            postType,
+            questionTime,
+            answerTime,
+            deleted
+        } = cached.post;
 
         if (postType !== 'Answer') return;
 
-        const reportersArray: AdvancedFlagging.ReporterInformation = {
-            Natty: new NattyAPI(postId, questionTime, answerTime)
+        const reportersArray: ReporterInformation = {
+            Natty: new NattyAPI(postId, questionTime, answerTime, deleted)
         };
 
         const flagType = cachedFlagTypes
             .find(item => item.DisplayName === 'Not an answer'); // the NAA cached flag type
         if (!flagType) return; // something went wrong
 
-        void AdvancedFlagging.handleFlag(flagType, reportersArray);
+        void handleFlag(flagType, reportersArray);
     });
 }

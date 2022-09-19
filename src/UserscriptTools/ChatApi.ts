@@ -1,5 +1,5 @@
 import { Store } from './Store';
-import { Cached, soboticsRoomId, getSentMessage, debugMode } from '../shared';
+import { Cached, getSentMessage, debugMode } from '../shared';
 
 export class ChatApi {
     private static getExpiryDate(): Date {
@@ -10,9 +10,11 @@ export class ChatApi {
     }
 
     private readonly chatRoomUrl: string;
+    private readonly soboticsRoomId: number;
 
     public constructor(chatUrl = 'https://chat.stackoverflow.com') {
         this.chatRoomUrl = chatUrl;
+        this.soboticsRoomId = 111347;
     }
 
     public getChannelFKey(roomId: number): Promise<string> {
@@ -45,7 +47,7 @@ export class ChatApi {
     public async sendMessage(
         message: string,
         bot: string,
-        roomId = soboticsRoomId
+        roomId = this.soboticsRoomId
     ): Promise<string> {
         let numTries = 0;
         const feedback = message.split(' ').pop() || '';

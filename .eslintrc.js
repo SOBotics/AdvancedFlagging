@@ -18,7 +18,7 @@ module.exports = {
         'arrow-parens': ['warn','as-needed'],
         'arrow-spacing': ['error', { 'before': true, 'after': true }],
         'brace-style': 'warn',
-        //'camelcase': ['warn', { 'properties': 'never', 'ignoreGlobals': true }],
+        // 'camelcase': ['warn', { 'properties': 'never', 'ignoreGlobals': true }],
         'dot-notation': 'warn',
         'eqeqeq': 'warn',
         'func-call-spacing': 'warn',
@@ -45,6 +45,7 @@ module.exports = {
         'require-await': 'warn',
         'semi': [1, 'always'],
         'space-in-parens': 'off',
+
         '@typescript-eslint/explicit-function-return-type': 'warn',
         '@typescript-eslint/no-misused-promises': ['warn', { 'checksVoidReturn': false }],
         '@typescript-eslint/member-delimiter-style': 'warn',

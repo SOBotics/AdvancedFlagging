@@ -14,7 +14,6 @@ import {
     isStackOverflow,
     getFullFlag,
     getCachedConfigBotKey,
-    showInlineElement,
     Cached,
     Configuration
 } from './shared';
@@ -516,7 +515,6 @@ function getSendFeedbackToRow(
             const sanitised = botName.replace(/\s/g, '').toLowerCase();
 
             const botImage = createBotIcon(botName);
-            showInlineElement(botImage);
 
             // need the postId in the id to make it unique
             const botNameId = `advanced-flagging-send-feedback-to-${sanitised}-${postId}`;

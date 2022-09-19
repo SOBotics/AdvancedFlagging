@@ -40,7 +40,6 @@ export function cacheFlags(): void {
         return category.FlagTypes.map(flagType => {
             return Object.assign(flagType, {
                 BelongsTo: category.Name,
-                IsDefault: true,
                 Downvote: !isModOrNoFlag(flagType.ReportType),
                 Enabled: true // all flags should be enabled by default
             });

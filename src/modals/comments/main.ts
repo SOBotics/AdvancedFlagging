@@ -84,10 +84,11 @@ import {
 */
 
 export function toggleHideIfNeeded(parent: HTMLElement): void {
-    const shouldHide = [...parent.firstElementChild?.children as HTMLCollection]
-        .every(element => element.classList.contains('d-none'));
+    const children = parent.firstElementChild?.children as HTMLCollection;
+    const shouldHide = ([...children] as HTMLElement[])
+        .every(element => element.style.display === 'none');
 
-    parent.classList[shouldHide ? 'add' : 'remove']('d-none');
+    parent.style.display = shouldHide ? 'none' : 'block';
 }
 
 function getExpandableContent(flagType: CachedFlag): HTMLElement[] {

@@ -56,6 +56,8 @@ export class GenericBotAPI {
 
         if (debugMode) {
             console.log('Track post via', url, payload);
+
+            return Promise.resolve('');
         }
 
         return new Promise<string>((resolve, reject) => {

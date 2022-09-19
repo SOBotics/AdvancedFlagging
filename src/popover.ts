@@ -222,14 +222,14 @@ async function handleReportLinkClick(
 
 export function createPopoverToOption(
     boldText: string,
-    value: string | HTMLElement[] | null,
+    value: string | HTMLElement | HTMLElement[] | null,
     deleted: boolean
 ): HTMLElement | undefined {
     if (!value) return;
 
     const wrapper = document.createElement('li');
     const bold = document.createElement('strong');
-    bold.innerText = `${boldText}: `;
+    bold.innerHTML = `${boldText}: `;
 
     wrapper.append(bold);
 
@@ -240,11 +240,11 @@ export function createPopoverToOption(
     }
 
     if (deleted) {
-        const deletedspan = document.createElement('span');
-        deletedspan.classList.add('fc-danger');
-        deletedspan.innerText = '- post is deleted';
+        const deleted = document.createElement('span');
+        deleted.classList.add('fc-danger');
+        deleted.innerText = '- post is deleted';
 
-        wrapper.append(' ', deletedspan);
+        wrapper.append(' ', deleted);
     }
 
     return wrapper;
@@ -271,13 +271,17 @@ function getTooltipHtml(
     const { ReportType, Downvote } = flagType;
 
     // Feedbacks: X with Y, foo with bar
-    const feedbacks = getFeedbackSpans(
+    const feedbackText = getFeedbackSpans(
         flagType,
         reporters,
         deleted
     )
         .map(span => span.outerHTML)
         .join(', '); // separate the feedbacks
+    const feedbacks = new DOMParser()
+        .parseFromString(feedbackText, 'text/html')
+        .body
+        .firstElementChild as HTMLSpanElement;
 
     // Flag text: ...
     const tooltipFlagText = deleted ? '' : flagText;

@@ -77,15 +77,16 @@ function toggleTextarea(
     const wrapper = element
         .closest('.s-card')
         ?.querySelector(`[id*="-comment-${comment}rep"]`)
-        ?.closest('div.flex--item');
+        ?.closest('div.flex--item') as HTMLElement | undefined;
 
     if (!wrapper) return;
 
     $(wrapper)[`fade${type}`](400, () => {
-        wrapper.classList.toggle('d-none');
-        wrapper.classList.toggle('d-block');
+        //wrapper.style.display = type === 'In' ? 'block' : 'none';
 
-        const row = wrapper.parentElement?.parentElement as HTMLDivElement;
+        const row = wrapper
+            .parentElement
+            ?.parentElement as HTMLDivElement;
 
         toggleHideIfNeeded(row);
     });
@@ -126,6 +127,7 @@ export function getCommentInputs(
 
     // event listener after checkbox has been defined, so we can use it
     const toggleInput = toggle.querySelector('input') as HTMLInputElement;
+    const cbInput = checkbox.querySelector('input') as HTMLInputElement;
 
     toggleInput.addEventListener('change', () => {
         const cbInput = checkbox.querySelector('input') as HTMLInputElement;
@@ -134,6 +136,9 @@ export function getCommentInputs(
 
         if (toggleInput.checked) {
             toggleTextarea(toggleInput, 'low', 'In');
+            if (cbInput.checked) {
+                toggleTextarea(toggleInput, 'high', 'In');
+            }
 
             checkbox.classList.remove('is-disabled');
         } else {
@@ -144,7 +149,6 @@ export function getCommentInputs(
         }
     });
 
-    const cbInput = checkbox.querySelector('input') as HTMLInputElement;
     cbInput.addEventListener('change', () => {
         toggleTextarea(
             cbInput,
@@ -218,9 +222,9 @@ export function getTextareas({
 
         const wrapper = wrapInFlexItem(element);
 
-        textarea.value
-            ? wrapper.classList.add('d-block')
-            : wrapper.classList.add('d-none');
+        wrapper.style.display = textarea.value
+            ? 'block'
+            : 'none';
 
         return wrapper;
     });

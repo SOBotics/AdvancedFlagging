@@ -23,7 +23,7 @@ function saveTextareaContent(
             // while the user can hide the textarea, we still keep the text in it
             // in case this was an accident
             // therefore, we only need to search and save content in visible textareas
-            .map(textarea => textarea?.style.display !== 'none' ? textarea?.value || '' : '');
+            .map(textarea => textarea?.offsetParent ? textarea.value || '' : '');
 
     flagType.FlagText = flag;
     if (low) {

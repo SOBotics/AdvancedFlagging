@@ -83,7 +83,7 @@ export class ChatApi {
         if (debugMode) {
             console.log('Send', message, `to ${roomId} via`, url);
 
-            return new Promise(resolve => resolve(true));
+            return Promise.resolve(true);
         }
 
         const fkey = await this.getChannelFKey(roomId);

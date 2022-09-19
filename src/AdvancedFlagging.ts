@@ -371,6 +371,12 @@ export async function handleActions(
     // only downvote if post hasn't already been downvoted
     if (!downvoteRequired || !Downvote || hasDownvoted) return;
 
+    if (debugMode) {
+        console.log('Downvote post by clicking', button);
+
+        return;
+    }
+
     button?.click();
 }
 

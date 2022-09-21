@@ -638,39 +638,8 @@ function setupPostPage(): void {
             iconLocation,
             score,
             deleted,
+            done, failed, flagged
         } = post;
-
-        // complicated process of setting up reporters:
-        // --------------------------------------------
-
-        // every site & post type
-        const reporters: ReporterInformation = {
-            Smokey: new MetaSmokeAPI(postId, postType, deleted)
-        };
-
-        // NAAs and plagiarised answers
-        if (postType === 'Answer' && isStackOverflow) {
-            reporters.Natty = new NattyAPI(postId, questionTime, answerTime, deleted);
-            reporters.Guttenberg = new CopyPastorAPI(postId);
-        }
-
-        // if we aren't in a question page, then we just insert the icons
-        // should be done before Generic bot is set up
-        // because it doesn't have an .icon
-        if (page !== 'Question') {
-            const icons = (Object.values(reporters) as ValueOfReporters[])
-                .map(reporter => reporter.icon)
-                .filter(Boolean) as HTMLElement[];
-
-            iconLocation.append(...icons);
-        }
-
-        // Guttenberg can only track Stack Overflow posts
-        if (isStackOverflow) {
-            reporters['Generic Bot'] = new GenericBotAPI(postId);
-        }
-
-        if (score === null) return; // can't use !score, because score might be 0
 
         const advancedFlaggingLink = Buttons.makeStacksButton(
             `advanced-flagging-link-${postId}`,
@@ -686,6 +655,40 @@ function setupPostPage(): void {
 
         flexItem.append(advancedFlaggingLink);
         iconLocation.append(flexItem);
+
+        // complicated process of setting up reporters:
+        // --------------------------------------------
+
+        // every site & post type
+        const reporters: ReporterInformation = {
+            Smokey: new MetaSmokeAPI(postId, postType, deleted)
+        };
+
+        // NAAs and plagiarised answers
+        if (postType === 'Answer' && isStackOverflow) {
+            reporters.Natty = new NattyAPI(postId, questionTime, answerTime, deleted);
+            reporters.Guttenberg = new CopyPastorAPI(postId);
+        }
+
+        const icons = (Object.values(reporters) as ValueOfReporters[])
+            .map(reporter => reporter.icon)
+            .filter(Boolean) as HTMLElement[];
+
+        // if we aren't in a question page, then we just insert the icons
+        // should be done before Generic bot is set up
+        // because it doesn't have an .icon
+        if (page !== 'Question') {
+            iconLocation.after(...icons);
+        } else {
+            iconLocation.append(done, failed, flagged, ...icons);
+        }
+
+        // Guttenberg can only track Stack Overflow posts
+        if (isStackOverflow) {
+            reporters['Generic Bot'] = new GenericBotAPI(postId);
+        }
+
+        if (score === null) return; // can't use !score, because score might be 0
 
         // Now append the advanced flagging dialog
         const dropDown = buildFlaggingDialog(post, reporters);

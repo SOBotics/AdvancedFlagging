@@ -85,6 +85,7 @@ import {
 
 export function toggleHideIfNeeded(parent: HTMLElement): void {
     const children = parent.firstElementChild?.children as HTMLCollection;
+
     const shouldHide = ([...children] as HTMLElement[])
         .every(element => element.style.display === 'none');
 

@@ -21,7 +21,7 @@ function saveChanges(): void {
     document
         .querySelectorAll('#advanced-flagging-configuration-section-general > div > input')
         .forEach(element => {
-            const id = element.id as GeneralItems;
+            const id = element.id.split('-').pop() as GeneralItems;
             const checked = (element as HTMLInputElement).checked;
 
             cachedConfiguration[id] = checked;
@@ -191,7 +191,7 @@ function getGeneralConfigItems(): HTMLElement {
         const selected = cachedConfiguration[configValue as GeneralItems];
 
         return {
-            id: configValue,
+            id: `advanced-flagging-${configValue}`,
             labelConfig: {
                 text,
                 description: tooltipText,

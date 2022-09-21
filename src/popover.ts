@@ -133,7 +133,7 @@ function getFeedbackSpans(
             const shouldReport = (botName === 'Smokey' && !smokeyId)
                 || (botName === 'Natty' && !nattyReported);
 
-            feedbackSpan.classList.add(`fc-${className}`);
+            strong.classList.add(`fc-${className}`);
             strong.innerHTML = shouldReport ? 'report' : feedback;
 
             feedbackSpan.append(` to ${botName}`);
@@ -277,10 +277,8 @@ function getTooltipHtml(
     )
         .map(span => span.outerHTML)
         .join(', '); // separate the feedbacks
-    const feedbacks = new DOMParser()
-        .parseFromString(feedbackText, 'text/html')
-        .body
-        .firstElementChild as HTMLSpanElement;
+    const feedbacks = document.createElement('span');
+    feedbacks.innerHTML = feedbackText;
 
     // Flag text: ...
     const tooltipFlagText = deleted ? '' : flagText;
@@ -462,7 +460,7 @@ function getOptionsRow(
             const uncheck = cachedConfiguration[cacheKey]
                 // extra requirement for the leave comment option:
                 // there shouldn't be any comments below the post
-                && (text === 'Leave comment' ? !comments : true);
+                || (text === 'Leave comment' && comments);
 
             const idified = text.toLowerCase().replace(' ', '-');
             const id = `advanced-flagging-${idified}-checkbox-${postId}`;
@@ -506,8 +504,8 @@ function getSendFeedbackToRow(
                     // generic works on SO
                     return isStackOverflow;
                 case 'Smokey':
-                    // valid everywhere
-                    return true;
+                    // valid everywhere, if not disabled
+                    return !MetaSmokeAPI.isDisabled;
             }
         })
         .map(([botName]) => {

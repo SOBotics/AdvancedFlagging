@@ -175,7 +175,6 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): vo
         const raiseVlq = qualifiesForVlq(score, answerTime);
 
         const [done, failed, flagged] = getActionIcons();
-        iconLocation?.append(done, failed, flagged);
 
         callback({
             postType,

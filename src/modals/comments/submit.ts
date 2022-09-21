@@ -101,8 +101,8 @@ function saveFeedbacks(
         'Generic Bot'
     ]
         .map(name => {
-            const selector = `[id*="-${name.replace(/\s/g, '-')}-$"][checked]`;
-            const radio = expandable.querySelector<HTMLInputElement>(`.s-radio${selector}`);
+            const selector = `[name*="-feedback-to-${name.replace(/\s/g, '-')}-$"][checked]`;
+            const radio = expandable.querySelector<HTMLElement>(`.s-radio${selector}`);
 
             const feedback = radio?.dataset.feedack || '';
 

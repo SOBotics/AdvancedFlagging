@@ -81,13 +81,17 @@ function toggleTextarea(
 
     if (!wrapper) return;
 
+    const row = wrapper
+        .parentElement
+        ?.parentElement as HTMLDivElement;
+
+    // in case we're asked to show a textarea,
+    // make the row visible, so the fadeIn effect will be visible
+    if (type === 'In') {
+        row.style.display = 'block';
+    }
+
     $(wrapper)[`fade${type}`](400, () => {
-        //wrapper.style.display = type === 'In' ? 'block' : 'none';
-
-        const row = wrapper
-            .parentElement
-            ?.parentElement as HTMLDivElement;
-
         toggleHideIfNeeded(row);
     });
 }

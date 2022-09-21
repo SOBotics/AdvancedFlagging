@@ -130,6 +130,16 @@ export function setupConfiguration(): void {
             true
         );
 
-        setTimeout(() => Stacks.showModal(configModal));
+        setTimeout(() => {
+            Stacks.showModal(configModal);
+
+            // tick "uncheck downvote by default" option
+            // request by Scratte, Shree
+            const checkbox = document.querySelector(
+                '#advanced-flagging-defaultNoDownvote'
+            ) as HTMLInputElement;
+
+            checkbox.checked = true;
+        });
     }
 }

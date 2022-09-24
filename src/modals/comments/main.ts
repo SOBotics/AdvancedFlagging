@@ -202,7 +202,7 @@ function getActionItems(
         const flagId = Number(wrapper.dataset.flagId);
 
         // find index of current flag type
-        const index = cachedFlagTypes.findIndex(item => item.Id === flagId);
+        const index = cachedFlagTypes.findIndex(({ id }) => id === flagId);
         // remove the flag type from the list
         cachedFlagTypes.splice(index, 1);
 
@@ -247,7 +247,7 @@ function getActionItems(
 
         // update the Enabled property depending on the switch
         // and store the updated object in cache
-        current.Enabled = input.checked;
+        current.enabled = input.checked;
         updateFlagTypes();
 
         // update the card's style
@@ -267,9 +267,9 @@ function createFlagTypeDiv(
     flagType: CachedFlag
 ): HTMLDivElement {
     const {
-        Id,
-        DisplayName,
-        Enabled,
+        id,
+        displayName,
+        enabled,
     } = flagType;
 
     // concatenate all 4 rows
@@ -277,15 +277,15 @@ function createFlagTypeDiv(
     // they should be wrapped in a div.flex--item first
 
     const card = document.createElement('div');
-    card.dataset.flagId = Id.toString();
+    card.dataset.flagId = id.toString();
     card.classList.add('s-card', 'bs-sm', 'py4');
 
-    if (!Enabled) {
+    if (!enabled) {
         card.classList.add('s-card__muted');
     }
 
-    const idedName = DisplayName.toLowerCase().replace(/\s/g, '');
-    const expandableId = `advanced-flagging-${Id}-${idedName}`;
+    const idedName = displayName.toLowerCase().replace(/\s/g, '');
+    const expandableId = `advanced-flagging-${id}-${idedName}`;
 
     // content visible without toggling the expandable
     const content = document.createElement('div');
@@ -293,12 +293,12 @@ function createFlagTypeDiv(
 
     const h3 = document.createElement('h3');
     h3.classList.add('mb0', 'mr-auto', 'fs-body3');
-    h3.innerText = DisplayName;
+    h3.innerText = displayName;
 
     const actions = document.createElement('div');
     actions.classList.add('d-flex', 'gs8', 'ai-center');
 
-    actions.append(...getActionItems(Id, Enabled, expandableId));
+    actions.append(...getActionItems(id, enabled, expandableId));
 
     content.append(h3, actions);
 
@@ -344,13 +344,13 @@ function getCommentsModalBody(): HTMLElement {
     container.classList.add('d-flex', 'fd-column', 'gs16');
 
     const categories = cachedCategories
-        .filter(({ Name }) => Name)
-        .map(({ Name: name }) => {
+        .filter(({ name }) => name)
+        .map(({ name }) => {
             const div = createCategoryDiv(name || '');
 
             const flagTypes = cachedFlagTypes
                 // only those belonging to "Name" category
-                .filter(({ BelongsTo }) => BelongsTo === name)
+                .filter(({ belongsTo: BelongsTo }) => BelongsTo === name)
                 // create the s-card
                 .map(flagType => createFlagTypeDiv(flagType));
 

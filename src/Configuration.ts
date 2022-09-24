@@ -39,9 +39,9 @@ export function cacheFlags(): void {
     const flagTypesToCache = flagCategories.flatMap(category => {
         return category.FlagTypes.map(flagType => {
             return Object.assign(flagType, {
-                BelongsTo: category.Name,
-                Downvote: !isModOrNoFlag(flagType.ReportType),
-                Enabled: true // all flags should be enabled by default
+                belongsTo: category.name,
+                downvote: !isModOrNoFlag(flagType.reportType),
+                enabled: true // all flags should be enabled by default
             });
         });
     }) as CachedFlag[];
@@ -58,9 +58,9 @@ function cacheCategories(): void {
     const categories = flagCategories
         .map(category => (
             {
-                IsDangerous: category.IsDangerous,
-                Name: category.Name,
-                AppliesTo: category.AppliesTo
+                isDangerous: category.isDangerous,
+                name: category.name,
+                appliesTo: category.appliesTo
             } as CachedCategory
         ));
 
@@ -74,11 +74,12 @@ function setupDefaults(): void {
     // is probably using an older version of AF
     // clear and re-save
     if (!cachedFlagTypes.length
-        || !('Downvote' in cachedFlagTypes[0])) {
+        || !('downvote' in cachedFlagTypes[0])) {
         cacheFlags();
     }
 
-    if (!cachedCategories.length) {
+    if (!cachedCategories.length
+        || !('appliesTo' in cachedCategories[0])) {
         cacheCategories();
     }
 }

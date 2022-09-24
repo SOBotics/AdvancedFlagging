@@ -17,8 +17,8 @@ import {
     Radio
 } from '@userscripters/stacks-helpers';
 
-const flagTypes = flagCategories.flatMap(category => category.FlagTypes);
-const flagNames = [...new Set(flagTypes.map(flagType => flagType.ReportType))];
+const flagTypes = flagCategories.flatMap(({ FlagTypes }) => FlagTypes);
+const flagNames = [...new Set(flagTypes.map(({ reportType }) => reportType))];
 
 function getCharSpan(
     textarea: HTMLTextAreaElement,
@@ -98,7 +98,7 @@ function toggleTextarea(
 
 // Row #1: Comment options
 export function getCommentInputs(
-    { Id, Comments }: CachedFlag,
+    { id, comments }: CachedFlag,
 ): HTMLDivElement {
     // Consists of:
     // - Leave comment switch
@@ -111,20 +111,20 @@ export function getCommentInputs(
     toggleContainer.classList.add('flex--item');
 
     const toggle = Toggle.makeStacksToggle(
-        `advanced-flagging-comments-toggle-${Id}`,
+        `advanced-flagging-comments-toggle-${id}`,
         { text: 'Leave comment' },
-        Boolean(Comments?.Low)
+        Boolean(comments?.low)
     );
     toggleContainer.append(toggle);
 
     const [, checkbox] = Checkbox.makeStacksCheckboxes([
         {
-            id: `advanced-flagging-toggle-highrep-${Id}`,
+            id: `advanced-flagging-toggle-highrep-${id}`,
             labelConfig: {
                 text: 'Add a different comment for high reputation users'
             },
-            selected: Boolean(Comments?.High),
-            disabled: !Comments?.Low,
+            selected: Boolean(comments?.high),
+            disabled: !comments?.low,
         },
     ]);
     checkbox.classList.add('fs-body2', 'pt1');
@@ -176,30 +176,30 @@ export function getCommentInputs(
 
 // Row #2: Textareas
 export function getTextareas({
-    Id,
-    FlagText,
-    Comments
+    id,
+    flagText,
+    comments
 }: CachedFlag): HTMLElement {
     // Consists of the Low/High Rep comments + flag text
     // Only the relevant ones are shown (display: flex)
     // The others are hidden
 
     const flag = Textarea.makeStacksTextarea(
-        `advanced-flagging-text-modflag-${Id}`,
-        { value: FlagText },
+        `advanced-flagging-text-modflag-${id}`,
+        { value: flagText },
         { text: 'Flag text' }
     );
 
     const lowRep = Textarea.makeStacksTextarea(
-        `advanced-flagging-comment-lowrep-${Id}`,
-        { value: Comments?.Low },
+        `advanced-flagging-comment-lowrep-${id}`,
+        { value: comments?.low },
         // if there is a high rep comment, change the wording of the label
-        { text: 'Comment text' + (Comments?.High ? ' for low reputation users' : '') },
+        { text: 'Comment text' + (comments?.high ? ' for low reputation users' : '') },
     );
 
     const highRep = Textarea.makeStacksTextarea(
-        `advanced-flagging-comment-highrep-${Id}`,
-        { value: Comments?.High },
+        `advanced-flagging-comment-highrep-${id}`,
+        { value: comments?.high },
         { text: 'Comment text for high reputation users' },
     );
 
@@ -243,21 +243,21 @@ export function getTextareas({
 // Row #3: "Flag" select + extra options
 
 function getFlagSelect(
-    Id: CachedFlag['Id'],
-    ReportType: CachedFlag['ReportType']
+    id: CachedFlag['id'],
+    reportType: CachedFlag['reportType']
 ): HTMLElement[] {
     const options = flagNames.map(flagName => {
         return {
             value: flagName,
             text: getHumanFromDisplayName(flagName) || '(none)',
-            selected: flagName === ReportType
+            selected: flagName === reportType
         };
     });
 
     const select = Select.makeStacksSelect(
-        `advanced-flagging-select-flag-${Id}`,
+        `advanced-flagging-select-flag-${id}`,
         options,
-        { disabled: ReportType === 'PostOther' }
+        { disabled: reportType === 'PostOther' }
     );
     select.className = 'd-flex ai-center';
 
@@ -270,7 +270,7 @@ function getFlagSelect(
     flagLabel.classList.add('fw-bold', 'ps-relative', 'z-selected', 'l12', 'fs-body1', 'flex--item');
     flagLabel.innerText = 'Flag:';
 
-    if (ReportType === 'PostOther') {
+    if (reportType === 'PostOther') {
         flagLabel.classList.add('o50');
     }
 
@@ -278,35 +278,35 @@ function getFlagSelect(
 }
 
 export function getSelectRow({
-    Id,
-    SendWhenFlagRaised,
-    Downvote,
-    ReportType
+    id,
+    sendWhenFlagRaised,
+    downvote,
+    reportType
 }: CachedFlag): HTMLDivElement {
     // Consists of:
     // - The "Flag as" select
     // - The "Send feedback from this flagtype..." checkbox
     // - The "Downvote checkbox"
 
-    const [label, select] = getFlagSelect(Id, ReportType);
+    const [label, select] = getFlagSelect(id, reportType);
 
     const [, feedback] = Checkbox.makeStacksCheckboxes([
         {
-            id: `advanced-flagging-send-when-flag-raised-${Id}`,
+            id: `advanced-flagging-send-when-flag-raised-${id}`,
             labelConfig: {
                 text: 'Send feedback from this flag type when this flag is raised'
             },
-            selected: SendWhenFlagRaised
+            selected: sendWhenFlagRaised
         }
     ]);
 
-    const [, downvote] = Checkbox.makeStacksCheckboxes([
+    const [, downvoteBox] = Checkbox.makeStacksCheckboxes([
         {
-            id: `advanced-flagging-downvote-post-${Id}`,
+            id: `advanced-flagging-downvote-post-${id}`,
             labelConfig: {
                 text: 'Downvote post'
             },
-            selected: Downvote
+            selected: downvote
         },
     ]);
 
@@ -315,10 +315,10 @@ export function getSelectRow({
     container.append(
         label,
         select,
-        wrapInFlexItem(downvote)
+        wrapInFlexItem(downvoteBox)
     );
 
-    if (!isModOrNoFlag(ReportType)) {
+    if (!isModOrNoFlag(reportType)) {
         container.append(wrapInFlexItem(feedback));
     }
 
@@ -369,7 +369,7 @@ function getRadiosForBot(
     return fieldset;
 }
 
-export function getRadioRow({ Id, Feedbacks }: CachedFlag): HTMLElement {
+export function getRadioRow({ id, feedbacks }: CachedFlag): HTMLElement {
     const container = document.createElement('div');
     container.classList.add('d-flex', 'fd-column', 'gsy', 'gs4');
 
@@ -378,7 +378,7 @@ export function getRadioRow({ Id, Feedbacks }: CachedFlag): HTMLElement {
         .map(item => {
             const botName = item as BotNames;
 
-            return getRadiosForBot(botName, Feedbacks[botName], Id);
+            return getRadiosForBot(botName, feedbacks[botName], id);
         })
         .map(checkbox => wrapInFlexItem(checkbox));
 

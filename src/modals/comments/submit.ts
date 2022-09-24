@@ -25,9 +25,9 @@ function saveTextareaContent(
             // therefore, we only need to search and save content in visible textareas
             .map(textarea => textarea?.offsetParent ? textarea.value || '' : '');
 
-    flagType.FlagText = flag;
+    flagType.flagText = flag;
     if (low) {
-        flagType.Comments = { Low: low, High: high };
+        flagType.comments = { low: low, high: high };
     }
 }
 
@@ -46,7 +46,7 @@ function saveReportType(
             true
         );
     } else {
-        flagType.ReportType = newReportType;
+        flagType.reportType = newReportType;
     }
 }
 
@@ -59,20 +59,20 @@ function saveSwfr(
     const swfrBox = expandable.querySelector<HTMLInputElement>('[id*="-send-when-flag-raised-"');
     const sendFeedback = swfrBox?.checked || false;
 
-    flagType.SendWhenFlagRaised = sendFeedback;
+    flagType.sendWhenFlagRaised = sendFeedback;
 
     // if any other FlagType with the same ReportType has swfr to true, then we need to change that
-    const similar = cachedFlagTypes.find(item => item.SendWhenFlagRaised
-                                                 && item.ReportType === flagType.ReportType
-                                                 && item.Id !== flagId); // not this FlagType
+    const similar = cachedFlagTypes.find(item => item.sendWhenFlagRaised
+                                                 && item.reportType === flagType.reportType
+                                                 && item.id !== flagId); // not this FlagType
 
     // make sure the FlagType exists and that the checkbox is checked
     if (!similar || !sendFeedback) return;
 
-    similar.SendWhenFlagRaised = false; // then turn off the option
+    similar.sendWhenFlagRaised = false; // then turn off the option
 
     const similarEl = document.querySelector<HTMLInputElement>(
-        `[id*="-send-when-flag-raised-${similar.Id}"]`
+        `[id*="-send-when-flag-raised-${similar.id}"]`
     );
 
     // uncheck it
@@ -87,7 +87,7 @@ function saveDownvote(
 ): void {
     const downvote = expandable.querySelector<HTMLInputElement>('[id*="-downvote-post-"');
 
-    flagType.Downvote = downvote?.checked || false;
+    flagType.downvote = downvote?.checked || false;
 }
 
 function saveFeedbacks(
@@ -101,7 +101,7 @@ function saveFeedbacks(
         'Generic Bot'
     ]
         .map(name => {
-            const selector = `[name*="-feedback-to-${name.replace(/\s/g, '-')}-$"][checked]`;
+            const selector = `[name*="-feedback-to-${name.replace(/\s/g, '-')}"][checked]`;
             const radio = expandable.querySelector<HTMLElement>(`.s-radio${selector}`);
 
             const feedback = radio?.dataset.feedack || '';
@@ -109,7 +109,7 @@ function saveFeedbacks(
             return [name, feedback];
         });
 
-    flagType.Feedbacks = Object.fromEntries(feedbacks) as FlagTypeFeedbacks;
+    flagType.feedbacks = Object.fromEntries(feedbacks) as FlagTypeFeedbacks;
 }
 
 export function submitChanges(element: HTMLElement): void {

@@ -54,11 +54,12 @@ function increaseTooltipWidth(menu: HTMLUListElement): void {
         });
 }
 
-function getFeedbackSpans(
-    flagType: CachedFlag,
+function canSendFeedback(
+    botName: keyof FlagTypeFeedbacks,
+    feedback: AllFeedbacks,
     reporters: ReporterInformation,
-    postDeleted: boolean
-): HTMLSpanElement[] {
+    postDeleted: boolean,
+): boolean {
     const {
         Guttenberg: copypastor,
         Natty: natty,
@@ -72,35 +73,56 @@ function getFeedbackSpans(
     const nattyReported = natty?.wasReported() || false;
     const nattyCanReport = natty?.canBeReported() || false;
 
+    switch (botName) {
+        case 'Natty':
+            return (
+                nattyReported // the post has been reported
+                && !postDeleted // AND is not deleted
+            ) || ( // OR
+                nattyCanReport // it can be reported
+                && feedback === 'tp' // AND the feedback is tp
+            );
+        case 'Smokey':
+            return Boolean(smokeyId) || ( // the post has been reported OR:
+                feedback === 'tpu-' // the feedback is tpu-
+                && !postDeleted // AND the post is not deleted
+                && !smokeyDisabled // AND SD info is stored in cache
+            );
+        case 'Guttenberg':
+            // there's no way to report a post to Guttenberg,
+            // so we just filter the posts that have been reported
+            return Boolean(copypastorId);
+        case 'Generic Bot':
+            // Guttenberg can't track deleted posts
+            return feedback === 'track' && !postDeleted && isStackOverflow;
+    }
+}
+
+function getFeedbackSpans(
+    flagType: CachedFlag,
+    reporters: ReporterInformation,
+    postDeleted: boolean
+): HTMLSpanElement[] {
+    const {
+        Natty: natty,
+        Smokey: metasmoke
+    } = reporters;
+
+    const smokeyId = metasmoke?.getSmokeyId();
+    const nattyReported = natty?.wasReported() || false;
+
     type FeedbackEntries = [keyof FlagTypeFeedbacks, AllFeedbacks][];
 
-    const spans = (Object.entries(flagType.Feedbacks) as FeedbackEntries)
+    const spans = (Object.entries(flagType.feedbacks) as FeedbackEntries)
         // make sure there's actually a feedback
         .filter(([, feedback]) => feedback)
         .filter(([botName, feedback]) => {
-            switch (botName) {
-                case 'Natty':
-                    return (
-                        nattyReported // the post has been reported
-                        && !postDeleted // AND is not deleted
-                    ) || ( // OR
-                        nattyCanReport // it can be reported
-                        && feedback === 'tp' // AND the feedback is tp
-                    );
-                case 'Smokey':
-                    return smokeyId || ( // the post has been reported OR:
-                        feedback === 'tpu-' // the feedback is tpu-
-                        && !postDeleted // AND the post is not deleted
-                        && !smokeyDisabled // AND SD info is stored in cache
-                    );
-                case 'Guttenberg':
-                    // there's no way to report a post to Guttenberg,
-                    // so we just filter the posts that have been reported
-                    return copypastorId;
-                case 'Generic Bot':
-                    // Guttenberg can't track deleted posts
-                    return feedback === 'track' && !postDeleted;
-            }
+            return canSendFeedback(
+                botName,
+                feedback,
+                reporters,
+                postDeleted
+            );
         })
         .map(([botName, feedback]) => {
             const feedbackSpan = document.createElement('span');
@@ -203,17 +225,17 @@ async function handleReportLinkClick(
     const success = await handleFlag(flagType, reporters, post);
 
     const { done, failed } = post;
-    const { ReportType, DisplayName } = flagType;
+    const { reportType, displayName } = flagType;
 
     // don't show performed/failed action icons if post has been flagged
-    if (ReportType !== 'NoFlag') return;
+    if (reportType !== 'NoFlag') return;
 
     if (success) {
-        attachPopover(done, `Performed action ${DisplayName}`);
+        attachPopover(done, `Performed action ${displayName}`);
 
         $(done).fadeIn();
     } else {
-        attachPopover(failed, `Failed to perform action ${DisplayName}`);
+        attachPopover(failed, `Failed to perform action ${displayName}`);
 
         $(failed).fadeIn();
     }
@@ -258,7 +280,7 @@ function getTooltipHtml(
     */
 
     const { deleted, raiseVlq } = post;
-    const { ReportType, Downvote } = flagType;
+    const { reportType, downvote } = flagType;
 
     // Feedbacks: X with Y, foo with bar
     const feedbackText = getFeedbackSpans(
@@ -279,13 +301,13 @@ function getTooltipHtml(
     const tooltipCommentText = (deleted ? '' : commentText) || '';
 
     // if the flag changed from VLQ to NAA, let the user know why
-    const flagName = getFlagToRaise(ReportType, raiseVlq);
+    const flagName = getFlagToRaise(reportType, raiseVlq);
 
-    let reportTypeHuman = ReportType === 'NoFlag' || !deleted
+    let reportTypeHuman = reportType === 'NoFlag' || !deleted
         ? getHumanFromDisplayName(flagName)
         : '';
 
-    if (ReportType !== flagName) {
+    if (reportType !== flagName) {
         reportTypeHuman += ' (VLQ criteria weren\'t met)';
     }
 
@@ -306,7 +328,7 @@ function getTooltipHtml(
 
     // Downvotes/Does not downvote the post
     const downvoteWrapper = document.createElement('li');
-    const downvoteOrNot = Downvote
+    const downvoteOrNot = downvote
         ? '<b>Downvotes</b>'
         : 'Does <b>not</b> downvote';
     downvoteWrapper.innerHTML = `${downvoteOrNot} the post`;
@@ -318,14 +340,14 @@ function getTooltipHtml(
 
 function getCommentText(
     { opReputation, opName }: PostInfo,
-    { Comments }: CachedFlag
+    { comments }: CachedFlag
 ): string | null {
     // Adds the author name before the comment if the option is enabled
     // and determines if the comment should be low/high rep
     const { addAuthorName: AddAuthorName } = cachedConfiguration;
 
-    const commentType = (opReputation || 0) > 50 ? 'High' : 'Low';
-    const comment = Comments?.[commentType] || Comments?.Low;
+    const commentType = (opReputation || 0) > 50 ? 'high' : 'low';
+    const comment = comments?.[commentType] || comments?.low;
 
     return (
         comment && AddAuthorName
@@ -350,7 +372,7 @@ function getReportLinks(
     // add the flag types to the category they correspond to
     const categories = cachedCategories
         // exclude categories that do not apply to the current post type
-        .filter(item => item.AppliesTo?.includes(postType))
+        .filter(item => item.appliesTo?.includes(postType))
         // create a new FlagType property to store cached flags
         .map(item => ({ ...item, FlagTypes: [] as CachedFlag[] }));
 
@@ -358,24 +380,24 @@ function getReportLinks(
     // based on their BelongsTo, to .FlagTypes
     cachedFlagTypes
         // exclude disabled and non-SO flag types
-        .filter(({ ReportType, DisplayName, BelongsTo, Enabled }) => {
+        .filter(({ reportType, displayName, belongsTo, enabled }) => {
             // only Guttenberg reports (can) have ReportType === 'PostOther' (for now)
-            const isGuttenbergItem = ReportType === FlagNames.ModFlag;
+            const isGuttenbergItem = reportType === FlagNames.ModFlag;
 
             const showGutReport = Boolean(copypastorId) // a CopyPastor id must exist
                 // https://github.com/SOBotics/AdvancedFlagging/issues/16
-                && (DisplayName === 'Duplicate Answer' ? repost : !repost);
+                && (displayName === 'Duplicate Answer' ? repost : !repost);
 
             // show the red flags and general items on every site,
             // restrict the others to Stack Overflow
-            const showOnSo = ['Red flags', 'General'].includes(BelongsTo) || isStackOverflow;
+            const showOnSo = ['Red flags', 'General'].includes(belongsTo) || isStackOverflow;
 
-            return Enabled && (isGuttenbergItem ? showGutReport : showOnSo);
+            return enabled && (isGuttenbergItem ? showGutReport : showOnSo);
         })
         .forEach(flagType => {
-            const { BelongsTo } = flagType;
+            const { belongsTo } = flagType;
 
-            const category = categories.find(({ Name }) => BelongsTo === Name);
+            const category = categories.find(({ name: Name }) => belongsTo === Name);
 
             category?.FlagTypes.push(flagType);
         });
@@ -385,10 +407,10 @@ function getReportLinks(
         // exclude empty categories (no .FlagTypes)
         .filter(category => category.FlagTypes.length)
         .flatMap(category => {
-            const { IsDangerous } = category;
+            const { isDangerous } = category;
 
             const mapped = category.FlagTypes.flatMap(flagType => {
-                const { DisplayName } = flagType;
+                const { displayName } = flagType;
 
                 const flagText = copypastorId && targetUrl
                     ? getFullFlag(flagType, targetUrl, copypastorId)
@@ -401,12 +423,12 @@ function getReportLinks(
                     flagText
                 );
 
-                const classes = IsDangerous
+                const classes = isDangerous
                     ? [ 'fc-red-500' ]
                     : '';
 
                 return {
-                    text: DisplayName,
+                    text: displayName,
                     // unfortunately, danger: IsDangerous won't work
                     // since SE uses s-anchors__muted
                     blockLink: { selected: false },
@@ -511,11 +533,13 @@ function getSendFeedbackToRow(
             const botNameId = `advanced-flagging-send-feedback-to-${sanitised}-${postId}`;
             const defaultNoCheck = cachedConfiguration[cacheKey];
 
+            const imageClone = botImage.cloneNode(true) as HTMLElement;
+
             return {
                 checkbox: {
                     id: botNameId,
                     labelConfig: {
-                        text: `Feedback to ${botImage.outerHTML}`,
+                        text: `Feedback to ${imageClone.outerHTML}`,
                         classes: [ 'fs-body1' ]
                     },
                     selected: !defaultNoCheck,

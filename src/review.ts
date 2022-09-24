@@ -114,7 +114,7 @@ export function setupReview(): void {
         const flagType = cachedFlagTypes
             // send 'Looks Fine' feedback:
             // get the respective flagType, call handleFlag()
-            .find(item => item.DisplayName === 'Looks Fine');
+            .find(({ displayName }) => displayName === 'Looks Fine');
 
         if (!reviewCachedInfo || !flagType) return; // something went wrong
 
@@ -150,7 +150,7 @@ export function setupReview(): void {
         };
 
         const flagType = cachedFlagTypes
-            .find(item => item.DisplayName === 'Not an answer'); // the NAA cached flag type
+            .find(({ displayName }) => displayName === 'Not an answer'); // the NAA cached flag type
         if (!flagType) return; // something went wrong
 
         void handleFlag(flagType, reportersArray);

@@ -5,10 +5,9 @@ export type StacksToastState = 'success' | 'danger' | 'info' | 'warning';
 export type PostType = 'Question' | 'Answer';
 
 export interface CachedFlag extends FlagType {
-    Downvote: boolean;
-    Enabled: boolean;
-    BelongsTo: string; // the Name of the category it belongs to
-    IsDefault: boolean;
+    downvote: boolean;
+    enabled: boolean;
+    belongsTo: string; // the Name of the category it belongs to
 }
 
 export type CachedCategory = Omit<FlagCategory, 'FlagTypes'>;
@@ -218,7 +217,7 @@ export function getFullFlag(
     const placeholderTarget = /\$TARGET\$/g;
     const placeholderCopypastorLink = /\$COPYPASTOR\$/g;
 
-    const content = flagType.FlagText;
+    const content = flagType.flagText;
 
     if (!content) return null;
 
@@ -230,7 +229,7 @@ export function getFullFlag(
 }
 
 export function getFlagTypeFromFlagId(flagId: number): CachedFlag | null {
-    return cachedFlagTypes.find(flagType => flagType.Id === flagId) || null;
+    return cachedFlagTypes.find(({ id }) => id === flagId) || null;
 }
 
 export function getHumanFromDisplayName(displayName: Flags): HumanFlags {

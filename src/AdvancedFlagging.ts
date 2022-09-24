@@ -326,7 +326,7 @@ async function flagPost(
 
 export async function handleActions(
     { postId, element, flagged, raiseVlq }: PostInfo,
-    { ReportType, Downvote }: CachedFlag,
+    { reportType, downvote }: CachedFlag,
     flagRequired: boolean,
     downvoteRequired: boolean,
     flagText: string | null,
@@ -344,12 +344,12 @@ export async function handleActions(
         }
     }
 
-    if (flagRequired && ReportType !== 'NoFlag') {
+    if (flagRequired && reportType !== 'NoFlag') {
         autoFlagging = true;
 
         // if the flag name is VLQ, then we need to check if the criteria are met.
         // If not, switch to NAA
-        const flagName = getFlagToRaise(ReportType, raiseVlq);
+        const flagName = getFlagToRaise(reportType, raiseVlq);
 
         try {
             await flagPost(postId, fkey, flagName, flagged, flagText);
@@ -362,7 +362,7 @@ export async function handleActions(
     const button = element.querySelector<HTMLButtonElement>('.js-vote-down-btn');
     const hasDownvoted = button?.classList.contains('fc-theme-primary');
     // only downvote if post hasn't already been downvoted
-    if (!downvoteRequired || !Downvote || hasDownvoted) return;
+    if (!downvoteRequired || !downvote || hasDownvoted) return;
 
     if (debugMode) {
         console.log('Downvote post by clicking', button);
@@ -397,12 +397,12 @@ export async function handleFlag(
             // hence the ?? instead of ||
             const sendFeedback = input?.checked ?? true;
 
-            return sendFeedback && flagType.Feedbacks[name];
+            return sendFeedback && flagType.feedbacks[name];
         })
         // return a promise that sends the feedback
         // use .map() so that they run in paraller
         .map(reporter => {
-            return reporter.sendFeedback(flagType.Feedbacks[reporter.name])
+            return reporter.sendFeedback(flagType.feedbacks[reporter.name])
                 .then(message => {
                     // promise resolves to a success message
                     if (message) {
@@ -609,14 +609,14 @@ function setFlagWatch(
         const flag = (matches?.[1] as Flags);
 
         const flagType = cachedFlagTypes
-            .find(item => item.SendWhenFlagRaised && item.ReportType === flag);
+            .find(item => item.sendWhenFlagRaised && item.reportType === flag);
         if (!flagType) return;
 
         if (debugMode) {
             console.log('Post', postId, 'manually flagged as', flag, flagType);
         }
 
-        displaySuccessFlagged(flagged, flagType.ReportType);
+        displaySuccessFlagged(flagged, flagType.reportType);
 
         void handleFlag(flagType, reporters);
     });

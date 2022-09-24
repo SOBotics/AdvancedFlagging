@@ -12,242 +12,242 @@ const setBounties = '/help/privileges/set-bounties';
 const flagPosts = '/help/privileges/flag-posts';
 
 export interface FlagType {
-    Id: number;
-    DisplayName: string;
-    ReportType: Flags;
-    FlagText?: string;
-    Comments?: {
-        Low: string;
-        High?: string;
+    id: number;
+    displayName: string;
+    reportType: Flags;
+    flagText?: string;
+    comments?: {
+        low: string;
+        high?: string;
     };
-    Feedbacks: FlagTypeFeedbacks;
-    SendWhenFlagRaised: boolean;
+    feedbacks: FlagTypeFeedbacks;
+    sendWhenFlagRaised: boolean;
 }
 
 export interface FlagCategory {
-    IsDangerous: boolean; // whether each FlagType of the category should have a red colour
-    Name: string; // will appear on the edit comments & flags modal
-    AppliesTo: PostType[]; // where it'll appear (question, answer or both)
+    isDangerous: boolean; // whether each FlagType of the category should have a red colour
+    name: string; // will appear on the edit comments & flags modal
+    appliesTo: PostType[]; // where it'll appear (question, answer or both)
     FlagTypes: FlagType[];
 }
 
 export const flagCategories: FlagCategory[] = [
     {
-        IsDangerous: true,
-        Name: 'Red flags',
-        AppliesTo: ['Answer', 'Question'],
+        isDangerous: true,
+        name: 'Red flags',
+        appliesTo: ['Answer', 'Question'],
         FlagTypes: [
             {
-                Id: 1,
-                DisplayName: 'Spam',
-                ReportType: FlagNames.Spam,
-                Feedbacks: { Smokey: 'tpu-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
-                SendWhenFlagRaised: true
+                id: 1,
+                displayName: 'Spam',
+                reportType: FlagNames.Spam,
+                feedbacks: { Smokey: 'tpu-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
+                sendWhenFlagRaised: true
             },
             {
-                Id: 2,
-                DisplayName: 'Rude or Abusive',
-                ReportType: FlagNames.Rude,
-                Feedbacks: { Smokey: 'tpu-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
-                SendWhenFlagRaised: true
+                id: 2,
+                displayName: 'Rude or Abusive',
+                reportType: FlagNames.Rude,
+                feedbacks: { Smokey: 'tpu-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
+                sendWhenFlagRaised: true
             }
         ]
     },
     {
-        IsDangerous: true,
-        Name: 'Guttenberg mod flags',
-        AppliesTo: ['Answer'],
+        isDangerous: true,
+        name: 'Guttenberg mod flags',
+        appliesTo: ['Answer'],
         FlagTypes: [
             {
-                Id: 3,
-                DisplayName: 'Plagiarism',
-                ReportType: FlagNames.ModFlag,
-                FlagText: 'Possible plagiarism of another answer $TARGET$, as can be seen here $COPYPASTOR$',
+                id: 3,
+                displayName: 'Plagiarism',
+                reportType: FlagNames.ModFlag,
+                flagText: 'Possible plagiarism of another answer $TARGET$, as can be seen here $COPYPASTOR$',
                 // don't send feedback to Smokey despite https://charcoal-se.org/smokey/Feedback-Guidance.html#plagiarism
-                Feedbacks: { Smokey: '', Natty: '', Guttenberg: 'tp', 'Generic Bot': '' },
-                SendWhenFlagRaised: false
+                feedbacks: { Smokey: '', Natty: '', Guttenberg: 'tp', 'Generic Bot': '' },
+                sendWhenFlagRaised: false
             },
             {
-                Id: 4,
-                DisplayName: 'Duplicate answer',
-                ReportType: FlagNames.ModFlag,
-                FlagText: 'The answer is a repost of their other answer $TARGET$, but as there are slight differences '
+                id: 4,
+                displayName: 'Duplicate answer',
+                reportType: FlagNames.ModFlag,
+                flagText: 'The answer is a repost of their other answer $TARGET$, but as there are slight differences '
                                + '(see $COPYPASTOR$), an auto flag would not be raised.',
-                Comments: {
-                    Low: "Please don't add the [same answer to multiple questions](//meta.stackexchange.com/q/104227)."
+                comments: {
+                    low: "Please don't add the [same answer to multiple questions](//meta.stackexchange.com/q/104227)."
                        + ' Answer the best one and flag the rest as duplicates, once you earn enough reputation. '
                        + 'If it is not a duplicate, [edit] the answer and tailor the post to the question.',
                 },
-                Feedbacks: { Smokey: '', Natty: '', Guttenberg: 'tp', 'Generic Bot': '' },
-                SendWhenFlagRaised: false
+                feedbacks: { Smokey: '', Natty: '', Guttenberg: 'tp', 'Generic Bot': '' },
+                sendWhenFlagRaised: false
             },
             {
-                Id: 5,
-                DisplayName: 'Bad attribution',
-                ReportType: FlagNames.ModFlag,
-                FlagText: 'This post is copied from [another answer]($TARGET$), as can be seen here $COPYPASTOR$. The author '
+                id: 5,
+                displayName: 'Bad attribution',
+                reportType: FlagNames.ModFlag,
+                flagText: 'This post is copied from [another answer]($TARGET$), as can be seen here $COPYPASTOR$. The author '
                                + 'only added a link to the other answer, which is [not the proper way of attribution]'
                                + '(//stackoverflow.blog/2009/06/25/attribution-required).',
-                Feedbacks: { Smokey: '', Natty: '', Guttenberg: 'tp', 'Generic Bot': '' },
-                SendWhenFlagRaised: false
+                feedbacks: { Smokey: '', Natty: '', Guttenberg: 'tp', 'Generic Bot': '' },
+                sendWhenFlagRaised: false
             }
         ]
     },
     {
-        IsDangerous: false,
-        Name: 'Answer-related',
-        AppliesTo: ['Answer'],
+        isDangerous: false,
+        name: 'Answer-related',
+        appliesTo: ['Answer'],
         FlagTypes: [
             {
-                Id: 6,
-                DisplayName: 'Link Only',
-                ReportType: FlagNames.VLQ,
-                Comments: {
-                    Low: 'A link to a solution is welcome, but please ensure your answer is useful without it: '
+                id: 6,
+                displayName: 'Link Only',
+                reportType: FlagNames.VLQ,
+                comments: {
+                    low: 'A link to a solution is welcome, but please ensure your answer is useful without it: '
                        + '[add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will '
                        + 'have some idea what it is and why it is there, then quote the most relevant part of the page '
                        + 'you are linking to in case the target page is unavailable. '
                        + `[Answers that are little more than a link may be deleted.](${deletedAnswers})`,
                 },
-                Feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
-                SendWhenFlagRaised: true
+                feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
+                sendWhenFlagRaised: true
             },
             {
-                Id: 7,
-                DisplayName: 'Not an answer',
-                ReportType: FlagNames.NAA,
-                Comments: {
-                    Low: 'This does not provide an answer to the question. You can [search for similar questions](/search), '
+                id: 7,
+                displayName: 'Not an answer',
+                reportType: FlagNames.NAA,
+                comments: {
+                    low: 'This does not provide an answer to the question. You can [search for similar questions](/search), '
                        + 'or refer to the related and linked questions on the right-hand side of the page to find an answer. '
                        + 'If you have a related but different question, [ask a new question](/questions/ask), and include a '
                        + 'link to this one to help provide context. See: [Ask questions, get answers, no distractions](/tour)',
-                    High: 'This post doesn\'t look like an attempt to answer this question. Every post here is expected to '
+                    high: 'This post doesn\'t look like an attempt to answer this question. Every post here is expected to '
                         + 'be an explicit attempt to *answer* this question; if you have a critique or need a clarification '
                         + `of the question or another answer, you can [post a comment](${commentHelp}) (like this `
                         + 'one) directly below it. Please remove this answer and create either a comment or a new question. '
                         + 'See: [Ask questions, get answers, no distractions](/tour).',
                 },
-                Feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
-                SendWhenFlagRaised: true
+                feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
+                sendWhenFlagRaised: true
             },
             {
-                Id: 8,
-                DisplayName: 'Thanks',
-                ReportType: FlagNames.NAA,
-                Comments: {
-                    Low: 'Please don\'t add _thanks_ as answers. They don\'t actually provide an answer to the question, and '
+                id: 8,
+                displayName: 'Thanks',
+                reportType: FlagNames.NAA,
+                comments: {
+                    low: 'Please don\'t add _thanks_ as answers. They don\'t actually provide an answer to the question, and '
                        + 'can be perceived as noise by its future visitors. Once you [earn](//meta.stackoverflow.com/q/146472) '
                        + `enough [reputation](${reputationHelp}), you will gain privileges to `
                        + `[upvote answers](${voteUpHelp}) you like. This way future visitors of the question `
                        + 'will see a higher vote count on that answer, and the answerer will also be rewarded with '
                        + `reputation points. See [Why is voting important](${whyVote}).`,
-                    High: 'Please don\'t add _thanks_ as answers. They don\'t actually provide an answer to the question, '
+                    high: 'Please don\'t add _thanks_ as answers. They don\'t actually provide an answer to the question, '
                         + 'and can be perceived as noise by its future visitors. Instead, '
                         + `[upvote answers](${voteUpHelp}) you like. This way future visitors of the question `
                         + 'will see a higher vote count on that answer, and the answerer will also be rewarded '
                         + `with reputation points. See [Why is voting important](${whyVote}).`,
                 },
-                Feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
-                SendWhenFlagRaised: false
+                feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
+                sendWhenFlagRaised: false
             },
             {
-                Id: 9,
-                DisplayName: 'Me too',
-                ReportType: FlagNames.NAA,
-                Comments: {
-                    Low: 'Please don\'t add *Me too* as answers. It doesn\'t actually provide an answer to the question. '
+                id: 9,
+                displayName: 'Me too',
+                reportType: FlagNames.NAA,
+                comments: {
+                    low: 'Please don\'t add *Me too* as answers. It doesn\'t actually provide an answer to the question. '
                        + 'If you have a different but related question, then [ask](/questions/ask) it (reference this one '
                        + 'if it will help provide context). If you are interested in this specific question, you can '
                        + `[upvote](${voteUpHelp}) it, leave a [comment](${commentHelp}), or start a `
                        + `[bounty](${setBounties}) once you have enough [reputation](${reputationHelp}).`,
                 },
-                Feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
-                SendWhenFlagRaised: false
+                feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
+                sendWhenFlagRaised: false
             },
             {
-                Id: 10,
-                DisplayName: 'Library',
-                ReportType: FlagNames.VLQ,
-                Comments: {
-                    Low: 'Please don\'t just post some tool or library as an answer. At least demonstrate '
+                id: 10,
+                displayName: 'Library',
+                reportType: FlagNames.VLQ,
+                comments: {
+                    low: 'Please don\'t just post some tool or library as an answer. At least demonstrate '
                        + '[how it solves the problem](//meta.stackoverflow.com/a/251605) in the answer itself.',
                 },
-                Feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
-                SendWhenFlagRaised: false
+                feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
+                sendWhenFlagRaised: false
             },
             {
-                Id: 11,
-                DisplayName: 'Comment',
-                ReportType: FlagNames.NAA,
-                Comments: {
-                    Low: 'This does not provide an answer to the question. Once you have sufficient '
+                id: 11,
+                displayName: 'Comment',
+                reportType: FlagNames.NAA,
+                comments: {
+                    low: 'This does not provide an answer to the question. Once you have sufficient '
                        + `[reputation](${reputationHelp}) you will be able to [comment on any post](${commentHelp}); instead, `
                        + '[provide answers that don\'t require clarification from the asker](//meta.stackexchange.com/q/214173).',
-                    High: 'This does not provide an answer to the question. Please write a comment instead.',
+                    high: 'This does not provide an answer to the question. Please write a comment instead.',
                 },
-                Feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
-                SendWhenFlagRaised: false
+                feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
+                sendWhenFlagRaised: false
             },
             {
-                Id: 12,
-                DisplayName: 'Duplicate',
-                ReportType: FlagNames.NAA,
-                Comments: {
-                    Low: 'Instead of posting an answer which merely links to another answer, please instead '
+                id: 12,
+                displayName: 'Duplicate',
+                reportType: FlagNames.NAA,
+                comments: {
+                    low: 'Instead of posting an answer which merely links to another answer, please instead '
                        + `[flag the question](${flagPosts}) as a duplicate.`,
                 },
-                Feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
-                SendWhenFlagRaised: false
+                feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
+                sendWhenFlagRaised: false
             },
             {
-                Id: 13,
-                DisplayName: 'Non English',
-                ReportType: FlagNames.VLQ,
-                Comments: {
-                    Low: 'Please write your answer in English, as Stack Overflow is an '
+                id: 13,
+                displayName: 'Non English',
+                reportType: FlagNames.VLQ,
+                comments: {
+                    low: 'Please write your answer in English, as Stack Overflow is an '
                        + '[English-only site](//meta.stackoverflow.com/a/297680).',
                 },
-                Feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
-                SendWhenFlagRaised: false
+                feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
+                sendWhenFlagRaised: false
             },
             {
-                Id: 14,
-                DisplayName: 'Should be an edit',
-                ReportType: FlagNames.NAA,
-                Comments: {
-                    Low: 'Please use the edit link on your question to add additional information. '
+                id: 14,
+                displayName: 'Should be an edit',
+                reportType: FlagNames.NAA,
+                comments: {
+                    low: 'Please use the edit link on your question to add additional information. '
                        + 'The "Post Answer" button should be used only for complete answers to the question.',
                 },
-                Feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
-                SendWhenFlagRaised: false
+                feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
+                sendWhenFlagRaised: false
             }
         ]
     },
     {
-        IsDangerous: false,
-        Name: 'General',
-        AppliesTo: ['Answer', 'Question'],
+        isDangerous: false,
+        name: 'General',
+        appliesTo: ['Answer', 'Question'],
         FlagTypes: [
             {
-                Id: 15,
-                DisplayName: 'Looks Fine',
-                ReportType: FlagNames.NoFlag,
-                Feedbacks: { Smokey: 'fp-', Natty: 'fp', Guttenberg: 'fp', 'Generic Bot': '' },
-                SendWhenFlagRaised: false
+                id: 15,
+                displayName: 'Looks Fine',
+                reportType: FlagNames.NoFlag,
+                feedbacks: { Smokey: 'fp-', Natty: 'fp', Guttenberg: 'fp', 'Generic Bot': '' },
+                sendWhenFlagRaised: false
             },
             {
-                Id: 16,
-                DisplayName: 'Needs Editing',
-                ReportType: FlagNames.NoFlag,
-                Feedbacks: { Smokey: 'fp-', Natty: 'ne', Guttenberg: 'fp', 'Generic Bot': '' },
-                SendWhenFlagRaised: false
+                id: 16,
+                displayName: 'Needs Editing',
+                reportType: FlagNames.NoFlag,
+                feedbacks: { Smokey: 'fp-', Natty: 'ne', Guttenberg: 'fp', 'Generic Bot': '' },
+                sendWhenFlagRaised: false
             },
             {
-                Id: 17,
-                DisplayName: 'Vandalism',
-                ReportType: FlagNames.NoFlag,
-                Feedbacks: { Smokey: 'tp-', Natty: '', Guttenberg: 'fp', 'Generic Bot': '' },
-                SendWhenFlagRaised: false
+                id: 17,
+                displayName: 'Vandalism',
+                reportType: FlagNames.NoFlag,
+                feedbacks: { Smokey: 'tp-', Natty: '', Guttenberg: 'fp', 'Generic Bot': '' },
+                sendWhenFlagRaised: false
             }
         ]
     }

@@ -641,21 +641,6 @@ function setupPostPage(): void {
             done, failed, flagged
         } = post;
 
-        const advancedFlaggingLink = Buttons.makeStacksButton(
-            `advanced-flagging-link-${postId}`,
-            'Advanced Flagging',
-            {
-                type: [ 'link' ],
-                classes: [ 'advanced-flagging-link' ]
-            }
-        );
-
-        const flexItem = document.createElement('div');
-        flexItem.classList.add('flex--item');
-
-        flexItem.append(advancedFlaggingLink);
-        iconLocation.append(flexItem);
-
         // complicated process of setting up reporters:
         // --------------------------------------------
 
@@ -679,8 +664,6 @@ function setupPostPage(): void {
         // because it doesn't have an .icon
         if (page !== 'Question') {
             iconLocation.after(...icons);
-        } else {
-            iconLocation.append(done, failed, flagged, ...icons);
         }
 
         // Guttenberg can only track Stack Overflow posts
@@ -690,12 +673,32 @@ function setupPostPage(): void {
 
         if (score === null) return; // can't use !score, because score might be 0
 
+        setFlagWatch(post, reporters);
+
+        if (page !== 'Question') return;
+
         // Now append the advanced flagging dialog
+        const advancedFlaggingLink = Buttons.makeStacksButton(
+            `advanced-flagging-link-${postId}`,
+            'Advanced Flagging',
+            {
+                type: ['link'],
+                classes: ['advanced-flagging-link']
+            }
+        );
+
+        const flexItem = document.createElement('div');
+        flexItem.classList.add('flex--item');
+
+        flexItem.append(advancedFlaggingLink);
+        iconLocation.append(flexItem);
+
         const dropDown = buildFlaggingDialog(post, reporters);
         advancedFlaggingLink.append(dropDown);
 
+        iconLocation.append(done, failed, flagged, ...icons);
+
         setPopoverOpening(advancedFlaggingLink, dropDown);
-        setFlagWatch(post, reporters);
     });
 }
 

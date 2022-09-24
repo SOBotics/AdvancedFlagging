@@ -98,8 +98,8 @@ function getFeedbackSpans(
                     // so we just filter the posts that have been reported
                     return copypastorId;
                 case 'Generic Bot':
-                    // only get bot names where there is feedback
-                    return feedback === 'track';
+                    // Guttenberg can't track deleted posts
+                    return feedback === 'track' && !postDeleted;
             }
         })
         .map(([botName, feedback]) => {
@@ -221,8 +221,7 @@ async function handleReportLinkClick(
 
 export function createPopoverToOption(
     boldText: string,
-    value: string | HTMLElement | HTMLElement[] | null,
-    deleted: boolean
+    value: string | HTMLElement | HTMLElement[] | null
 ): HTMLElement | undefined {
     if (!value) return;
 
@@ -236,14 +235,6 @@ export function createPopoverToOption(
         wrapper.append(...value);
     } else {
         wrapper.append(value || noneSpan);
-    }
-
-    if (deleted) {
-        const deleted = document.createElement('span');
-        deleted.classList.add('fc-danger');
-        deleted.innerText = '- post is deleted';
-
-        wrapper.append(' ', deleted);
     }
 
     return wrapper;
@@ -309,7 +300,7 @@ function getTooltipHtml(
         'Feedbacks': feedbacks
     })
         .filter(([, value]) => value)
-        .map(([boldText, value]) => createPopoverToOption(boldText, value, deleted))
+        .map(([boldText, value]) => createPopoverToOption(boldText, value))
         .filter(Boolean)
         .forEach(element => popoverParent.append(element as HTMLElement));
 
@@ -456,6 +447,8 @@ function getOptionsRow(
 
     // ['label test', globals.cacheKey]
     return config
+        // don't leave comments on non-SO sites
+        .filter(([ text ]) => text === 'Leave comment' ? isStackOverflow : true)
         .map(([text, cacheKey]) => {
             const uncheck = cachedConfiguration[cacheKey]
                 // extra requirement for the leave comment option:
@@ -542,11 +535,7 @@ export function makeMenu(
     reporters: ReporterInformation,
     post: PostInfo
 ): HTMLUListElement {
-    // actionsMenu.append(globals.popoverArrow.clone());
-    // don't leave comments on non-SO sites
-    const actionBoxes = isStackOverflow
-        ? getOptionsRow(post)
-        : [];
+    const actionBoxes = getOptionsRow(post);
 
     const menu = Menu.makeMenu(
         {

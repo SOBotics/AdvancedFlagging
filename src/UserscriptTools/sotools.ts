@@ -44,17 +44,19 @@ const isFlagsPage = /\/users\/flag-summary\/\d+/.test(location.href);
 function getExistingElement(): HTMLElement[] | undefined {
     if (!isQuestionPage && !isNatoPage && !isFlagsPage) return;
 
-    const nato = document.querySelectorAll('.default-view-post-table > tbody > tr');
-    const flag = document.querySelectorAll('.flagged-post');
-    const questionPage = document.querySelectorAll('.question, .answer');
+    let elements: NodeListOf<Element> | HTMLElement[];
 
-    const elementToUse = [
-        nato,
-        flag,
-        questionPage
-    ].find(item => item.length) || [];
+    if (isNatoPage) {
+        elements = document.querySelectorAll('.default-view-post-table > tbody > tr');
+    } else if (isFlagsPage) {
+        elements = document.querySelectorAll('.flagged-post');
+    } else if (isQuestionPage) {
+        elements = document.querySelectorAll('.question, .answer');
+    } else {
+        elements = [];
+    }
 
-    return [...elementToUse] as HTMLElement[];
+    return [...elements] as HTMLElement[];
 }
 
 function getPage(): Pages | '' {
@@ -64,7 +66,14 @@ function getPage(): Pages | '' {
     else return '';
 }
 
-function getPostIdFromElement(postNode: HTMLElement, postType: PostType): number {
+function getPostType(element: HTMLElement): PostType {
+    return element.classList.contains('question')
+        || element.querySelector('.question-hyperlink')
+        ? 'Question'
+        : 'Answer';
+}
+
+function getPostId(postNode: HTMLElement, postType: PostType): number {
     const href = postNode.querySelector<HTMLAnchorElement>(
         '.answer-hyperlink, .question-hyperlink'
     )?.href;
@@ -77,13 +86,15 @@ function getPostIdFromElement(postNode: HTMLElement, postType: PostType): number
         ) || (
             postType === 'Answer'// flags/NATO page: parse the post URL
                 ? href?.split('#')[1]
-                : href?.split('/')[2]
+                : href?.split('/')[4]
         );
 
     return Number(postIdString);
 }
 
-function parseAuthorReputation(reputationDiv: HTMLElement): number {
+function parseAuthorReputation(reputationDiv?: HTMLElement): number {
+    if (!reputationDiv) return 0;
+
     let reputationText = reputationDiv.innerText.replace(/,/g, '');
     if (!reputationText) return 0;
 
@@ -141,11 +152,7 @@ function getActionIcons(): HTMLElement[] {
 
 export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): void {
     getExistingElement()?.forEach(element => {
-        const postType: PostType =
-            element.classList.contains('question')
-         || element.querySelector('.question-hyperlink')
-                ? 'Question'
-                : 'Answer';
+        const postType = getPostType(element);
 
         const page = getPage();
         if (!page) return;
@@ -154,7 +161,7 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): vo
             ? element.querySelector('.js-post-menu')?.firstElementChild
             : element.querySelector('a.question-hyperlink, a.answer-hyperlink');
 
-        const postId = getPostIdFromElement(element, postType);
+        const postId = getPostId(element, postType);
         const questionTime = getPostCreationDate(element, 'Question');
         const answerTime = getPostCreationDate(element, 'Answer');
 
@@ -162,8 +169,10 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): vo
         const score = Number(element.dataset.score) || 0;
 
         // this won't work for community wiki posts and there's nothing that can be done about it:
-        const reputationEl = [...element.querySelectorAll('.user-info .reputation-score')].pop();
-        const opReputation = parseAuthorReputation(reputationEl as HTMLElement);
+        const reputationEl = [...element.querySelectorAll<HTMLElement>(
+            '.user-info .reputation-score'
+        )].pop();
+        const opReputation = parseAuthorReputation(reputationEl);
 
         // in Flags page, authorName will be empty, but we aren't interested in it there anyways...
         const lastNameEl = [...document.querySelectorAll('.user-info .user-details a')].pop();
@@ -206,32 +215,11 @@ export function getAllPostIds(
     if (!elementToUse) return [];
 
     return elementToUse.map(item => {
-        const postType: PostType =
-            item.dataset.questionid || item.querySelector('.question-hyperlink')
-                ? 'Question'
-                : 'Answer';
+        const postType = getPostType(item);
 
         if (!includeQuestion && postType === 'Question') return '';
 
-        const href = item.querySelector<HTMLAnchorElement>(
-            `.${postType.toLowerCase()}-hyperlink`
-        )?.href;
-
-        let postId: number;
-
-        if (href) {
-            // We're on flags page. We have to fetch the post id from the post URL
-            postId = Number(
-                postType === 'Answer'
-                    ? href.split('#')[1]
-                    : href.split('/')[2]
-            );
-        } else {
-            // instead, on the question page, the element has a
-            // data-questionid or data-answerid attribute with the post id
-            postId = Number(item.dataset.questionid || item.dataset.answerid);
-        }
-
+        const postId = getPostId(item, postType);
         const type = postType === 'Answer' ? 'a' : 'questions';
 
         return urlForm

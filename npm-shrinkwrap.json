@@ -18,7 +18,7 @@
         "@typescript-eslint/parser": "5.38.0",
         "@userscripters/stackexchange-global-types": "^2.4.2",
         "eslint": "8.23.1",
-        "ts-loader": "9.4.0",
+        "ts-loader": "9.4.1",
         "typescript": "4.8.3",
         "webpack": "5.74.0",
         "webpack-cli": "4.10.0"
@@ -2445,9 +2445,9 @@
       }
     },
     "node_modules/ts-loader": {
-      "version": "9.4.0",
-      "resolved": "https://registry.npmjs.org/ts-loader/-/ts-loader-9.4.0.tgz",
-      "integrity": "sha512-0G3UMhk1bjgsgiwF4rnZRAeTi69j9XMDtmDDMghGSqlWESIAS3LFgJe//GYfE4vcjbyzuURLB9Us2RZIWp2clQ==",
+      "version": "9.4.1",
+      "resolved": "https://registry.npmjs.org/ts-loader/-/ts-loader-9.4.1.tgz",
+      "integrity": "sha512-384TYAqGs70rn9F0VBnh6BPTfhga7yFNdC5gXbQpDrBj9/KsT4iRkGqKXhziofHOlE2j6YEaiTYVGKKvPhGWvw==",
       "dev": true,
       "dependencies": {
         "chalk": "^4.1.0",
@@ -4536,9 +4536,9 @@
       }
     },
     "ts-loader": {
-      "version": "9.4.0",
-      "resolved": "https://registry.npmjs.org/ts-loader/-/ts-loader-9.4.0.tgz",
-      "integrity": "sha512-0G3UMhk1bjgsgiwF4rnZRAeTi69j9XMDtmDDMghGSqlWESIAS3LFgJe//GYfE4vcjbyzuURLB9Us2RZIWp2clQ==",
+      "version": "9.4.1",
+      "resolved": "https://registry.npmjs.org/ts-loader/-/ts-loader-9.4.1.tgz",
+      "integrity": "sha512-384TYAqGs70rn9F0VBnh6BPTfhga7yFNdC5gXbQpDrBj9/KsT4iRkGqKXhziofHOlE2j6YEaiTYVGKKvPhGWvw==",
       "dev": true,
       "requires": {
         "chalk": "^4.1.0",

@@ -23,11 +23,11 @@ function saveTextareaContent(
             // while the user can hide the textarea, we still keep the text in it
             // in case this was an accident
             // therefore, we only need to search and save content in visible textareas
-            .map(textarea => textarea?.offsetParent ? textarea.value || '' : '');
+            .map(textarea => textarea?.offsetParent ? textarea.value : '');
 
     flagType.flagText = flag;
     if (low) {
-        flagType.comments = { low: low, high: high };
+        flagType.comments = { low, high };
     }
 }
 
@@ -101,10 +101,10 @@ function saveFeedbacks(
         'Generic Bot'
     ]
         .map(name => {
-            const selector = `[name*="-feedback-to-${name.replace(/\s/g, '-')}"][checked]`;
+            const selector = `[name*="-feedback-to-${name.replace(/\s/g, '-')}"]:checked`;
             const radio = expandable.querySelector<HTMLElement>(`.s-radio${selector}`);
 
-            const feedback = radio?.dataset.feedack || '';
+            const feedback = radio?.dataset.feedback || '';
 
             return [name, feedback];
         });

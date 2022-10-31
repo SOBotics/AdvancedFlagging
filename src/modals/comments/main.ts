@@ -31,47 +31,42 @@ import {
    are cached if they exist.
    Sample cache (undefined values are empty strings):
 
-       FlagTypes: [{
-           Id: 1,
-           DisplayName: 'Plagiarism',
-           FlagText: 'This is some text',
-           Comments: {
-               Low: 'This is a LowRep comment',
-               High: ''
-           },
-           ReportType: 'PostOther',
-           Feedbacks: {
-               Smokey: 'tp-',
-               Natty: 'tp',
-               Guttenberg: 'tp'
-               'Generic Bot': 'track'
-           },
-           BelongsTo: 'Guttenberg mod-flags',
-           IsDefault: true,
-           SendWhenFlagRaised: false,
-           Downvote: false,
-           Enabled: false
-       }, {
-           Id: 2,
-           DisplayName: 'Not an answer',
-           FlagText: '',
-           Comments: {
-               Low: 'This is a LowRep comment',
-               High: 'This is a HighRep comment'
-           },
-           ReportType: 'AnswerNotAnAnswer',
-           Feedbacks: {
-               Smokey: 'fp-',
-               Natty: 'ne',
-               Guttenberg: 'fp'
-               'Generic Bot': ''
-           },
-           BelongsTo: 'Answer-related',
-           IsDefault: false,
-           SendWhenFlagRaised: true,
-           Downvote: true,
-           Enabled: true
-       }]
+       "FlagTypes": [
+            {
+                "id": 1,
+                "displayName": "Spam",
+                "reportType": "PostSpam",
+                "feedbacks": {
+                    "Smokey": "tpu-",
+                    "Natty": "tp",
+                    "Guttenberg": "",
+                    "Generic Bot": "track"
+                },
+                "sendWhenFlagRaised": true,
+                "belongsTo": "Red flags",
+                "downvote": true,
+                "enabled": true
+            },
+            {
+                "id": 11,
+                "displayName": "Comment",
+                "reportType": "AnswerNotAnAnswer",
+                "comments": {
+                    "low": "low comment text",
+                    "high": "This does not provide an answer to the question. Please write a comment instead."
+                },
+                "feedbacks": {
+                    "Smokey": "naa-",
+                    "Natty": "tp",
+                    "Guttenberg": "",
+                    "Generic Bot": "track"
+                },
+                "sendWhenFlagRaised": false,
+                "belongsTo": "Answer-related",
+                "downvote": true,
+                "enabled": true
+            },
+        ]
 
     Notes:
     - The ReportType can't be changed to/from PostOther for default flags.
@@ -296,7 +291,7 @@ function createFlagTypeDiv(
     h3.innerText = displayName;
 
     const actions = document.createElement('div');
-    actions.classList.add('d-flex', 'gs8', 'ai-center');
+    actions.classList.add('d-flex', 'g8', 'ai-center');
 
     actions.append(...getActionItems(id, enabled, expandableId));
 
@@ -341,7 +336,7 @@ function createCategoryDiv(displayName: string): HTMLDivElement {
 
 function getCommentsModalBody(): HTMLElement {
     const container = document.createElement('div');
-    container.classList.add('d-flex', 'fd-column', 'gs16');
+    container.classList.add('d-flex', 'fd-column', 'g16');
 
     const categories = cachedCategories
         .filter(({ name }) => name)

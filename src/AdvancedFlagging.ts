@@ -32,6 +32,22 @@ import { Buttons } from '@userscripters/stacks-helpers';
 // TODO how about creating a <nav> Config/Comments instead of 2 modals
 // TODO classes to s-...-control in stacks-helpers
 
+// TODO address gs deprecation stacks-helpers
+// TODO address s-check-* change
+
+// <TODO>
+// What's left for 2.0.0:
+// - Add button icons to search
+// - Section to ONLY send feedback
+// - Manipulate the flag dialog:
+//   - send feedback to bots checkbox
+//   - choose the bots to which to send feedback
+//   - choose the feedback to send
+// - Add new category/flagtype
+// - Edit name of flagtype
+// - Choose the rep to low/high comments
+// </TODO>
+
 export type ValueOfReporters = NattyAPI | MetaSmokeAPI | CopyPastorAPI; // Object.values() is broken :(
 type Reporter = CopyPastorAPI | MetaSmokeAPI | NattyAPI | GenericBotAPI;
 
@@ -714,6 +730,10 @@ function Setup(): void {
         setupStyles();
         setupConfiguration();
         setupReview();
+
+        // TODO make more specific & remove jQuery
+        // appends advanced flagging link to new/edited posts
+        $(document).ajaxComplete(() => setupPostPage());
     });
 }
 

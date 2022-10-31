@@ -176,7 +176,7 @@ export class MetaSmokeAPI {
                 MetaSmokeAPI.metasmokeIds[postId] = id;
             });
         } catch (error) {
-            displayToaster('Failed to get Metasmoke URLs.', 'success');
+            displayToaster('Failed to get Metasmoke URLs.', 'danger');
             console.error(error);
         }
     }

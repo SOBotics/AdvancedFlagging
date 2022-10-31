@@ -27,17 +27,6 @@ export interface PostInfo {
     flagged: HTMLElement;
 }
 
-$.event.special.destroyed = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    remove: (o: any): void => {
-        /* eslint-disable-next-line
-               @typescript-eslint/no-unsafe-member-access,
-               @typescript-eslint/no-unsafe-call
-        */
-        o.handler?.();
-    }
-};
-
 const isNatoPage = location.href.includes('/tools/new-answers-old-questions');
 const isFlagsPage = /\/users\/flag-summary\/\d+/.test(location.href);
 
@@ -56,7 +45,8 @@ function getExistingElement(): HTMLElement[] | undefined {
         elements = [];
     }
 
-    return [...elements] as HTMLElement[];
+    return ([...elements] as HTMLElement[])
+        .filter(element => !element.querySelector('.advanced-flagging-link'));
 }
 
 function getPage(): Pages | '' {
@@ -123,6 +113,8 @@ function getPostCreationDate(postNode: Element, postType: PostType): Date {
 function qualifiesForVlq(score: number, created: Date): boolean {
     const dayMillis = 1000 * 60 * 60 * 24;
 
+    // a post can't be flagged as VLQ if it has a positive score
+    // or is more than 1 day old
     return (new Date().valueOf() - created.valueOf()) < dayMillis
         && score <= 0;
 }
@@ -151,60 +143,62 @@ function getActionIcons(): HTMLElement[] {
 }
 
 export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): void {
-    getExistingElement()?.forEach(element => {
-        const postType = getPostType(element);
+    getExistingElement()
+        ?.forEach(element => {
+            const postType = getPostType(element);
 
-        const page = getPage();
-        if (!page) return;
+            const page = getPage();
+            if (!page) return;
 
-        const iconLocation = page === 'Question'
-            ? element.querySelector('.js-post-menu')?.firstElementChild
-            : element.querySelector('a.question-hyperlink, a.answer-hyperlink');
+            const iconLocation = page === 'Question'
+                ? element.querySelector('.js-post-menu')?.firstElementChild
+                : element.querySelector('a.question-hyperlink, a.answer-hyperlink');
 
-        const postId = getPostId(element, postType);
-        const questionTime = getPostCreationDate(element, 'Question');
-        const answerTime = getPostCreationDate(element, 'Answer');
+            const postId = getPostId(element, postType);
+            const questionTime = getPostCreationDate(element, 'Question');
+            const answerTime = getPostCreationDate(element, 'Answer');
 
-        // won't work for Flags, but we don't need that there:
-        const score = Number(element.dataset.score) || 0;
+            // won't work for Flags, but we don't need that there:
+            const score = Number(element.dataset.score) || 0;
 
-        // this won't work for community wiki posts and there's nothing that can be done about it:
-        const reputationEl = [...element.querySelectorAll<HTMLElement>(
-            '.user-info .reputation-score'
-        )].pop();
-        const opReputation = parseAuthorReputation(reputationEl);
+            // this won't work for community wiki posts,
+            // and there's nothing that can be done about it:
+            const reputationEl = [...element.querySelectorAll<HTMLElement>(
+                '.user-info .reputation-score'
+            )].pop();
+            const opReputation = parseAuthorReputation(reputationEl);
 
-        // in Flags page, authorName will be empty, but we aren't interested in it there anyways...
-        const lastNameEl = [...document.querySelectorAll('.user-info .user-details a')].pop();
-        const opName = lastNameEl?.textContent?.trim() || '';
+            // in Flags page, authorName will be empty, but we aren't interested in it there anyways...
+            const lastNameEl = [...document.querySelectorAll('.user-info .user-details a')].pop();
+            const opName = lastNameEl?.textContent?.trim() || '';
 
-        // (yes, even deleted questions have these class...)
-        const deleted = element.classList.contains('deleted-answer');
+            // (yes, even deleted questions have these class...)
+            const deleted = element.classList.contains('deleted-answer');
 
-        const raiseVlq = qualifiesForVlq(score, answerTime);
+            const raiseVlq = qualifiesForVlq(score, answerTime);
 
-        const [done, failed, flagged] = getActionIcons();
+            const [done, failed, flagged] = getActionIcons();
 
-        callback({
-            postType,
-            element,
-            iconLocation: iconLocation as HTMLElement,
-            page,
-            postId,
-            questionTime,
-            answerTime,
-            score,
-            opReputation,
-            opName,
-            deleted,
-            raiseVlq,
+            callback({
+                postType,
+                element,
+                iconLocation: iconLocation as HTMLElement,
+                page,
+                postId,
+                questionTime,
+                answerTime,
+                score,
+                opReputation,
+                opName,
+                deleted,
+                raiseVlq,
 
-            // icons
-            done,
-            failed,
-            flagged,
+                // icons
+                done,
+                failed,
+                flagged,
+            });
         });
-    });
 }
 
 export function getAllPostIds(

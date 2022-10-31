@@ -46,15 +46,15 @@ function resetConfig(): void {
 
 /* The configuration modal has two sections:
    - General (uses cache): general options. They are properties of the main
-     Configuration object and accept Boolean values
-     All options are disabled by default
+     Configuration object and accept Boolean values.
+     All options (except defaultNoDownvote) are disabled by default.
    - Admin: doesn't use cache, but it interacts with it (deletes/amends values)
    Sample cache:
 
    Configuration: {
-       OpenOnHover: true,
-       AnotherOption: false,
-       DoFooBar: true,
+       openOnHover: true,
+       anotherOption: false,
+       doFooBar: true,
        ...
    }
 
@@ -62,6 +62,8 @@ function resetConfig(): void {
    - In General, the checkboxes and the corresponding labels are wrapped
      in a div that has a data-option-id attribute.
      This is the property of the option that will be used in cache.
+   - The user is prompted to set up configuration settings
+     if the Configuration value is not defined in Storage.
 */
 export function buildConfigurationOverlay(): void {
     const modal = Modals.makeStacksModal(
@@ -209,7 +211,7 @@ function getGeneralConfigItems(): HTMLElement {
 function getAdminConfigItems(): HTMLElement {
     const section = document.createElement('fieldset');
     section.id = 'advanced-flagging-configuration-section-admin';
-    section.classList.add('d-flex', 'gs8', 'gsy', 'fd-column', 'fs-body2');
+    section.classList.add('d-flex', 'g8', 'fd-column', 'fs-body2');
 
     const header = document.createElement('h2');
     header.innerText = 'Admin';

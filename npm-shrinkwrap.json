@@ -18,7 +18,7 @@
         "@typescript-eslint/parser": "5.42.1",
         "@userscripters/stackexchange-global-types": "^2.4.2",
         "eslint": "8.27.0",
-        "ts-loader": "9.4.1",
+        "ts-loader": "9.4.2",
         "typescript": "4.8.4",
         "webpack": "5.75.0",
         "webpack-cli": "4.10.0"
@@ -2506,9 +2506,9 @@
       }
     },
     "node_modules/ts-loader": {
-      "version": "9.4.1",
-      "resolved": "https://registry.npmjs.org/ts-loader/-/ts-loader-9.4.1.tgz",
-      "integrity": "sha512-384TYAqGs70rn9F0VBnh6BPTfhga7yFNdC5gXbQpDrBj9/KsT4iRkGqKXhziofHOlE2j6YEaiTYVGKKvPhGWvw==",
+      "version": "9.4.2",
+      "resolved": "https://registry.npmjs.org/ts-loader/-/ts-loader-9.4.2.tgz",
+      "integrity": "sha512-OmlC4WVmFv5I0PpaxYb+qGeGOdm5giHU7HwDDUjw59emP2UYMHy9fFSDcYgSNoH8sXcj4hGCSEhlDZ9ULeDraA==",
       "dev": true,
       "dependencies": {
         "chalk": "^4.1.0",

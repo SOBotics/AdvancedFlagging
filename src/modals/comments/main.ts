@@ -223,13 +223,11 @@ function getActionItems(
         `advanced-flagging-toggle-flagtype-${flagId}`,
         { text: '' },
         enabled
-    ).querySelector('.s-toggle-switch') as HTMLDivElement;
-
-    const input = toggle.firstElementChild as HTMLInputElement;
+    ).querySelector('.s-toggle-switch') as HTMLInputElement;
 
     // toggle the flagtype on change
-    input.addEventListener('change', () => {
-        const wrapper = input.closest<HTMLElement>('.s-card');
+    toggle.addEventListener('change', () => {
+        const wrapper = toggle.closest<HTMLElement>('.s-card');
         const flagId = Number(wrapper?.dataset.flagId);
 
         const current = getFlagTypeFromFlagId(flagId);
@@ -242,14 +240,14 @@ function getActionItems(
 
         // update the Enabled property depending on the switch
         // and store the updated object in cache
-        current.enabled = input.checked;
+        current.enabled = toggle.checked;
         updateFlagTypes();
 
         // update the card's style
         wrapper?.classList.toggle('s-card__muted');
 
         displayStacksToast(
-            `Successfully ${input.checked ? 'en' : 'dis'}abled flag type`,
+            `Successfully ${toggle.checked ? 'en' : 'dis'}abled flag type`,
             'success',
             true
         );

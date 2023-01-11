@@ -92,6 +92,7 @@ function setupStyles(): void {
 #advanced-flagging-comments-modal > .s-modal--dialog,
 #advanced-flagging-configuration-modal > .s-modal--dialog {
     max-width: 90% !important;
+    max-height: 95% !important;
 }`);
 
 }

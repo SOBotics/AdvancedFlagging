@@ -80,6 +80,11 @@ function setupStyles(): void {
     outline: none;
 }
 
+.advanced-flagging-link {
+    outline-style: none !important;
+    outline: none !important;
+}
+
 .advanced-flagging-link li > a {
     padding-block: 4px;
 }

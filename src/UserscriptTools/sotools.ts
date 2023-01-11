@@ -169,7 +169,7 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): vo
             const opReputation = parseAuthorReputation(reputationEl);
 
             // in Flags page, authorName will be empty, but we aren't interested in it there anyways...
-            const lastNameEl = [...document.querySelectorAll('.user-info .user-details a')].pop();
+            const lastNameEl = [...element.querySelectorAll('.user-info .user-details a')].pop();
             const opName = lastNameEl?.textContent?.trim() || '';
 
             // (yes, even deleted questions have these class...)

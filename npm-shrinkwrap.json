@@ -1,12 +1,12 @@
 {
   "name": "advancedflagging",
-  "version": "1.3.9",
+  "version": "1.3.10",
   "lockfileVersion": 3,
   "requires": true,
   "packages": {
     "": {
       "name": "advancedflagging",
-      "version": "1.3.9",
+      "version": "1.3.10",
       "license": "ISC",
       "dependencies": {
         "@userscripters/stacks-helpers": "1.0.0-beta.11"

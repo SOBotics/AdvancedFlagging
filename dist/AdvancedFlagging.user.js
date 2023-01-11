@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.3.9
+// @version      1.3.10
 // @author       Robert Rudman
 // @contributor  double-beep
 // @match        *://*.stackexchange.com/*
@@ -86,6 +86,7 @@ function setupStyles() {
 #advanced-flagging-comments-modal > .s-modal--dialog,
 #advanced-flagging-configuration-modal > .s-modal--dialog {
     max-width: 90% !important;
+    max-height: 95% !important;
 }`);
 }
 const popupWrapper = document.createElement('div');
@@ -524,7 +525,7 @@ function parseQuestionsAndAnswers(callback) {
         const score = Number(element.dataset.score) || 0;
         const reputationEl = [...element.querySelectorAll('.user-info .reputation-score')].pop();
         const opReputation = parseAuthorReputation(reputationEl);
-        const lastNameEl = [...document.querySelectorAll('.user-info .user-details a')].pop();
+        const lastNameEl = [...element.querySelectorAll('.user-info .user-details a')].pop();
         const opName = ((_b = lastNameEl === null || lastNameEl === void 0 ? void 0 : lastNameEl.textContent) === null || _b === void 0 ? void 0 : _b.trim()) || '';
         const deleted = element.classList.contains('deleted-answer');
         const raiseVlq = qualifiesForVlq(score, answerTime);

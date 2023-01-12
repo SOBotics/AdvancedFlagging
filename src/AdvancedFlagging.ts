@@ -615,4 +615,10 @@ function Setup(): void {
     });
 }
 
-Setup();
+// run Setup() if/when the document has focus
+// to prevent load on MS
+if (document.hasFocus()) {
+    Setup();
+} else {
+    window.addEventListener('focus', () => Setup(), { once: true });
+}

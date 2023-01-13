@@ -1,8 +1,13 @@
+import { getIconsFromReporters, ReporterInformation } from '../AdvancedFlagging';
 import {
     isQuestionPage,
     getSvg,
-    PostType
+    PostType,
+    isStackOverflow
 } from '../shared';
+import { CopyPastorAPI } from './CopyPastorAPI';
+import { MetaSmokeAPI } from './MetaSmokeAPI';
+import { NattyAPI } from './NattyApi';
 
 type Pages = 'Question' | 'NATO' | 'Flags';
 
@@ -10,12 +15,10 @@ export interface PostInfo {
     postType: PostType;
     element: Element;
     iconLocation: Element;
-    page: Pages;
     postId: number;
     questionTime: Date; // not interested in that value on the Flags page
     answerTime: Date;
-    score: number | null;
-    opReputation: number | null; // null in the Flags page
+    opReputation: number;
     opName: string;
     deleted: boolean;
     raiseVlq: boolean;
@@ -27,11 +30,13 @@ export interface PostInfo {
     flagged: HTMLElement;
 }
 
-const isNatoPage = location.href.includes('/tools/new-answers-old-questions');
+const currentUrl = new URL(location.href);
+const isNatoPage = currentUrl.pathname.startsWith('/tools/new-answers-old-questions');
 const isFlagsPage = /\/users\/flag-summary\/\d+/.test(location.href);
+const isSearch = currentUrl.pathname.startsWith('/search');
 
-function getExistingElement(): HTMLElement[] | undefined {
-    if (!isQuestionPage && !isNatoPage && !isFlagsPage) return;
+function getExistingElements(): HTMLElement[] | undefined {
+    if (!isQuestionPage && !isNatoPage && !isFlagsPage && !isSearch) return;
 
     let elements: NodeListOf<Element> | HTMLElement[];
 
@@ -41,15 +46,17 @@ function getExistingElement(): HTMLElement[] | undefined {
         elements = document.querySelectorAll('.flagged-post');
     } else if (isQuestionPage) {
         elements = document.querySelectorAll('.question, .answer');
+    } else if (isSearch) {
+        elements = document.querySelectorAll('.js-search-results [id^="answer-id-"]');
     } else {
         elements = [];
     }
 
     return ([...elements] as HTMLElement[])
-        .filter(element => !element.querySelector('.advanced-flagging-link'));
+        .filter(element => !element.querySelector('.advanced-flagging-link, .advanced-flagging-icon'));
 }
 
-function getPage(): Pages | '' {
+export function getPage(): Pages | '' {
     if (isFlagsPage) return 'Flags';
     else if (isNatoPage) return 'NATO';
     else if (isQuestionPage) return 'Question';
@@ -68,18 +75,43 @@ function getPostId(postNode: HTMLElement, postType: PostType): number {
         '.answer-hyperlink, .question-hyperlink'
     )?.href;
 
-    const postIdString =
+    const postId =
         (
             // questions page: get value of data-questionid/data-answerid
             postNode.dataset.questionid
          || postNode.dataset.answerid
         ) || (
-            postType === 'Answer'// flags/NATO page: parse the post URL
-                ? href?.split('#')[1]
+            postType === 'Answer'// flags/NATO/search page: parse the post URL
+                ? new URL(href || '').pathname.split('/').pop()
                 : href?.split('/')[4]
         );
 
-    return Number(postIdString);
+    return Number(postId);
+}
+
+export function addIcons(): void {
+    getExistingElements()
+        ?.forEach(element => {
+            const iconLocation = element.querySelector('a.question-hyperlink, a.answer-hyperlink');
+            const postType = getPostType(element);
+            const postId = getPostId(element, postType);
+
+            // we're setting up the icons for non-question pages
+            // we don't care if the dates are correct or the posts are deleted
+            // just if they have been reported by a bot
+            const reporters: ReporterInformation = {
+                Smokey: new MetaSmokeAPI(postId, postType, false)
+            };
+
+            const date = new Date();
+            if (postType === 'Answer' && isStackOverflow) {
+                reporters.Natty = new NattyAPI(postId, date, date, false);
+                reporters.Guttenberg = new CopyPastorAPI(postId);
+            }
+
+            const icons = getIconsFromReporters(reporters);
+            iconLocation?.append(...icons);
+        });
 }
 
 function parseAuthorReputation(reputationDiv?: HTMLElement): number {
@@ -143,16 +175,14 @@ function getActionIcons(): HTMLElement[] {
 }
 
 export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): void {
-    getExistingElement()
+    getExistingElements()
         ?.forEach(element => {
             const postType = getPostType(element);
 
             const page = getPage();
             if (!page) return;
 
-            const iconLocation = page === 'Question'
-                ? element.querySelector('.js-post-menu')?.firstElementChild
-                : element.querySelector('a.question-hyperlink, a.answer-hyperlink');
+            const iconLocation = element.querySelector('.js-post-menu')?.firstElementChild;
 
             const postId = getPostId(element, postType);
             const questionTime = getPostCreationDate(element, 'Question');
@@ -183,11 +213,9 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): vo
                 postType,
                 element,
                 iconLocation: iconLocation as HTMLElement,
-                page,
                 postId,
                 questionTime,
                 answerTime,
-                score,
                 opReputation,
                 opName,
                 deleted,
@@ -205,7 +233,7 @@ export function getAllPostIds(
     includeQuestion: boolean,
     urlForm: boolean
 ): (number | string)[] {
-    const elementToUse = getExistingElement();
+    const elementToUse = getExistingElements();
     if (!elementToUse) return [];
 
     return elementToUse.map(item => {

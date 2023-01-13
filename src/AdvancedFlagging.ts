@@ -1,5 +1,5 @@
 import { Flags } from './FlagTypes';
-import { parseQuestionsAndAnswers, PostInfo } from './UserscriptTools/sotools';
+import { addIcons, getPage, parseQuestionsAndAnswers, PostInfo } from './UserscriptTools/sotools';
 import { setupConfiguration } from './Configuration';
 import { makeMenu } from './popover';
 
@@ -32,7 +32,7 @@ import { Buttons } from '@userscripters/stacks-helpers';
 
 // <TODO>
 // What's left for 2.0.0:
-// - Add button icons to search
+// - Fix review
 // - Section to ONLY send feedback
 // - Manipulate the flag dialog:
 //   - send feedback to bots checkbox
@@ -516,11 +516,32 @@ function setFlagWatch(
     });
 }
 
+export function getIconsFromReporters(
+    reporters: ReporterInformation
+): HTMLElement[] {
+    const icons = (Object.values(reporters) as ValueOfReporters[])
+        .map(reporter => reporter.icon)
+        .filter(Boolean) as HTMLElement[];
+    icons.forEach(icon => icon.classList.add('advanced-flagging-icon'));
+
+    return icons;
+}
+
 let autoFlagging = false;
 function setupPostPage(): void {
     // check if the link + popover should be set up
     const linkDisabled = cachedConfiguration[Cached.Configuration.linkDisabled];
     if (linkDisabled || isLqpReviewPage) return; // do not add the buttons on review
+
+    // split setup into two parts:
+    // i)  append the icons to iconLocation
+    // ii) add link & set up reporters on
+
+    if (getPage() !== 'Question') {
+        addIcons();
+
+        return;
+    }
 
     parseQuestionsAndAnswers(post => {
         const {
@@ -528,15 +549,12 @@ function setupPostPage(): void {
             postType,
             questionTime,
             answerTime,
-            page,
             iconLocation,
-            score,
             deleted,
             done, failed, flagged
         } = post;
 
-        // complicated process of setting up reporters:
-        // --------------------------------------------
+        // set up reporters
 
         // every site & post type
         const reporters: ReporterInformation = {
@@ -549,29 +567,16 @@ function setupPostPage(): void {
             reporters.Guttenberg = new CopyPastorAPI(postId);
         }
 
-        const icons = (Object.values(reporters) as ValueOfReporters[])
-            .map(reporter => reporter.icon)
-            .filter(Boolean) as HTMLElement[];
-
-        // if we aren't in a question page, then we just insert the icons
-        // should be done before Generic bot is set up
-        // because it doesn't have an .icon
-        if (page !== 'Question') {
-            iconLocation.after(...icons);
-        }
+        const icons = getIconsFromReporters(reporters);
 
         // Guttenberg can only track Stack Overflow posts
         if (isStackOverflow) {
             reporters['Generic Bot'] = new GenericBotAPI(postId);
         }
 
-        if (score === null) return; // can't use !score, because score might be 0
-
         setFlagWatch(post, reporters);
 
-        if (page !== 'Question') return;
-
-        // Now append the advanced flagging dialog
+        // Now append the advanced flagging dropdown
         const advancedFlaggingLink = Buttons.makeStacksButton(
             `advanced-flagging-link-${postId}`,
             'Advanced Flagging',

@@ -121,7 +121,7 @@ export function buildConfigurationOverlay(): void {
 
     document.body.append(modal);
 
-    const resetButton = document.querySelector('.s-btn__danger') as Element;
+    const resetButton = modal.querySelector('.s-btn__danger') as Element;
 
     attachPopover(
         resetButton,

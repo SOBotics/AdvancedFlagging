@@ -42,7 +42,7 @@ export class Store {
 
     public static set<T>(cacheKey: string, item: T, expiresAt?: Date): void {
         const jsonObject = expiresAt
-            ? { Expires: expiresAt, Data: item }
+            ? { Expires: expiresAt.getTime(), Data: item }
             : item;
 
         GM_setValue(cacheKey, jsonObject);

@@ -186,7 +186,7 @@ function getGeneralConfigItems(): HTMLElement {
             configValue: getCachedConfigBotKey('Generic Bot')
         },
         {
-            text: 'Enable debug mode',
+            text: 'Enable dry-run mode',
             configValue: Cached.Configuration.debug
         }
     ].map(({ text, configValue, tooltipText }) => {

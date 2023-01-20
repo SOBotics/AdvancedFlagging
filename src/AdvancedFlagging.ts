@@ -33,12 +33,12 @@ import { Buttons } from '@userscripters/stacks-helpers';
 
 // <TODO>
 // What's left for 2.0.0:
-// - Fix review
 // - Section to ONLY send feedback
 // - Manipulate the flag dialog:
 //   - send feedback to bots checkbox
 //   - choose the bots to which to send feedback
 //   - choose the feedback to send
+//   - also the recomment deletion/Delete popup
 // - Add new category/flagtype
 // - Edit name of flagtype
 // - Choose the rep to low/high comments

@@ -124,23 +124,23 @@ export function setupConfiguration(): void {
         Cached.Configuration.addAuthorName
     );
 
-    if (propertyDoesNotExist) {
-        displayStacksToast(
-            'Please set up AdvancedFlagging before continuing.',
-            'info',
-            true
-        );
+    if (!propertyDoesNotExist) return;
 
-        setTimeout(() => {
-            Stacks.showModal(configModal);
+    displayStacksToast(
+        'Please set up AdvancedFlagging before continuing.',
+        'info',
+        true
+    );
 
-            // tick "uncheck downvote by default" option
-            // request by Scratte, Shree
-            const checkbox = document.querySelector(
-                '#advanced-flagging-defaultNoDownvote'
-            ) as HTMLInputElement;
+    setTimeout(() => {
+        Stacks.showModal(configModal);
 
-            checkbox.checked = true;
-        });
-    }
+        // tick "uncheck downvote by default" option
+        // request by Scratte, Shree
+        const checkbox = document.querySelector(
+            '#advanced-flagging-defaultNoDownvote'
+        ) as HTMLInputElement;
+
+        checkbox.checked = true;
+    });
 }

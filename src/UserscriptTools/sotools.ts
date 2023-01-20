@@ -223,7 +223,7 @@ export function parseQuestionsAndAnswers(callback: (post: PostInfo) => void): vo
             const lastNameEl = [...element.querySelectorAll('.user-info .user-details a')].pop();
             const opName = lastNameEl?.textContent?.trim() || '';
 
-            // (yes, even deleted questions have these class...)
+            // (yes, even deleted questions have this class...)
             const deleted = element.classList.contains('deleted-answer');
 
             const raiseVlq = qualifiesForVlq(score, answerTime);

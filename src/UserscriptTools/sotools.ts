@@ -6,6 +6,7 @@ import {
     isStackOverflow
 } from '../shared';
 import { CopyPastorAPI } from './CopyPastorAPI';
+import { GenericBotAPI } from './GenericBotAPI';
 import { MetaSmokeAPI } from './MetaSmokeAPI';
 import { NattyAPI } from './NattyApi';
 
@@ -89,28 +90,48 @@ function getPostId(postNode: HTMLElement, postType: PostType): number {
     return Number(postId);
 }
 
+export function addIconToPost(
+    element: HTMLElement,
+    locationSelector: string,
+    postType: PostType,
+    postId: number,
+    qDate?: Date,
+    aDate?: Date,
+): ReporterInformation {
+    const iconLocation = element.querySelector(locationSelector);
+
+    // we're setting up the icons for non-question pages
+    // we don't care if the dates are correct or the posts are deleted
+    // just if they have been reported by a bot
+    const reporters: ReporterInformation = {
+        Smokey: new MetaSmokeAPI(postId, postType, false)
+    };
+
+    const date = new Date();
+    if (postType === 'Answer' && isStackOverflow) {
+        reporters.Natty = new NattyAPI(postId, qDate || date, aDate || date, false);
+        reporters.Guttenberg = new CopyPastorAPI(postId);
+        // doesn't add an icon, should however be returned
+        reporters['Generic Bot'] = new GenericBotAPI(postId);
+    }
+
+    const icons = getIconsFromReporters(reporters);
+    iconLocation?.append(...icons);
+
+    return reporters;
+}
+
 export function addIcons(): void {
     getExistingElements()
         ?.forEach(element => {
-            const iconLocation = element.querySelector('a.question-hyperlink, a.answer-hyperlink');
             const postType = getPostType(element);
-            const postId = getPostId(element, postType);
 
-            // we're setting up the icons for non-question pages
-            // we don't care if the dates are correct or the posts are deleted
-            // just if they have been reported by a bot
-            const reporters: ReporterInformation = {
-                Smokey: new MetaSmokeAPI(postId, postType, false)
-            };
-
-            const date = new Date();
-            if (postType === 'Answer' && isStackOverflow) {
-                reporters.Natty = new NattyAPI(postId, date, date, false);
-                reporters.Guttenberg = new CopyPastorAPI(postId);
-            }
-
-            const icons = getIconsFromReporters(reporters);
-            iconLocation?.append(...icons);
+            addIconToPost(
+                element,
+                'a.question-hyperlink, a.answer-hyperlink',
+                postType,
+                getPostId(element, postType)
+            );
         });
 }
 
@@ -131,7 +152,7 @@ function parseAuthorReputation(reputationDiv?: HTMLElement): number {
     }
 }
 
-function getPostCreationDate(postNode: Element, postType: PostType): Date {
+export function getPostCreationDate(postNode: Element, postType: PostType): Date {
     const post = postType === 'Question'
         ? document.querySelector('.question')
         : postNode;

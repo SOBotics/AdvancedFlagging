@@ -70,7 +70,7 @@ export class CopyPastorAPI {
         await this.storeReportedPosts(postUrls as string[]);
     }
 
-    private static storeReportedPosts(postUrls: string[]): Promise<void> {
+    public static storeReportedPosts(postUrls: string[]): Promise<void> {
         const url = `${copypastorServer}/posts/findTarget?url=${postUrls.join(',')}`;
 
         return new Promise<void>((resolve, reject) => {

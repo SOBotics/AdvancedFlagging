@@ -146,11 +146,11 @@ export class MetaSmokeAPI {
         return await this.showMSTokenPopupAndGet();
     }
 
-    public static async queryMetaSmokeInternal(): Promise<void> {
+    public static async queryMetaSmokeInternal(urls?: string[]): Promise<void> {
         if (MetaSmokeAPI.isDisabled) return;
 
         // postIds as URLs, including questions
-        const urlString = getAllPostIds(true, true).join(',');
+        const urlString = urls || getAllPostIds(true, true).join(',');
 
         // don't make the request if there aren't URLs
         if (!urlString) return;

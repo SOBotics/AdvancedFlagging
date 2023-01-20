@@ -41,8 +41,8 @@ export class NattyAPI {
         this.icon = this.getIcon();
     }
 
-    public static getAllNattyIds(): Promise<void> {
-        const postIds = getAllPostIds(false, false).join(',');
+    public static getAllNattyIds(ids?: number[]): Promise<void> {
+        const postIds = (ids || getAllPostIds(false, false)).join(',');
         if (!isStackOverflow || !postIds) return Promise.resolve();
 
         return new Promise<void>((resolve, reject) => {

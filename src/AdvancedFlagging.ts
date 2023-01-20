@@ -15,6 +15,7 @@ import {
     FlagNames,
     getFormDataFromObject,
     getHumanFromDisplayName,
+    interceptXhr,
     isLqpReviewPage,
     isQuestionPage,
     isStackOverflow,
@@ -537,7 +538,8 @@ function setupPostPage(): void {
     // i)  append the icons to iconLocation
     // ii) add link & set up reporters on
 
-    if (getPage() !== 'Question') {
+    const page = getPage();
+    if (page && page !== 'Question') {
         addIcons();
 
         return;
@@ -601,6 +603,11 @@ function setupPostPage(): void {
     });
 }
 
+// used in review.ts to determine if bots have been set up
+// the XHR callback must be added, but the script should wait
+// for Setup() to complete before appending the icons to the DOM
+export let isDone = false;
+
 function Setup(): void {
     // Collect all ids
     void Promise.all([
@@ -612,14 +619,17 @@ function Setup(): void {
         setupPostPage();
         setupStyles();
         setupConfiguration();
-        setupReview();
 
         // TODO make more specific & remove jQuery
         // appends advanced flagging link to new/edited posts
         $(document).ajaxComplete(() => setupPostPage());
+
+        isDone = true;
     });
 }
 
+setupReview();
+interceptXhr();
 // run Setup() if/when the document has focus
 // to prevent load on MS
 if (document.hasFocus()) {

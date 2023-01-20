@@ -171,14 +171,13 @@ export async function delay(milliseconds: number): Promise<void> {
 }
 
 // Credits: https://github.com/SOBotics/Userscripts/blob/master/Natty/NattyReporter.user.js#L101
-let initialized = false;
 const callbacks: ((request: XMLHttpRequest) => void)[] = [];
 
 export function addXHRListener(callback: (request: XMLHttpRequest) => void): void {
     callbacks.push(callback);
+}
 
-    if (initialized) return;
-
+export function interceptXhr(): void {
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const open = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function(): void {
@@ -189,8 +188,6 @@ export function addXHRListener(callback: (request: XMLHttpRequest) => void): voi
         // eslint-disable-next-line prefer-rest-params
         open.apply(this, arguments);
     };
-
-    initialized = true;
 }
 
 // cache-related helpers/values

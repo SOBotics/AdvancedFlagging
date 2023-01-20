@@ -39,7 +39,8 @@ function saveReportType(
     const newReportType = select?.value as Flags;
 
     // can't select to flag for mod attention
-    if (newReportType === 'PostOther') {
+    // unless it's disabled, meaning it's a Guttenberg flag type
+    if (newReportType === 'PostOther' && !select?.disabled) {
         displayStacksToast(
             'This type of flag cannot be raised with this option',
             'danger',

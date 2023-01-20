@@ -355,9 +355,10 @@ function getRadiosForBot(
     });
     // add data-feedback attribute
     fieldset.querySelectorAll('input').forEach(radio => {
-        const [feedback] = radio.id.split('-').slice(-2, -1);
+        const label = radio.nextElementSibling as HTMLElement;
+        const feedback = label.innerText || '';
 
-        radio.dataset.feedback = feedback;
+        radio.dataset.feedback = feedback === '(none)' ? '' : feedback;
     });
 
     const description = document.createElement('div');

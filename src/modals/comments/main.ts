@@ -24,6 +24,7 @@ import {
     Buttons,
     Modals,
     Toggle,
+    Input,
 } from '@userscripters/stacks-helpers';
 
 /* In this case, we are caching a FlagType, but removing unnecessary properties.
@@ -113,12 +114,38 @@ function getExpandableContent(flagType: CachedFlag): HTMLElement[] {
 
 function expandableToggled(edit: HTMLElement): void {
     const save = edit.previousElementSibling;
-    const expandable = edit
-        .closest('.s-card') // get the parent
-        ?.querySelector('.s-expandable'); // then the expandable
-    if (!save || !expandable) return;
+    const card = edit.closest<HTMLElement>('.s-card');
+    const expandable = card?.querySelector('.s-expandable');
+
+    if (!card || !save || !expandable) return;
 
     const isExpanded = expandable.classList.contains('is-expanded');
+
+    // convert name to input (or input to name)
+    const flagId = Number(card.dataset.flagId);
+    card.firstElementChild?.classList.toggle('jc-space-between');
+
+    if (isExpanded) {
+        const name = card.querySelector('h3');
+        const input = Input.makeStacksInput(
+            `advanced-flagging-flag-name-${flagId}`,
+            {
+                classes: [ 's-input__md' ],
+                value: name?.innerText || ''
+            }
+        );
+
+        name?.replaceWith(input);
+    } else {
+        const input = card.querySelector<HTMLInputElement>(
+            `#advanced-flagging-flag-name-${flagId}`
+        );
+        const h3 = getH3(input?.value || '');
+
+        input
+            ?.parentElement // input container
+            ?.replaceWith(h3);
+    }
 
     const pencil = getIconPath('iconPencil');
     const eyeOff = getIconPath('iconEyeOff');
@@ -256,6 +283,14 @@ function getActionItems(
     return [save, edit, remove, toggle];
 }
 
+function getH3(displayName: string): HTMLHeadElement {
+    const h3 = document.createElement('h3');
+    h3.classList.add('mb0', 'mr-auto', 'fs-body3');
+    h3.innerText = displayName;
+
+    return h3;
+}
+
 function createFlagTypeDiv(
     flagType: CachedFlag
 ): HTMLDivElement {
@@ -284,9 +319,7 @@ function createFlagTypeDiv(
     const content = document.createElement('div');
     content.classList.add('d-flex', 'ai-center', 'sm:fd-column', 'sm:ai-start');
 
-    const h3 = document.createElement('h3');
-    h3.classList.add('mb0', 'mr-auto', 'fs-body3');
-    h3.innerText = displayName;
+    const h3 = getH3(displayName);
 
     const actions = document.createElement('div');
     actions.classList.add('d-flex', 'g8', 'ai-center');

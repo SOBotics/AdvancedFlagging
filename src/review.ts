@@ -96,9 +96,10 @@ async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
             const flagType = cachedFlagTypes
                 // send 'Looks Fine' feedback:
                 // get the respective flagType, call handleFlag()
-                .find(({ displayName }) => displayName === 'Looks Fine');
+                .find(({ id }) => id === 15);
 
-            if (!cached || !flagType) return; // something went wrong
+            // in case "looks fine" flagtype is deleted
+            if (!cached || !flagType) return;
 
             void handleFlag(flagType, cached.reporters);
         });
@@ -126,7 +127,7 @@ export function setupReview(): void {
         if (!cached) return;
 
         const flagType = cachedFlagTypes
-            .find(({ displayName }) => displayName === 'Not an answer'); // the NAA cached flag type
+            .find(({ id }) => id === 7); // the "Not an answer" flag type
         if (!flagType) return; // something went wrong
 
         void handleFlag(flagType, cached.reporters);

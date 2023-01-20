@@ -380,13 +380,14 @@ function getReportLinks(
     // based on their BelongsTo, to .FlagTypes
     cachedFlagTypes
         // exclude disabled and non-SO flag types
-        .filter(({ reportType, displayName, belongsTo, enabled }) => {
+        .filter(({ reportType, id, belongsTo, enabled }) => {
             // only Guttenberg reports (can) have ReportType === 'PostOther' (for now)
             const isGuttenbergItem = reportType === FlagNames.ModFlag;
 
             const showGutReport = Boolean(copypastorId) // a CopyPastor id must exist
                 // https://github.com/SOBotics/AdvancedFlagging/issues/16
-                && (displayName === 'Duplicate Answer' ? repost : !repost);
+                // id === 4 => Duplicate Answer
+                && (id === 4 ? repost : !repost);
 
             // show the red flags and general items on every site,
             // restrict the others to Stack Overflow

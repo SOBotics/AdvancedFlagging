@@ -8,6 +8,15 @@ import {
 } from '../../shared';
 import { Flags } from '../../FlagTypes';
 
+function saveName(
+    card: HTMLElement,
+    flagType: CachedFlag
+): void {
+    const input = card.querySelector<HTMLInputElement>('.s-input__md');
+
+    flagType.displayName = input?.value || '';
+}
+
 function saveTextareaContent(
     expandable: Element,
     flagType: CachedFlag
@@ -143,6 +152,11 @@ export function submitChanges(element: HTMLElement): void {
 
         return;
     }
+
+    // Flag name
+    saveName(wrapper, flagType);
+
+    // Row #1: nothing to save (comment toggle + checkbox)
 
     // Row #2
     saveTextareaContent(expandable, flagType);

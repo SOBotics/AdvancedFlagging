@@ -42,6 +42,7 @@ import { Buttons } from '@userscripters/stacks-helpers';
 // - Add new category/flagtype
 // - Edit name of flagtype
 // - Choose the rep to low/high comments
+// - Show if any feedbacks have already been sent to a bot
 // </TODO>
 
 export type ValueOfReporters = NattyAPI | MetaSmokeAPI | CopyPastorAPI; // Object.values() is broken :(

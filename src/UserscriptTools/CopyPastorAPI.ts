@@ -86,10 +86,11 @@ export class CopyPastorAPI {
                         const {
                             post_id: postId,
                             target_url: targetUrl,
+                            original_url: originalUrl,
                             repost,
                         } = item;
 
-                        const id = /\d+/.exec(targetUrl)?.[0];
+                        const id = /\d+/.exec(originalUrl)?.[0];
                         const sitePostId = Number(id);
 
                         this.copypastorIds[sitePostId] = {

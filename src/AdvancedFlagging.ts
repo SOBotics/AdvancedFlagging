@@ -38,9 +38,8 @@ import { Buttons } from '@userscripters/stacks-helpers';
 //   - send feedback to bots checkbox
 //   - choose the bots to which to send feedback
 //   - choose the feedback to send
-//   - also the recomment deletion/Delete popup
+//   - also the recommend deletion/Delete popup
 // - Add new category/flagtype
-// - Edit name of flagtype
 // - Choose the rep to low/high comments
 // - Show if any feedbacks have already been sent to a bot
 // </TODO>

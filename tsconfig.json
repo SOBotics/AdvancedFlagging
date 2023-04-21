@@ -5,14 +5,17 @@
     "strict": true,
     "strictBindCallApply": false,
     "removeComments": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
     "module": "commonjs",
-    "target": "es2019",
+    "target": "esnext",
     "lib": [ "esnext", "DOM", "DOM.Iterable" ],
     "types": [
       "@userscripters/stackexchange-global-types",
       "@userscripters/stacks-helpers",
       "jquery",
-      "tampermonkey"
+      "tampermonkey",
+      "node"
     ]
   }
 }

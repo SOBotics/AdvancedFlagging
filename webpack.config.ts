@@ -1,11 +1,11 @@
-const path = require('path');
-const webpack = require('webpack'); // for the banner plugin
-const userscriptInfo = require('./package.json');
+import path from 'path';
+import { BannerPlugin, Configuration } from 'webpack'; // for the banner plugin
+import userscriptInfo from './package.json';
 
 const svgsNeeded = ['Checkmark', 'Clear', 'EyeOff', 'Flag', 'Pencil', 'Trash'];
 const svgsUrls = svgsNeeded.map(svgName => `// @resource     icon${svgName} https://cdn.sstatic.net/Img/stacks-icons/${svgName}.svg`);
 
-module.exports = {
+const config: Configuration = {
     entry: './src/AdvancedFlagging.ts',
     mode: 'none',
     target: 'node',
@@ -17,7 +17,7 @@ module.exports = {
         extensions: ['.webpack.js', '.web.js', '.ts', '.tsx', '.js']
     },
     plugins: [
-        new webpack.BannerPlugin({
+        new BannerPlugin({
             raw: true,
             banner: `// ==UserScript==
                      // @name         Advanced Flagging
@@ -64,3 +64,5 @@ module.exports = {
         ]
     }
 };
+
+export default config;

@@ -199,7 +199,7 @@ async function flagPost(
 
     if (tooFast.test(responseText)) { // flagging posts too quickly
         const rlCount = /\d+/.exec(responseText)?.[0] || 0;
-        const pluralS = rlCount > 1 ? 's' : '';
+        const pluralS = Number(rlCount) > 1 ? 's' : '';
         const message = `${failedToFlag}rate-limited for ${rlCount} second${pluralS}`;
 
         displayErrorFlagged(message, responseText);

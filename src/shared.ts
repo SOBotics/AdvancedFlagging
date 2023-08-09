@@ -1,6 +1,13 @@
 import { Store } from './UserscriptTools/Store';
 import { Flags, FlagCategory, HumanFlags, FlagType } from './FlagTypes';
 
+type BasicPlacement = 'auto' | 'top' | 'right' | 'bottom' | 'left';
+// Minimum TypeScript Version: 4.1
+type AllPlacements =
+    | BasicPlacement
+    | `${BasicPlacement}-start`
+    | `${BasicPlacement}-end`;
+
 export type StacksToastState = 'success' | 'danger' | 'info' | 'warning';
 export type PostType = 'Question' | 'Answer';
 
@@ -126,7 +133,7 @@ export function displayStacksToast(
 export function attachPopover(
     element: Element,
     text: string,
-    position: Stacks.TooltipOptions['placement'] = 'bottom-start'
+    position: AllPlacements = 'bottom-start'
 ): void {
     Stacks.setTooltipText(
         element,

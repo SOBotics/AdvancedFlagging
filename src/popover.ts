@@ -216,7 +216,8 @@ async function handleReportLinkClick(
             flag,
             downvote,
             flagText,
-            comment
+            comment,
+            reporters.Guttenberg?.targetUrl
         );
     }
 
@@ -381,8 +382,8 @@ function getReportLinks(
     cachedFlagTypes
         // exclude disabled and non-SO flag types
         .filter(({ reportType, id, belongsTo, enabled }) => {
-            // only Guttenberg reports (can) have ReportType === 'PostOther' (for now)
-            const isGuttenbergItem = reportType === FlagNames.ModFlag;
+            // only Guttenberg reports (can) have ReportType === 'PlagiarizedContent'
+            const isGuttenbergItem = reportType === FlagNames.Plagiarism;
 
             const showGutReport = Boolean(copypastorId) // a CopyPastor id must exist
                 // https://github.com/SOBotics/AdvancedFlagging/issues/16

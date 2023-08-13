@@ -4,9 +4,10 @@ import {
     BotNames,
     AllFeedbacks,
     possibleFeedbacks,
+    FlagNames,
 } from '../../shared';
 import { flagCategories } from '../../FlagTypes';
-import { wrapInFlexItem, isModOrNoFlag } from '../../Configuration';
+import { wrapInFlexItem, isPlagiarismOrNoFlag } from '../../Configuration';
 import { toggleHideIfNeeded } from './main';
 
 import {
@@ -257,7 +258,7 @@ function getFlagSelect(
     const select = Select.makeStacksSelect(
         `advanced-flagging-select-flag-${id}`,
         options,
-        { disabled: reportType === 'PostOther' }
+        { disabled: reportType === FlagNames.Plagiarism }
     );
     select.className = 'd-flex ai-center';
 
@@ -270,7 +271,7 @@ function getFlagSelect(
     flagLabel.classList.add('fw-bold', 'ps-relative', 'z-selected', 'l12', 'fs-body1', 'flex--item');
     flagLabel.innerText = 'Flag:';
 
-    if (reportType === 'PostOther') {
+    if (reportType === FlagNames.Plagiarism) {
         flagLabel.classList.add('o50');
     }
 
@@ -318,7 +319,7 @@ export function getSelectRow({
         wrapInFlexItem(downvoteBox)
     );
 
-    if (!isModOrNoFlag(reportType)) {
+    if (!isPlagiarismOrNoFlag(reportType)) {
         container.append(wrapInFlexItem(feedback));
     }
 

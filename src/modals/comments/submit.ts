@@ -5,6 +5,7 @@ import {
     FlagTypeFeedbacks,
     getFlagTypeFromFlagId,
     updateFlagTypes,
+    FlagNames,
 } from '../../shared';
 import { Flags } from '../../FlagTypes';
 
@@ -47,9 +48,9 @@ function saveReportType(
     const select = expandable.querySelector('select');
     const newReportType = select?.value as Flags;
 
-    // can't select to flag for mod attention
+    // can't select to flag for plagiarism
     // unless it's disabled, meaning it's a Guttenberg flag type
-    if (newReportType === 'PostOther' && !select?.disabled) {
+    if (newReportType === FlagNames.Plagiarism && !select?.disabled) {
         displayStacksToast(
             'This type of flag cannot be raised with this option',
             'danger',

@@ -70,7 +70,7 @@ import {
         ]
 
     Notes:
-    - The ReportType can't be changed to/from PostOther for default flags.
+    - The ReportType can't be changed to/from PlagiarizedContent for default flags.
     - The Human field is retrieved on runtime when the flag is raised based on ReportType.
     - Each s-card div has a data-flag-id attribute based on which we can store the
       information on cache again.

@@ -174,18 +174,28 @@ async function flagPost(
     flagName: Flags,
     flagged: HTMLElement,
     flagText: string | null,
+    targetUrl?: string,
 ): Promise<void> {
     const failedToFlag = 'Failed to flag: ';
 
     const url = `/flags/posts/${postId}/add/${flagName}`;
-    const data = { fkey, otherText: flagText || '' };
+    const data = {
+        fkey,
+        otherText: flagText || '',
+        // plagiarism flag: fill "Link(s) to original content"
+        // note wrt link: site will always be Stack Overflow,
+        //                post will always be an answer.
+        customData: flagName === FlagNames.Plagiarism
+            ? JSON.stringify({ plagiarizedSource: `https:${targetUrl}` })
+            : ''
+    };
 
     if (debugMode) {
         console.log(`Flag post as ${flagName} via`, url, data);
         return;
     }
 
-    const flagPost = await fetch(url, {
+    const flagRequest = await fetch(url, {
         method: 'POST',
         body: getFormDataFromObject(data)
     });
@@ -195,7 +205,7 @@ async function flagPost(
     // for example, if a user flags posts too quickly, they get a text response
     // if the post has been flagged successfully, the response is in JSON
     const tooFast = /You may only flag a post every \d+ seconds?/;
-    const responseText = await flagPost.text();
+    const responseText = await flagRequest.text();
 
     if (tooFast.test(responseText)) { // flagging posts too quickly
         const rlCount = /\d+/.exec(responseText)?.[0] || 0;
@@ -226,6 +236,7 @@ export async function handleActions(
     downvoteRequired: boolean,
     flagText: string | null,
     commentText?: string | null,
+    targetUrl?: string,
 ): Promise<void> {
     // needed to add the comment and raise the flag
     const fkey = StackExchange.options.user.fkey;
@@ -239,7 +250,7 @@ export async function handleActions(
         }
     }
 
-    if (flagRequired && reportType !== 'NoFlag') {
+    if (flagRequired && reportType !== FlagNames.NoFlag) {
         autoFlagging = true;
 
         // if the flag name is VLQ, then we need to check if the criteria are met.
@@ -247,7 +258,7 @@ export async function handleActions(
         const flagName = getFlagToRaise(reportType, raiseVlq);
 
         try {
-            await flagPost(postId, fkey, flagName, flagged, flagText);
+            await flagPost(postId, fkey, flagName, flagged, flagText, targetUrl);
         } catch (error) {
             displayErrorFlagged('Failed to flag post', error as string);
         }

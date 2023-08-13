@@ -1,5 +1,5 @@
 import { Store } from './UserscriptTools/Store';
-import { Flags, FlagCategory, HumanFlags, FlagType } from './FlagTypes';
+import { Flags, FlagCategory, FlagType } from './FlagTypes';
 
 type BasicPlacement = 'auto' | 'top' | 'right' | 'bottom' | 'left';
 // Minimum TypeScript Version: 4.1
@@ -55,8 +55,8 @@ export enum FlagNames {
     Rude = 'PostOffensive',
     NAA = 'AnswerNotAnAnswer',
     VLQ = 'PostLowQuality',
-    ModFlag = 'PostOther',
-    NoFlag = 'NoFlag'
+    NoFlag = 'NoFlag',
+    Plagiarism = 'PlagiarizedContent'
 }
 
 // Constants
@@ -236,14 +236,16 @@ export function getFlagTypeFromFlagId(flagId: number): CachedFlag | null {
     return cachedFlagTypes.find(({ id }) => id === flagId) || null;
 }
 
+export type HumanFlags = 'as NAA' | 'as R/A' | 'as spam' | 'for plagiarism' | 'as VLQ' | '';
+
 export function getHumanFromDisplayName(displayName: Flags): HumanFlags {
     const flags = {
         [FlagNames.Spam]: 'as spam',
         [FlagNames.Rude]: 'as R/A',
         [FlagNames.NAA]: 'as NAA',
         [FlagNames.VLQ]: 'as VLQ',
-        [FlagNames.ModFlag]: 'for moderator attention',
-        [FlagNames.NoFlag]: ''
+        [FlagNames.NoFlag]: '',
+        [FlagNames.Plagiarism]: 'for plagiarism'
     } as const;
 
     return flags[displayName] || '';

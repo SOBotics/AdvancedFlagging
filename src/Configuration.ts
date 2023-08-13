@@ -1,6 +1,6 @@
 import { flagCategories } from './FlagTypes';
 import { Store } from './UserscriptTools/Store';
-import { CachedFlag } from './shared';
+import { CachedFlag, updateFlagTypes } from './shared';
 import { Flags } from './FlagTypes';
 
 import {
@@ -16,11 +16,11 @@ import {
 import { buildConfigurationOverlay } from './modals/config';
 import { setupCommentsAndFlagsModal } from './modals/comments/main';
 
-export function isModOrNoFlag(flagName: Flags): boolean {
+export function isPlagiarismOrNoFlag(flagName: Flags): boolean {
     const result =
         [
             FlagNames.NoFlag,
-            FlagNames.ModFlag
+            FlagNames.Plagiarism
         ]
             .some(reportType => reportType === flagName);
 
@@ -40,7 +40,7 @@ export function cacheFlags(): void {
         return category.FlagTypes.map(flagType => {
             return Object.assign(flagType, {
                 belongsTo: category.name,
-                downvote: !isModOrNoFlag(flagType.reportType),
+                downvote: !isPlagiarismOrNoFlag(flagType.reportType),
                 enabled: true // all flags should be enabled by default
             });
         });
@@ -82,6 +82,15 @@ function setupDefaults(): void {
         || !('appliesTo' in cachedCategories[0])) {
         cacheCategories();
     }
+
+    // PostOther is no more!
+    // Replace with PlagiarizedContent.
+    cachedFlagTypes.forEach(cachedFlag => {
+        if (cachedFlag.reportType as Flags | 'PostOther' !== 'PostOther') return;
+
+        cachedFlag.reportType = FlagNames.Plagiarism;
+    });
+    updateFlagTypes();
 }
 
 export function setupConfiguration(): void {

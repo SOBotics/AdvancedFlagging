@@ -1,7 +1,12 @@
 import { FlagTypeFeedbacks, PostType, FlagNames } from './shared';
 
-export type Flags = 'AnswerNotAnAnswer' | 'PostOffensive' | 'PostSpam' | 'NoFlag' | 'PostOther' | 'PostLowQuality';
-export type HumanFlags = 'as NAA' | 'as R/A' | 'as spam' | 'for moderator attention' | 'as VLQ' | '';
+export type Flags = 'AnswerNotAnAnswer'
+    | 'PostOffensive'
+    | 'PostSpam'
+    | 'NoFlag'
+    //| 'PostOther'
+    | 'PostLowQuality'
+    | 'PlagiarizedContent';
 
 const deletedAnswers = '/help/deleted-answers';
 const commentHelp = '/help/privileges/comment';
@@ -61,8 +66,8 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 3,
                 displayName: 'Plagiarism',
-                reportType: FlagNames.ModFlag,
-                flagText: 'Possible plagiarism of another answer $TARGET$, as can be seen here $COPYPASTOR$',
+                reportType: FlagNames.Plagiarism,
+                flagText: 'Possible plagiarism of the linked answer, as can be seen here $COPYPASTOR$',
                 // don't send feedback to Smokey despite https://charcoal-se.org/smokey/Feedback-Guidance.html#plagiarism
                 feedbacks: { Smokey: '', Natty: '', Guttenberg: 'tp', 'Generic Bot': '' },
                 sendWhenFlagRaised: false
@@ -70,8 +75,8 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 4,
                 displayName: 'Duplicate answer',
-                reportType: FlagNames.ModFlag,
-                flagText: 'The answer is a repost of their other answer $TARGET$, but as there are slight differences '
+                reportType: FlagNames.Plagiarism,
+                flagText: 'The post is a repost of their other answer, but as there are slight differences '
                                + '(see $COPYPASTOR$), an auto flag would not be raised.',
                 comments: {
                     low: "Please don't add the [same answer to multiple questions](//meta.stackexchange.com/q/104227)."
@@ -84,8 +89,8 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 5,
                 displayName: 'Bad attribution',
-                reportType: FlagNames.ModFlag,
-                flagText: 'This post is copied from [another answer]($TARGET$), as can be seen here $COPYPASTOR$. The author '
+                reportType: FlagNames.Plagiarism,
+                flagText: 'This post is copied from the linked answer, as can be seen here $COPYPASTOR$. The author '
                                + 'only added a link to the other answer, which is [not the proper way of attribution]'
                                + '(//stackoverflow.blog/2009/06/25/attribution-required).',
                 feedbacks: { Smokey: '', Natty: '', Guttenberg: 'tp', 'Generic Bot': '' },

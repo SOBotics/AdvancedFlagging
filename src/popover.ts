@@ -10,7 +10,6 @@ import {
     cachedCategories,
     cachedFlagTypes,
 
-    FlagNames,
     isStackOverflow,
     getFullFlag,
     getCachedConfigBotKey,
@@ -33,6 +32,7 @@ import { GenericBotAPI } from './UserscriptTools/GenericBotAPI';
 import { CopyPastorAPI } from './UserscriptTools/CopyPastorAPI';
 
 import { Menu } from '@userscripters/stacks-helpers';
+import { isSpecialFlag } from './Configuration';
 
 const noneSpan = document.createElement('span');
 noneSpan.classList.add('o50');
@@ -382,8 +382,8 @@ function getReportLinks(
     cachedFlagTypes
         // exclude disabled and non-SO flag types
         .filter(({ reportType, id, belongsTo, enabled }) => {
-            // only Guttenberg reports (can) have ReportType === 'PlagiarizedContent'
-            const isGuttenbergItem = reportType === FlagNames.Plagiarism;
+            // only Guttenberg reports (can) have ReportType === 'PlagiarizedContent/PostOther'
+            const isGuttenbergItem = isSpecialFlag(reportType, false);
 
             const showGutReport = Boolean(copypastorId) // a CopyPastor id must exist
                 // https://github.com/SOBotics/AdvancedFlagging/issues/16

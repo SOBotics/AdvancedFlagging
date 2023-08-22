@@ -4,7 +4,7 @@ export type Flags = 'AnswerNotAnAnswer'
     | 'PostOffensive'
     | 'PostSpam'
     | 'NoFlag'
-    //| 'PostOther'
+    | 'PostOther'
     | 'PostLowQuality'
     | 'PlagiarizedContent';
 
@@ -75,7 +75,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 4,
                 displayName: 'Duplicate answer',
-                reportType: FlagNames.Plagiarism,
+                reportType: FlagNames.ModFlag,
                 flagText: 'The post is a repost of their other answer, but as there are slight differences '
                                + '(see $COPYPASTOR$), an auto flag would not be raised.',
                 comments: {

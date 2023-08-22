@@ -16,15 +16,17 @@ import {
 import { buildConfigurationOverlay } from './modals/config';
 import { setupCommentsAndFlagsModal } from './modals/comments/main';
 
-export function isPlagiarismOrNoFlag(flagName: Flags): boolean {
-    const result =
-        [
-            FlagNames.NoFlag,
-            FlagNames.Plagiarism
-        ]
-            .some(reportType => reportType === flagName);
+export function isSpecialFlag(flagName: Flags, checkNoFlag = true): boolean {
+    const arrayOfFlags: Flags[] = [
+        FlagNames.ModFlag,
+        FlagNames.Plagiarism
+    ];
 
-    return result;
+    if (checkNoFlag) {
+        arrayOfFlags.push(FlagNames.NoFlag);
+    }
+
+    return arrayOfFlags.includes(flagName);
 }
 
 export function wrapInFlexItem(element: HTMLElement): HTMLElement {
@@ -40,7 +42,7 @@ export function cacheFlags(): void {
         return category.FlagTypes.map(flagType => {
             return Object.assign(flagType, {
                 belongsTo: category.name,
-                downvote: !isPlagiarismOrNoFlag(flagType.reportType),
+                downvote: !isSpecialFlag(flagType.reportType),
                 enabled: true // all flags should be enabled by default
             });
         });
@@ -83,10 +85,12 @@ function setupDefaults(): void {
         cacheCategories();
     }
 
-    // PostOther is no more!
-    // Replace with PlagiarizedContent.
+    // PostOther can be replaced with PlagiarizedContent
+    // for "Plagiarism" flag type.
     cachedFlagTypes.forEach(cachedFlag => {
-        if (cachedFlag.reportType as Flags | 'PostOther' !== 'PostOther') return;
+        // Plagiarism and Bad Attribution flag types,
+        // filter by id because names can be edited by the user
+        if (cachedFlag.id !== 3 && cachedFlag.id !== 5) return;
 
         cachedFlag.reportType = FlagNames.Plagiarism;
     });

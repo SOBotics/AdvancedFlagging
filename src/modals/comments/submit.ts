@@ -5,9 +5,9 @@ import {
     FlagTypeFeedbacks,
     getFlagTypeFromFlagId,
     updateFlagTypes,
-    FlagNames,
 } from '../../shared';
 import { Flags } from '../../FlagTypes';
+import { isSpecialFlag } from '../../Configuration';
 
 function saveName(
     card: HTMLElement,
@@ -48,11 +48,14 @@ function saveReportType(
     const select = expandable.querySelector('select');
     const newReportType = select?.value as Flags;
 
-    // can't select to flag for plagiarism
-    // unless it's disabled, meaning it's a Guttenberg flag type
-    if (newReportType === FlagNames.Plagiarism && !select?.disabled) {
+    // can't select to flag for plagiarism/mod attention
+    // (if disabled, it's a Guttenberg flag type)
+    if (
+        isSpecialFlag(newReportType, false)
+        && !select?.disabled
+    ) {
         displayStacksToast(
-            'This type of flag cannot be raised with this option',
+            'You cannot use this type of flag!',
             'danger',
             true
         );

@@ -4,10 +4,9 @@ import {
     BotNames,
     AllFeedbacks,
     possibleFeedbacks,
-    FlagNames,
 } from '../../shared';
 import { flagCategories } from '../../FlagTypes';
-import { wrapInFlexItem, isPlagiarismOrNoFlag } from '../../Configuration';
+import { wrapInFlexItem, isSpecialFlag } from '../../Configuration';
 import { toggleHideIfNeeded } from './main';
 
 import {
@@ -247,6 +246,8 @@ function getFlagSelect(
     id: CachedFlag['id'],
     reportType: CachedFlag['reportType']
 ): HTMLElement[] {
+    const shouldDisable = isSpecialFlag(reportType, false);
+
     const options = flagNames.map(flagName => {
         return {
             value: flagName,
@@ -258,7 +259,7 @@ function getFlagSelect(
     const select = Select.makeStacksSelect(
         `advanced-flagging-select-flag-${id}`,
         options,
-        { disabled: reportType === FlagNames.Plagiarism }
+        { disabled: shouldDisable }
     );
     select.className = 'd-flex ai-center';
 
@@ -271,7 +272,7 @@ function getFlagSelect(
     flagLabel.classList.add('fw-bold', 'ps-relative', 'z-selected', 'l12', 'fs-body1', 'flex--item');
     flagLabel.innerText = 'Flag:';
 
-    if (reportType === FlagNames.Plagiarism) {
+    if (shouldDisable) {
         flagLabel.classList.add('o50');
     }
 
@@ -319,7 +320,7 @@ export function getSelectRow({
         wrapInFlexItem(downvoteBox)
     );
 
-    if (!isPlagiarismOrNoFlag(reportType)) {
+    if (!isSpecialFlag(reportType)) {
         container.append(wrapInFlexItem(feedback));
     }
 

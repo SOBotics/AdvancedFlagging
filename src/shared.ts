@@ -56,7 +56,8 @@ export enum FlagNames {
     NAA = 'AnswerNotAnAnswer',
     VLQ = 'PostLowQuality',
     NoFlag = 'NoFlag',
-    Plagiarism = 'PlagiarizedContent'
+    Plagiarism = 'PlagiarizedContent',
+    ModFlag = 'PostOther'
 }
 
 // Constants
@@ -236,7 +237,13 @@ export function getFlagTypeFromFlagId(flagId: number): CachedFlag | null {
     return cachedFlagTypes.find(({ id }) => id === flagId) || null;
 }
 
-export type HumanFlags = 'as NAA' | 'as R/A' | 'as spam' | 'for plagiarism' | 'as VLQ' | '';
+export type HumanFlags = 'as NAA'
+    | 'as R/A'
+    | 'as spam'
+    | 'for plagiarism'
+    | 'as VLQ'
+    | 'for moderator attention'
+    | '';
 
 export function getHumanFromDisplayName(displayName: Flags): HumanFlags {
     const flags = {
@@ -245,7 +252,8 @@ export function getHumanFromDisplayName(displayName: Flags): HumanFlags {
         [FlagNames.NAA]: 'as NAA',
         [FlagNames.VLQ]: 'as VLQ',
         [FlagNames.NoFlag]: '',
-        [FlagNames.Plagiarism]: 'for plagiarism'
+        [FlagNames.Plagiarism]: 'for plagiarism',
+        [FlagNames.ModFlag]: 'for moderator attention',
     } as const;
 
     return flags[displayName] || '';

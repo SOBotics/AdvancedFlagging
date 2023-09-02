@@ -41,29 +41,6 @@ function saveTextareaContent(
     }
 }
 
-function saveReportType(
-    expandable: Element,
-    flagType: CachedFlag
-): void {
-    const select = expandable.querySelector('select');
-    const newReportType = select?.value as Flags;
-
-    // can't select to flag for plagiarism/mod attention
-    // (if disabled, it's a Guttenberg flag type)
-    if (
-        isSpecialFlag(newReportType, false)
-        && !select?.disabled
-    ) {
-        displayStacksToast(
-            'You cannot use this type of flag!',
-            'danger',
-            true
-        );
-    } else {
-        flagType.reportType = newReportType;
-    }
-}
-
 function saveSwfr(
     expandable: Element,
     flagType: CachedFlag,
@@ -157,6 +134,26 @@ export function submitChanges(element: HTMLElement): void {
         return;
     }
 
+    // check if the flag type is invalid:
+    // can't select to flag for plagiarism/mod attention
+    // (if disabled, it's a Guttenberg flag type)
+    const select = expandable.querySelector('select');
+    const newReportType = select?.value as Flags;
+
+    if (
+        isSpecialFlag(newReportType, false)
+        && !select?.disabled
+    ) {
+        displayStacksToast(
+            'You cannot use this type of flag!',
+            'danger',
+            true
+        );
+
+        return;
+    }
+
+
     // Flag name
     saveName(wrapper, flagType);
 
@@ -166,7 +163,7 @@ export function submitChanges(element: HTMLElement): void {
     saveTextareaContent(expandable, flagType);
 
     // Row #3
-    saveReportType(expandable, flagType);
+    flagType.reportType = newReportType;
     saveSwfr(expandable, flagType, flagId);
     saveDownvote(expandable, flagType);
 

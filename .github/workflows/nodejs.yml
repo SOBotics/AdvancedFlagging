@@ -9,10 +9,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Using Node 16
+    - name: Using Node 18
       uses: actions/setup-node@v3
       with:
-        node-version: 16
+        node-version: 18
     - name: Update npm version to latest
       run: npm install -g npm@latest # shop showing warnings about the lockfile
     - name: Install dependencies

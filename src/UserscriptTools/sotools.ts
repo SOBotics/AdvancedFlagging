@@ -10,7 +10,7 @@ import { GenericBotAPI } from './GenericBotAPI';
 import { MetaSmokeAPI } from './MetaSmokeAPI';
 import { NattyAPI } from './NattyApi';
 
-type Pages = 'Question' | 'NATO' | 'Flags';
+type Pages = 'Question' | 'NATO' | 'Flags' | 'Search';
 
 export interface PostInfo {
     postType: PostType;
@@ -48,7 +48,7 @@ function getExistingElements(): HTMLElement[] | undefined {
     } else if (isQuestionPage) {
         elements = document.querySelectorAll('.question, .answer');
     } else if (isSearch) {
-        elements = document.querySelectorAll('.js-search-results [id^="answer-id-"]');
+        elements = document.querySelectorAll('.js-search-results .s-post-summary');
     } else {
         elements = [];
     }
@@ -61,19 +61,25 @@ export function getPage(): Pages | '' {
     if (isFlagsPage) return 'Flags';
     else if (isNatoPage) return 'NATO';
     else if (isQuestionPage) return 'Question';
+    else if (isSearch) return 'Search';
     else return '';
 }
 
 function getPostType(element: HTMLElement): PostType {
+    // Consistency at its finest:
+    // for each results in the /search page:
+    // - if it's a question, anchor will have the s-link class
+    // - if it's an answer, anchor will have the answer-hyperlink class
+    // (ask SE why)
     return element.classList.contains('question')
-        || element.querySelector('.question-hyperlink')
+        || element.querySelector('.question-hyperlink, .s-link')
         ? 'Question'
         : 'Answer';
 }
 
 function getPostId(postNode: HTMLElement, postType: PostType): number {
     const href = postNode.querySelector<HTMLAnchorElement>(
-        '.answer-hyperlink, .question-hyperlink'
+        '.answer-hyperlink, .question-hyperlink, .s-link'
     )?.href;
 
     const postId =
@@ -128,7 +134,7 @@ export function addIcons(): void {
 
             addIconToPost(
                 element,
-                'a.question-hyperlink, a.answer-hyperlink',
+                'a.question-hyperlink, a.answer-hyperlink, .s-link',
                 postType,
                 getPostId(element, postType)
             );

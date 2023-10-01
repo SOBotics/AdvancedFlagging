@@ -11,7 +11,7 @@
   "devDependencies": {
     "@types/jquery": "3.5.18",
     "@types/node": "^20.5.8",
-    "@types/tampermonkey": "4.20.1",
+    "@types/tampermonkey": "4.20.3",
     "@typescript-eslint/eslint-plugin": "6.5.0",
     "@typescript-eslint/parser": "6.5.0",
     "@userscripters/stackexchange-global-types": "^2.7.0",

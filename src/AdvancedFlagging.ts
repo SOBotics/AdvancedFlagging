@@ -389,7 +389,7 @@ export function upvoteSameComments(
 
             parent
                 ?.querySelector<HTMLAnchorElement>(
-                    'a.comment-up.comment-up-off' // voting button
+                    'a.js-comment-up.comment-up-off' // voting button
                 )
                 ?.click(); // click it!
         });

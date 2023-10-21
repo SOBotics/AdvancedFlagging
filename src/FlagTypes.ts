@@ -76,7 +76,7 @@ export const flagCategories: FlagCategory[] = [
                 id: 4,
                 displayName: 'Duplicate answer',
                 reportType: FlagNames.ModFlag,
-                flagText: 'The post is a repost of their other answer, but as there are slight differences '
+                flagText: 'The post is a repost of their other answer: $TARGET$, but as there are slight differences '
                                + '(see $COPYPASTOR$), an auto flag would not be raised.',
                 comments: {
                     low: "Please don't add the [same answer to multiple questions](//meta.stackexchange.com/q/104227)."
@@ -90,7 +90,7 @@ export const flagCategories: FlagCategory[] = [
                 id: 5,
                 displayName: 'Bad attribution',
                 reportType: FlagNames.Plagiarism,
-                flagText: 'This post is copied from the linked answer, as can be seen here $COPYPASTOR$. The author '
+                flagText: 'This post is copied from $TARGET$, as can be seen here $COPYPASTOR$. The author '
                                + 'only added a link to the other answer, which is [not the proper way of attribution]'
                                + '(//stackoverflow.blog/2009/06/25/attribution-required).',
                 feedbacks: { Smokey: '', Natty: '', Guttenberg: 'tp', 'Generic Bot': '' },

@@ -229,7 +229,7 @@ export function getFullFlag(
     const copypastorLink = `https://copypastor.sobotics.org/posts/${postId}`;
 
     return content
-        .replace(placeholderTarget, target)
+        .replace(placeholderTarget, `https:${target}`)
         .replace(placeholderCopypastorLink, copypastorLink);
 }
 

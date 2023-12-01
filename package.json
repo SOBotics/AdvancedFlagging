@@ -10,7 +10,7 @@
   "license": "ISC",
   "devDependencies": {
     "@types/jquery": "3.5.25",
-    "@types/node": "^20.8.9",
+    "@types/node": "^20.10.1",
     "@types/tampermonkey": "4.20.4",
     "@typescript-eslint/eslint-plugin": "6.9.0",
     "@typescript-eslint/parser": "6.9.0",

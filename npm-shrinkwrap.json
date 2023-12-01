@@ -14,7 +14,7 @@
       "devDependencies": {
         "@types/jquery": "3.5.25",
         "@types/node": "^20.8.9",
-        "@types/tampermonkey": "4.20.4",
+        "@types/tampermonkey": "5.0.2",
         "@typescript-eslint/eslint-plugin": "6.9.0",
         "@typescript-eslint/parser": "6.9.0",
         "@userscripters/stackexchange-global-types": "^2.7.0",
@@ -571,9 +571,9 @@
       "dev": true
     },
     "node_modules/@types/tampermonkey": {
-      "version": "4.20.4",
-      "resolved": "https://registry.npmjs.org/@types/tampermonkey/-/tampermonkey-4.20.4.tgz",
-      "integrity": "sha512-8w9QsNyZ2RDzmNA8UPbGvEx2Czwjg6/dEQ7Oqi5SqdNlmjJvBz+eg8bY6nt33BOsLKJERD6Kk3RGBVr5ZhcEWA==",
+      "version": "5.0.2",
+      "resolved": "https://registry.npmjs.org/@types/tampermonkey/-/tampermonkey-5.0.2.tgz",
+      "integrity": "sha512-keKnYemqWts68wO2+TBdEg84iQd5vymK5SEQGxitI9uOfOnjm/ZskBoK9ZH3mnSYp79HidZMA/Y7ODQtiA/VIg==",
       "dev": true
     },
     "node_modules/@typescript-eslint/eslint-plugin": {

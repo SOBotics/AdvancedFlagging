@@ -8,11 +8,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Using Node 18
-      uses: actions/setup-node@v3
+    - uses: actions/checkout@v4
+    - name: Using Node 20
+      uses: actions/setup-node@v4
       with:
-        node-version: 18
+        node-version: 20
     - name: Update npm version to latest
       run: npm install -g npm@latest # shop showing warnings about the lockfile
     - name: Install dependencies

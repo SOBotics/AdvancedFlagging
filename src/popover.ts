@@ -351,9 +351,9 @@ function getCommentText(
     let comment = comments?.[commentType] || comments?.low;
 
     if (comment){
-        var sitename = StackExchange.options.site.name || "";
-        sitename = sitename.replace(/ ?Stack Exchange/, "");
-        var siteurl = window.location.hostname;
+        let sitename = StackExchange.options.site.name || '';
+        sitename = sitename.replace(/ ?Stack Exchange/, '');
+        let siteurl = window.location.hostname;
 
         comment = comment.replace(/%SITENAME%/, sitename);
         comment = comment.replace(/%SITEURL%/, siteurl);
@@ -482,7 +482,7 @@ function getOptionsRow(
     // ['label test', globals.cacheKey]
     return config
         // don't leave comments on non-SO sites
-//      .filter(([ text ]) => text === 'Leave comment' ? isStackOverflow : true)
+        // .filter(([ text ]) => text === 'Leave comment' ? isStackOverflow : true)
         .map(([text, cacheKey]) => {
             const uncheck = cachedConfiguration[cacheKey]
                 // extra requirement for the leave comment option:

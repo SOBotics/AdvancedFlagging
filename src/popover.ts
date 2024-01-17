@@ -350,6 +350,16 @@ function getCommentText(
     const commentType = (opReputation || 0) > 50 ? 'high' : 'low';
     const comment = comments?.[commentType] || comments?.low;
 
+    if (comment){
+        var sitename = StackExchange.options.site.name || "";
+        sitename = sitename.replace(/ ?Stack Exchange/, "");
+        var siteurl = window.location.hostname;
+
+        comment = comment.replace(/%SITENAME%/, sitename);
+        comment = comment.replace(/%SITEURL%/, siteurl);
+        comment = comment.replace(/%OP%/, opName);
+    }
+
     return (
         comment && AddAuthorName
             ? `${opName}, ${comment[0].toLowerCase()}${comment.slice(1)}`
@@ -390,9 +400,9 @@ function getReportLinks(
                 // id === 4 => Duplicate Answer
                 && (id === 4 ? repost : !repost);
 
-            // show the red flags and general items on every site,
+            // show the red flags, general, and answer-related items on every site,
             // restrict the others to Stack Overflow
-            const showOnSo = ['Red flags', 'General'].includes(belongsTo) || isStackOverflow;
+            const showOnSo = ['Red flags', 'General', 'Answer-related'].includes(belongsTo) || isStackOverflow;
 
             return enabled && (isGuttenbergItem ? showGutReport : showOnSo);
         })
@@ -472,7 +482,7 @@ function getOptionsRow(
     // ['label test', globals.cacheKey]
     return config
         // don't leave comments on non-SO sites
-        .filter(([ text ]) => text === 'Leave comment' ? isStackOverflow : true)
+//      .filter(([ text ]) => text === 'Leave comment' ? isStackOverflow : true)
         .map(([text, cacheKey]) => {
             const uncheck = cachedConfiguration[cacheKey]
                 // extra requirement for the leave comment option:

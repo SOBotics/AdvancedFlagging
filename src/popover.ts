@@ -348,7 +348,7 @@ function getCommentText(
     const { addAuthorName: AddAuthorName } = cachedConfiguration;
 
     const commentType = (opReputation || 0) > 50 ? 'high' : 'low';
-    const comment = comments?.[commentType] || comments?.low;
+    let comment = comments?.[commentType] || comments?.low;
 
     if (comment){
         var sitename = StackExchange.options.site.name || "";

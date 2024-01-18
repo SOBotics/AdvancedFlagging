@@ -72,7 +72,7 @@ function getPostType(element: HTMLElement): PostType {
     // - if it's an answer, anchor will have the answer-hyperlink class
     // (ask SE why)
     return element.classList.contains('question')
-        || element.querySelector('.question-hyperlink, .s-link:not([href^='/collectives'])')
+        || element.querySelector('.question-hyperlink, .s-link:not([href^="/collectives"])')
         ? 'Question'
         : 'Answer';
 }

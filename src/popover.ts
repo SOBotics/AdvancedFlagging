@@ -352,7 +352,6 @@ function getCommentText(
 
     if (comment){
         let sitename = StackExchange.options.site.name || '';
-        sitename = sitename.replace(/ ?Stack Exchange/, '');
         let siteurl = window.location.hostname;
 
         comment = comment.replace(/%SITENAME%/, sitename);

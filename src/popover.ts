@@ -354,9 +354,9 @@ function getCommentText(
         const sitename = StackExchange.options.site.name || '';
         const siteurl = window.location.hostname;
 
-        comment = comment.replaceAll(/%SITENAME%/, sitename);
-        comment = comment.replaceAll(/%SITEURL%/, siteurl);
-        comment = comment.replaceAll(/%OP%/, opName);
+        comment = comment.replace(/%SITENAME%/g, sitename);
+        comment = comment.replace(/%SITEURL%/g, siteurl);
+        comment = comment.replace(/%OP%/g, opName);
     }
 
     return (

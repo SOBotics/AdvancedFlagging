@@ -12,7 +12,7 @@
     "@types/jquery": "3.5.29",
     "@types/node": "^20.10.6",
     "@types/tampermonkey": "5.0.2",
-    "@typescript-eslint/eslint-plugin": "6.17.0",
+    "@typescript-eslint/eslint-plugin": "7.0.0",
     "@typescript-eslint/parser": "6.17.0",
     "@userscripters/stackexchange-global-types": "^2.7.0",
     "esbuild": "^0.19.11",

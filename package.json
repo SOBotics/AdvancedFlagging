@@ -13,7 +13,7 @@
     "@types/node": "^20.10.6",
     "@types/tampermonkey": "5.0.2",
     "@typescript-eslint/eslint-plugin": "6.17.0",
-    "@typescript-eslint/parser": "6.17.0",
+    "@typescript-eslint/parser": "7.4.0",
     "@userscripters/stackexchange-global-types": "^2.7.0",
     "esbuild": "^0.19.11",
     "eslint": "8.56.0",

@@ -1,6 +1,6 @@
 {
   "name": "advancedflagging",
-  "version": "1.3.10",
+  "version": "1.3.11",
   "scripts": {
     "lint": "eslint src",
     "build": "npm run lint && npm run esbuild",

@@ -7,7 +7,7 @@ import {
     debugMode
 } from '../shared';
 import { getAllPostIds } from './sotools';
-import { createBotIcon } from '../AdvancedFlagging';
+import { createBotIcon, displayToaster } from '../AdvancedFlagging';
 
 interface CopyPastorFindTargetResponseItem {
     post_id: string;
@@ -67,7 +67,12 @@ export class CopyPastorAPI {
 
         if (!postUrls.length) return; // make sure the array isn't empty
 
-        await this.storeReportedPosts(postUrls as string[]);
+        try {
+            await this.storeReportedPosts(postUrls as string[]);
+        } catch (error) {
+            displayToaster('Could not connect to CopyPastor.', 'danger');
+            console.error(error);
+        }
     }
 
     public static storeReportedPosts(postUrls: string[]): Promise<void> {
@@ -77,6 +82,7 @@ export class CopyPastorAPI {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url,
+                timeout: 2000,
                 onload: ({ responseText }) => {
                     const response = JSON.parse(responseText) as CopyPastorFindTargetResponse;
 
@@ -101,7 +107,8 @@ export class CopyPastorAPI {
                     });
                     resolve();
                 },
-                onerror: () => reject()
+                onerror: error => reject(error),
+                ontimeout: () => reject('Request timed out')
             });
         });
     }

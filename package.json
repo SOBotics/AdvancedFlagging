@@ -20,7 +20,7 @@
     "typescript": "5.4.5"
   },
   "dependencies": {
-    "@userscripters/stacks-helpers": "1.0.1"
+    "@userscripters/stacks-helpers": "1.1.2"
   },
   "repository": {
     "type": "git",

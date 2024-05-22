@@ -66,13 +66,8 @@ export function getPage(): Pages | '' {
 }
 
 function getPostType(element: HTMLElement): PostType {
-    // Consistency at its finest:
-    // for each results in the /search page:
-    // - if it's a question, anchor will have the s-link class
-    // - if it's an answer, anchor will have the answer-hyperlink class
-    // (ask SE why)
     return element.classList.contains('question')
-        || element.querySelector('.question-hyperlink, .s-link')
+        || element.id.startsWith('question')
         ? 'Question'
         : 'Answer';
 }

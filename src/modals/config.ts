@@ -1,13 +1,9 @@
-import { Store } from '../UserscriptTools/Store';
+import { Cached, Configuration, Store } from '../UserscriptTools/Store';
 import { MetaSmokeAPI } from '../UserscriptTools/MetaSmokeAPI';
 
 import {
-    Configuration,
-    cachedConfiguration,
-    updateConfiguration,
     displayStacksToast,
     attachPopover,
-    Cached,
     getCachedConfigBotKey
 } from '../shared';
 
@@ -24,10 +20,10 @@ function saveChanges(): void {
             const id = element.id.split('-').pop() as GeneralItems;
             const checked = (element as HTMLInputElement).checked;
 
-            cachedConfiguration[id] = checked;
+            Store.config[id] = checked;
         });
 
-    updateConfiguration();
+    Store.updateConfiguration();
     displayStacksToast('Configuration saved', 'success');
 
     setTimeout(() => window.location.reload(), 500);
@@ -190,7 +186,7 @@ function getGeneralConfigItems(): HTMLElement {
             configValue: Cached.Configuration.debug
         }
     ].map(({ text, configValue, tooltipText }) => {
-        const selected = cachedConfiguration[configValue as GeneralItems];
+        const selected = Store.config[configValue as GeneralItems];
 
         return {
             id: `advanced-flagging-${configValue}`,

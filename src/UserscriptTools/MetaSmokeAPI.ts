@@ -1,16 +1,14 @@
-import { Store } from './Store';
+import { Store, Cached } from './Store';
 import {
-    Cached,
-    FlagTypeFeedbacks,
+    AllFeedbacks,
     PostType,
     delay,
     getFormDataFromObject,
     getSentMessage,
-    debugMode,
 } from '../shared';
-import { getAllPostIds } from './sotools';
 import { Modals, Input, Buttons } from '@userscripters/stacks-helpers';
-import { createBotIcon, displayToaster } from '../AdvancedFlagging';
+import { displayToaster, page } from '../AdvancedFlagging';
+import Reporter from './Reporter';
 
 const metasmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
 const metasmokeApiFilter = 'GGJFNNKKJFHFKJFLJLGIJMFIHNNJNINJ';
@@ -31,22 +29,24 @@ interface MetasmokeData {
     [key: number]: number;
 }
 
-export class MetaSmokeAPI {
+export class MetaSmokeAPI extends Reporter {
     public static accessToken: string;
     public static isDisabled: boolean = Store.get<boolean>(Cached.Metasmoke.disabled) || false;
+
+    public smokeyId: number;
 
     private static readonly appKey = metasmokeKey;
     private static metasmokeIds: MetasmokeData = {};
 
-    public name: keyof FlagTypeFeedbacks = 'Smokey';
-    public icon?: HTMLDivElement | undefined;
-
     constructor(
-        private readonly postId: number,
+        id: number,
         private readonly postType: PostType,
         private readonly deleted: boolean
     ) {
+        super('Smokey', id);
+
         this.icon = this.getIcon();
+        this.smokeyId = MetaSmokeAPI.metasmokeIds[this.id] || 0;
     }
 
     public static reset(): void {
@@ -150,7 +150,7 @@ export class MetaSmokeAPI {
         if (MetaSmokeAPI.isDisabled) return;
 
         // postIds as URLs, including questions
-        const urlString = urls || getAllPostIds(true, true).join(',');
+        const urlString = urls || page.getAllPostIds(true, true).join(',');
 
         // don't make the request if there aren't URLs
         if (!urlString) return;
@@ -211,13 +211,8 @@ export class MetaSmokeAPI {
             });
     }
 
-    public getSmokeyId(): number {
-        return MetaSmokeAPI.metasmokeIds[this.postId] || 0;
-    }
-
     public async reportRedFlag(): Promise<string> {
-        const smokeyId = this.getSmokeyId();
-        const urlString = MetaSmokeAPI.getQueryUrl(this.postId, this.postType);
+        const urlString = MetaSmokeAPI.getQueryUrl(this.id, this.postType);
 
         const { appKey, accessToken } = MetaSmokeAPI;
 
@@ -228,7 +223,7 @@ export class MetaSmokeAPI {
             token: accessToken
         };
 
-        if (debugMode) {
+        if (Store.dryRun) {
             console.log('Report post via', url, data);
 
             throw new Error('Didn\'t report post: in debug mode');
@@ -246,7 +241,7 @@ export class MetaSmokeAPI {
 
         // if the post is successfully reported, the response is a plain OK
         if (!reportRequest.ok || requestResponse !== 'OK') {
-            console.error(`Failed to report post ${smokeyId} to Smokey`, requestResponse);
+            console.error(`Failed to report post ${this.smokeyId} to Smokey`, requestResponse);
 
             throw new Error(metasmokeFailureMessage);
         }
@@ -254,17 +249,37 @@ export class MetaSmokeAPI {
         return metasmokeReportedMessage;
     }
 
+    public override canBeReported(): boolean {
+        return !MetaSmokeAPI.isDisabled;
+    }
+
+    public override wasReported(): boolean {
+        return Boolean(this.smokeyId);
+    }
+
+    public override showOnPopover(): boolean {
+        // valid everywhere, if not disabled
+        return !MetaSmokeAPI.isDisabled;
+    }
+
+    public override canSendFeedback(feedback: AllFeedbacks): boolean {
+        return Boolean(this.smokeyId) || ( // the post has been reported OR:
+            feedback === 'tpu-' // the feedback is tpu-
+            && !this.deleted // AND the post is not deleted
+            && !MetaSmokeAPI.isDisabled // AND SD info is stored in cache
+            && !MetaSmokeAPI.accessToken // AND user has authenticated with SM
+        );
+    }
+
     public async sendFeedback(feedback: string): Promise<string> {
         if (MetaSmokeAPI.isDisabled) return '';
 
         const { appKey, accessToken } = MetaSmokeAPI;
 
-        const smokeyId = this.getSmokeyId();
-
         // not reported, feedback is tpu AND the post isn't deleted => report it!
-        if (!smokeyId && feedback === 'tpu-' && !this.deleted) {
+        if (!this.smokeyId && feedback === 'tpu-' && !this.deleted) {
             return await this.reportRedFlag();
-        } else if (!accessToken || !smokeyId) {
+        } else if (!accessToken || !this.smokeyId) {
             // user hasn't authenticated or the post hasn't been reported => don't send feedback
             return '';
         }
@@ -275,9 +290,9 @@ export class MetaSmokeAPI {
             key: appKey,
             token: accessToken
         };
-        const url = `//metasmoke.erwaysoftware.com/api/w/post/${smokeyId}/feedback`;
+        const url = `//metasmoke.erwaysoftware.com/api/w/post/${this.smokeyId}/feedback`;
 
-        if (debugMode) {
+        if (Store.dryRun) {
             console.log('Feedback to Smokey via', url, data);
 
             throw new Error('Didn\'t send feedback: debug mode');
@@ -293,7 +308,7 @@ export class MetaSmokeAPI {
         const feedbackResponse = await feedbackRequest.json() as unknown;
 
         if (!feedbackRequest.ok) {
-            console.error(`Failed to send feedback for ${smokeyId} to Smokey`, feedbackResponse);
+            console.error(`Failed to send feedback for ${this.smokeyId} to Smokey`, feedbackResponse);
 
             throw new Error(getSentMessage(false, feedback, this.name));
         }
@@ -302,12 +317,10 @@ export class MetaSmokeAPI {
     }
 
     private getIcon(): HTMLDivElement | undefined {
-        const smokeyId = this.getSmokeyId();
-        if (!smokeyId) return;
+        if (!this.smokeyId) return;
 
-        const icon = createBotIcon(
-            'Smokey',
-            `//metasmoke.erwaysoftware.com/post/${smokeyId}`
+        const icon = this.createBotIcon(
+            `//metasmoke.erwaysoftware.com/post/${this.smokeyId}`
         );
 
         return icon;

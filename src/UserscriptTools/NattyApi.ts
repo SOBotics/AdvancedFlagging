@@ -1,10 +1,8 @@
 import { ChatApi } from './ChatApi';
-import {
-    isStackOverflow,
-    FlagTypeFeedbacks,
-} from '../shared';
-import { getAllPostIds } from './sotools';
-import { createBotIcon } from '../AdvancedFlagging';
+import { AllFeedbacks } from '../shared';
+import { page } from '../AdvancedFlagging';
+import Reporter from './Reporter';
+import Page from './Page';
 
 const dayMillis = 1000 * 60 * 60 * 24;
 const nattyFeedbackUrl = 'https://logs.sobotics.org/napi-1.1/api/stored/';
@@ -20,30 +18,29 @@ interface NattyFeedbackItem {
     type: 'Stored post';
 }
 
-export class NattyAPI {
+export class NattyAPI extends Reporter {
     private static nattyIds: number[] = [];
     private readonly chat: ChatApi = new ChatApi();
     private readonly feedbackMessage: string;
     private readonly reportMessage: string;
 
-    public name: keyof FlagTypeFeedbacks = 'Natty';
-    public icon?: HTMLDivElement;
-
     constructor(
-        private readonly answerId: number,
+        id: number,
         private readonly questionDate: Date,
         private readonly answerDate: Date,
         private readonly deleted: boolean
     ) {
-        this.feedbackMessage = `@Natty feedback https://stackoverflow.com/a/${this.answerId}`;
-        this.reportMessage = `@Natty report https://stackoverflow.com/a/${this.answerId}`;
+        super('Natty', id);
+
+        this.feedbackMessage = `@Natty feedback https://stackoverflow.com/a/${this.id}`;
+        this.reportMessage = `@Natty report https://stackoverflow.com/a/${this.id}`;
 
         this.icon = this.getIcon();
     }
 
     public static getAllNattyIds(ids?: number[]): Promise<void> {
-        const postIds = (ids || getAllPostIds(false, false)).join(',');
-        if (!isStackOverflow || !postIds) return Promise.resolve();
+        const postIds = (ids || page.getAllPostIds(false, false)).join(',');
+        if (!Page.isStackOverflow || !postIds) return Promise.resolve();
 
         return new Promise<void>((resolve, reject) => {
             GM_xmlhttpRequest({
@@ -62,11 +59,11 @@ export class NattyAPI {
         });
     }
 
-    public wasReported(): boolean {
-        return NattyAPI.nattyIds.includes(this.answerId);
+    public override wasReported(): boolean {
+        return NattyAPI.nattyIds.includes(this.id);
     }
 
-    public canBeReported(): boolean {
+    public override canBeReported(): boolean {
         const answerAge = this.getDaysBetween(this.answerDate, new Date());
         const daysPostedAfterQuestion = this.getDaysBetween(this.questionDate, this.answerDate);
 
@@ -76,7 +73,18 @@ export class NattyAPI {
             && !this.deleted;
     }
 
-    private async reportNaa(feedback: string): Promise<string> {
+    public override canSendFeedback(feedback: AllFeedbacks): boolean {
+        // a post can't be reported if it's been deleted!
+        return this.wasReported() || (this.canBeReported() && feedback === 'tp');
+    }
+
+    public override async sendFeedback(feedback: string): Promise<string> {
+        return this.wasReported()
+            ? await this.chat.sendMessage(`${this.feedbackMessage} ${feedback}`, this.name)
+            : await this.report(feedback);
+    }
+
+    private async report(feedback: string): Promise<string> {
         // no point in reporting if the feedback is not tp
         if (!this.canBeReported() || feedback !== 'tp') return '';
 
@@ -90,18 +98,11 @@ export class NattyAPI {
         return (answerDate.valueOf() - questionDate.valueOf()) / dayMillis;
     }
 
-    public async sendFeedback(feedback: string): Promise<string> {
-        return this.wasReported()
-            ? await this.chat.sendMessage(`${this.feedbackMessage} ${feedback}`, this.name)
-            : await this.reportNaa(feedback);
-    }
-
     private getIcon(): HTMLDivElement | undefined {
         if (!this.wasReported()) return;
 
-        const icon = createBotIcon(
-            'Natty',
-            `//sentinel.erwaysoftware.com/posts/aid/${this.answerId}`
+        const icon = this.createBotIcon(
+            `//sentinel.erwaysoftware.com/posts/aid/${this.id}`
         );
 
         return icon;

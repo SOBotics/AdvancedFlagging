@@ -1,5 +1,5 @@
-import { Store } from './Store';
-import { Cached, getSentMessage, debugMode } from '../shared';
+import { Store, Cached } from './Store';
+import { getSentMessage } from '../shared';
 
 export class ChatApi {
     private static getExpiryDate(): Date {
@@ -82,7 +82,7 @@ export class ChatApi {
     private async sendRequestToChat(message: string, roomId: number): Promise<boolean> {
         const url = `${this.chatRoomUrl}/chats/${roomId}/messages/new`;
 
-        if (debugMode) {
+        if (Store.dryRun) {
             console.log('Send', message, `to ${roomId} via`, url);
 
             return Promise.resolve(true);

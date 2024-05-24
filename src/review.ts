@@ -1,35 +1,20 @@
-import {
-    Cached,
-    cachedConfiguration,
-    addXHRListener,
-    cachedFlagTypes,
-    isLqpReviewPage,
-} from './shared';
+import { addXHRListener } from './shared';
+import { isDone } from './AdvancedFlagging';
 
-import {
-    ReporterInformation,
-    handleFlag,
-    isDone,
-} from './AdvancedFlagging';
-import {
-    addIconToPost,
-    getPostCreationDate
-} from './UserscriptTools/sotools';
 import { MetaSmokeAPI } from './UserscriptTools/MetaSmokeAPI';
 import { NattyAPI } from './UserscriptTools/NattyApi';
 import { CopyPastorAPI } from './UserscriptTools/CopyPastorAPI';
+import { Cached, Store } from './UserscriptTools/Store';
+
+import Post from './UserscriptTools/Post';
+import Page from './UserscriptTools/Page';
 
 interface ReviewQueueResponse {
     postId: number;
     isAudit: boolean; // detect audits & avoid sending feedback to bots
 }
 
-interface ReviewQueuePostInfo {
-    postId: number;
-    reporters: ReporterInformation;
-}
-
-const reviewPostsInformation: ReviewQueuePostInfo[] = [];
+const allPosts: Post[] = [];
 
 function getPostIdFromReview(): number {
     const answer = document.querySelector('[id^="answer-"]');
@@ -50,33 +35,26 @@ async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
     const reviewResponse = JSON.parse(xhr.responseText) as ReviewQueueResponse;
     if (reviewResponse.isAudit) return; // audit
 
-    const cachedPost = reviewPostsInformation
-        .find(item => item.postId === reviewResponse.postId);
+    const cached = allPosts.find(({ id }) => id === reviewResponse.postId);
+    const element = document.querySelector<HTMLElement>('#answer .answer');
+    if (!element) return;
 
-    await new Promise<void>(resolve => {
-        if (isDone) resolve();
-    });
+    const post = cached || new Post(element);
 
-    // add icons:
-    const question = document.querySelector('.question') as HTMLElement;
-    const answer = document.querySelector('#answer') as HTMLElement;
-
-    const postMenu = '.js-post-menu > div.d-flex';
-    const qDate = getPostCreationDate(question, 'Question');
-    const aDate = getPostCreationDate(answer, 'Answer');
-    // in case the post isn't cached, use the id as given
-    // in the /next-task or /task-reviewed call
-    const postId = cachedPost?.postId || reviewResponse.postId;
+    while (!isDone) {
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise<void>(resolve => setTimeout(resolve, 200));
+    }
 
     // update info on reporters
-    const url = `//stackoverflow.com/a/${postId}`;
-    await MetaSmokeAPI.queryMetaSmokeInternal([ url ]);
-    await NattyAPI.getAllNattyIds([postId]);
-    await CopyPastorAPI.storeReportedPosts([url]);
+    const url = `//stackoverflow.com/a/${post.id}`;
+    await Promise.all([
+        MetaSmokeAPI.queryMetaSmokeInternal([ url ]),
+        NattyAPI.getAllNattyIds([ post.id ]),
+        CopyPastorAPI.storeReportedPosts([ url ])
+    ]);
 
-    const reporters = addIconToPost(answer, postMenu, 'Answer', postId, qDate, aDate);
-
-    reviewPostsInformation.push({ postId, reporters });
+    if (!cached) allPosts.push(post);
 
     // attach click event listener to the submit button
     // it's OK to do on every task load, as the HTML is re-added
@@ -90,10 +68,9 @@ async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
             // must have selected 'Looks OK' and clicked submit
             if (!looksGood?.checked) return;
 
-            const cached = reviewPostsInformation
-                .find(item => item.postId === postId);
+            const cached = allPosts.find(({ id }) => id === post.id);
 
-            const flagType = cachedFlagTypes
+            const flagType = Store.flagTypes
                 // send 'Looks Fine' feedback:
                 // get the respective flagType, call handleFlag()
                 .find(({ id }) => id === 15);
@@ -101,13 +78,13 @@ async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
             // in case "looks fine" flagtype is deleted
             if (!cached || !flagType) return;
 
-            void handleFlag(flagType, cached.reporters);
+            void cached.sendFeedbacks(flagType);
         });
 }
 
 export function setupReview(): void {
-    const watchReview = cachedConfiguration[Cached.Configuration.watchQueues];
-    if (!watchReview || !isLqpReviewPage) return;
+    const watchReview = Store.config[Cached.Configuration.watchQueues];
+    if (!watchReview || !Page.isLqpReviewPage) return;
 
     addXHRListener(runOnNewTask);
 
@@ -121,15 +98,14 @@ export function setupReview(): void {
         ) return;
 
         const postId = getPostIdFromReview();
-        const cached = reviewPostsInformation
-            .find(item => item.postId === postId);
+        const cached = allPosts.find(({ id }) => id === postId);
 
         if (!cached) return;
 
-        const flagType = cachedFlagTypes
+        const flagType = Store.flagTypes
             .find(({ id }) => id === 7); // the "Not an answer" flag type
         if (!flagType) return; // something went wrong
 
-        void handleFlag(flagType, cached.reporters);
+        void cached.sendFeedbacks(flagType);
     });
 }

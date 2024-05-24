@@ -1,21 +1,24 @@
-import {
-    isStackOverflow,
-    username,
-    FlagTypeFeedbacks,
-    debugMode
-} from '../shared';
+import { username, FlagTypeFeedbacks, AllFeedbacks } from '../shared';
+import Page from './Page';
+import Reporter from './Reporter';
+import { Store } from './Store';
 
 const genericBotKey = 'Cm45BSrt51FR3ju';
 const genericBotSuccess = 'Post tracked with Generic Bot';
 const genericBotFailure = 'Server refused to track the post';
 
-export class GenericBotAPI {
-    private readonly answerId: number;
+export class GenericBotAPI extends Reporter {
     public name: keyof FlagTypeFeedbacks = 'Generic Bot';
 
-    constructor(answerId: number) {
-        this.answerId = answerId;
+    private readonly deleted: boolean;
+
+    constructor(id: number, deleted: boolean) {
+        super('Generic Bot', id);
+
+        this.deleted = deleted;
     }
+
+    // TODO create icon
 
     // Ask Floern what this does
     // https://github.com/SOBotics/Userscripts/blob/master/GenericBot/flagtracker.user.js#L32-L40
@@ -34,18 +37,18 @@ export class GenericBotAPI {
     public sendFeedback(trackPost: string): Promise<string> {
         const flaggerName = encodeURIComponent(username || '');
 
-        if (!trackPost || !isStackOverflow || !flaggerName) {
+        if (!trackPost || !Page.isStackOverflow || !flaggerName) {
             return Promise.resolve('');
         }
 
-        const answer = document.querySelector(`#answer-${this.answerId} .js-post-body`);
+        const answer = document.querySelector(`#answer-${this.id} .js-post-body`);
         const answerBody = answer?.innerHTML.trim() || '';
         const contentHash = this.computeContentHash(answerBody);
 
         const url = 'https://so.floern.com/api/trackpost.php';
         const payload = {
             key: genericBotKey,
-            postId: this.answerId,
+            postId: this.id,
             contentHash,
             flagger: flaggerName,
         };
@@ -54,7 +57,7 @@ export class GenericBotAPI {
             .map(item => item.join('='))
             .join('&');
 
-        if (debugMode) {
+        if (Store.dryRun) {
             console.log('Track post via', url, payload);
 
             return Promise.resolve('');
@@ -79,5 +82,14 @@ export class GenericBotAPI {
                 onerror: () => reject(genericBotFailure)
             });
         });
+    }
+
+    public override showOnPopover(): boolean {
+        // Generic Bot only works on SO
+        return Page.isStackOverflow;
+    }
+
+    public override canSendFeedback(feedback: AllFeedbacks): boolean {
+        return feedback === 'track' && !this.deleted && Page.isStackOverflow;
     }
 }

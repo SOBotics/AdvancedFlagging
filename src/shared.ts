@@ -1,5 +1,5 @@
-import { Store } from './UserscriptTools/Store';
-import { Flags, FlagCategory, FlagType } from './FlagTypes';
+import { CachedFlag, Configuration, Store } from './UserscriptTools/Store';
+import { Flags } from './FlagTypes';
 
 type BasicPlacement = 'auto' | 'top' | 'right' | 'bottom' | 'left';
 // Minimum TypeScript Version: 4.1
@@ -10,28 +10,6 @@ type AllPlacements =
 
 export type StacksToastState = 'success' | 'danger' | 'info' | 'warning';
 export type PostType = 'Question' | 'Answer';
-
-export interface CachedFlag extends FlagType {
-    downvote: boolean;
-    enabled: boolean;
-    belongsTo: string; // the Name of the category it belongs to
-}
-
-export type CachedCategory = Omit<FlagCategory, 'FlagTypes'>;
-
-type Mutable<Type> = {
-    -readonly [Key in keyof Type]: Type[Key];
-};
-
-export type Configuration = Mutable<{
-    // so that cache keys aren't duplicated
-    [key in keyof (Omit<typeof Cached.Configuration, 'key'>)]: boolean
-}> & { // add bot values that don't exist in Cached
-    defaultNoSmokey: boolean;
-    defaultNoNatty: boolean;
-    defaultNoGuttenberg: boolean;
-    defaultNoGenericBot: boolean;
-}
 
 export interface FlagTypeFeedbacks {
     Smokey: 'tpu-' | 'tp-' | 'fp-' | 'naa-' | '';
@@ -65,37 +43,6 @@ export const username = document.querySelector<HTMLDivElement>(
     'a[href^="/users/"] div[title]'
 )?.title || '';
 export const popupDelay = 4 * 1000;
-
-export const isStackOverflow = /^https:\/\/stackoverflow.com/.test(location.href);
-export const isQuestionPage = /\/questions\/\d+.*/.test(location.href);
-export const isLqpReviewPage = /\/review\/low-quality-posts\/\d+/.test(location.href);
-
-// Cache keys
-export const Cached = {
-    Configuration: {
-        key: 'Configuration',
-
-        openOnHover: 'openOnHover',
-        defaultNoFlag: 'defaultNoFlag',
-        defaultNoComment: 'defaultNoComment',
-        defaultNoDownvote: 'defaultNoDownvote',
-
-        watchFlags: 'watchFlags',
-        watchQueues: 'watchQueues',
-
-        linkDisabled: 'linkDisabled',
-        addAuthorName: 'addAuthorName',
-        debug: 'debug',
-    },
-    Fkey: 'fkey',
-    Metasmoke: {
-        userKey: 'MetaSmoke.userKey',
-        disabled: 'MetaSmoke.disabled'
-    },
-
-    FlagTypes: 'FlagTypes',
-    FlagCategories: 'FlagCategories'
-} as const;
 
 export const getIconPath = (name: string): string => {
     const element = GM_getResourceText(name);
@@ -198,21 +145,6 @@ export function interceptXhr(): void {
     };
 }
 
-// cache-related helpers/values
-// Some information from cache is stored on the variables as objects to make editing easier and simpler
-// Each time something is changed in the variables, update* must also be called to save the changes to the cache
-export const cachedConfiguration = Store.get<Configuration>(Cached.Configuration.key)
-    || {} as Partial<Configuration>;
-export const updateConfiguration = (): void => Store.set(Cached.Configuration.key, cachedConfiguration);
-export const debugMode = cachedConfiguration[Cached.Configuration.debug];
-
-export const cachedFlagTypes = Store.get<CachedFlag[]>(Cached.FlagTypes) || [];
-export const updateFlagTypes = (): void => Store.set(Cached.FlagTypes, cachedFlagTypes);
-
-export const cachedCategories = Store.get<CachedCategory[]>(Cached.FlagCategories)
-    || [] as (Partial<CachedCategory>)[];
-// export const updateCategories = (): void => GreaseMonkeyCache.storeInCache(FlagCategoriesKey, cachedCategories);
-
 // Replaces the placeholders with actual values in the cached flag text
 export function getFullFlag(
     flagType: CachedFlag,
@@ -234,7 +166,7 @@ export function getFullFlag(
 }
 
 export function getFlagTypeFromFlagId(flagId: number): CachedFlag | null {
-    return cachedFlagTypes.find(({ id }) => id === flagId) || null;
+    return Store.flagTypes.find(({ id }) => id === flagId) || null;
 }
 
 export type HumanFlags = 'as NAA'

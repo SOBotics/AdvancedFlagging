@@ -1,12 +1,8 @@
-import { Store } from '../../UserscriptTools/Store';
+import { Cached, CachedFlag, Store } from '../../UserscriptTools/Store';
 import {
     getIconPath,
-    cachedFlagTypes,
-    updateFlagTypes,
     displayStacksToast,
     getFlagTypeFromFlagId,
-    cachedCategories,
-    Cached
 } from '../../shared';
 
 import { submitChanges } from './submit';
@@ -17,7 +13,6 @@ import {
     getRadioRow
 } from './rows';
 
-import { CachedFlag } from '../../shared';
 import { wrapInFlexItem, cacheFlags } from '../../Configuration';
 
 import {
@@ -224,12 +219,12 @@ function getActionItems(
         const flagId = Number(wrapper.dataset.flagId);
 
         // find index of current flag type
-        const index = cachedFlagTypes.findIndex(({ id }) => id === flagId);
+        const index = Store.flagTypes.findIndex(({ id }) => id === flagId);
         // remove the flag type from the list
-        cachedFlagTypes.splice(index, 1);
+        Store.flagTypes.splice(index, 1);
 
         // update the storage
-        updateFlagTypes();
+        Store.updateFlagTypes();
 
         $(wrapper).fadeOut('fast', () => {
             const category = wrapper.parentElement;
@@ -268,7 +263,7 @@ function getActionItems(
         // update the Enabled property depending on the switch
         // and store the updated object in cache
         current.enabled = toggle.checked;
-        updateFlagTypes();
+        Store.updateFlagTypes();
 
         // update the card's style
         wrapper?.classList.toggle('s-card__muted');
@@ -369,12 +364,12 @@ function getCommentsModalBody(): HTMLElement {
     const container = document.createElement('div');
     container.classList.add('d-flex', 'fd-column', 'g16');
 
-    const categories = cachedCategories
+    const categories = Store.categories
         .filter(({ name }) => name)
         .map(({ name }) => {
             const div = createCategoryDiv(name || '');
 
-            const flagTypes = cachedFlagTypes
+            const flagTypes = Store.flagTypes
                 // only those belonging to "Name" category
                 .filter(({ belongsTo: BelongsTo }) => BelongsTo === name)
                 // create the s-card

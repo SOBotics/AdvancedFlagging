@@ -1,13 +1,11 @@
 import {
     displayStacksToast,
-    CachedFlag,
-    cachedFlagTypes,
     FlagTypeFeedbacks,
     getFlagTypeFromFlagId,
-    updateFlagTypes,
 } from '../../shared';
 import { Flags } from '../../FlagTypes';
 import { isSpecialFlag } from '../../Configuration';
+import { CachedFlag, Store } from '../../UserscriptTools/Store';
 
 function saveName(
     card: HTMLElement,
@@ -53,9 +51,9 @@ function saveSwfr(
     flagType.sendWhenFlagRaised = sendFeedback;
 
     // if any other FlagType with the same ReportType has swfr to true, then we need to change that
-    const similar = cachedFlagTypes.find(item => item.sendWhenFlagRaised
-                                                 && item.reportType === flagType.reportType
-                                                 && item.id !== flagId); // not this FlagType
+    const similar = Store.flagTypes.find(item => item.sendWhenFlagRaised
+                                              && item.reportType === flagType.reportType
+                                              && item.id !== flagId); // not this FlagType
 
     // make sure the FlagType exists and that the checkbox is checked
     if (!similar || !sendFeedback) return;
@@ -170,7 +168,7 @@ export function submitChanges(element: HTMLElement): void {
     // Row #4
     saveFeedbacks(expandable, flagType);
 
-    updateFlagTypes();
+    Store.updateFlagTypes();
 
     // element is the save button
     // the next element is the hide button

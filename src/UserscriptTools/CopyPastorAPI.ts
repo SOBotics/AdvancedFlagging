@@ -1,13 +1,14 @@
 import { ChatApi } from './ChatApi';
 import {
-    isStackOverflow,
     username,
     getSentMessage,
     FlagTypeFeedbacks,
-    debugMode
+    AllFeedbacks
 } from '../shared';
-import { getAllPostIds } from './sotools';
-import { createBotIcon, displayToaster } from '../AdvancedFlagging';
+import { displayToaster, page } from '../AdvancedFlagging';
+import { Store } from './Store';
+import Reporter from './Reporter';
+import Page from './Page';
 
 interface CopyPastorFindTargetResponseItem {
     post_id: string;
@@ -35,23 +36,24 @@ interface CopyPastorData {
 const copypastorServer = 'https://copypastor.sobotics.org';
 const copypastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
 
-export class CopyPastorAPI {
+export class CopyPastorAPI extends Reporter {
     private static copypastorIds: Partial<CopyPastorData> = {};
 
     public name: keyof FlagTypeFeedbacks = 'Guttenberg';
     public copypastorId: number;
     public repost: boolean;
     public targetUrl: string;
-    public icon?: HTMLDivElement;
 
     constructor(
-        private readonly answerId: number,
+        id: number,
     ) {
+        super('Guttenberg', id);
+
         const {
             copypastorId = 0,
             repost = false,
             target_url: targetUrl = ''
-        } = CopyPastorAPI.copypastorIds[this.answerId] || {};
+        } = CopyPastorAPI.copypastorIds[this.id] || {};
 
         this.copypastorId = copypastorId;
         this.repost = repost;
@@ -61,9 +63,9 @@ export class CopyPastorAPI {
     }
 
     public static async getAllCopyPastorIds(): Promise<void> {
-        if (!isStackOverflow) return;
+        if (!Page.isStackOverflow) return;
 
-        const postUrls = getAllPostIds(false, true); // postIds as URLs excluding questions
+        const postUrls = page.getAllPostIds(false, true); // postIds as URLs excluding questions
 
         if (!postUrls.length) return; // make sure the array isn't empty
 
@@ -113,7 +115,7 @@ export class CopyPastorAPI {
         });
     }
 
-    public sendFeedback(feedback: string): Promise<string> {
+    public override sendFeedback(feedback: string): Promise<string> {
         const chatId = new ChatApi().getChatUserId();
 
         if (!this.copypastorId) {
@@ -138,7 +140,7 @@ export class CopyPastorAPI {
         return new Promise<string>((resolve, reject) => {
             const url = `${copypastorServer}/feedback/create`;
 
-            if (debugMode) {
+            if (Store.dryRun) {
                 console.log('Feedback to Guttenberg via', url, data);
 
                 reject('Didn\'t send feedback: debug mode');
@@ -161,11 +163,23 @@ export class CopyPastorAPI {
         });
     }
 
+    public override canBeReported(): boolean {
+        return false;
+    }
+
+    public override wasReported(): boolean {
+        // post was reported if copypastorId is not falsy
+        return Boolean(this.copypastorId);
+    }
+
+    public override canSendFeedback(feedback: AllFeedbacks): boolean {
+        return this.wasReported() && Boolean(feedback);
+    }
+
     private getIcon(): HTMLDivElement | undefined {
         if (!this.copypastorId) return;
 
-        const icon = createBotIcon(
-            'Guttenberg',
+        const icon = this.createBotIcon(
             `${copypastorServer}/posts/${this.copypastorId}`
         );
 

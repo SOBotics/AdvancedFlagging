@@ -1,5 +1,4 @@
 import {
-    CachedFlag,
     getHumanFromDisplayName,
     BotNames,
     AllFeedbacks,
@@ -16,6 +15,7 @@ import {
     Select,
     Radio
 } from '@userscripters/stacks-helpers';
+import { CachedFlag } from '../../UserscriptTools/Store';
 
 const flagTypes = flagCategories.flatMap(({ FlagTypes }) => FlagTypes);
 const flagNames = [...new Set(flagTypes.map(({ reportType }) => reportType))];

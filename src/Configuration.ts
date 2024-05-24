@@ -1,17 +1,13 @@
 import { flagCategories } from './FlagTypes';
-import { Store } from './UserscriptTools/Store';
-import { CachedFlag, updateFlagTypes } from './shared';
+import {
+    Store,
+    Cached,
+    CachedCategory,
+    CachedFlag
+} from './UserscriptTools/Store';
 import { Flags } from './FlagTypes';
 
-import {
-    Cached,
-    FlagNames,
-    cachedFlagTypes,
-    CachedCategory,
-    cachedCategories,
-    cachedConfiguration,
-    displayStacksToast
-} from './shared';
+import { FlagNames, displayStacksToast } from './shared';
 
 import { buildConfigurationOverlay } from './modals/config';
 import { setupCommentsAndFlagsModal } from './modals/comments/main';
@@ -52,7 +48,7 @@ export function cacheFlags(): void {
     Store.set<CachedFlag[]>(Cached.FlagTypes, flagTypesToCache);
 
     // also update the variable to prevent breaking the config modal
-    cachedFlagTypes.push(...flagTypesToCache);
+    Store.flagTypes.push(...flagTypesToCache);
 }
 
 function cacheCategories(): void {
@@ -68,33 +64,33 @@ function cacheCategories(): void {
 
     Store.set<CachedCategory[]>(Cached.FlagCategories, categories);
 
-    cachedCategories.push(...categories);
+    Store.categories.push(...categories);
 }
 
 function setupDefaults(): void {
     // if there's no downvote property, then the user
     // is probably using an older version of AF
     // clear and re-save
-    if (!cachedFlagTypes.length
-        || !('downvote' in cachedFlagTypes[0])) {
+    if (!Store.flagTypes.length
+        || !('downvote' in Store.flagTypes[0])) {
         cacheFlags();
     }
 
-    if (!cachedCategories.length
-        || !('appliesTo' in cachedCategories[0])) {
+    if (!Store.categories.length
+        || !('appliesTo' in Store.categories[0])) {
         cacheCategories();
     }
 
     // PostOther can be replaced with PlagiarizedContent
     // for "Plagiarism" flag type.
-    cachedFlagTypes.forEach(cachedFlag => {
+    Store.flagTypes.forEach(cachedFlag => {
         // Plagiarism and Bad Attribution flag types,
         // filter by id because names can be edited by the user
         if (cachedFlag.id !== 3 && cachedFlag.id !== 5) return;
 
         cachedFlag.reportType = FlagNames.Plagiarism;
     });
-    updateFlagTypes();
+    Store.updateFlagTypes();
 }
 
 export function setupConfiguration(): void {
@@ -133,7 +129,7 @@ export function setupConfiguration(): void {
     // or is using an older version of AF,
     // prompt to submit
     const propertyDoesNotExist = !Object.prototype.hasOwnProperty.call(
-        cachedConfiguration,
+        Store.config,
         Cached.Configuration.addAuthorName
     );
 

@@ -183,7 +183,7 @@ function setPopoverOpening(
 }
 
 const url = new URL(window.location.href);
-export const page = new Page(url);
+export let page = new Page(url);
 
 function setupPostPage(): void {
     // check if the link + popover should be set up
@@ -194,14 +194,16 @@ function setupPostPage(): void {
     // i)  append the icons to iconLocation
     // ii) add link & set up reporters on
 
+    page = new Page(url);
+
     if (page.name && page.name !== 'Question') {
         page.posts.forEach(post => post.addIcons());
+
+        return;
     }
 
     page.posts.forEach(post => {
         const { id, done, failed, flagged, element } = post;
-
-        const icons = post.getAllIcons(); // TODO exclude Generic Bot
 
         post.watchForFlags();
 
@@ -226,7 +228,8 @@ function setupPostPage(): void {
         const dropDown = buildFlaggingDialog(post);
         advancedFlaggingLink.append(dropDown);
 
-        iconLocation?.append(done, failed, flagged, ...icons);
+        iconLocation?.append(done, failed, flagged);
+        post.addIcons();
 
         setPopoverOpening(advancedFlaggingLink, dropDown);
     });

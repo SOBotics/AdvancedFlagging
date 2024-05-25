@@ -1,4 +1,4 @@
-import { username, FlagTypeFeedbacks, AllFeedbacks } from '../shared';
+import { username, AllFeedbacks } from '../shared';
 import Page from './Page';
 import Reporter from './Reporter';
 import { Store } from './Store';
@@ -8,8 +8,6 @@ const genericBotSuccess = 'Post tracked with Generic Bot';
 const genericBotFailure = 'Server refused to track the post';
 
 export class GenericBotAPI extends Reporter {
-    public name: keyof FlagTypeFeedbacks = 'Generic Bot';
-
     private readonly deleted: boolean;
 
     constructor(id: number, deleted: boolean) {
@@ -17,8 +15,6 @@ export class GenericBotAPI extends Reporter {
 
         this.deleted = deleted;
     }
-
-    // TODO create icon
 
     // Ask Floern what this does
     // https://github.com/SOBotics/Userscripts/blob/master/GenericBot/flagtracker.user.js#L32-L40
@@ -34,7 +30,7 @@ export class GenericBotAPI extends Reporter {
         return hash;
     }
 
-    public sendFeedback(trackPost: string): Promise<string> {
+    public override sendFeedback(trackPost: string): Promise<string> {
         const flaggerName = encodeURIComponent(username || '');
 
         if (!trackPost || !Page.isStackOverflow || !flaggerName) {

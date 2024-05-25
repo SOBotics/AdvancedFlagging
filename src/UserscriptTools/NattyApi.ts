@@ -34,8 +34,6 @@ export class NattyAPI extends Reporter {
 
         this.feedbackMessage = `@Natty feedback https://stackoverflow.com/a/${this.id}`;
         this.reportMessage = `@Natty report https://stackoverflow.com/a/${this.id}`;
-
-        this.icon = this.getIcon();
     }
 
     public static getAllNattyIds(ids?: number[]): Promise<void> {
@@ -98,13 +96,11 @@ export class NattyAPI extends Reporter {
         return (answerDate.valueOf() - questionDate.valueOf()) / dayMillis;
     }
 
-    private getIcon(): HTMLDivElement | undefined {
-        if (!this.wasReported()) return;
-
-        const icon = this.createBotIcon(
-            `//sentinel.erwaysoftware.com/posts/aid/${this.id}`
+    public override getIcon(): HTMLDivElement {
+        return this.createBotIcon(
+            this.wasReported()
+                ? `//sentinel.erwaysoftware.com/posts/aid/${this.id}`
+                : ''
         );
-
-        return icon;
     }
 }

@@ -152,6 +152,7 @@ export default class Post {
 
         if (Store.dryRun) {
             console.log('Downvote post by clicking', button);
+            return;
         }
 
         button?.click();
@@ -283,6 +284,7 @@ export default class Post {
     private getType(): PostType {
         return this.element.classList.contains('question')
             || this.element.id.startsWith('question')
+            || this.element.querySelector('.question-hyperlink')
             ? 'Question'
             : 'Answer';
     }
@@ -335,20 +337,13 @@ export default class Post {
         return lastNameEl?.textContent?.trim() || '';
     }
 
-    public getAllIcons(): HTMLElement[] {
-        const icons = (Object.values(this.reporters) as Reporter[])
-            .map(reporter => reporter.icon)
-            .filter(Boolean) as HTMLElement[];
-        icons.forEach(icon => icon.classList.add('advanced-flagging-icon'));
-
-        return icons;
-    }
-
     public addIcons(): void {
         const iconLocation = this.element.querySelector(
             'a.question-hyperlink, a.answer-hyperlink, .s-link, .js-post-menu > div.d-flex'
         );
-        const icons = this.getAllIcons(); // TODO is this needed?
+        const icons = (Object.values(this.reporters) as Reporter[])
+            .filter(reporter => reporter.wasReported())
+            .map(reporter => reporter.getIcon());
 
         iconLocation?.append(...icons);
     }

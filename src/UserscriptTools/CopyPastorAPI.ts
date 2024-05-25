@@ -1,10 +1,5 @@
 import { ChatApi } from './ChatApi';
-import {
-    username,
-    getSentMessage,
-    FlagTypeFeedbacks,
-    AllFeedbacks
-} from '../shared';
+import { username, getSentMessage, AllFeedbacks } from '../shared';
 import { displayToaster, page } from '../AdvancedFlagging';
 import { Store } from './Store';
 import Reporter from './Reporter';
@@ -39,7 +34,6 @@ const copypastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
 export class CopyPastorAPI extends Reporter {
     private static copypastorIds: Partial<CopyPastorData> = {};
 
-    public name: keyof FlagTypeFeedbacks = 'Guttenberg';
     public copypastorId: number;
     public repost: boolean;
     public targetUrl: string;
@@ -58,8 +52,6 @@ export class CopyPastorAPI extends Reporter {
         this.copypastorId = copypastorId;
         this.repost = repost;
         this.targetUrl = targetUrl;
-
-        this.icon = this.getIcon();
     }
 
     public static async getAllCopyPastorIds(): Promise<void> {
@@ -176,13 +168,11 @@ export class CopyPastorAPI extends Reporter {
         return this.wasReported() && Boolean(feedback);
     }
 
-    private getIcon(): HTMLDivElement | undefined {
-        if (!this.copypastorId) return;
-
-        const icon = this.createBotIcon(
-            `${copypastorServer}/posts/${this.copypastorId}`
+    public override getIcon(): HTMLDivElement {
+        return this.createBotIcon(
+            this.copypastorId
+                ? `${copypastorServer}/posts/${this.copypastorId}`
+                : ''
         );
-
-        return icon;
     }
 }

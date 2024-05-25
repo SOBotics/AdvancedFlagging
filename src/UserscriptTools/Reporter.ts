@@ -5,8 +5,6 @@ export default class Reporter {
     public readonly name: keyof FlagTypeFeedbacks;
     public readonly id: number;
 
-    public icon?: HTMLDivElement;
-
     constructor(name: keyof FlagTypeFeedbacks, id: number) {
         this.name = name;
         this.id = id;
@@ -32,6 +30,10 @@ export default class Reporter {
         return Boolean(feedback);
     }
 
+    public getIcon(): HTMLDivElement {
+        return this.createBotIcon('');
+    }
+
     protected createBotIcon(href?: string): HTMLDivElement {
         const botImages = {
             Natty: 'https://i.stack.imgur.com/aMUMt.jpg?s=32&g=1',
@@ -41,7 +43,7 @@ export default class Reporter {
         };
 
         const iconWrapper = document.createElement('div');
-        iconWrapper.classList.add('flex--item', 'd-inline-block');
+        iconWrapper.classList.add('flex--item', 'd-inline-block', 'advanced-flagging-icon');
 
         if (!Page.isQuestionPage && !Page.isLqpReviewPage) {
             iconWrapper.classList.add('ml8'); // flag pages
@@ -53,9 +55,10 @@ export default class Reporter {
         if (href) {
             iconLink.href = href;
             iconLink.target = '_blank';
+
+            attachPopover(iconLink, `Reported by ${this.name}`);
         }
 
-        attachPopover(iconLink, `Reported by ${this.name}`);
         iconWrapper.append(iconLink);
 
         const iconImage = document.createElement('img');

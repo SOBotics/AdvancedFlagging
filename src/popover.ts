@@ -21,7 +21,7 @@ import { NattyAPI } from './UserscriptTools/NattyApi';
 import { GenericBotAPI } from './UserscriptTools/GenericBotAPI';
 import { CopyPastorAPI } from './UserscriptTools/CopyPastorAPI';
 
-import { Menu } from '@userscripters/stacks-helpers';
+import { Menu, Spinner } from '@userscripters/stacks-helpers';
 import { isSpecialFlag } from './Configuration';
 import { Store, Cached, Configuration, CachedFlag } from './UserscriptTools/Store';
 import Reporter from './UserscriptTools/Reporter';
@@ -204,13 +204,11 @@ export class Popover {
                 const botNameId = `advanced-flagging-send-feedback-to-${sanitised}-${this.post.id}`;
                 const defaultNoCheck = Store.config[cacheKey];
 
-                const imageClone = instance.icon?.cloneNode(true) as HTMLElement;
-
                 return {
                     checkbox: {
                         id: botNameId,
                         labelConfig: {
-                            text: `Feedback to ${imageClone.outerHTML}`,
+                            text: `Feedback to ${instance.getIcon().outerHTML}`,
                             classes: [ 'fs-body1' ]
                         },
                         selected: !defaultNoCheck,
@@ -380,6 +378,15 @@ export class Popover {
         // hide the dropdown immediately after clicking one of the options
         $(dropdown).fadeOut('fast');
 
+        // add Stacks spinner
+        const spinner = Spinner.makeSpinner({ size: 'sm' });
+
+        const flex = document.createElement('div');
+        flex.classList.add('flex--item');
+        flex.append(spinner);
+
+        dropdown.closest('.flex--item')?.after(flex);
+
         // only if the post hasn't been deleted should we
         // upvote a comment/send feedback/downvote/flag it
         if (!this.post.deleted) {
@@ -430,6 +437,9 @@ export class Popover {
         // feedback should however be sent
         // if it's sent successfully, the success variable is true, otherwise false
         const success = await this.post.sendFeedbacks(flagType);
+
+        // remove spinner
+        flex.remove();
 
         // don't show performed/failed action icons if post has been flagged
         if (reportType !== 'NoFlag') return;

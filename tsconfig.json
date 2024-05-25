@@ -4,6 +4,7 @@
     "isolatedModules": true,
     "strict": true,
     "strictBindCallApply": false,
+    "noImplicitOverride": true,
     "removeComments": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,

@@ -28,6 +28,7 @@ export default class Page {
         return this.posts
             .filter(post => {
                 if (!includeQuestion) return post.type !== 'Question';
+                else return true;
             })
             .map(({ id, type }) => {
                 const urlType = type === 'Answer' ? 'a' : 'questions';

@@ -45,7 +45,6 @@ export class MetaSmokeAPI extends Reporter {
     ) {
         super('Smokey', id);
 
-        this.icon = this.getIcon();
         this.smokeyId = MetaSmokeAPI.metasmokeIds[this.id] || 0;
     }
 
@@ -267,11 +266,11 @@ export class MetaSmokeAPI extends Reporter {
             feedback === 'tpu-' // the feedback is tpu-
             && !this.deleted // AND the post is not deleted
             && !MetaSmokeAPI.isDisabled // AND SD info is stored in cache
-            && !MetaSmokeAPI.accessToken // AND user has authenticated with SM
+            && Boolean(MetaSmokeAPI.accessToken) // AND user has authenticated with SM
         );
     }
 
-    public async sendFeedback(feedback: string): Promise<string> {
+    public override async sendFeedback(feedback: string): Promise<string> {
         if (MetaSmokeAPI.isDisabled) return '';
 
         const { appKey, accessToken } = MetaSmokeAPI;
@@ -316,13 +315,11 @@ export class MetaSmokeAPI extends Reporter {
         return getSentMessage(true, feedback, this.name);
     }
 
-    private getIcon(): HTMLDivElement | undefined {
-        if (!this.smokeyId) return;
-
-        const icon = this.createBotIcon(
-            `//metasmoke.erwaysoftware.com/post/${this.smokeyId}`
+    public override getIcon(): HTMLDivElement {
+        return this.createBotIcon(
+            this.smokeyId
+                ? `//metasmoke.erwaysoftware.com/post/${this.smokeyId}`
+                : ''
         );
-
-        return icon;
     }
 }

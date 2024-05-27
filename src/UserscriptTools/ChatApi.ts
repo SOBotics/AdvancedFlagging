@@ -180,17 +180,20 @@ export class ChatApi {
     }
 
     private closeWS(): void {
-        this.websocket?.close();
+        // websocket already closed
+        if (!this.websocket) return;
+
+        this.websocket.close();
         this.websocket = null;
 
         if (Store.dryRun) {
-            console.log('WebSocket connection closed.');
+            console.log('Chat WebSocket connection closed.');
         }
     }
 
     public async waitForReport(postId: number): Promise<void> {
         await withTimeout<void>(
-            10000,
+            10_000,
             new Promise<void>(resolve => {
                 this.websocket?.addEventListener('message', (event: MessageEvent<string>) => {
                     const data = JSON.parse(event.data) as ChatWsMessage;

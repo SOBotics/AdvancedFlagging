@@ -4,13 +4,12 @@ import {
     PostType,
     delay,
     getFormDataFromObject,
+    withTimeout,
 } from '../shared';
 import { Modals, Input, Buttons } from '@userscripters/stacks-helpers';
 import { displayToaster, page } from '../AdvancedFlagging';
 import Reporter from './Reporter';
 
-const metasmokeKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
-const metasmokeApiFilter = 'GGJFNNKKJFHFKJFLJLGIJMFIHNNJNINJ';
 const metasmokeReportedMessage = 'Post reported to Smokey';
 const metasmokeFailureMessage = 'Failed to report post to Smokey';
 
@@ -28,14 +27,29 @@ interface MetasmokeData {
     [key: number]: number;
 }
 
+interface MetasmokeWsMessage {
+    type: string;
+    message: {
+        event_class: string;
+        event_type: string;
+        object: {
+            link: string;
+        };
+    };
+}
+
 export class MetaSmokeAPI extends Reporter {
     public static accessToken: string;
     public static isDisabled: boolean = Store.get<boolean>(Cached.Metasmoke.disabled) || false;
 
     public smokeyId: number;
 
-    private static readonly appKey = metasmokeKey;
+    private static readonly appKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
+    private static readonly filter = 'GGJFNNKKJFHFKJFLJLGIJMFIHNNJNINJ';
     private static metasmokeIds: MetasmokeData = {};
+
+    private websocket: WebSocket | null = null;
+    private readonly wsUrl = 'wss://metasmoke.erwaysoftware.com/cable';
 
     constructor(
         id: number,
@@ -55,6 +69,80 @@ export class MetaSmokeAPI extends Reporter {
     public static async setup(): Promise<void> {
         // Make sure we request it immediately
         MetaSmokeAPI.accessToken = await MetaSmokeAPI.getUserKey();
+    }
+
+    private initWS(): void {
+        this.websocket = new WebSocket(this.wsUrl);
+
+        const auth = JSON.stringify({
+            identifier: JSON.stringify({
+                channel: 'ApiChannel',
+                key: MetaSmokeAPI.appKey,
+                events: 'posts#create'
+            }),
+            command: 'subscribe'
+        });
+
+        this.websocket.addEventListener('open', () => {
+            this.websocket?.send(auth);
+        });
+
+        if (Store.dryRun) {
+            console.log('MS WebSocket initialised.');
+        }
+    }
+
+    private closeWS(): void {
+        // websocket already closed
+        if (!this.websocket) return;
+
+        this.websocket.close();
+        this.websocket = null;
+
+        if (Store.dryRun) {
+            console.log('MS WebSocket connection closed.');
+        }
+    }
+
+    private async waitForReport(): Promise<void> {
+        if (!this.websocket) return;
+
+        await withTimeout(
+            10_000,
+            new Promise<void>(resolve => {
+                this.websocket?.addEventListener('message', (event: MessageEvent<string>) => {
+                    const data = JSON.parse(event.data) as MetasmokeWsMessage;
+
+                    // https://github.com/Charcoal-SE/userscripts/blob/master/sim/sim.user.js#L381-L400
+                    if (data.type) return; // not interested
+
+                    if (Store.dryRun) {
+                        console.log('New post reported to Smokey', data);
+                    }
+
+                    const {
+                        object,
+                        event_class: evClass,
+                        event_type: type
+                    } = data.message;
+
+                    // not interested
+                    if (type !== 'create' || evClass !== 'Post') return;
+
+                    const link = object.link;
+                    const url = new URL(link, location.href);
+
+                    const postId = Number(/\d+/.exec(url.pathname)?.[0]);
+
+                    if (
+                        url.host !== location.host // different sites
+                        || postId !== this.id // different posts
+                    ) return;
+
+                    resolve();
+                });
+            })
+        ).finally(() => this.closeWS());
     }
 
     private static getMetasmokeTokenPopup(): HTMLElement {
@@ -157,7 +245,7 @@ export class MetaSmokeAPI extends Reporter {
             urls: urlString,
             key: MetaSmokeAPI.appKey,
             per_page: 1000,
-            filter: metasmokeApiFilter // only include id and link fields
+            filter: this.filter // only include id and link fields
         })
             .map(item => item.join('='))
             .join('&');
@@ -209,7 +297,7 @@ export class MetaSmokeAPI extends Reporter {
             });
     }
 
-    public async reportRedFlag(): Promise<string> {
+    public async reportRedFlag(): Promise<void> {
         const urlString = MetaSmokeAPI.getQueryUrl(this.id, this.postType);
 
         const { appKey, accessToken } = MetaSmokeAPI;
@@ -243,8 +331,6 @@ export class MetaSmokeAPI extends Reporter {
 
             throw new Error(metasmokeFailureMessage);
         }
-
-        return metasmokeReportedMessage;
     }
 
     public override canBeReported(): boolean {
@@ -276,7 +362,15 @@ export class MetaSmokeAPI extends Reporter {
 
         // not reported, feedback is tpu AND the post isn't deleted => report it!
         if (!this.smokeyId && feedback === 'tpu-' && !this.deleted) {
-            return await this.reportRedFlag();
+            // see: https://chat.stackexchange.com/transcript/message/65076878
+            this.initWS();
+            await this.reportRedFlag();
+            await this.waitForReport();
+
+            // https://chat.stackexchange.com/transcript/message/65097399
+            await new Promise(resolve => setTimeout(resolve, 3 * 1000));
+
+            return metasmokeReportedMessage;
         } else if (!accessToken || !this.smokeyId) {
             // user hasn't authenticated or the post hasn't been reported => don't send feedback
             return '';

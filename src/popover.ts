@@ -449,18 +449,19 @@ export class Popover {
                 } catch (error) {
                     displayToaster('Failed to flag: ' + (error as string), 'danger');
                 }
+            }
 
-                // delete vote if the user has chosen to flag the post
-                // as spam/rude/NAA/VLQ
-                if (del && this.post.canDelete
-                    && reportType !== FlagNames.Plagiarism
-                    && reportType !== FlagNames.ModFlag
-                ) {
-                    try {
-                        await this.post.deleteVote();
-                    } catch (error) {
-                        displayToaster('Failed to vote to delete: ' + (error as string), 'danger');
-                    }
+            // delete vote if the user has chosen to flag the post
+            // as spam/rude/NAA/VLQ
+            if (del && this.post.canDelete
+                && reportType !== FlagNames.Plagiarism
+                && reportType !== FlagNames.ModFlag
+                && reportType !== FlagNames.NoFlag
+            ) {
+                try {
+                    await this.post.deleteVote();
+                } catch (error) {
+                    displayToaster('Failed to vote to delete: ' + (error as string), 'danger');
                 }
             }
         }

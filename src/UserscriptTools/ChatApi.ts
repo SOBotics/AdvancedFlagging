@@ -1,5 +1,25 @@
 import { Store, Cached } from './Store';
-import { getSentMessage } from '../shared';
+import { withTimeout } from '../shared';
+
+interface ChatWSAuthResponse {
+    url: string;
+}
+
+interface ChatEventsResponse {
+    time: number;
+}
+
+interface ChatMessageInfo {
+    event_type: number;
+    user_id: number;
+    content: string;
+}
+
+interface ChatWsMessage {
+    [key: string]: {
+        e?: ChatMessageInfo[];
+    };
+}
 
 export class ChatApi {
     private static getExpiryDate(): Date {
@@ -10,31 +30,19 @@ export class ChatApi {
     }
 
     private readonly chatRoomUrl: string;
-    private readonly soboticsRoomId: number;
+    private readonly roomId: number;
+    private readonly nattyId = 6817005;
 
-    public constructor(chatUrl = 'https://chat.stackoverflow.com') {
+    private websocket: WebSocket | null = null;
+
+    public constructor(
+        chatUrl = 'https://chat.stackoverflow.com',
+        roomId = 111347
+    ) {
         this.chatRoomUrl = chatUrl;
-        this.soboticsRoomId = 111347;
+        this.roomId = roomId;
     }
 
-    public getChannelFKey(roomId: number): Promise<string> {
-        const expiryDate = ChatApi.getExpiryDate();
-
-        return Store.getAndCache<string>(Cached.Fkey, async () => {
-            try {
-                const channelPage = await this.getChannelPage(roomId);
-                const parsed = new DOMParser().parseFromString(channelPage, 'text/html');
-
-                const fkeyInput = parsed.querySelector<HTMLInputElement>('input[name="fkey"]');
-                const fkey = fkeyInput?.value || '';
-
-                return fkey;
-            } catch (error) {
-                console.error(error);
-                throw new Error('Failed to get chat fkey');
-            }
-        }, expiryDate);
-    }
 
     public getChatUserId(): number {
         // Because the script only sends messages to SO chat,
@@ -44,19 +52,14 @@ export class ChatApi {
         return StackExchange.options.user.userId as number;
     }
 
-    public async sendMessage(
-        message: string,
-        bot: string,
-        roomId = this.soboticsRoomId
-    ): Promise<string> {
+    public async sendMessage(message: string,): Promise<boolean> {
         let numTries = 0;
-        const feedback = message.split(' ').pop() || '';
 
         const makeRequest = async (): Promise<boolean> => {
-            return await this.sendRequestToChat(message, roomId);
+            return await this.sendRequestToChat(message);
         };
 
-        const onFailure = async (): Promise<string> => {
+        const onFailure = async (): Promise<boolean> => {
             numTries++;
 
             if (numTries < 3) {
@@ -69,26 +72,26 @@ export class ChatApi {
                 throw new Error('Failed to send message to chat'); // retry limit exceeded
             }
 
-            return getSentMessage(true, feedback, bot);
+            return true;
         };
 
         if (!await makeRequest()) {
             return onFailure();
         }
 
-        return getSentMessage(true, feedback, bot);
+        return true;
     }
 
-    private async sendRequestToChat(message: string, roomId: number): Promise<boolean> {
-        const url = `${this.chatRoomUrl}/chats/${roomId}/messages/new`;
+    private async sendRequestToChat(message: string): Promise<boolean> {
+        const url = `${this.chatRoomUrl}/chats/${this.roomId}/messages/new`;
 
         if (Store.dryRun) {
-            console.log('Send', message, `to ${roomId} via`, url);
+            console.log('Send', message, `to ${this.roomId} via`, url);
 
             return Promise.resolve(true);
         }
 
-        const fkey = await this.getChannelFKey(roomId);
+        const fkey = await this.getChannelFKey();
 
         return new Promise(resolve => {
             GM_xmlhttpRequest({
@@ -104,11 +107,11 @@ export class ChatApi {
         });
     }
 
-    private getChannelPage(roomId: number): Promise<string> {
+    private getChannelPage(): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'GET',
-                url: `${this.chatRoomUrl}/rooms/${roomId}`,
+                url: `${this.chatRoomUrl}/rooms/${this.roomId}`,
                 onload: ({ status, responseText }) => {
                     status === 200
                         ? resolve(responseText)
@@ -117,5 +120,119 @@ export class ChatApi {
                 onerror: () => reject()
             });
         });
+    }
+
+    // see https://meta.stackexchange.com/a/218355
+    private async getWsUrl(): Promise<string> {
+        const fkey = await this.getChannelFKey();
+
+        return new Promise<string>((resolve, reject) => {
+            GM_xmlhttpRequest({
+                method: 'POST',
+                url: `${this.chatRoomUrl}/ws-auth`,
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                data: `roomid=${this.roomId}&fkey=${fkey}`,
+                onload: ({ status, responseText }) => {
+                    if (status !== 200) reject();
+
+                    const json = JSON.parse(responseText) as ChatWSAuthResponse;
+                    resolve(json.url);
+                },
+                onerror: () => reject()
+            });
+        });
+    }
+
+    private async getLParam(): Promise<number> {
+        const fkey = await this.getChannelFKey();
+
+        return new Promise<number>((resolve, reject) => {
+            GM_xmlhttpRequest({
+                method: 'POST',
+                url: `${this.chatRoomUrl}/chats/${this.roomId}/events`,
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                data: `fkey=${fkey}`,
+                onload: ({ status, responseText }) => {
+                    if (status !== 200) reject();
+
+                    const json = JSON.parse(responseText) as ChatEventsResponse;
+                    resolve(json.time);
+                },
+                onerror: () => reject()
+            });
+        });
+    }
+
+    public async initWS(): Promise<void> {
+        const l = await this.getLParam();
+        const url = await this.getWsUrl();
+
+        const ws = `${url}?l=${l}`;
+        this.websocket = new WebSocket(ws);
+
+        if (Store.dryRun) {
+            console.log('Initialised WebSocket at', ws, this.websocket);
+        }
+    }
+
+    private closeWS(): void {
+        this.websocket?.close();
+        this.websocket = null;
+
+        if (Store.dryRun) {
+            console.log('WebSocket connection closed.');
+        }
+    }
+
+    public async waitForReport(postId: number): Promise<void> {
+        await withTimeout<void>(
+            10000,
+            new Promise<void>(resolve => {
+                this.websocket?.addEventListener('message', (event: MessageEvent<string>) => {
+                    const data = JSON.parse(event.data) as ChatWsMessage;
+
+                    data[`r${this.roomId}`].e
+                        ?.filter(({ event_type, user_id }) => {
+                            // interested in new messages posted by Natty
+                            return event_type === 1 && user_id === this.nattyId;
+                        })
+                        .forEach(item => {
+                            const { content } = item;
+
+                            if (Store.dryRun) {
+                                console.log('New message posted by Natty on room', this.roomId, item);
+                            }
+
+                            const postUrl = `stackoverflow.com/a/${postId})`;
+                            if (!content.includes(postUrl)) return;
+
+                            resolve();
+                        });
+                });
+            })
+        ).finally(() => this.closeWS());
+    }
+
+    private getChannelFKey(): Promise<string> {
+        const expiryDate = ChatApi.getExpiryDate();
+
+        return Store.getAndCache<string>(Cached.Fkey, async () => {
+            try {
+                const channelPage = await this.getChannelPage();
+                const parsed = new DOMParser().parseFromString(channelPage, 'text/html');
+
+                const fkeyInput = parsed.querySelector<HTMLInputElement>('input[name="fkey"]');
+                const fkey = fkeyInput?.value || '';
+
+                return fkey;
+            } catch (error) {
+                console.error(error);
+                throw new Error('Failed to get chat fkey');
+            }
+        }, expiryDate);
     }
 }

@@ -1,5 +1,5 @@
 import { ChatApi } from './ChatApi';
-import { username, getSentMessage, AllFeedbacks } from '../shared';
+import { username, AllFeedbacks } from '../shared';
 import { displayToaster, page } from '../AdvancedFlagging';
 import { Store } from './Store';
 import Reporter from './Reporter';
@@ -114,8 +114,8 @@ export class CopyPastorAPI extends Reporter {
             return Promise.resolve('');
         }
 
-        const successMessage = getSentMessage(true, feedback, this.name);
-        const failureMessage = getSentMessage(false, feedback, this.name);
+        const successMessage = this.getSentMessage(true, feedback);
+        const failureMessage = this.getSentMessage(false, feedback);
 
         const payload = {
             post_id: this.copypastorId,

@@ -77,16 +77,27 @@ export class NattyAPI extends Reporter {
     }
 
     public override async sendFeedback(feedback: string): Promise<string> {
-        return this.wasReported()
-            ? await this.chat.sendMessage(`${this.feedbackMessage} ${feedback}`, this.name)
+        this.wasReported()
+            ? await this.chat.sendMessage(`${this.feedbackMessage} ${feedback}`)
             : await this.report(feedback);
+
+        return this.getSentMessage(true, feedback);
     }
 
     private async report(feedback: string): Promise<string> {
         // no point in reporting if the feedback is not tp
         if (!this.canBeReported() || feedback !== 'tp') return '';
 
-        await this.chat.sendMessage(this.reportMessage, this.name);
+        // When mods flag a post as NAA/VLQ, then that
+        // post is deleted immediately. As a result, it
+        // isn't reported on time to Natty.
+        if (StackExchange.options.user.isModerator) {
+            await this.chat.initWS();
+            await this.chat.sendMessage(this.reportMessage);
+            await this.chat.waitForReport(this.id);
+        } else {
+            await this.chat.sendMessage(this.reportMessage);
+        }
 
         return nattyReportedMessage;
     }

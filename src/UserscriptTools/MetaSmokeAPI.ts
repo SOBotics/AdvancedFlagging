@@ -4,7 +4,6 @@ import {
     PostType,
     delay,
     getFormDataFromObject,
-    getSentMessage,
 } from '../shared';
 import { Modals, Input, Buttons } from '@userscripters/stacks-helpers';
 import { displayToaster, page } from '../AdvancedFlagging';
@@ -309,10 +308,10 @@ export class MetaSmokeAPI extends Reporter {
         if (!feedbackRequest.ok) {
             console.error(`Failed to send feedback for ${this.smokeyId} to Smokey`, feedbackResponse);
 
-            throw new Error(getSentMessage(false, feedback, this.name));
+            throw new Error(this.getSentMessage(false, feedback));
         }
 
-        return getSentMessage(true, feedback, this.name);
+        return this.getSentMessage(true, feedback);
     }
 
     public override getIcon(): HTMLDivElement {

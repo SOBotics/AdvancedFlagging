@@ -34,6 +34,15 @@ export default class Reporter {
         return this.createBotIcon('');
     }
 
+    public getSentMessage(
+        success: boolean,
+        feedback: string,
+    ): string {
+        return success
+            ? `Feedback ${feedback} sent to ${this.name}`
+            : `Failed to send feedback ${feedback} to ${this.name}`;
+    }
+
     protected createBotIcon(href?: string): HTMLDivElement {
         const botImages = {
             Natty: 'https://i.stack.imgur.com/aMUMt.jpg?s=32&g=1',

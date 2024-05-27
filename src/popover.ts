@@ -11,8 +11,7 @@ import {
 } from './shared';
 import {
     getFlagToRaise,
-    displayToaster,
-    displaySuccessFlagged
+    displayToaster
 } from './AdvancedFlagging';
 import Post from './UserscriptTools/Post';
 
@@ -153,17 +152,23 @@ export class Popover {
         const config = [
             ['Leave comment', Cached.Configuration.defaultNoComment],
             ['Flag', Cached.Configuration.defaultNoFlag],
-            ['Downvote', Cached.Configuration.defaultNoDownvote]
+            ['Downvote', Cached.Configuration.defaultNoDownvote],
+            ['Delete', Cached.Configuration.defaultNoDelete]
         ] as [string, keyof Configuration][];
 
-        // ['label test', globals.cacheKey]
         return config
             // don't leave comments on non-SO sites
-            .filter(([ text ]) => text === 'Leave comment' ? Page.isStackOverflow : true)
+            // hide delete checkbox when user can't delete vote
+            .filter(([ text ]) => {
+                if (text === 'Leave comment') return Page.isStackOverflow;
+                else if (text === 'Delete') return this.post.canDelete;
+
+                return true;
+            })
             .map(([text, cacheKey]) => {
                 const uncheck = Store.config[cacheKey]
-                // extra requirement for the leave comment option:
-                // there shouldn't be any comments below the post
+                    // extra requirement for the leave comment option:
+                    // there shouldn't be any comments below the post
                     || (text === 'Leave comment' && comments);
 
                 const idified = text.toLowerCase().replace(' ', '-');
@@ -235,6 +240,7 @@ export class Popover {
                      is an [English-only site](//meta.stackoverflow.com/a/297680).
             Feedbacks: tp to Natty, track with Generic Bot
             Downvotes the post
+            Votes to delete the post
 
         with some HTML magic added
         */
@@ -289,6 +295,17 @@ export class Popover {
         downvoteWrapper.innerHTML = `${downvoteOrNot} the post`;
 
         popoverParent.append(downvoteWrapper);
+
+        // Votes to delete the post
+        if (this.post.canDelete && !this.post.deleted
+            && reportType !== FlagNames.Plagiarism
+            && reportType !== FlagNames.ModFlag
+            && reportType !== FlagNames.NoFlag
+        ) {
+            const wrapper = document.createElement('li');
+            wrapper.innerHTML = '<b>Votes to delete</b> the post';
+            popoverParent.append(wrapper);
+        }
 
         return popoverParent.innerHTML;
     }
@@ -387,6 +404,9 @@ export class Popover {
 
         dropdown.closest('.flex--item')?.after(flex);
 
+        // if feedback is sent successfully, the success variable is true, otherwise false
+        const success = await this.post.sendFeedbacks(flagType);
+
         // only if the post hasn't been deleted should we
         // upvote a comment/send feedback/downvote/flag it
         if (!this.post.deleted) {
@@ -402,7 +422,7 @@ export class Popover {
                 comment = null;
             }
 
-            const [flag, downvote] = ['flag', 'downvote']
+            const [flag, downvote, del] = ['flag', 'downvote', 'delete']
                 .map(type => {
                     return dropdown.querySelector<HTMLInputElement>(
                         `[id*="-${type}-checkbox-"]`
@@ -419,24 +439,31 @@ export class Popover {
                 }
             }
 
-            // flag
+            // downvote
+            if (downvote && flagType.downvote) this.post.downvote();
+
+            // flag & delete
             if (flag && reportType !== FlagNames.NoFlag) {
                 try {
                     await this.post.flag(reportType, flagText);
-
-                    displaySuccessFlagged(this.post.flagged, getFlagToRaise(reportType, this.post.raiseVlq));
                 } catch (error) {
                     displayToaster('Failed to flag: ' + (error as string), 'danger');
                 }
+
+                // delete vote if the user has chosen to flag the post
+                // as spam/rude/NAA/VLQ
+                if (del && this.post.canDelete
+                    && reportType !== FlagNames.Plagiarism
+                    && reportType !== FlagNames.ModFlag
+                ) {
+                    try {
+                        await this.post.deleteVote();
+                    } catch (error) {
+                        displayToaster('Failed to vote to delete: ' + (error as string), 'danger');
+                    }
+                }
             }
-
-            // downvote
-            if (downvote && flagType.downvote) this.post.downvote();
         }
-
-        // feedback should however be sent
-        // if it's sent successfully, the success variable is true, otherwise false
-        const success = await this.post.sendFeedbacks(flagType);
 
         // remove spinner
         flex.remove();

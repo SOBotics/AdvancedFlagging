@@ -43,7 +43,7 @@ function resetConfig(): void {
 /* The configuration modal has two sections:
    - General (uses cache): general options. They are properties of the main
      Configuration object and accept Boolean values.
-     All options (except defaultNoDownvote) are disabled by default.
+     All options (except defaultNoDownvote and defaultNoDelete) are disabled by default.
    - Admin: doesn't use cache, but it interacts with it (deletes/amends values)
    Sample cache:
 
@@ -159,6 +159,10 @@ function getGeneralConfigItems(): HTMLElement {
         {
             text: 'Uncheck \'Downvote\' by default',
             configValue: Cached.Configuration.defaultNoDownvote
+        },
+        {
+            text: 'Uncheck \'Delete\' by default',
+            configValue: Cached.Configuration.defaultNoDelete
         },
         {
             text: 'Add author\'s name before comments',

@@ -36,6 +36,7 @@ export const Cached = {
         defaultNoFlag: 'defaultNoFlag',
         defaultNoComment: 'defaultNoComment',
         defaultNoDownvote: 'defaultNoDownvote',
+        defaultNoDelete: 'defaultNoDelete',
 
         watchFlags: 'watchFlags',
         watchQueues: 'watchQueues',

@@ -91,6 +91,12 @@ function setupDefaults(): void {
         cachedFlag.reportType = FlagNames.Plagiarism;
     });
     Store.updateFlagTypes();
+
+    if (!('defaultNoDelete' in Store.config)) {
+        Store.config.defaultNoDelete = true;
+
+        Store.updateConfiguration();
+    }
 }
 
 export function setupConfiguration(): void {

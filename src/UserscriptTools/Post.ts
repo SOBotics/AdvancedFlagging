@@ -17,6 +17,11 @@ interface StackExchangeFlagResponse {
     Success: boolean;
 }
 
+interface StackExchangeDeleteResponse {
+    Success: boolean;
+    Message: string;
+}
+
 export interface Reporters {
     Smokey?: MetaSmokeAPI;
     Natty?: NattyAPI;
@@ -34,6 +39,7 @@ export default class Post {
 
     private readonly score: number;
     public readonly raiseVlq: boolean;
+    public readonly canDelete: boolean;
 
     public readonly opReputation: number;
     public readonly opName: string;
@@ -50,10 +56,6 @@ export default class Post {
 
     private autoflagging = false;
 
-    // TODO!
-    // public readonly popover: popover
-    // public readonly Reporters: Reporters
-
     constructor(element: HTMLElement) {
         this.element = element;
         this.type = this.getType();
@@ -68,6 +70,7 @@ export default class Post {
 
         this.score = Number(this.element.dataset.score) || 0;
         this.raiseVlq = this.qualifiesForVlq();
+        this.canDelete = this.deleteButtonExists();
 
         this.opReputation = this.getOpReputation();
         this.opName = this.getOpName();
@@ -141,6 +144,14 @@ export default class Post {
                 throw message;
             }
         }
+
+        // flag changes the state of the post
+        // => reload the page
+        if (response.ResultChangedState) {
+            location.reload();
+        }
+
+        displaySuccessFlagged(this.flagged, flagName);
     }
 
     public downvote(): void {
@@ -156,6 +167,40 @@ export default class Post {
         }
 
         button?.click();
+    }
+
+    public async deleteVote(): Promise<void> {
+        const fkey = StackExchange.options.user.fkey;
+        const url = `/posts/${this.id}/vote/10`;
+
+        if (Store.dryRun) {
+            console.log('Delete vote via', url, 'with', fkey);
+
+            return;
+        }
+
+        const request = await fetch(url, {
+            method: 'POST',
+            body: getFormDataFromObject({ fkey })
+        });
+        const response = await request.text();
+
+        let json: StackExchangeDeleteResponse;
+        try {
+            json = JSON.parse(response) as StackExchangeDeleteResponse;
+        } catch (error) {
+            console.error(response);
+
+            throw 'could not parse JSON';
+        }
+
+        if (json.Success) {
+            displayToaster('Voted to delete post.', 'success');
+        } else {
+            console.error(json);
+
+            throw json.Message.toLowerCase();
+        }
     }
 
     public async comment(text: string): Promise<void> {
@@ -349,10 +394,6 @@ export default class Post {
     }
 
     private getCreationDate(): Date {
-        /*const post = postType === 'Question'
-            ? document.querySelector('.question')
-            : this.element;*/
-
         const dateElements = this.element.querySelectorAll<HTMLElement>('.user-info .relativetime');
         const authorDateElement = Array.from(dateElements).pop();
 
@@ -366,6 +407,13 @@ export default class Post {
         // or is more than 1 day old
         return (new Date().valueOf() - this.date.valueOf()) < dayMillis
             && this.score <= 0;
+    }
+
+    private deleteButtonExists(): boolean {
+        const selector = '.js-delete-post[title^="Vote to delete"]';
+        const deleteButton = this.element.querySelector(selector);
+
+        return Boolean(deleteButton);
     }
 
     private getActionIcons(): HTMLElement[] {

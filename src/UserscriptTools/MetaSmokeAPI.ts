@@ -107,7 +107,7 @@ export class MetaSmokeAPI extends Reporter {
             StackExchange.helpers.showModal(popup);
 
             popup
-                .querySelector('.s-btn__primary')
+                .querySelector('.s-btn__filled')
                 ?.addEventListener('click', () => {
                     const input = popup.querySelector('input');
                     const token = input?.value;

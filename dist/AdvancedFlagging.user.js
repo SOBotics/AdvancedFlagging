@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.3.12
+// @version      1.3.13
 // @author       Robert Rudman
 // @contributor  double-beep
 // @match        *://*.stackexchange.com/*
@@ -1063,7 +1063,7 @@
       return new Promise((resolve) => {
         const popup = this.getMetasmokeTokenPopup();
         StackExchange.helpers.showModal(popup);
-        popup.querySelector(".s-btn__primary")?.addEventListener("click", () => {
+        popup.querySelector(".s-btn__filled")?.addEventListener("click", () => {
           const input = popup.querySelector("input");
           const token = input?.value;
           popup.remove();

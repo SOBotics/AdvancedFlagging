@@ -93,8 +93,16 @@ export class MetaSmokeAPI extends Reporter {
     }
 
     private closeWS(): void {
-        // websocket already closed
-        if (!this.websocket) return;
+        // websocket already closed (perhaps connection failed)
+        if (!this.websocket || this.websocket.readyState > 1) {
+            this.websocket = null;
+
+            if (Store.dryRun) {
+                console.log('Failed to connect to metasmoke WS.');
+            }
+
+            return;
+        }
 
         this.websocket.close();
         this.websocket = null;

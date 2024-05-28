@@ -175,7 +175,7 @@ export class ChatApi {
         this.websocket = new WebSocket(ws);
 
         if (Store.dryRun) {
-            console.log('Initialised WebSocket at', ws, this.websocket);
+            console.log('Initialised chat WebSocket at', ws, this.websocket);
         }
     }
 
@@ -192,6 +192,16 @@ export class ChatApi {
     }
 
     public async waitForReport(postId: number): Promise<void> {
+        if (!this.websocket || this.websocket.readyState > 1) {
+            this.websocket = null;
+
+            if (Store.dryRun) {
+                console.log('Failed to connect to chat WS.');
+            }
+
+            return;
+        }
+
         await withTimeout<void>(
             10_000,
             new Promise<void>(resolve => {
@@ -210,8 +220,9 @@ export class ChatApi {
                                 console.log('New message posted by Natty on room', this.roomId, item);
                             }
 
-                            const postUrl = `stackoverflow.com/a/${postId})`;
-                            if (!content.includes(postUrl)) return;
+                            const matchRegex = /stackoverflow\.com\/a\/(\d+)/;
+                            const id = matchRegex.exec(content)?.[1];
+                            if (Number(id) !== postId) return;
 
                             resolve();
                         });

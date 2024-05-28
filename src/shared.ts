@@ -180,22 +180,3 @@ export function getHumanFromDisplayName(displayName: Flags): HumanFlags {
 
     return flags[displayName] || '';
 }
-
-export async function withTimeout<T>(millis: number, promise: Promise<T>): Promise<void> {
-    let time: NodeJS.Timeout | undefined;
-
-    const timeout = new Promise<void>(resolve => {
-        time = setTimeout(() => {
-            if (Store.dryRun) console.log('Promise timeouted after', millis, 'ms');
-
-            resolve();
-        }, millis);
-    });
-
-    await Promise.race([
-        promise,
-        timeout
-    ]).finally(() => {
-        if (time) clearTimeout(time);
-    });
-}

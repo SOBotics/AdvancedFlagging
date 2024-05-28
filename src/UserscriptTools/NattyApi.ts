@@ -3,6 +3,7 @@ import { AllFeedbacks } from '../shared';
 import { page } from '../AdvancedFlagging';
 import Reporter from './Reporter';
 import Page from './Page';
+import { WebsocketUtils } from './WebsocketUtils';
 
 const dayMillis = 1000 * 60 * 60 * 24;
 const nattyFeedbackUrl = 'https://logs.sobotics.org/napi-1.1/api/stored/';
@@ -92,9 +93,14 @@ export class NattyAPI extends Reporter {
         // post is deleted immediately. As a result, it
         // isn't reported on time to Natty.
         if (StackExchange.options.user.isModerator) {
-            await this.chat.initWS();
+            // init websocket
+            const url = await this.chat.getFinalUrl();
+            const wsUtils = new WebsocketUtils(url, this.id);
+
             await this.chat.sendMessage(this.reportMessage);
-            await this.chat.waitForReport(this.id);
+
+            // wait until the report is received
+            await wsUtils.waitForReport(event => this.chat.reportReceived(event));
         } else {
             await this.chat.sendMessage(this.reportMessage);
         }

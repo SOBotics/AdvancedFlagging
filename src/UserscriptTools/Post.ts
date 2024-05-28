@@ -1,6 +1,6 @@
 import { displaySuccessFlagged, displayToaster, getFlagToRaise } from '../AdvancedFlagging';
 import { Flags } from '../FlagTypes';
-import { getSvg, PostType, FlagNames, getFormDataFromObject, addXHRListener } from '../shared';
+import { getSvg, PostType, FlagNames, getFormDataFromObject, addXHRListener, delay } from '../shared';
 import { CopyPastorAPI } from './CopyPastorAPI';
 import { GenericBotAPI } from './GenericBotAPI';
 import { MetaSmokeAPI } from './MetaSmokeAPI';
@@ -20,6 +20,7 @@ interface StackExchangeFlagResponse {
 interface StackExchangeDeleteResponse {
     Success: boolean;
     Message: string;
+    Refresh: boolean;
 }
 
 export interface Reporters {
@@ -148,6 +149,9 @@ export default class Post {
         // flag changes the state of the post
         // => reload the page
         if (response.ResultChangedState) {
+            // wait 1 second before reloading
+            await delay(1000);
+
             location.reload();
         }
 
@@ -200,6 +204,12 @@ export default class Post {
             console.error(json);
 
             throw json.Message.toLowerCase();
+        }
+
+        if (json.Refresh) {
+            await delay(1500);
+
+            location.reload();
         }
     }
 

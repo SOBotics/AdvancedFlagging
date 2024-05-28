@@ -4,14 +4,11 @@ import {
     PostType,
     delay,
     getFormDataFromObject,
-    withTimeout,
 } from '../shared';
 import { Modals, Input, Buttons } from '@userscripters/stacks-helpers';
 import { displayToaster, page } from '../AdvancedFlagging';
 import Reporter from './Reporter';
-
-const metasmokeReportedMessage = 'Post reported to Smokey';
-const metasmokeFailureMessage = 'Failed to report post to Smokey';
+import { WebsocketUtils } from './WebsocketUtils';
 
 interface MetaSmokeApiItem {
     id: number;
@@ -48,8 +45,18 @@ export class MetaSmokeAPI extends Reporter {
     private static readonly filter = 'GGJFNNKKJFHFKJFLJLGIJMFIHNNJNINJ';
     private static metasmokeIds: MetasmokeData = {};
 
-    private websocket: WebSocket | null = null;
+    private readonly reportMessage = 'Post reported to Smokey';
+    private readonly failureMessage = 'Failed to report post to Smokey';
+
     private readonly wsUrl = 'wss://metasmoke.erwaysoftware.com/cable';
+    private readonly wsAuth = JSON.stringify({
+        identifier: JSON.stringify({
+            channel: 'ApiChannel',
+            key: MetaSmokeAPI.appKey,
+            events: 'posts#create'
+        }),
+        command: 'subscribe'
+    });
 
     constructor(
         id: number,
@@ -71,86 +78,34 @@ export class MetaSmokeAPI extends Reporter {
         MetaSmokeAPI.accessToken = await MetaSmokeAPI.getUserKey();
     }
 
-    private initWS(): void {
-        this.websocket = new WebSocket(this.wsUrl);
+    public reportReceived(event: MessageEvent<string>): number[] {
+        const data = JSON.parse(event.data) as MetasmokeWsMessage;
 
-        const auth = JSON.stringify({
-            identifier: JSON.stringify({
-                channel: 'ApiChannel',
-                key: MetaSmokeAPI.appKey,
-                events: 'posts#create'
-            }),
-            command: 'subscribe'
-        });
-
-        this.websocket.addEventListener('open', () => {
-            this.websocket?.send(auth);
-        });
+        // https://github.com/Charcoal-SE/userscripts/blob/master/sim/sim.user.js#L381-L400
+        if (data.type) return []; // not interested
 
         if (Store.dryRun) {
-            console.log('MS WebSocket initialised.');
-        }
-    }
-
-    private closeWS(): void {
-        // websocket already closed (perhaps connection failed)
-        if (!this.websocket || this.websocket.readyState > 1) {
-            this.websocket = null;
-
-            if (Store.dryRun) {
-                console.log('Failed to connect to metasmoke WS.');
-            }
-
-            return;
+            console.log('New post reported to Smokey', data);
         }
 
-        this.websocket.close();
-        this.websocket = null;
+        const {
+            object,
+            event_class: evClass,
+            event_type: type
+        } = data.message;
 
-        if (Store.dryRun) {
-            console.log('MS WebSocket connection closed.');
-        }
-    }
+        // not interested
+        if (type !== 'create' || evClass !== 'Post') return [];
 
-    private async waitForReport(): Promise<void> {
-        if (!this.websocket) return;
+        const link = object.link;
+        const url = new URL(link, location.href);
 
-        await withTimeout(
-            10_000,
-            new Promise<void>(resolve => {
-                this.websocket?.addEventListener('message', (event: MessageEvent<string>) => {
-                    const data = JSON.parse(event.data) as MetasmokeWsMessage;
+        const postId = Number(/\d+/.exec(url.pathname)?.[0]);
 
-                    // https://github.com/Charcoal-SE/userscripts/blob/master/sim/sim.user.js#L381-L400
-                    if (data.type) return; // not interested
+        // different sites
+        if (url.host !== location.host) return [];
 
-                    if (Store.dryRun) {
-                        console.log('New post reported to Smokey', data);
-                    }
-
-                    const {
-                        object,
-                        event_class: evClass,
-                        event_type: type
-                    } = data.message;
-
-                    // not interested
-                    if (type !== 'create' || evClass !== 'Post') return;
-
-                    const link = object.link;
-                    const url = new URL(link, location.href);
-
-                    const postId = Number(/\d+/.exec(url.pathname)?.[0]);
-
-                    if (
-                        url.host !== location.host // different sites
-                        || postId !== this.id // different posts
-                    ) return;
-
-                    resolve();
-                });
-            })
-        ).finally(() => this.closeWS());
+        return [ postId ];
     }
 
     private static getMetasmokeTokenPopup(): HTMLElement {
@@ -337,7 +292,7 @@ export class MetaSmokeAPI extends Reporter {
         if (!reportRequest.ok || requestResponse !== 'OK') {
             console.error(`Failed to report post ${this.smokeyId} to Smokey`, requestResponse);
 
-            throw new Error(metasmokeFailureMessage);
+            throw new Error(this.failureMessage);
         }
     }
 
@@ -371,14 +326,15 @@ export class MetaSmokeAPI extends Reporter {
         // not reported, feedback is tpu AND the post isn't deleted => report it!
         if (!this.smokeyId && feedback === 'tpu-' && !this.deleted) {
             // see: https://chat.stackexchange.com/transcript/message/65076878
-            this.initWS();
+            const wsUtils = new WebsocketUtils(this.wsUrl, this.id, this.wsAuth);
             await this.reportRedFlag();
-            await this.waitForReport();
+            await wsUtils.waitForReport(event => this.reportReceived(event));
 
             // https://chat.stackexchange.com/transcript/message/65097399
+            // wait 3 seconds so that SD can start watching for post deletion
             await new Promise(resolve => setTimeout(resolve, 3 * 1000));
 
-            return metasmokeReportedMessage;
+            return this.reportMessage;
         } else if (!accessToken || !this.smokeyId) {
             // user hasn't authenticated or the post hasn't been reported => don't send feedback
             return '';

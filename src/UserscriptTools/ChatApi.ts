@@ -1,5 +1,4 @@
 import { Store, Cached } from './Store';
-import { withTimeout } from '../shared';
 
 interface ChatWSAuthResponse {
     url: string;
@@ -32,8 +31,6 @@ export class ChatApi {
     private readonly chatRoomUrl: string;
     private readonly roomId: number;
     private readonly nattyId = 6817005;
-
-    private websocket: WebSocket | null = null;
 
     public constructor(
         chatUrl = 'https://chat.stackoverflow.com',
@@ -167,68 +164,33 @@ export class ChatApi {
         });
     }
 
-    public async initWS(): Promise<void> {
-        const l = await this.getLParam();
+    public async getFinalUrl(): Promise<string> {
         const url = await this.getWsUrl();
+        const l = await this.getLParam();
 
-        const ws = `${url}?l=${l}`;
-        this.websocket = new WebSocket(ws);
-
-        if (Store.dryRun) {
-            console.log('Initialised chat WebSocket at', ws, this.websocket);
-        }
+        return `${url}?l=${l}`;
     }
 
-    private closeWS(): void {
-        // websocket already closed
-        if (!this.websocket) return;
+    public reportReceived(event: MessageEvent<string>): number[] {
+        const data = JSON.parse(event.data) as ChatWsMessage;
 
-        this.websocket.close();
-        this.websocket = null;
-
-        if (Store.dryRun) {
-            console.log('Chat WebSocket connection closed.');
-        }
-    }
-
-    public async waitForReport(postId: number): Promise<void> {
-        if (!this.websocket || this.websocket.readyState > 1) {
-            this.websocket = null;
-
-            if (Store.dryRun) {
-                console.log('Failed to connect to chat WS.');
-            }
-
-            return;
-        }
-
-        await withTimeout<void>(
-            10_000,
-            new Promise<void>(resolve => {
-                this.websocket?.addEventListener('message', (event: MessageEvent<string>) => {
-                    const data = JSON.parse(event.data) as ChatWsMessage;
-
-                    data[`r${this.roomId}`].e
-                        ?.filter(({ event_type, user_id }) => {
-                            // interested in new messages posted by Natty
-                            return event_type === 1 && user_id === this.nattyId;
-                        })
-                        .forEach(item => {
-                            const { content } = item;
-
-                            if (Store.dryRun) {
-                                console.log('New message posted by Natty on room', this.roomId, item);
-                            }
-
-                            const matchRegex = /stackoverflow\.com\/a\/(\d+)/;
-                            const id = matchRegex.exec(content)?.[1];
-                            if (Number(id) !== postId) return;
-
-                            resolve();
-                        });
-                });
+        return data[`r${this.roomId}`].e
+            ?.filter(({ event_type, user_id }) => {
+                // interested in new messages posted by Natty
+                return event_type === 1 && user_id === this.nattyId;
             })
-        ).finally(() => this.closeWS());
+            .map(item => {
+                const { content } = item;
+
+                if (Store.dryRun) {
+                    console.log('New message posted by Natty on room', this.roomId, item);
+                }
+
+                const matchRegex = /stackoverflow\.com\/a\/(\d+)/;
+                const id = matchRegex.exec(content)?.[1];
+
+                return Number(id);
+            }) || [];
     }
 
     private getChannelFKey(): Promise<string> {

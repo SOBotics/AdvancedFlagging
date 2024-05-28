@@ -1,4 +1,4 @@
-import { addXHRListener } from './shared';
+import { addXHRListener, delay } from './shared';
 import { isDone } from './AdvancedFlagging';
 
 import { MetaSmokeAPI } from './UserscriptTools/MetaSmokeAPI';
@@ -41,10 +41,8 @@ async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
 
     const post = cached || new Post(element);
 
-    while (!isDone) {
-        // eslint-disable-next-line no-await-in-loop
-        await new Promise<void>(resolve => setTimeout(resolve, 200));
-    }
+    // eslint-disable-next-line no-await-in-loop
+    while (!isDone) await delay(200);
 
     // update info on reporters
     const url = `//stackoverflow.com/a/${post.id}`;

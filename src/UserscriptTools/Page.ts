@@ -3,12 +3,12 @@ import Post from './Post';
 type Pages = 'Question' | 'NATO' | 'Flags' | 'Search';
 
 export default class Page {
-    public readonly name: Pages | '';
-    public readonly posts: Post[] = [];
-
     public static readonly isStackOverflow = /^https:\/\/stackoverflow.com/.test(location.href);
     public static readonly isQuestionPage = /\/questions\/\d+.*/.test(location.href);
     public static readonly isLqpReviewPage = /\/review\/low-quality-posts\/\d+/.test(location.href);
+
+    public readonly name: Pages | '';
+    public readonly posts: Post[] = [];
 
     private readonly href: URL;
     private readonly selector: string;

@@ -3,31 +3,16 @@ import Page from './Page';
 import Reporter from './Reporter';
 import { Store } from './Store';
 
-const genericBotKey = 'Cm45BSrt51FR3ju';
-const genericBotSuccess = 'Post tracked with Generic Bot';
-const genericBotFailure = 'Server refused to track the post';
-
 export class GenericBotAPI extends Reporter {
-    private readonly deleted: boolean;
+    private readonly key = 'Cm45BSrt51FR3ju';
+    private readonly success = 'Post tracked with Generic Bot';
+    private readonly failure = 'Server refused to track the post';
 
-    constructor(id: number, deleted: boolean) {
+    constructor(
+        id: number,
+        private readonly deleted: boolean
+    ) {
         super('Generic Bot', id);
-
-        this.deleted = deleted;
-    }
-
-    // Ask Floern what this does
-    // https://github.com/SOBotics/Userscripts/blob/master/GenericBot/flagtracker.user.js#L32-L40
-    private computeContentHash(postContent: string): number {
-        if (!postContent) return 0;
-
-        let hash = 0;
-        for (let i = 0; i < postContent.length; ++i) {
-            hash = ((hash << 5) - hash) + postContent.charCodeAt(i);
-            hash = hash & hash;
-        }
-
-        return hash;
     }
 
     public override sendFeedback(trackPost: string): Promise<string> {
@@ -43,7 +28,7 @@ export class GenericBotAPI extends Reporter {
 
         const url = 'https://so.floern.com/api/trackpost.php';
         const payload = {
-            key: genericBotKey,
+            key: this.key,
             postId: this.id,
             contentHash,
             flagger: flaggerName,
@@ -70,12 +55,12 @@ export class GenericBotAPI extends Reporter {
                 onload: ({ status, response }) => {
                     if (status !== 200) {
                         console.error('Failed to send track request.', response);
-                        reject(genericBotFailure);
+                        reject(this.failure);
                     }
 
-                    resolve(genericBotSuccess);
+                    resolve(this.success);
                 },
-                onerror: () => reject(genericBotFailure)
+                onerror: () => reject(this.failure)
             });
         });
     }
@@ -87,5 +72,19 @@ export class GenericBotAPI extends Reporter {
 
     public override canSendFeedback(feedback: AllFeedbacks): boolean {
         return feedback === 'track' && !this.deleted && Page.isStackOverflow;
+    }
+
+    // Ask Floern what this does
+    // https://github.com/SOBotics/Userscripts/blob/master/GenericBot/flagtracker.user.js#L32-L40
+    private computeContentHash(postContent: string): number {
+        if (!postContent) return 0;
+
+        let hash = 0;
+        for (let i = 0; i < postContent.length; ++i) {
+            hash = ((hash << 5) - hash) + postContent.charCodeAt(i);
+            hash = hash & hash;
+        }
+
+        return hash;
     }
 }

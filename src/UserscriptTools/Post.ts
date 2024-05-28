@@ -31,14 +31,14 @@ export interface Reporters {
 }
 
 export default class Post {
+    public static qDate: Date = new Date();
+
     public readonly type: PostType;
     public readonly id: number;
     public readonly deleted: boolean;
 
     public readonly date: Date;
-    public static qDate: Date = new Date();
 
-    private readonly score: number;
     public readonly raiseVlq: boolean;
     public readonly canDelete: boolean;
 
@@ -51,14 +51,14 @@ export default class Post {
     public readonly failed: HTMLElement;
     public readonly flagged: HTMLElement;
 
-    public readonly element: HTMLElement;
-
     public readonly reporters: Reporters = {};
 
     private autoflagging = false;
+    private readonly score: number;
 
-    constructor(element: HTMLElement) {
-        this.element = element;
+    constructor(
+        public readonly element: HTMLElement
+    ) {
         this.type = this.getType();
         this.id = this.getId();
         // (yes, even deleted questions have this class...)
@@ -336,6 +336,40 @@ export default class Post {
         return !hasFailed;
     }
 
+    public addIcons(): void {
+        const iconLocation = this.element.querySelector(
+            'a.question-hyperlink, a.answer-hyperlink, .s-link, .js-post-menu > div.d-flex'
+        );
+        const icons = (Object.values(this.reporters) as Reporter[])
+            .filter(reporter => reporter.wasReported())
+            .map(reporter => reporter.getIcon());
+
+        iconLocation?.append(...icons);
+    }
+
+    private static getIcon(svg: SVGElement, classname: string): HTMLElement {
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('flex--item');
+        wrapper.style.display = 'none';
+
+        svg.classList.add(classname);
+        wrapper.append(svg);
+
+        return wrapper;
+    }
+
+    private static getStrippedComment(text: string): string {
+        // the comments under a post are in HTML, but the comments in cache in markdown
+        // to determine if two comments are the same, we must strip the HTML
+        return text
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1') // Match [links](...)
+            .replace(/\[([^\]]+)\][^(]*?/g, '$1') // Match [edit]
+            .replace(/_([^_]+)_/g, '$1') //  _thanks_ => thanks
+            .replace(/\*\*([^*]+)\*\*/g, '$1') // **thanks** => thanks
+            .replace(/\*([^*]+)\*/g, '$1') // *thanks* => thanks
+            .replace(' - From Review', ''); // remove the "from review" part
+    }
+
     private getType(): PostType {
         return this.element.classList.contains('question')
             || this.element.id.startsWith('question')
@@ -392,17 +426,6 @@ export default class Post {
         return lastNameEl?.textContent?.trim() || '';
     }
 
-    public addIcons(): void {
-        const iconLocation = this.element.querySelector(
-            'a.question-hyperlink, a.answer-hyperlink, .s-link, .js-post-menu > div.d-flex'
-        );
-        const icons = (Object.values(this.reporters) as Reporter[])
-            .filter(reporter => reporter.wasReported())
-            .map(reporter => reporter.getIcon());
-
-        iconLocation?.append(...icons);
-    }
-
     private getCreationDate(): Date {
         const dateElements = this.element.querySelectorAll<HTMLElement>('.user-info .relativetime');
         const authorDateElement = Array.from(dateElements).pop();
@@ -433,32 +456,6 @@ export default class Post {
             ['Flag', 'fc-red-500']
         ]
             .map(([svg, classname]) => Post.getIcon(getSvg(`icon${svg}`), classname));
-    }
-
-    private static getIcon(
-        svg: SVGElement,
-        classname: string,
-    ): HTMLElement {
-        const wrapper = document.createElement('div');
-        wrapper.classList.add('flex--item');
-        wrapper.style.display = 'none';
-
-        svg.classList.add(classname);
-        wrapper.append(svg);
-
-        return wrapper;
-    }
-
-    private static getStrippedComment(text: string): string {
-        // the comments under a post are in HTML, but the comments in cache in markdown
-        // to determine if two comments are the same, we must strip the HTML
-        return text
-            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1') // Match [links](...)
-            .replace(/\[([^\]]+)\][^(]*?/g, '$1') // Match [edit]
-            .replace(/_([^_]+)_/g, '$1') //  _thanks_ => thanks
-            .replace(/\*\*([^*]+)\*\*/g, '$1') // **thanks** => thanks
-            .replace(/\*([^*]+)\*/g, '$1') // *thanks* => thanks
-            .replace(' - From Review', ''); // remove the "from review" part
     }
 
     private initReporters(): void {

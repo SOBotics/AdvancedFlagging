@@ -21,24 +21,12 @@ interface ChatWsMessage {
 }
 
 export class ChatApi {
-    private static getExpiryDate(): Date {
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 1);
-
-        return expiryDate;
-    }
-
-    private readonly chatRoomUrl: string;
-    private readonly roomId: number;
     private readonly nattyId = 6817005;
 
     public constructor(
-        chatUrl = 'https://chat.stackoverflow.com',
-        roomId = 111347
-    ) {
-        this.chatRoomUrl = chatUrl;
-        this.roomId = roomId;
-    }
+        private readonly chatUrl = 'https://chat.stackoverflow.com',
+        private readonly roomId = 111347
+    ) {}
 
 
     public getChatUserId(): number {
@@ -79,91 +67,6 @@ export class ChatApi {
         return true;
     }
 
-    private async sendRequestToChat(message: string): Promise<boolean> {
-        const url = `${this.chatRoomUrl}/chats/${this.roomId}/messages/new`;
-
-        if (Store.dryRun) {
-            console.log('Send', message, `to ${this.roomId} via`, url);
-
-            return Promise.resolve(true);
-        }
-
-        const fkey = await this.getChannelFKey();
-
-        return new Promise(resolve => {
-            GM_xmlhttpRequest({
-                method: 'POST',
-                url,
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                data: `text=${encodeURIComponent(message)}&fkey=${fkey}`,
-                onload: ({ status }) => resolve(status === 200),
-                onerror: () => resolve(false),
-            });
-        });
-    }
-
-    private getChannelPage(): Promise<string> {
-        return new Promise<string>((resolve, reject) => {
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url: `${this.chatRoomUrl}/rooms/${this.roomId}`,
-                onload: ({ status, responseText }) => {
-                    status === 200
-                        ? resolve(responseText)
-                        : reject();
-                },
-                onerror: () => reject()
-            });
-        });
-    }
-
-    // see https://meta.stackexchange.com/a/218355
-    private async getWsUrl(): Promise<string> {
-        const fkey = await this.getChannelFKey();
-
-        return new Promise<string>((resolve, reject) => {
-            GM_xmlhttpRequest({
-                method: 'POST',
-                url: `${this.chatRoomUrl}/ws-auth`,
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                data: `roomid=${this.roomId}&fkey=${fkey}`,
-                onload: ({ status, responseText }) => {
-                    if (status !== 200) reject();
-
-                    const json = JSON.parse(responseText) as ChatWSAuthResponse;
-                    resolve(json.url);
-                },
-                onerror: () => reject()
-            });
-        });
-    }
-
-    private async getLParam(): Promise<number> {
-        const fkey = await this.getChannelFKey();
-
-        return new Promise<number>((resolve, reject) => {
-            GM_xmlhttpRequest({
-                method: 'POST',
-                url: `${this.chatRoomUrl}/chats/${this.roomId}/events`,
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                data: `fkey=${fkey}`,
-                onload: ({ status, responseText }) => {
-                    if (status !== 200) reject();
-
-                    const json = JSON.parse(responseText) as ChatEventsResponse;
-                    resolve(json.time);
-                },
-                onerror: () => reject()
-            });
-        });
-    }
-
     public async getFinalUrl(): Promise<string> {
         const url = await this.getWsUrl();
         const l = await this.getLParam();
@@ -191,6 +94,98 @@ export class ChatApi {
 
                 return Number(id);
             }) || [];
+    }
+
+    private static getExpiryDate(): Date {
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 1);
+
+        return expiryDate;
+    }
+
+    private async sendRequestToChat(message: string): Promise<boolean> {
+        const url = `${this.chatUrl}/chats/${this.roomId}/messages/new`;
+
+        if (Store.dryRun) {
+            console.log('Send', message, `to ${this.roomId} via`, url);
+
+            return Promise.resolve(true);
+        }
+
+        const fkey = await this.getChannelFKey();
+
+        return new Promise(resolve => {
+            GM_xmlhttpRequest({
+                method: 'POST',
+                url,
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                data: `text=${encodeURIComponent(message)}&fkey=${fkey}`,
+                onload: ({ status }) => resolve(status === 200),
+                onerror: () => resolve(false),
+            });
+        });
+    }
+
+    private getChannelPage(): Promise<string> {
+        return new Promise<string>((resolve, reject) => {
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: `${this.chatUrl}/rooms/${this.roomId}`,
+                onload: ({ status, responseText }) => {
+                    status === 200
+                        ? resolve(responseText)
+                        : reject();
+                },
+                onerror: () => reject()
+            });
+        });
+    }
+
+    // see https://meta.stackexchange.com/a/218355
+    private async getWsUrl(): Promise<string> {
+        const fkey = await this.getChannelFKey();
+
+        return new Promise<string>((resolve, reject) => {
+            GM_xmlhttpRequest({
+                method: 'POST',
+                url: `${this.chatUrl}/ws-auth`,
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                data: `roomid=${this.roomId}&fkey=${fkey}`,
+                onload: ({ status, responseText }) => {
+                    if (status !== 200) reject();
+
+                    const json = JSON.parse(responseText) as ChatWSAuthResponse;
+                    resolve(json.url);
+                },
+                onerror: () => reject()
+            });
+        });
+    }
+
+    private async getLParam(): Promise<number> {
+        const fkey = await this.getChannelFKey();
+
+        return new Promise<number>((resolve, reject) => {
+            GM_xmlhttpRequest({
+                method: 'POST',
+                url: `${this.chatUrl}/chats/${this.roomId}/events`,
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                data: `fkey=${fkey}`,
+                onload: ({ status, responseText }) => {
+                    if (status !== 200) reject();
+
+                    const json = JSON.parse(responseText) as ChatEventsResponse;
+                    resolve(json.time);
+                },
+                onerror: () => reject()
+            });
+        });
     }
 
     private getChannelFKey(): Promise<string> {

@@ -43,7 +43,7 @@ export class MetaSmokeAPI extends Reporter {
 
     private static readonly appKey = '0a946b9419b5842f99b052d19c956302aa6c6dd5a420b043b20072ad2efc29e0';
     private static readonly filter = 'GGJFNNKKJFHFKJFLJLGIJMFIHNNJNINJ';
-    private static metasmokeIds: MetasmokeData = {};
+    private static readonly metasmokeIds: MetasmokeData = {};
 
     private readonly reportMessage = 'Post reported to Smokey';
     private readonly failureMessage = 'Failed to report post to Smokey';
@@ -76,123 +76,6 @@ export class MetaSmokeAPI extends Reporter {
     public static async setup(): Promise<void> {
         // Make sure we request it immediately
         MetaSmokeAPI.accessToken = await MetaSmokeAPI.getUserKey();
-    }
-
-    public reportReceived(event: MessageEvent<string>): number[] {
-        const data = JSON.parse(event.data) as MetasmokeWsMessage;
-
-        // https://github.com/Charcoal-SE/userscripts/blob/master/sim/sim.user.js#L381-L400
-        if (data.type) return []; // not interested
-
-        if (Store.dryRun) {
-            console.log('New post reported to Smokey', data);
-        }
-
-        const {
-            object,
-            event_class: evClass,
-            event_type: type
-        } = data.message;
-
-        // not interested
-        if (type !== 'create' || evClass !== 'Post') return [];
-
-        const link = object.link;
-        const url = new URL(link, location.href);
-
-        const postId = Number(/\d+/.exec(url.pathname)?.[0]);
-
-        // different sites
-        if (url.host !== location.host) return [];
-
-        return [ postId ];
-    }
-
-    private static getMetasmokeTokenPopup(): HTMLElement {
-        const codeInput = Input.makeStacksInput(
-            'advanced-flagging-metasmoke-token-input',
-            { placeholder: 'Enter the code here', },
-            {
-                text: 'Metasmoke access token',
-                description: 'Once you\'ve authenticated Advanced Flagging with '
-                           + 'metasmoke, you\'ll be given a code; enter it below:'
-            }
-        );
-
-        const authModal = Modals.makeStacksModal(
-            'advanced-flagging-metasmoke-token-modal',
-            {
-                title: {
-                    text: 'Authenticate MS with AF'
-                },
-                body: {
-                    bodyHtml: codeInput
-                },
-                footer: {
-                    buttons: [
-                        {
-                            element: Buttons.makeStacksButton(
-                                'advanced-flagging-submit-code',
-                                'Submit',
-                                { primary: true }
-                            )
-                        },
-                        {
-                            element: Buttons.makeStacksButton(
-                                'advanced-flagging-dismiss-code-modal',
-                                'Cancel',
-                            ),
-                            hideOnClick: true
-                        }
-                    ]
-                }
-            }
-        );
-
-        return authModal;
-    }
-
-    private static showMSTokenPopupAndGet(): Promise<string | undefined> {
-        return new Promise<string>(resolve => {
-            const popup = this.getMetasmokeTokenPopup();
-            StackExchange.helpers.showModal(popup);
-
-            popup
-                .querySelector('.s-btn__filled')
-                ?.addEventListener('click', () => {
-                    const input = popup.querySelector('input');
-                    const token = input?.value;
-
-                    // dismiss modal
-                    popup.remove();
-
-                    if (!token) return;
-
-                    resolve(token.toString());
-                });
-        });
-    }
-
-    private static async codeGetter(metaSmokeOAuthUrl: string): Promise<string | undefined> {
-        if (MetaSmokeAPI.isDisabled) return;
-
-        const authenticate = await StackExchange.helpers.showConfirmModal({
-            title: 'Setting up metasmoke',
-            bodyHtml: 'If you do not wish to connect, press cancel and this popup won\'t show up again. '
-                    + 'To reset configuration, see the footer of Stack Overflow.',
-            buttonLabel: 'Authenticate!'
-        });
-
-        // user doesn't wish to connect
-        if (!authenticate) {
-            Store.set(Cached.Metasmoke.disabled, true);
-            return;
-        }
-
-        window.open(metaSmokeOAuthUrl, '_blank');
-        await delay(100);
-
-        return await this.showMSTokenPopupAndGet();
     }
 
     public static async queryMetaSmokeInternal(urls?: string[]): Promise<void> {
@@ -230,38 +113,44 @@ export class MetaSmokeAPI extends Reporter {
         }
     }
 
-    public static getQueryUrl(postId: number, postType: PostType): string {
-        const path = postType === 'Answer' ? 'a' : 'questions';
+    public getQueryUrl(): string {
+        const path = this.postType === 'Answer' ? 'a' : 'questions';
 
-        return `//${window.location.hostname}/${path}/${postId}`;
+        return `//${window.location.hostname}/${path}/${this.id}`;
     }
 
-    private static async getUserKey(): Promise<string> {
-        while (typeof StackExchange.helpers.showConfirmModal === 'undefined') {
-            // eslint-disable-next-line no-await-in-loop
-            await delay(100);
+    public reportReceived(event: MessageEvent<string>): number[] {
+        const data = JSON.parse(event.data) as MetasmokeWsMessage;
+
+        // https://github.com/Charcoal-SE/userscripts/blob/master/sim/sim.user.js#L381-L400
+        if (data.type) return []; // not interested
+
+        if (Store.dryRun) {
+            console.log('New post reported to Smokey', data);
         }
 
-        const { appKey } = MetaSmokeAPI;
-        const url = `https://metasmoke.erwaysoftware.com/oauth/request?key=${appKey}`;
+        const {
+            object,
+            event_class: evClass,
+            event_type: type
+        } = data.message;
 
-        return await Store.getAndCache<string>(
-            Cached.Metasmoke.userKey,
-            async (): Promise<string> => {
-                const code = await MetaSmokeAPI.codeGetter(url);
-                if (!code) return '';
+        // not interested
+        if (type !== 'create' || evClass !== 'Post') return [];
 
-                const tokenUrl = `//metasmoke.erwaysoftware.com/oauth/token?key=${appKey}&code=${code}`;
-                const tokenCall = await fetch(tokenUrl);
+        const link = object.link;
+        const url = new URL(link, location.href);
 
-                const { token } = await tokenCall.json() as { token: string };
+        const postId = Number(/\d+/.exec(url.pathname)?.[0]);
 
-                return token;
-            });
+        // different sites
+        if (url.host !== location.host) return [];
+
+        return [ postId ];
     }
 
     public async reportRedFlag(): Promise<void> {
-        const urlString = MetaSmokeAPI.getQueryUrl(this.id, this.postType);
+        const urlString = this.getQueryUrl();
 
         const { appKey, accessToken } = MetaSmokeAPI;
 
@@ -378,5 +267,116 @@ export class MetaSmokeAPI extends Reporter {
                 ? `//metasmoke.erwaysoftware.com/post/${this.smokeyId}`
                 : ''
         );
+    }
+
+    private static getMetasmokeTokenPopup(): HTMLElement {
+        const codeInput = Input.makeStacksInput(
+            'advanced-flagging-metasmoke-token-input',
+            { placeholder: 'Enter the code here', },
+            {
+                text: 'Metasmoke access token',
+                description: 'Once you\'ve authenticated Advanced Flagging with '
+                           + 'metasmoke, you\'ll be given a code; enter it below:'
+            }
+        );
+
+        const authModal = Modals.makeStacksModal(
+            'advanced-flagging-metasmoke-token-modal',
+            {
+                title: {
+                    text: 'Authenticate MS with AF'
+                },
+                body: {
+                    bodyHtml: codeInput
+                },
+                footer: {
+                    buttons: [
+                        {
+                            element: Buttons.makeStacksButton(
+                                'advanced-flagging-submit-code',
+                                'Submit',
+                                { primary: true }
+                            )
+                        },
+                        {
+                            element: Buttons.makeStacksButton(
+                                'advanced-flagging-dismiss-code-modal',
+                                'Cancel',
+                            ),
+                            hideOnClick: true
+                        }
+                    ]
+                }
+            }
+        );
+
+        return authModal;
+    }
+
+    private static showMSTokenPopupAndGet(): Promise<string | undefined> {
+        return new Promise<string>(resolve => {
+            const popup = this.getMetasmokeTokenPopup();
+            StackExchange.helpers.showModal(popup);
+
+            popup
+                .querySelector('.s-btn__filled')
+                ?.addEventListener('click', () => {
+                    const input = popup.querySelector('input');
+                    const token = input?.value;
+
+                    // dismiss modal
+                    popup.remove();
+
+                    if (!token) return;
+
+                    resolve(token.toString());
+                });
+        });
+    }
+
+    private static async codeGetter(metaSmokeOAuthUrl: string): Promise<string | undefined> {
+        if (MetaSmokeAPI.isDisabled) return;
+
+        const authenticate = await StackExchange.helpers.showConfirmModal({
+            title: 'Setting up metasmoke',
+            bodyHtml: 'If you do not wish to connect, press cancel and this popup won\'t show up again. '
+                    + 'To reset configuration, see the footer of Stack Overflow.',
+            buttonLabel: 'Authenticate!'
+        });
+
+        // user doesn't wish to connect
+        if (!authenticate) {
+            Store.set(Cached.Metasmoke.disabled, true);
+            return;
+        }
+
+        window.open(metaSmokeOAuthUrl, '_blank');
+        await delay(100);
+
+        return await this.showMSTokenPopupAndGet();
+    }
+
+    private static async getUserKey(): Promise<string> {
+        while (typeof StackExchange.helpers.showConfirmModal === 'undefined') {
+            // eslint-disable-next-line no-await-in-loop
+            await delay(100);
+        }
+
+        const { appKey } = MetaSmokeAPI;
+        const url = `https://metasmoke.erwaysoftware.com/oauth/request?key=${appKey}`;
+
+        return await Store.getAndCache<string>(
+            Cached.Metasmoke.userKey,
+            async (): Promise<string> => {
+                const code = await MetaSmokeAPI.codeGetter(url);
+                if (!code) return '';
+
+                const tokenUrl = `//metasmoke.erwaysoftware.com/oauth/token?key=${appKey}&code=${code}`;
+                const tokenCall = await fetch(tokenUrl);
+
+                const { token } = await tokenCall.json() as { token: string };
+
+                return token;
+            });
     }
 }

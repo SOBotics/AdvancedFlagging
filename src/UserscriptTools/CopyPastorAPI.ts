@@ -28,19 +28,16 @@ interface CopyPastorData {
     };
 }
 
-const copypastorServer = 'https://copypastor.sobotics.org';
-const copypastorKey = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
-
 export class CopyPastorAPI extends Reporter {
-    private static copypastorIds: Partial<CopyPastorData> = {};
-
     public copypastorId: number;
     public repost: boolean;
     public targetUrl: string;
 
-    constructor(
-        id: number,
-    ) {
+    private static readonly copypastorIds: Partial<CopyPastorData> = {};
+    private static readonly key = 'wgixsmuiz8q8px9kyxgwf8l71h7a41uugfh5rkyj';
+    private static readonly server = 'https://copypastor.sobotics.org';
+
+    constructor(id: number) {
         super('Guttenberg', id);
 
         const {
@@ -70,13 +67,13 @@ export class CopyPastorAPI extends Reporter {
     }
 
     public static storeReportedPosts(postUrls: string[]): Promise<void> {
-        const url = `${copypastorServer}/posts/findTarget?url=${postUrls.join(',')}`;
+        const url = `${this.server}/posts/findTarget?url=${postUrls.join(',')}`;
 
         return new Promise<void>((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url,
-                timeout: 2000,
+                timeout: 1500,
                 onload: ({ responseText }) => {
                     const response = JSON.parse(responseText) as CopyPastorFindTargetResponse;
 
@@ -114,15 +111,15 @@ export class CopyPastorAPI extends Reporter {
             return Promise.resolve('');
         }
 
-        const successMessage = this.getSentMessage(true, feedback);
-        const failureMessage = this.getSentMessage(false, feedback);
+        const success = this.getSentMessage(true, feedback);
+        const failure = this.getSentMessage(false, feedback);
 
         const payload = {
             post_id: this.copypastorId,
             feedback_type: feedback,
             username,
             link: `//chat.stackoverflow.com/users/${chatId}`,
-            key: copypastorKey,
+            key: CopyPastorAPI.key,
         };
         const data = Object
             .entries(payload)
@@ -130,7 +127,7 @@ export class CopyPastorAPI extends Reporter {
             .join('&');
 
         return new Promise<string>((resolve, reject) => {
-            const url = `${copypastorServer}/feedback/create`;
+            const url = `${CopyPastorAPI.server}/feedback/create`;
 
             if (Store.dryRun) {
                 console.log('Feedback to Guttenberg via', url, data);
@@ -147,10 +144,10 @@ export class CopyPastorAPI extends Reporter {
                 data,
                 onload: ({ status }) => {
                     status === 200
-                        ? resolve(successMessage)
-                        : reject(failureMessage);
+                        ? resolve(success)
+                        : reject(failure);
                 },
-                onerror: () => reject(failureMessage)
+                onerror: () => reject(failure)
             });
         });
     }
@@ -171,7 +168,7 @@ export class CopyPastorAPI extends Reporter {
     public override getIcon(): HTMLDivElement {
         return this.createBotIcon(
             this.copypastorId
-                ? `${copypastorServer}/posts/${this.copypastorId}`
+                ? `${CopyPastorAPI.server}/posts/${this.copypastorId}`
                 : ''
         );
     }

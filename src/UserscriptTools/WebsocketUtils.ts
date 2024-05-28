@@ -3,25 +3,15 @@ import { Store } from './Store';
 export class WebsocketUtils {
     public websocket: WebSocket | null = null;
 
-    private readonly url: string;
-    private readonly id: number;
-    private readonly timeout: number;
-    // message sent when the websocket opens
-    // for authentication
-    private readonly auth: string;
-
     constructor(
-        url: string,
+        private readonly url: string,
         // id of the post to watch
-        id: number,
-        auth?: string,
-        timeout = 1e4
+        private readonly id: number,
+        // message sent when the websocket opens
+        // for authentication
+        private readonly auth = '',
+        private readonly timeout = 1e4
     ) {
-        this.url = url;
-        this.id = id;
-        this.auth = auth || '';
-        this.timeout = timeout;
-
         this.initWebsocket();
     }
 

@@ -21,6 +21,7 @@ interface NattyFeedbackItem {
 
 export class NattyAPI extends Reporter {
     private static nattyIds: number[] = [];
+
     private readonly chat: ChatApi = new ChatApi();
     private readonly feedbackMessage: string;
     private readonly reportMessage: string;
@@ -39,6 +40,7 @@ export class NattyAPI extends Reporter {
 
     public static getAllNattyIds(ids?: number[]): Promise<void> {
         const postIds = (ids || page.getAllPostIds(false, false)).join(',');
+
         if (!Page.isStackOverflow || !postIds) return Promise.resolve();
 
         return new Promise<void>((resolve, reject) => {
@@ -108,16 +110,16 @@ export class NattyAPI extends Reporter {
         return nattyReportedMessage;
     }
 
-    private getDaysBetween(questionDate: Date, answerDate: Date): number {
-        // get the number of days between the creation of the question and the answer
-        return (answerDate.valueOf() - questionDate.valueOf()) / dayMillis;
-    }
-
     public override getIcon(): HTMLDivElement {
         return this.createBotIcon(
             this.wasReported()
                 ? `//sentinel.erwaysoftware.com/posts/aid/${this.id}`
                 : ''
         );
+    }
+
+    private getDaysBetween(questionDate: Date, answerDate: Date): number {
+        // get the number of days between the creation of the question and the answer
+        return (answerDate.valueOf() - questionDate.valueOf()) / dayMillis;
     }
 }

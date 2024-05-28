@@ -371,13 +371,13 @@ export class Popover {
     private getCommentText({ comments }: CachedFlag): string | null {
         // Adds the author name before the comment if the option is enabled
         // and determines if the comment should be low/high rep
-        const { addAuthorName: AddAuthorName } = Store.config;
+        const { addAuthorName } = Store.config;
 
-        const commentType = (this.post.opReputation || 0) > 50 ? 'high' : 'low';
-        const comment = comments?.[commentType] || comments?.low;
+        const type = (this.post.opReputation || 0) > 50 ? 'high' : 'low';
+        const comment = comments?.[type] || comments?.low;
 
         return (
-            comment && AddAuthorName
+            comment && addAuthorName
                 ? `${this.post.opName}, ${comment[0].toLowerCase()}${comment.slice(1)}`
                 : comment
         ) || null;

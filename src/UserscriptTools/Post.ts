@@ -241,12 +241,22 @@ export default class Post {
     }
 
     public upvoteSameComments(comment: string): void {
-        const strippedComment = Post.getStrippedComment(comment);
+        const alternative = Store.config.addAuthorName
+            ? comment.split(', ').slice(1).join(', ') // remove author's name
+            : `${this.opName}, ${comment}`; // add author's name
+
+        // convert comment texts to lowercase before comparing them
+        // compare both possible versions of the cached comment
+        // - the one without the author's name prepended
+        // - the one with author's name prepended
+        const stripped = Post.getStrippedComment(comment).toLowerCase();
+        const strippedAlt = Post.getStrippedComment(alternative).toLowerCase();
 
         this.element
             .querySelectorAll<HTMLElement>('.comment-body .comment-copy')
             .forEach(element => {
-                if (element.innerText !== strippedComment) return;
+                const text = element.innerText.toLowerCase();
+                if (text !== stripped || text !== strippedAlt) return;
 
                 const parent = element.closest('li');
 

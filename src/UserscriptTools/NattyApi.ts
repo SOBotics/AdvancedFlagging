@@ -39,7 +39,7 @@ export class NattyAPI extends Reporter {
     }
 
     public static getAllNattyIds(ids?: number[]): Promise<void> {
-        const postIds = (ids || page.getAllPostIds(false, false)).join(',');
+        const postIds = (ids ?? page.getAllPostIds(false, false)).join(',');
 
         if (!Page.isStackOverflow || !postIds) return Promise.resolve();
 

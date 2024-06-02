@@ -39,7 +39,7 @@ async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
     const element = document.querySelector<HTMLElement>('#answer .answer');
     if (!element) return;
 
-    const post = cached || new Post(element);
+    const post = cached ?? new Post(element);
 
     // eslint-disable-next-line no-await-in-loop
     while (!isDone) await delay(200);

@@ -93,7 +93,7 @@ export default class Post {
         const url = `/flags/posts/${this.id}/add/${flagName}`;
         const data = {
             fkey: StackExchange.options.user.fkey,
-            otherText: text || '',
+            otherText: text ?? '',
             // plagiarism flag: fill "Link(s) to original content"
             // note wrt link: site will always be Stack Overflow,
             //                post will always be an answer.
@@ -122,11 +122,11 @@ export default class Post {
         const responseText = await flagRequest.text();
 
         if (tooFast.test(responseText)) { // flagging posts too quickly
-            const rlCount = /\d+/.exec(responseText)?.[0] || 0;
+            const rlCount = /\d+/.exec(responseText)?.[0] ?? 0;
             const pluralS = Number(rlCount) > 1 ? 's' : '';
 
             console.error(responseText);
-            throw `rate-limited for ${rlCount} second${pluralS}`;
+            throw new Error(`rate-limited for ${rlCount} second${pluralS}`);
         }
 
         const response = JSON.parse(responseText) as StackExchangeFlagResponse;
@@ -138,11 +138,11 @@ export default class Post {
             console.error(fullMessage);
 
             if (message.includes('already flagged')) {
-                throw 'post already flagged';
+                throw new Error('post already flagged');
             } else if (message.includes('limit reached')) {
-                throw 'post flag limit reached';
+                throw new Error('post flag limit reached');
             } else {
-                throw message;
+                throw new Error(message);
             }
         }
 
@@ -193,9 +193,9 @@ export default class Post {
         try {
             json = JSON.parse(response) as StackExchangeDeleteResponse;
         } catch (error) {
-            console.error(response);
+            console.error(error, response);
 
-            throw 'could not parse JSON';
+            throw new Error('could not parse JSON');
         }
 
         if (json.Success) {
@@ -203,7 +203,7 @@ export default class Post {
         } else {
             console.error(json);
 
-            throw json.Message.toLowerCase();
+            throw new Error(json.Message.toLowerCase());
         }
 
         if (json.Refresh) {
@@ -287,7 +287,7 @@ export default class Post {
             ) return;
 
             const matches = regex.exec(responseURL);
-            const flag = (matches?.[1] as Flags);
+            const flag = matches?.[1] as Flags;
 
             const flagType = Store.flagTypes
                 .find(item => item.sendWhenFlagRaised && item.reportType === flag);
@@ -328,14 +328,18 @@ export default class Post {
             .map(reporter => {
                 return reporter.sendFeedback(feedbacks[reporter.name])
                     .then(message => {
-                    // promise resolves to a success message
+                        // promise resolves to a success message
                         if (message) {
                             displayToaster(message, 'success');
                         }
                     })
                     // otherwise throws an error caught here
-                    .catch((promiseError: Error) => {
-                        displayToaster(promiseError.message, 'danger');
+                    .catch((error: unknown) => {
+                        console.error(error);
+
+                        if (error instanceof Error) {
+                            displayToaster(error.message, 'danger');
+                        }
 
                         hasFailed = true;
                     });
@@ -393,16 +397,14 @@ export default class Post {
             '.answer-hyperlink, .question-hyperlink, .s-link'
         )?.href;
 
-        const postId =
-            (
-                // questions page: get value of data-questionid/data-answerid
-                this.element.dataset.questionid
-             || this.element.dataset.answerid
-            ) || (
-                this.type === 'Answer'// flags/NATO/search page: parse the post URL
-                    ? new URL(href || '').pathname.split('/').pop()
-                    : href?.split('/')[4]
-            );
+        const postId = (
+            // questions page: get value of data-questionid/data-answerid
+            this.element.dataset.questionid ?? this.element.dataset.answerid
+        ) ?? (
+            this.type === 'Answer'// flags/NATO/search page: parse the post URL
+                ? new URL(href ?? '').pathname.split('/').pop()
+                : href?.split('/')[4]
+        );
 
         return Number(postId);
     }
@@ -433,14 +435,14 @@ export default class Post {
         // in Flags page, authorName will be empty, but we aren't interested in it there anyways...
         const lastNameEl = [...this.element.querySelectorAll('.user-info .user-details a')].pop();
 
-        return lastNameEl?.textContent?.trim() || '';
+        return lastNameEl?.textContent?.trim() ?? '';
     }
 
     private getCreationDate(): Date {
         const dateElements = this.element.querySelectorAll<HTMLElement>('.user-info .relativetime');
         const authorDateElement = Array.from(dateElements).pop();
 
-        return new Date(authorDateElement?.title || '');
+        return new Date(authorDateElement?.title ?? '');
     }
 
     private qualifiesForVlq(): boolean {

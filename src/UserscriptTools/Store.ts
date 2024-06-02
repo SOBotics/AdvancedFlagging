@@ -25,7 +25,7 @@ export type Configuration = Mutable<{
     defaultNoNatty: boolean;
     defaultNoGuttenberg: boolean;
     defaultNoGenericBot: boolean;
-}
+};
 
 // Cache keys
 export const Cached = {
@@ -59,9 +59,9 @@ export class Store {
     // cache-related helpers/values
     // Some information from cache is stored on the variables as objects to make editing easier and simpler
     // Each time something is changed in the variables, update* must also be called to save the changes to the cache
-    public static config = Store.get<Configuration>(Cached.Configuration.key) || {} as Partial<Configuration>;
-    public static categories = Store.get<CachedCategory[]>(Cached.FlagCategories) || [] as (Partial<CachedCategory>)[];
-    public static flagTypes = Store.get<CachedFlag[]>(Cached.FlagTypes) || [];
+    public static config = Store.get<Configuration>(Cached.Configuration.key) ?? {} as Partial<Configuration>;
+    public static categories = Store.get<CachedCategory[]>(Cached.FlagCategories) ?? [] as (Partial<CachedCategory>)[];
+    public static flagTypes = Store.get<CachedFlag[]>(Cached.FlagTypes) ?? [];
 
     public static updateConfiguration = (): void => Store.set(Cached.Configuration.key, this.config);
     public static updateFlagTypes = (): void => Store.set(Cached.FlagTypes, this.flagTypes);

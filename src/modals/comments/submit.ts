@@ -13,25 +13,23 @@ function saveName(
 ): void {
     const input = card.querySelector<HTMLInputElement>('.s-input__md');
 
-    flagType.displayName = input?.value || '';
+    flagType.displayName = input?.value ?? '';
 }
 
 function saveTextareaContent(
     expandable: Element,
     flagType: CachedFlag
 ): void {
-    // use || '' to avoid null/undefined values in cache
-    const [flag, low, high] =
-        [
-            'text-modflag',
-            'comment-lowrep',
-            'comment-highrep'
-        ]
-            .map(id => expandable.querySelector<HTMLTextAreaElement>(`[id*="${id}"]`))
-            // while the user can hide the textarea, we still keep the text in it
-            // in case this was an accident
-            // therefore, we only need to search and save content in visible textareas
-            .map(textarea => textarea?.offsetParent ? textarea.value : '');
+    const [flag, low, high] = [
+        'text-modflag',
+        'comment-lowrep',
+        'comment-highrep'
+    ]
+        .map(id => expandable.querySelector<HTMLTextAreaElement>(`[id*="${id}"]`))
+        // while the user can hide the textarea, we still keep the text in it
+        // in case this was an accident
+        // therefore, we only need to search and save content in visible textareas
+        .map(textarea => textarea?.offsetParent ? textarea.value : '');
 
     flagType.flagText = flag;
     if (low) {
@@ -46,7 +44,7 @@ function saveSwfr(
 ): void {
     // swfr = send when flag raised :)
     const swfrBox = expandable.querySelector<HTMLInputElement>('[id*="-send-when-flag-raised-"');
-    const sendFeedback = swfrBox?.checked || false;
+    const sendFeedback = swfrBox?.checked ?? false;
 
     flagType.sendWhenFlagRaised = sendFeedback;
 
@@ -76,7 +74,7 @@ function saveDownvote(
 ): void {
     const downvote = expandable.querySelector<HTMLInputElement>('[id*="-downvote-post-"');
 
-    flagType.downvote = downvote?.checked || false;
+    flagType.downvote = downvote?.checked ?? false;
 }
 
 function saveFeedbacks(
@@ -93,7 +91,7 @@ function saveFeedbacks(
             const selector = `[name*="-feedback-to-${name.replace(/\s/g, '-')}"]:checked`;
             const radio = expandable.querySelector<HTMLElement>(`.s-radio${selector}`);
 
-            const feedback = radio?.dataset.feedback || '';
+            const feedback = radio?.dataset.feedback ?? '';
 
             return [name, feedback];
         });
@@ -150,7 +148,6 @@ export function submitChanges(element: HTMLElement): void {
 
         return;
     }
-
 
     // Flag name
     saveName(wrapper, flagType);

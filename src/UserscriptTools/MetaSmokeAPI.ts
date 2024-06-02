@@ -19,10 +19,8 @@ interface MetaSmokeApiWrapper {
     items: MetaSmokeApiItem[];
 }
 
-interface MetasmokeData {
-    // key is the sitePostId, the value is the metasmokeId. That's all we need!
-    [key: number]: number;
-}
+// key is the sitePostId, the value is the metasmokeId. That's all we need!
+type MetasmokeData = Record<number, number>;
 
 interface MetasmokeWsMessage {
     type: string;
@@ -37,7 +35,7 @@ interface MetasmokeWsMessage {
 
 export class MetaSmokeAPI extends Reporter {
     public static accessToken: string;
-    public static isDisabled: boolean = Store.get<boolean>(Cached.Metasmoke.disabled) || false;
+    public static isDisabled: boolean = Store.get<boolean>(Cached.Metasmoke.disabled) ?? false;
 
     public smokeyId: number;
 
@@ -65,7 +63,7 @@ export class MetaSmokeAPI extends Reporter {
     ) {
         super('Smokey', id);
 
-        this.smokeyId = MetaSmokeAPI.metasmokeIds[this.id] || 0;
+        this.smokeyId = MetaSmokeAPI.metasmokeIds[this.id] ?? 0;
     }
 
     public static reset(): void {
@@ -82,7 +80,7 @@ export class MetaSmokeAPI extends Reporter {
         if (MetaSmokeAPI.isDisabled) return;
 
         // postIds as URLs, including questions
-        const urlString = urls || page.getAllPostIds(true, true).join(',');
+        const urlString = urls ?? page.getAllPostIds(true, true).join(',');
 
         // don't make the request if there aren't URLs
         if (!urlString) return;

@@ -30,7 +30,7 @@ export class WebsocketUtils {
             return;
         }
 
-        await this.withTimeout<void>(
+        await this.withTimeout(
             this.timeout,
             new Promise<void>(resolve => {
                 this.websocket?.addEventListener(

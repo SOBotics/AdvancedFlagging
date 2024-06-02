@@ -74,7 +74,6 @@ function setupStyles(): void {
     max-width: 90% !important;
     max-height: 95% !important;
 }`);
-
 }
 
 const popupWrapper = document.createElement('div');
@@ -212,8 +211,8 @@ function setupPostPage(): void {
             `advanced-flagging-link-${id}`,
             'Advanced Flagging',
             {
-                type: ['link'],
-                classes: ['advanced-flagging-link']
+                type: [ 'link' ],
+                classes: [ 'advanced-flagging-link' ]
             }
         );
 

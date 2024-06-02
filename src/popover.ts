@@ -69,7 +69,7 @@ export class Popover {
             Guttenberg: copypastor,
         } = this.post.reporters;
 
-        const { copypastorId, repost, targetUrl } = copypastor || {};
+        const { copypastorId, repost, targetUrl } = copypastor ?? {};
 
         // add the flag types to the category they correspond to
         const categories = Store.categories
@@ -104,7 +104,6 @@ export class Popover {
 
                 category?.FlagTypes.push(flagType);
             });
-
 
         return categories
             // exclude empty categories (no .FlagTypes)
@@ -219,7 +218,7 @@ export class Popover {
                         selected: !defaultNoCheck,
                     },
                     checkboxOptions: {
-                        classes: [ 'px6' ]
+                        classes: ['px6']
                     },
                     popover: {
                         html: `Send feedback to ${instance.name}`,
@@ -259,7 +258,7 @@ export class Popover {
 
         // Comment text: ...
         const commentText = this.getCommentText(flagType);
-        const tooltipCommentText = (this.post.deleted ? '' : commentText) || '';
+        const tooltipCommentText = (this.post.deleted ? '' : commentText) ?? '';
 
         // if the flag changed from VLQ to NAA, let the user know why
         const flagName = getFlagToRaise(reportType, this.post.raiseVlq);
@@ -277,10 +276,10 @@ export class Popover {
         const popoverParent = document.createElement('div');
 
         Object.entries({
-            'Flag': reportTypeHuman,
-            'Comment': tooltipCommentText,
+            Flag: reportTypeHuman,
+            Comment: tooltipCommentText,
             'Flag text': tooltipFlagText,
-            'Feedbacks': feedbacks
+            Feedbacks: feedbacks
         })
             .filter(([, value]) => value)
             .map(([boldText, value]) => createPopoverToOption(boldText, value))
@@ -374,13 +373,13 @@ export class Popover {
         const { addAuthorName } = Store.config;
 
         const type = (this.post.opReputation || 0) > 50 ? 'high' : 'low';
-        const comment = comments?.[type] || comments?.low;
+        const comment = comments?.[type] ?? comments?.low;
 
         return (
             comment && addAuthorName
                 ? `${this.post.opName}, ${comment[0].toLowerCase()}${comment.slice(1)}`
                 : comment
-        ) || null;
+        ) ?? null;
     }
 
     private async handleReportLinkClick(
@@ -447,7 +446,11 @@ export class Popover {
                 try {
                     await this.post.flag(reportType, flagText);
                 } catch (error) {
-                    displayToaster('Failed to flag: ' + (error as string), 'danger');
+                    console.error(error);
+
+                    if (error instanceof Error) {
+                        displayToaster('Failed to flag: ' + error.message, 'danger');
+                    }
                 }
             }
 
@@ -461,7 +464,11 @@ export class Popover {
                 try {
                     await this.post.deleteVote();
                 } catch (error) {
-                    displayToaster('Failed to vote to delete: ' + (error as string), 'danger');
+                    console.error(error);
+
+                    if (error instanceof Error) {
+                        displayToaster('Failed to vote to delete: ' + error.message, 'danger');
+                    }
                 }
             }
         }

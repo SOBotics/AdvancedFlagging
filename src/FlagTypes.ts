@@ -61,7 +61,7 @@ export const flagCategories: FlagCategory[] = [
     {
         isDangerous: true,
         name: 'Guttenberg mod flags',
-        appliesTo: ['Answer'],
+        appliesTo: [ 'Answer' ],
         FlagTypes: [
             {
                 id: 3,
@@ -77,9 +77,9 @@ export const flagCategories: FlagCategory[] = [
                 displayName: 'Duplicate answer',
                 reportType: FlagNames.ModFlag,
                 flagText: 'The post is a repost of their other answer: $TARGET$, but as there are slight differences '
-                               + '(see $COPYPASTOR$), an auto flag would not be raised.',
+                        + '(see $COPYPASTOR$), an auto flag would not be raised.',
                 comments: {
-                    low: "Please don't add the [same answer to multiple questions](//meta.stackexchange.com/q/104227)."
+                    low: 'Please don\'t add the [same answer to multiple questions](//meta.stackexchange.com/q/104227).'
                        + ' Answer the best one and flag the rest as duplicates, once you earn enough reputation. '
                        + 'If it is not a duplicate, [edit] the answer and tailor the post to the question.',
                 },
@@ -101,7 +101,7 @@ export const flagCategories: FlagCategory[] = [
     {
         isDangerous: false,
         name: 'Answer-related',
-        appliesTo: ['Answer'],
+        appliesTo: [ 'Answer' ],
         FlagTypes: [
             {
                 id: 6,

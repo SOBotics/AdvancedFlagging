@@ -14,11 +14,9 @@ interface ChatMessageInfo {
     content: string;
 }
 
-interface ChatWsMessage {
-    [key: string]: {
-        e?: ChatMessageInfo[];
-    };
-}
+type ChatWsMessage = Record<string, {
+    e?: ChatMessageInfo[];
+}>;
 
 export class ChatApi {
     private readonly nattyId = 6817005;
@@ -27,7 +25,6 @@ export class ChatApi {
         private readonly chatUrl = 'https://chat.stackoverflow.com',
         private readonly roomId = 111347
     ) {}
-
 
     public getChatUserId(): number {
         // Because the script only sends messages to SO chat,
@@ -93,7 +90,7 @@ export class ChatApi {
                 const id = matchRegex.exec(content)?.[1];
 
                 return Number(id);
-            }) || [];
+            }) ?? [];
     }
 
     private static getExpiryDate(): Date {
@@ -197,7 +194,7 @@ export class ChatApi {
                 const parsed = new DOMParser().parseFromString(channelPage, 'text/html');
 
                 const fkeyInput = parsed.querySelector<HTMLInputElement>('input[name="fkey"]');
-                const fkey = fkeyInput?.value || '';
+                const fkey = fkeyInput?.value ?? '';
 
                 return fkey;
             } catch (error) {

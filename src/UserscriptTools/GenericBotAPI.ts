@@ -23,7 +23,7 @@ export class GenericBotAPI extends Reporter {
         }
 
         const answer = document.querySelector(`#answer-${this.id} .js-post-body`);
-        const answerBody = answer?.innerHTML.trim() || '';
+        const answerBody = answer?.innerHTML.trim() ?? '';
         const contentHash = this.computeContentHash(answerBody);
 
         const url = 'https://so.floern.com/api/trackpost.php';

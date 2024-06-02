@@ -20,13 +20,12 @@ type CopyPastorFindTargetResponse = {
     message: string;
 };
 
-interface CopyPastorData {
-    [key: number]: { // key is the sitePostId
-        copypastorId: number;
-        repost: boolean;
-        target_url: string;
-    };
-}
+// key is the sitePostId
+type CopyPastorData = Record<number, {
+    copypastorId: number;
+    repost: boolean;
+    target_url: string;
+}>;
 
 export class CopyPastorAPI extends Reporter {
     public copypastorId: number;
@@ -44,7 +43,7 @@ export class CopyPastorAPI extends Reporter {
             copypastorId = 0,
             repost = false,
             target_url: targetUrl = ''
-        } = CopyPastorAPI.copypastorIds[this.id] || {};
+        } = CopyPastorAPI.copypastorIds[this.id] ?? {};
 
         this.copypastorId = copypastorId;
         this.repost = repost;

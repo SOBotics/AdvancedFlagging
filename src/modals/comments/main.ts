@@ -126,7 +126,7 @@ function expandableToggled(edit: HTMLElement): void {
             `advanced-flagging-flag-name-${flagId}`,
             {
                 classes: [ 's-input__md' ],
-                value: name?.innerText || ''
+                value: name?.innerText ?? ''
             }
         );
 
@@ -135,7 +135,7 @@ function expandableToggled(edit: HTMLElement): void {
         const input = card.querySelector<HTMLInputElement>(
             `#advanced-flagging-flag-name-${flagId}`
         );
-        const h3 = getH3(input?.value || '');
+        const h3 = getH3(input?.value ?? '');
 
         input
             ?.parentElement // input container
@@ -367,7 +367,7 @@ function getCommentsModalBody(): HTMLElement {
     const categories = Store.categories
         .filter(({ name }) => name)
         .map(({ name }) => {
-            const div = createCategoryDiv(name || '');
+            const div = createCategoryDiv(name ?? '');
 
             const flagTypes = Store.flagTypes
                 // only those belonging to "Name" category

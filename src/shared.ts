@@ -25,7 +25,7 @@ export const possibleFeedbacks: { [key in BotNames]: AllFeedbacks[] } = {
     Smokey: ['tpu-', 'tp-', 'fp-', 'naa-', ''],
     Natty: ['tp', 'fp', 'ne', ''],
     Guttenberg: ['tp', 'fp', ''],
-    'Generic Bot' : ['track', '']
+    'Generic Bot': ['track', '']
 };
 
 export enum FlagNames {
@@ -41,7 +41,7 @@ export enum FlagNames {
 // Constants
 export const username = document.querySelector<HTMLDivElement>(
     'a[href^="/users/"] div[title]'
-)?.title || '';
+)?.title ?? '';
 export const popupDelay = 4 * 1000;
 
 export const getIconPath = (name: string): string => {
@@ -49,7 +49,7 @@ export const getIconPath = (name: string): string => {
     const parsed = new DOMParser().parseFromString(element, 'text/html');
     const path = parsed.body.querySelector('path') as SVGPathElement;
 
-    return path.getAttribute('d') || '';
+    return path.getAttribute('d') ?? '';
 };
 
 export const getSvg = (name: string): SVGElement => {
@@ -64,9 +64,11 @@ export function displayStacksToast(
     type: StacksToastState,
     dismissable?: boolean
 ): void {
-    /*const parent = document.querySelector(
+    /*
+    const parent = document.querySelector(
         '.s-modal[aria-hidden="false"] > .s-modal--dialog'
-    ) as HTMLElement;*/
+    ) as HTMLElement;
+    */
 
     StackExchange.helpers.showToast(message, {
         type: type,
@@ -74,7 +76,7 @@ export function displayStacksToast(
         // disallow dismissing the popup if inside modal
         dismissable,
         // so that dismissing the toast won't close the modal
-        //$parent: addParent ? $(parent) : $()
+        // $parent: addParent ? $(parent) : $()
     });
 }
 
@@ -90,7 +92,7 @@ export function attachPopover(
     );
 }
 
-export function getFormDataFromObject<T extends { [key: string]: string }>(
+export function getFormDataFromObject<T extends Record<string, string>>(
     object: T
 ): FormData {
     return Object
@@ -112,7 +114,7 @@ export const getCachedConfigBotKey = (
 };
 
 export async function delay(milliseconds: number): Promise<void> {
-    return await new Promise<void>(resolve => setTimeout(resolve, milliseconds));
+    return new Promise<void>(resolve => setTimeout(resolve, milliseconds));
 }
 
 // Credits: https://github.com/SOBotics/Userscripts/blob/master/Natty/NattyReporter.user.js#L101
@@ -156,7 +158,7 @@ export function getFullFlag(
 }
 
 export function getFlagTypeFromFlagId(flagId: number): CachedFlag | null {
-    return Store.flagTypes.find(({ id }) => id === flagId) || null;
+    return Store.flagTypes.find(({ id }) => id === flagId) ?? null;
 }
 
 export type HumanFlags = 'as NAA'

@@ -206,7 +206,7 @@ export function getTextareas({
     const wrappers = [flag, lowRep, highRep].map(element => {
         const textarea = element.querySelector('textarea') as HTMLTextAreaElement;
         textarea.classList.add('fs-body2'); // increase font size
-        //textarea.style.height = `${textarea.scrollHeight + 2}px`; // fit to content
+        // textarea.style.height = `${textarea.scrollHeight + 2}px`; // fit to content
         textarea.rows = 4;
 
         const contentType = textarea.id.includes('comment')

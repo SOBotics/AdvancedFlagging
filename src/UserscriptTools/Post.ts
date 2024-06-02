@@ -256,7 +256,7 @@ export default class Post {
             .querySelectorAll<HTMLElement>('.comment-body .comment-copy')
             .forEach(element => {
                 const text = element.innerText.toLowerCase();
-                if (text !== stripped || text !== strippedAlt) return;
+                if (text !== stripped && text !== strippedAlt) return;
 
                 const parent = element.closest('li');
 

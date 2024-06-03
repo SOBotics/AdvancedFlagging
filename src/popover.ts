@@ -93,7 +93,7 @@ export class Popover {
 
                 // show the red flags and general items on every site,
                 // restrict the others to Stack Overflow
-                const showOnSo = ['Red flags', 'General'].includes(belongsTo) || Page.isStackOverflow;
+                const showOnSo = ['Red flags', 'General', 'Answer-related'].includes(belongsTo) || Page.isStackOverflow;
 
                 return enabled && (isGuttenbergItem ? showGutReport : showOnSo);
             })
@@ -156,11 +156,10 @@ export class Popover {
         ] as [string, keyof Configuration][];
 
         return config
-            // don't leave comments on non-SO sites
             // hide delete checkbox when user can't delete vote
             .filter(([ text ]) => {
-                if (text === 'Leave comment') return Page.isStackOverflow;
-                else if (text === 'Delete') return this.post.canDelete;
+                // if (text === 'Leave comment') return Page.isStackOverflow;
+                if (text === 'Delete') return this.post.canDelete;
 
                 return true;
             })
@@ -373,8 +372,17 @@ export class Popover {
         const { addAuthorName } = Store.config;
 
         const type = (this.post.opReputation || 0) > 50 ? 'high' : 'low';
-        const comment = comments?.[type] ?? comments?.low;
+        let comment = comments?.[type] ?? comments?.low;
+        if (comment) {
+            const sitename = StackExchange.options.site.name || '';
+            const siteurl = window.location.hostname;
+            const questionId = StackExchange.question.getQuestionId().toString();
 
+            comment = comment.replace(/%SITENAME%/g, sitename);
+            comment = comment.replace(/%SITEURL%/g, siteurl);
+            comment = comment.replace(/%OP%/g, this.post.opName);
+            comment = comment.replace(/%QID%/g, questionId);
+        }
         return (
             comment && addAuthorName
                 ? `${this.post.opName}, ${comment[0].toLowerCase()}${comment.slice(1)}`

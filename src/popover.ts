@@ -93,7 +93,7 @@ export class Popover {
 
                 // show the red flags and general items on every site,
                 // restrict the others to Stack Overflow
-                const showOnSo = ['Red flags', 'General', 'Answer-related'].includes(belongsTo) || Page.isStackOverflow;
+                const showOnSo = ['Red flags', 'General'].includes(belongsTo) || Page.isStackOverflow;
 
                 return enabled && (isGuttenbergItem ? showGutReport : showOnSo);
             })

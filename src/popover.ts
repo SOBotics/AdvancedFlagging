@@ -156,7 +156,6 @@ export class Popover {
         ] as [string, keyof Configuration][];
 
         return config
-            // don't leave comments on non-SO sites
             // hide delete checkbox when user can't delete vote
             .filter(([ text ]) => {
                 if (text === 'Leave comment') return Page.isStackOverflow;
@@ -373,8 +372,14 @@ export class Popover {
         const { addAuthorName } = Store.config;
 
         const type = (this.post.opReputation || 0) > 50 ? 'high' : 'low';
-        const comment = comments?.[type] ?? comments?.low;
+        let comment = comments?.[type] ?? comments?.low;
+        if (comment) {
+            const sitename = StackExchange.options.site.name || '';
+            const siteurl = window.location.hostname;
+            const questionId = StackExchange.question.getQuestionId().toString();
 
+            comment = comment.replace(/%SITENAME%/g, sitename).replace(/%SITEURL%/g, siteurl).replace(/%OP%/g, this.post.opName).replace(/%QID%/g, questionId);
+        }
         return (
             comment && addAuthorName
                 ? `${this.post.opName}, ${comment[0].toLowerCase()}${comment.slice(1)}`

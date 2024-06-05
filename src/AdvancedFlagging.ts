@@ -181,8 +181,7 @@ function setPopoverOpening(
     }
 }
 
-const url = new URL(window.location.href);
-export let page = new Page(url);
+export let page = new Page();
 
 function setupPostPage(): void {
     // check if the link + popover should be set up
@@ -193,7 +192,7 @@ function setupPostPage(): void {
     // i)  append the icons to iconLocation
     // ii) add link & set up reporters on
 
-    page = new Page(url);
+    page = new Page();
 
     if (page.name && page.name !== 'Question') {
         page.posts.forEach(post => post.addIcons());

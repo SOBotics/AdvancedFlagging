@@ -76,9 +76,18 @@ export default class Post {
         this.opReputation = this.getOpReputation();
         this.opName = this.getOpName();
 
-        [this.done, this.failed, this.flagged] = this.getActionIcons();
+        [this.done, this.failed, this.flagged] = Post.getActionIcons();
 
         this.initReporters();
+    }
+
+    public static getActionIcons(): HTMLElement[] {
+        return [
+            ['Checkmark', 'fc-green-500'],
+            ['Clear', 'fc-red-500'],
+            ['Flag', 'fc-red-500']
+        ]
+            .map(([svg, classname]) => Post.getIcon(getSvg(`icon${svg}`), classname));
     }
 
     public async flag(
@@ -459,15 +468,6 @@ export default class Post {
         const deleteButton = this.element.querySelector(selector);
 
         return Boolean(deleteButton);
-    }
-
-    private getActionIcons(): HTMLElement[] {
-        return [
-            ['Checkmark', 'fc-green-500'],
-            ['Clear', 'fc-red-500'],
-            ['Flag', 'fc-red-500']
-        ]
-            .map(([svg, classname]) => Post.getIcon(getSvg(`icon${svg}`), classname));
     }
 
     private initReporters(): void {

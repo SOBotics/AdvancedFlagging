@@ -1,6 +1,6 @@
 import Post from './Post';
 
-type Pages = 'Question' | 'NATO' | 'Flags' | 'Search';
+type Pages = 'Question' | 'NATO' | 'Flags' | 'Search' | 'Review';
 
 export default class Page {
     public static readonly isStackOverflow = /^https:\/\/stackoverflow.com/.test(location.href);
@@ -13,12 +13,24 @@ export default class Page {
     private readonly href: URL;
     private readonly selector: string;
 
-    constructor(href: URL) {
-        this.href = href;
+    constructor(
+        // whether to include posts AF has parsed
+        // useful for review
+        private readonly includeModified = false
+    ) {
+        this.href = new URL(location.href);
         this.name = this.getName();
 
         this.selector = this.getPostSelector();
         this.posts = this.getPosts();
+
+        const question = document.querySelector<HTMLElement>('.question');
+        if (Page.isLqpReviewPage && question) {
+            // populate Post.qDate
+            const post = new Post(question);
+
+            Post.qDate = post.date;
+        }
     }
 
     public getAllPostIds(
@@ -49,6 +61,7 @@ export default class Page {
         else if (isNatoPage) return 'NATO';
         else if (isQuestionPage) return 'Question';
         else if (isSearch) return 'Search';
+        else if (Page.isLqpReviewPage) return 'Review';
         else return '';
     }
 
@@ -62,16 +75,21 @@ export default class Page {
                 return '.question, .answer';
             case 'Search':
                 return '.js-search-results .s-post-summary';
+            case 'Review':
+                return '#answer .answer';
+            default:
+                return '';
         }
-
-        return '';
     }
 
     private getPosts(): Post[] {
         if (this.name === '') return [];
 
         return ([...document.querySelectorAll(this.selector)] as HTMLElement[])
-            .filter(el => !el.querySelector('.advanced-flagging-link, .advanced-flagging-icon'))
+            .filter(el => {
+                return !el.querySelector('.advanced-flagging-link, .advanced-flagging-icon')
+                    || this.includeModified;
+            })
             .map(el => new Post(el));
     }
 }

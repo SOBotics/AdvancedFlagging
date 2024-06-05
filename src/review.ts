@@ -6,21 +6,11 @@ import { NattyAPI } from './UserscriptTools/NattyApi';
 import { CopyPastorAPI } from './UserscriptTools/CopyPastorAPI';
 import { Cached, Store } from './UserscriptTools/Store';
 
-import Post from './UserscriptTools/Post';
 import Page from './UserscriptTools/Page';
 
 interface ReviewQueueResponse {
     postId: number;
     isAudit: boolean; // detect audits & avoid sending feedback to bots
-}
-
-const allPosts: Post[] = [];
-
-function getPostIdFromReview(): number {
-    const answer = document.querySelector('[id^="answer-"]');
-    const id = answer?.id.split('-')[1];
-
-    return Number(id);
 }
 
 async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
@@ -32,14 +22,13 @@ async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
      || !document.querySelector('#answer') // not an answer
     ) return;
 
-    const reviewResponse = JSON.parse(xhr.responseText) as ReviewQueueResponse;
-    if (reviewResponse.isAudit) return; // audit
+    const response = JSON.parse(xhr.responseText) as ReviewQueueResponse;
+    if (response.isAudit) return; // audit
 
-    const cached = allPosts.find(({ id }) => id === reviewResponse.postId);
-    const element = document.querySelector<HTMLElement>('#answer .answer');
-    if (!element) return;
-
-    const post = cached ?? new Post(element);
+    const page = new Page();
+    // page.posts should be an element with just one item:
+    //   the answer the user is reviewing
+    const post = page.posts[0];
 
     // eslint-disable-next-line no-await-in-loop
     while (!isDone) await delay(200);
@@ -52,7 +41,7 @@ async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
         CopyPastorAPI.storeReportedPosts([ url ])
     ]);
 
-    if (!cached) allPosts.push(post);
+    post.addIcons();
 
     // attach click event listener to the submit button
     // it's OK to do on every task load, as the HTML is re-added
@@ -66,17 +55,15 @@ async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
             // must have selected 'Looks OK' and clicked submit
             if (!looksGood?.checked) return;
 
-            const cached = allPosts.find(({ id }) => id === post.id);
-
             const flagType = Store.flagTypes
-                // send 'Looks Fine' feedback:
-                // get the respective flagType, call handleFlag()
+                // send 'Looks Fine' feedback: get the respective flagType
                 .find(({ id }) => id === 15);
 
             // in case "looks fine" flagtype is deleted
-            if (!cached || !flagType) return;
+            if (!flagType) return;
 
-            void cached.sendFeedbacks(flagType);
+            const page = new Page(true);
+            void page.posts[0].sendFeedbacks(flagType);
         });
 }
 
@@ -86,24 +73,53 @@ export function setupReview(): void {
 
     addXHRListener(runOnNewTask);
 
+    // The "Add a comment for the author?" modal opens
+    // when the GET request to /posts/modal/delete/<post id> is finished.
+    // We detect when the modal opens and attach a click event listener
+    // to the submit button in order to prevent immediate sending of the
+    // "Recommend Deletion" vote. This is required in case the post is 1 vote
+    // away from being deleted and it needs to be reported to a bot.
     addXHRListener(xhr => {
-        const regex = /(\d+)\/vote\/10|(\d+)\/recommend-delete/;
+        const regex = /\/posts\/modal\/delete\/\d+/;
 
         if (
             xhr.status !== 200 // request failed
             || !regex.test(xhr.responseURL) // didn't vote to delete
-            || !document.querySelector('#answer') // not an answer
+            || !document.querySelector('#answer') // answer element not found
         ) return;
 
-        const postId = getPostIdFromReview();
-        const cached = allPosts.find(({ id }) => id === postId);
+        // the submit button
+        const submit = document.querySelector('form .js-modal-submit');
+        if (!submit) return;
 
-        if (!cached) return;
+        submit.addEventListener('click', async event => {
+            // don't recomment deletion immediately
+            event.preventDefault();
+            event.stopPropagation();
 
-        const flagType = Store.flagTypes
-            .find(({ id }) => id === 7); // the "Not an answer" flag type
-        if (!flagType) return; // something went wrong
+            const target = event.target as HTMLButtonElement;
 
-        void cached.sendFeedbacks(flagType);
+            // indicate loading
+            target.classList.add('is-loading');
+            target.ariaDisabled = 'true';
+            target.disabled = true;
+
+            try {
+                // find the "Not an answer" flag type
+                const flagType = Store.flagTypes.find(({ id }) => id === 7);
+                if (!flagType) return; // something went wrong
+
+                const page = new Page(true);
+                await page.posts[0].sendFeedbacks(flagType);
+            } finally {
+                // remove previously added indicators
+                target.classList.remove('is-loading');
+                target.ariaDisabled = 'false';
+                target.disabled = false;
+
+                // proceed with the vote
+                target.click();
+            }
+        }, { once: true });
     });
 }

@@ -158,8 +158,8 @@ export class Popover {
         return config
             // hide delete checkbox when user can't delete vote
             .filter(([ text ]) => {
-                // if (text === 'Leave comment') return Page.isStackOverflow;
-                if (text === 'Delete') return this.post.canDelete;
+                if (text === 'Leave comment') return Page.isStackOverflow;
+                else if (text === 'Delete') return this.post.canDelete;
 
                 return true;
             })
@@ -378,10 +378,7 @@ export class Popover {
             const siteurl = window.location.hostname;
             const questionId = StackExchange.question.getQuestionId().toString();
 
-            comment = comment.replace(/%SITENAME%/g, sitename);
-            comment = comment.replace(/%SITEURL%/g, siteurl);
-            comment = comment.replace(/%OP%/g, this.post.opName);
-            comment = comment.replace(/%QID%/g, questionId);
+            comment = comment.replace(/%SITENAME%/g, sitename).replace(/%SITEURL%/g, siteurl).replace(/%OP%/g, this.post.opName).replace(/%QID%/g, questionId);
         }
         return (
             comment && addAuthorName

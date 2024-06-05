@@ -378,7 +378,10 @@ export class Popover {
             const siteurl = window.location.hostname;
             const questionId = StackExchange.question.getQuestionId().toString();
 
-            comment = comment.replace(/%SITENAME%/g, sitename).replace(/%SITEURL%/g, siteurl).replace(/%OP%/g, this.post.opName).replace(/%QID%/g, questionId);
+            comment = comment.replace(/%SITENAME%/g, sitename)
+                .replace(/%SITEURL%/g, siteurl)
+                .replace(/%OP%/g, this.post.opName)
+                .replace(/%QID%/g, questionId);
         }
         return (
             comment && addAuthorName

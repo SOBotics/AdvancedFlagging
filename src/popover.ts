@@ -91,9 +91,9 @@ export class Popover {
                     // id === 4 => Duplicate Answer
                     && (id === 4 ? repost : !repost);
 
-                // show the red flags and general items on every site,
+                // show the red flags, general, and answer-related items on every site,
                 // restrict the others to Stack Overflow
-                const showOnSo = ['Red flags', 'General'].includes(belongsTo) || Page.isStackOverflow;
+                const showOnSo = ['Red flags', 'General', 'Answer-related'].includes(belongsTo) || Page.isStackOverflow;
 
                 return enabled && (isGuttenbergItem ? showGutReport : showOnSo);
             })
@@ -158,8 +158,8 @@ export class Popover {
         return config
             // hide delete checkbox when user can't delete vote
             .filter(([ text ]) => {
-                if (text === 'Leave comment') return Page.isStackOverflow;
-                else if (text === 'Delete') return this.post.canDelete;
+                // if (text === 'Leave comment') return Page.isStackOverflow;
+                if (text === 'Delete') return this.post.canDelete;
 
                 return true;
             })

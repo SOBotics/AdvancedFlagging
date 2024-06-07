@@ -403,7 +403,7 @@ export default class Post {
         return Boolean(deleteButton) || (userRep > 20_000 && this.score < 0);
     }
 
-    private qualifiesForVlq(): boolean {
+    public qualifiesForVlq(): boolean {
         const dayMillis = 1000 * 60 * 60 * 24;
 
         // a post can't be flagged as VLQ if it has a positive score

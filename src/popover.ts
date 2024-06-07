@@ -413,7 +413,8 @@ export class Popover {
 
         dropdown.closest('.flex--item')?.after(flex);
 
-        this.post.progress = new Progress(this.post);
+        const controller = this.post.element.querySelector('.advanced-flagging-spinner');
+        this.post.progress = new Progress(controller);
         this.post.progress.attach();
 
         // if feedback is sent successfully, the success variable is true, otherwise false
@@ -465,6 +466,7 @@ export class Popover {
                     await this.post.flag(reportType, flagText);
 
                     fProgress.completed();
+                    $(this.post.flagged).fadeIn();
                 } catch (error) {
                     console.error(error);
 

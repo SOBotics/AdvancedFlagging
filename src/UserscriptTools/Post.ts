@@ -1,6 +1,6 @@
-import { getFlagToRaise, displaySuccessFlagged } from '../AdvancedFlagging';
+import { getFlagToRaise } from '../AdvancedFlagging';
 import { Flags } from '../FlagTypes';
-import { getSvg, PostType, FlagNames, getFormDataFromObject, addXHRListener } from '../shared';
+import { getSvg, PostType, FlagNames, getFormDataFromObject, addXHRListener, toggleLoading, delay } from '../shared';
 
 import { CopyPastorAPI } from './CopyPastorAPI';
 import { GenericBotAPI } from './GenericBotAPI';
@@ -54,7 +54,7 @@ export default class Post {
     public readonly failed: HTMLElement;
     public readonly flagged: HTMLElement;
 
-    public progress: Progress = new Progress(this);
+    public progress: Progress = new Progress();
     public readonly reporters: Reporters = {};
 
     private autoflagging = false;
@@ -280,31 +280,55 @@ export default class Post {
         addXHRListener(xhr => {
             const { status, responseURL } = xhr;
 
-            const flagNames = Object.values(FlagNames).join('|');
             const regex = new RegExp(
-                `/flags/posts/${this.id}/add/(${flagNames})`
+                `/flags/posts/${this.id}/popup`
             );
 
             if (!watchFlags // don't watch for flags
                 || this.autoflagging // post flagged via popover
                 || status !== 200 // request failed
-                || !regex.test(responseURL) // not a flag
+                || !regex.test(responseURL)
             ) return;
 
-            const matches = regex.exec(responseURL);
-            const flag = matches?.[1] as Flags;
+            const flagPopup = document.querySelector('#popup-flag-post');
+            const submit = flagPopup?.querySelector('.js-popup-submit');
 
-            const flagType = Store.flagTypes
-                .find(item => item.sendWhenFlagRaised && item.reportType === flag);
-            if (!flagType) return;
+            if (!submit || !flagPopup || submit.textContent?.trim().startsWith('Retract')) return;
 
-            if (Store.dryRun) {
-                console.log('Post', this.id, 'manually flagged as', flag, flagType);
-            }
+            submit.addEventListener('click', async event => {
+                // get the type of flag selected
+                const checked = flagPopup.querySelector<HTMLInputElement>('input.s-radio:checked');
+                if (!checked) return;
 
-            displaySuccessFlagged(this.flagged, flagType.reportType);
+                const flag = checked.value as Flags;
 
-            void this.sendFeedbacks(flagType);
+                const flagType = Store.flagTypes
+                    .find(item => item.sendWhenFlagRaised && item.reportType === flag);
+                if (!flagType) return;
+
+                // don't flag immediately
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (Store.dryRun) {
+                    console.log('Post', this.id, 'manually flagged as', flag, flagType);
+                }
+
+                const target = event.target as HTMLButtonElement;
+                toggleLoading(target);
+
+                this.progress = new Progress(submit);
+                this.progress.attach();
+
+                try {
+                    await this.sendFeedbacks(flagType);
+                    $(this.flagged).fadeIn();
+                } finally {
+                    await delay(1000);
+                    toggleLoading(target);
+                    target.click();
+                }
+            }, { once: true });
         });
     }
 

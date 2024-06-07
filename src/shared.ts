@@ -182,3 +182,9 @@ export function getHumanFromDisplayName(displayName: Flags): HumanFlags {
 
     return flags[displayName] || '';
 }
+
+export function toggleLoading(button: HTMLButtonElement): void {
+    button.classList.toggle('is-loading');
+    button.ariaDisabled = button.ariaDisabled === 'true' ? 'false' : 'true';
+    button.disabled = !button.disabled;
+}

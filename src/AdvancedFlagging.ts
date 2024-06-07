@@ -6,13 +6,7 @@ import { setupConfiguration } from './Configuration';
 import { Popover } from './popover';
 
 import { setupReview } from './review';
-import {
-    attachPopover,
-    FlagNames,
-    getHumanFromDisplayName,
-    interceptXhr,
-    popupDelay
-} from './shared';
+import { FlagNames, interceptXhr, popupDelay } from './shared';
 
 import { NattyAPI } from './UserscriptTools/NattyApi';
 import { MetaSmokeAPI } from './UserscriptTools/MetaSmokeAPI';
@@ -119,16 +113,6 @@ export function displayToaster(
     window.setTimeout(() => {
         $(element).fadeOut('slow', () => element.remove());
     }, popupDelay);
-}
-
-export function displaySuccessFlagged(icon: HTMLElement, reportType?: Flags): void {
-    if (!reportType) return;
-
-    const flaggedMessage = `Flagged ${getHumanFromDisplayName(reportType)}`;
-    attachPopover(icon, flaggedMessage);
-    $(icon).fadeIn();
-
-    displayToaster(flaggedMessage, 'success');
 }
 
 function buildFlaggingDialog(post: Post): HTMLElement {

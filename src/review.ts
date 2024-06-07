@@ -1,4 +1,4 @@
-import { addXHRListener, delay } from './shared';
+import { addXHRListener, delay, toggleLoading } from './shared';
 import { isDone } from './AdvancedFlagging';
 
 import { MetaSmokeAPI } from './UserscriptTools/MetaSmokeAPI';
@@ -49,7 +49,7 @@ async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
     // thus all previous event listeners are removed
     document
         .querySelector('.js-review-submit')
-        ?.addEventListener('click', () => {
+        ?.addEventListener('click', async event => {
             const looksGood = document.querySelector<HTMLInputElement>(
                 '#review-action-LooksGood'
             );
@@ -63,9 +63,20 @@ async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
             // in case "looks fine" flagtype is deleted
             if (!flagType) return;
 
+            event.preventDefault();
+            event.stopPropagation();
+
+            const target = event.target as HTMLButtonElement;
+            toggleLoading(target);
+
             const page = new Page(true);
-            void page.posts[0].sendFeedbacks(flagType);
-        });
+            await page.posts[0].sendFeedbacks(flagType);
+
+            await delay(1000);
+            toggleLoading(target);
+
+            target.click();
+        }, { once: true });
 }
 
 export function setupReview(): void {
@@ -94,6 +105,10 @@ export function setupReview(): void {
         if (!submit) return;
 
         submit.addEventListener('click', async event => {
+            // find the "Not an answer" flag type
+            const flagType = Store.flagTypes.find(({ id }) => id === 7);
+            if (!flagType) return; // something went wrong
+
             // don't recomment deletion immediately
             event.preventDefault();
             event.stopPropagation();
@@ -101,27 +116,20 @@ export function setupReview(): void {
             const target = event.target as HTMLButtonElement;
 
             // indicate loading
-            target.classList.add('is-loading');
-            target.ariaDisabled = 'true';
-            target.disabled = true;
+            toggleLoading(target);
 
             try {
-                // find the "Not an answer" flag type
-                const flagType = Store.flagTypes.find(({ id }) => id === 7);
-                if (!flagType) return; // something went wrong
-
                 const page = new Page(true);
                 const post = page.posts[0];
 
-                post.progress = new Progress(post);
+                post.progress = new Progress(target);
                 post.progress.attach();
 
                 await post.sendFeedbacks(flagType);
             } finally {
                 // remove previously added indicators
-                target.classList.remove('is-loading');
-                target.ariaDisabled = 'false';
-                target.disabled = false;
+                await delay(1000);
+                toggleLoading(target);
 
                 // proceed with the vote
                 target.click();

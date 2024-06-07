@@ -1,6 +1,5 @@
 import { Spinner } from '@userscripters/stacks-helpers';
 import Post from './Post';
-import Page from './Page';
 
 export interface ProgressItemActions {
     completed: () => void;
@@ -10,19 +9,15 @@ export interface ProgressItemActions {
 
 export class Progress {
     private readonly element: HTMLElement;
-    private controllerElement: Element | null = null;
 
-    constructor(private readonly post: Post) {
+    constructor(private readonly controller?: Element | null) {
         this.element = this.getPopover();
     }
 
     public attach(): void {
-        this.controllerElement = Page.isLqpReviewPage
-            ? document.querySelector('form .js-modal-submit')
-            : this.post.element.querySelector('.advanced-flagging-spinner');
-        if (!this.controllerElement) return;
+        if (!this.controller) return;
 
-        Stacks.attachPopover(this.controllerElement, this.element, {
+        Stacks.attachPopover(this.controller, this.element, {
             autoShow: true,
             placement: 'bottom-start',
             toggleOnClick: true
@@ -30,8 +25,8 @@ export class Progress {
     }
 
     public delete(): void {
-        if (this.controllerElement) {
-            Stacks.detachPopover(this.controllerElement);
+        if (this.controller) {
+            Stacks.detachPopover(this.controller);
         }
 
         this.element.remove();

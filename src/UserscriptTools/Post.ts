@@ -460,7 +460,9 @@ export default class Post {
     }
 
     private getScore(): number {
-        return Number(this.element.dataset.score) || 0;
+        const voteElement = this.element.querySelector('.js-vote-count');
+
+        return Number(voteElement?.textContent?.trim()) || 0;
     }
 
     private getOpReputation(): number {

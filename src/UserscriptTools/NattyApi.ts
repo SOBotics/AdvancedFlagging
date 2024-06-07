@@ -1,11 +1,10 @@
 import { ChatApi } from './ChatApi';
 import { AllFeedbacks } from '../shared';
 import { page } from '../AdvancedFlagging';
+
+import WebsocketUtils from './WebsocketUtils';
 import Reporter from './Reporter';
 import Page from './Page';
-import { WebsocketUtils } from './WebsocketUtils';
-import { Spinner } from '@userscripters/stacks-helpers';
-import Post from './Post';
 
 const dayMillis = 1000 * 60 * 60 * 24;
 const nattyFeedbackUrl = 'https://logs.sobotics.org/napi-1.1/api/stored/';
@@ -77,65 +76,22 @@ export class NattyAPI extends Reporter {
     }
 
     public override canSendFeedback(feedback: AllFeedbacks): boolean {
-        // a post can't be reported if it's been deleted!
-        return this.wasReported() || (this.canBeReported() && feedback === 'tp');
+        return Page.isStackOverflow // only SO is supported
+            && (
+                this.wasReported() || (
+                    this.canBeReported()
+                    && feedback === 'tp'
+                    && !this.deleted // deleted posts can't be reported
+                )
+            );
     }
 
-    public override async sendFeedback(feedback: string): Promise<string> {
+    public override async sendFeedback(feedback: string): Promise<void> {
         if (this.wasReported()) {
             await this.chat.sendMessage(`${this.feedbackMessage} ${feedback}`);
-
-            return this.getSentMessage(true, feedback);
         } else if (feedback === 'tp') {
-            return this.report();
+            await this.report();
         }
-
-        return '';
-    }
-
-    private async report(): Promise<string> {
-        if (!this.canBeReported()) return '';
-
-        const submit = document.querySelector('form .js-modal-submit');
-
-        const popover = document.createElement('div');
-        popover.classList.add('s-popover');
-        popover.id = 'advanced-flagging-progress-popover';
-
-        const arrow = document.createElement('div');
-        arrow.classList.add('s-popover--arrow');
-
-        if (Page.isLqpReviewPage && submit) {
-            // attach a popover to the "Delete" button indicating
-            // that post is being reported to Natty
-            Stacks.attachPopover(submit, popover, {
-                placement: 'bottom-start',
-                autoShow: true
-            });
-        }
-
-        // Handle cases where the post may not be reported to Natty on time:
-        // - when a mod flags a post as NAA/VLQ it is deleted immediately.
-        // - when a reviewer sends the last Recommend deletion/Delete review,
-        //   the post is also deleted immediately
-        if (StackExchange.options.user.isModerator || Page.isLqpReviewPage) {
-            this.addItem('Connecting to chat websocket...');
-            // init websocket
-            const url = await this.chat.getFinalUrl();
-            const wsUtils = new WebsocketUtils(url, this.id);
-
-            this.addItem('Reporting post to Natty...');
-            await this.chat.sendMessage(this.reportMessage);
-
-            // wait until the report is received
-            this.addItem('Waiting for Natty to receive the report...');
-            await wsUtils.waitForReport(event => this.chat.reportReceived(event));
-        } else {
-            await this.chat.sendMessage(this.reportMessage);
-        }
-
-        this.addItem('Completing review task...');
-        return nattyReportedMessage;
     }
 
     public override getIcon(): HTMLDivElement {
@@ -146,43 +102,46 @@ export class NattyAPI extends Reporter {
         );
     }
 
+    public override getProgressMessage(feedback: string): string {
+        return this.wasReported() || feedback !== 'tp'
+            ? super.getProgressMessage(feedback)
+            : 'Reporting post to Natty';
+    }
+
+    private async report(): Promise<string> {
+        if (!this.canBeReported()) return '';
+
+        // Handle cases where the post may not be reported to Natty on time:
+        // - when a mod flags a post as NAA/VLQ it is deleted immediately.
+        // - when a reviewer sends the last Recommend deletion/Delete review,
+        //   the post is also deleted immediately
+        if (StackExchange.options.user.isModerator || Page.isLqpReviewPage) {
+            // init websocket
+            const url = await this.chat.getFinalUrl();
+            const wsUtils = new WebsocketUtils(url, this.id, this.progress);
+
+            const reportProgress = this.progress?.addSubItem('Sending report...');
+            try {
+                await this.chat.sendMessage(this.reportMessage);
+                reportProgress?.completed();
+            } catch (error) {
+                wsUtils.closeWebsocket();
+                reportProgress?.failed();
+
+                throw error;
+            }
+
+            // wait until the report is received
+            await wsUtils.waitForReport(event => this.chat.reportReceived(event));
+        } else {
+            await this.chat.sendMessage(this.reportMessage);
+        }
+
+        return nattyReportedMessage;
+    }
+
     private getDaysBetween(questionDate: Date, answerDate: Date): number {
         // get the number of days between the creation of the question and the answer
         return (answerDate.valueOf() - questionDate.valueOf()) / dayMillis;
-    }
-
-    private addItem(text: string): void {
-        if (!Page.isLqpReviewPage) return;
-
-        const wrapper = document.createElement('div');
-        wrapper.classList.add('d-flex', 'gs8');
-
-        const action = document.createElement('div');
-        action.classList.add('flex--item');
-        action.textContent = text;
-
-        StackExchange.helpers.removeSpinner();
-
-        const spinner = Spinner.makeSpinner({
-            size: 'sm',
-            classes: [ 'flex--item' ]
-        });
-
-        wrapper.append(spinner, action);
-
-        const done = document.createElement('div');
-        done.classList.add('flex--item', 'fc-green-500', 'fw-bold');
-        done.textContent = 'done!';
-
-        const popover = document.querySelector('#advanced-flagging-progress-popover');
-
-        // previous process has been finished
-        const tick = Post.getActionIcons()[0];
-        tick.style.display = 'block';
-
-        popover?.lastElementChild?.prepend(tick);
-        popover?.lastElementChild?.append(done);
-        // info about current process
-        popover?.append(wrapper);
     }
 }

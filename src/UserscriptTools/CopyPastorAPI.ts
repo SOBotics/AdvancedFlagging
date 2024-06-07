@@ -103,15 +103,8 @@ export class CopyPastorAPI extends Reporter {
         });
     }
 
-    public override sendFeedback(feedback: string): Promise<string> {
+    public override sendFeedback(feedback: string): Promise<void> {
         const chatId = new ChatApi().getChatUserId();
-
-        if (!this.copypastorId) {
-            return Promise.resolve('');
-        }
-
-        const success = this.getSentMessage(true, feedback);
-        const failure = this.getSentMessage(false, feedback);
 
         const payload = {
             post_id: this.copypastorId,
@@ -125,13 +118,12 @@ export class CopyPastorAPI extends Reporter {
             .map(item => item.join('='))
             .join('&');
 
-        return new Promise<string>((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
             const url = `${CopyPastorAPI.server}/feedback/create`;
 
             if (Store.dryRun) {
                 console.log('Feedback to Guttenberg via', url, data);
-
-                reject('Didn\'t send feedback: debug mode');
+                resolve();
             }
 
             GM_xmlhttpRequest({
@@ -143,10 +135,10 @@ export class CopyPastorAPI extends Reporter {
                 data,
                 onload: ({ status }) => {
                     status === 200
-                        ? resolve(success)
-                        : reject(failure);
+                        ? resolve()
+                        : reject();
                 },
-                onerror: () => reject(failure)
+                onerror: () => reject()
             });
         });
     }

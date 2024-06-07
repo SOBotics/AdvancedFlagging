@@ -1,9 +1,12 @@
+import { ProgressItemActions } from './Progress';
 import { attachPopover, FlagTypeFeedbacks, AllFeedbacks } from '../shared';
 import Page from './Page';
 
 export default class Reporter {
     public readonly name: keyof FlagTypeFeedbacks;
     public readonly id: number;
+
+    public progress: ProgressItemActions | null = null;
 
     constructor(name: keyof FlagTypeFeedbacks, id: number) {
         this.name = name;
@@ -18,8 +21,10 @@ export default class Reporter {
         return false;
     }
 
-    public async sendFeedback(feedback: string): Promise<string> {
-        return await new Promise(resolve => resolve(feedback));
+    public async sendFeedback(feedback: string): Promise<void> {
+        if (!feedback) return;
+
+        return new Promise(resolve => resolve());
     }
 
     public showOnPopover(): boolean {
@@ -34,21 +39,16 @@ export default class Reporter {
         return this.createBotIcon('');
     }
 
-    public getSentMessage(
-        success: boolean,
-        feedback: string,
-    ): string {
-        return success
-            ? `Feedback ${feedback} sent to ${this.name}`
-            : `Failed to send feedback ${feedback} to ${this.name}`;
+    public getProgressMessage(feedback: string): string {
+        return `Sending ${feedback} feedback to ${this.name}`;
     }
 
     protected createBotIcon(href?: string): HTMLDivElement {
         const botImages = {
-            Natty: 'https://i.stack.imgur.com/aMUMt.jpg?s=32&g=1',
-            Smokey: 'https://i.stack.imgur.com/7cmCt.png?s=32&g=1',
-            'Generic Bot': 'https://i.stack.imgur.com/6DsXG.png?s=32&g=1',
-            Guttenberg: 'https://i.stack.imgur.com/tzKAI.png?s=32&g=1'
+            Natty: 'https://i.sstatic.net/aMUMt.jpg?s=32&g=1',
+            Smokey: 'https://i.sstatic.net/7cmCt.png?s=32&g=1',
+            'Generic Bot': 'https://i.sstatic.net/6DsXG.png?s=32&g=1',
+            Guttenberg: 'https://i.sstatic.net/kEQs2BQb.png?s=32&g=1'
         };
 
         const iconWrapper = document.createElement('div');

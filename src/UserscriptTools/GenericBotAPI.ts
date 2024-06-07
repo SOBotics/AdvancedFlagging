@@ -5,8 +5,6 @@ import { Store } from './Store';
 
 export class GenericBotAPI extends Reporter {
     private readonly key = 'Cm45BSrt51FR3ju';
-    private readonly success = 'Post tracked with Generic Bot';
-    private readonly failure = 'Server refused to track the post';
 
     constructor(
         id: number,
@@ -15,12 +13,10 @@ export class GenericBotAPI extends Reporter {
         super('Generic Bot', id);
     }
 
-    public override sendFeedback(trackPost: string): Promise<string> {
+    public override sendFeedback(trackPost: string): Promise<void> {
         const flaggerName = encodeURIComponent(username || '');
 
-        if (!trackPost || !Page.isStackOverflow || !flaggerName) {
-            return Promise.resolve('');
-        }
+        if (!trackPost) return Promise.resolve();
 
         const answer = document.querySelector(`#answer-${this.id} .js-post-body`);
         const answerBody = answer?.innerHTML.trim() ?? '';
@@ -41,10 +37,10 @@ export class GenericBotAPI extends Reporter {
         if (Store.dryRun) {
             console.log('Track post via', url, payload);
 
-            return Promise.resolve('');
+            return Promise.resolve();
         }
 
-        return new Promise<string>((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'POST',
                 url,
@@ -55,12 +51,12 @@ export class GenericBotAPI extends Reporter {
                 onload: ({ status, response }) => {
                     if (status !== 200) {
                         console.error('Failed to send track request.', response);
-                        reject(this.failure);
+                        reject();
                     }
 
-                    resolve(this.success);
+                    resolve();
                 },
-                onerror: () => reject(this.failure)
+                onerror: () => reject()
             });
         });
     }
@@ -71,7 +67,16 @@ export class GenericBotAPI extends Reporter {
     }
 
     public override canSendFeedback(feedback: AllFeedbacks): boolean {
-        return feedback === 'track' && !this.deleted && Page.isStackOverflow;
+        return feedback === 'track'
+            && !this.deleted // can't track deleted posts
+            && Page.isStackOverflow // only SO posts can be tracked
+            && Boolean(username); // in case username isn't found for some reason
+    }
+
+    public override getProgressMessage(feedback: string): string {
+        return feedback
+            ? 'Tracking post with Generic Bot'
+            : '';
     }
 
     // Ask Floern what this does

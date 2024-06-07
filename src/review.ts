@@ -7,6 +7,7 @@ import { CopyPastorAPI } from './UserscriptTools/CopyPastorAPI';
 import { Cached, Store } from './UserscriptTools/Store';
 
 import Page from './UserscriptTools/Page';
+import { Progress } from './UserscriptTools/Progress';
 
 interface ReviewQueueResponse {
     postId: number;
@@ -110,7 +111,12 @@ export function setupReview(): void {
                 if (!flagType) return; // something went wrong
 
                 const page = new Page(true);
-                await page.posts[0].sendFeedbacks(flagType);
+                const post = page.posts[0];
+
+                post.progress = new Progress(post);
+                post.progress.attach();
+
+                await post.sendFeedbacks(flagType);
             } finally {
                 // remove previously added indicators
                 target.classList.remove('is-loading');

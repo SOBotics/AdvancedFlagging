@@ -7,12 +7,10 @@ import {
 
     getFullFlag,
     getCachedConfigBotKey,
-    FlagNames
+    FlagNames,
+    delay
 } from './shared';
-import {
-    getFlagToRaise,
-    displayToaster
-} from './AdvancedFlagging';
+import { getFlagToRaise } from './AdvancedFlagging';
 import Post from './UserscriptTools/Post';
 
 import { MetaSmokeAPI } from './UserscriptTools/MetaSmokeAPI';
@@ -25,6 +23,7 @@ import { isSpecialFlag } from './Configuration';
 import { Store, Cached, Configuration, CachedFlag } from './UserscriptTools/Store';
 import Reporter from './UserscriptTools/Reporter';
 import Page from './UserscriptTools/Page';
+import { Progress } from './UserscriptTools/Progress';
 
 const noneSpan = document.createElement('span');
 noneSpan.classList.add('o50');
@@ -403,13 +402,19 @@ export class Popover {
         $(dropdown).fadeOut('fast');
 
         // add Stacks spinner
-        const spinner = Spinner.makeSpinner({ size: 'sm' });
+        const spinner = Spinner.makeSpinner({
+            size: 'sm',
+            classes: [ 'advanced-flagging-spinner' ]
+        });
 
         const flex = document.createElement('div');
         flex.classList.add('flex--item');
         flex.append(spinner);
 
         dropdown.closest('.flex--item')?.after(flex);
+
+        this.post.progress = new Progress(this.post);
+        this.post.progress.attach();
 
         // if feedback is sent successfully, the success variable is true, otherwise false
         const success = await this.post.sendFeedbacks(flagType);
@@ -438,11 +443,13 @@ export class Popover {
 
             // comment
             if (comment) {
+                const cProgress = this.post.progress.addItem('Adding comment...');
                 try {
                     await this.post.comment(comment);
+                    cProgress.completed();
                 } catch (error) {
-                    displayToaster('Failed to comment on post', 'danger');
                     console.error(error);
+                    cProgress.failed();
                 }
             }
 
@@ -451,14 +458,21 @@ export class Popover {
 
             // flag & delete
             if (flag && reportType !== FlagNames.NoFlag) {
+                const humanFlag = getHumanFromDisplayName(reportType);
+                const fProgress = this.post.progress.addItem(`Flagging ${humanFlag}...`);
+
                 try {
                     await this.post.flag(reportType, flagText);
+
+                    fProgress.completed();
                 } catch (error) {
                     console.error(error);
 
-                    if (error instanceof Error) {
-                        displayToaster('Failed to flag: ' + error.message, 'danger');
-                    }
+                    fProgress.failed(
+                        error instanceof Error
+                            ? error.message
+                            : 'see console for more details'
+                    );
                 }
             }
 
@@ -469,20 +483,27 @@ export class Popover {
                 && reportType !== FlagNames.ModFlag
                 && reportType !== FlagNames.NoFlag
             ) {
+                const dProgress = this.post.progress.addItem('Voting to delete...');
+
                 try {
                     await this.post.deleteVote();
+                    dProgress.completed();
                 } catch (error) {
                     console.error(error);
 
-                    if (error instanceof Error) {
-                        displayToaster('Failed to vote to delete: ' + error.message, 'danger');
-                    }
+                    dProgress.failed(
+                        error instanceof Error
+                            ? error.message
+                            : ''
+                    );
                 }
             }
         }
 
-        // remove spinner
+        // remove spinner after 2 secs
+        await delay(2000);
         flex.remove();
+        this.post.progress.delete();
 
         // don't show performed/failed action icons if post has been flagged
         if (reportType !== 'NoFlag') return;

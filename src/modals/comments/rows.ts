@@ -234,7 +234,7 @@ export function getTextareas({
     });
 
     const container = document.createElement('div');
-    container.classList.add('d-flex', 'fd-column', 'gsy', 'gs16');
+    container.classList.add('d-flex', 'fd-column', 'gy16');
     container.append(...wrappers);
 
     return container;
@@ -313,7 +313,7 @@ export function getSelectRow({
     ]);
 
     const container = document.createElement('div');
-    container.classList.add('d-flex', 'ai-center', 'gsx', 'gs6');
+    container.classList.add('d-flex', 'ai-center', 'gx6');
     container.append(
         label,
         select,
@@ -374,7 +374,7 @@ function getRadiosForBot(
 
 export function getRadioRow({ id, feedbacks }: CachedFlag): HTMLElement {
     const container = document.createElement('div');
-    container.classList.add('d-flex', 'fd-column', 'gsy', 'gs4');
+    container.classList.add('d-flex', 'fd-column', 'gy4');
 
     const feedbackRadios = Object
         .keys(possibleFeedbacks)

@@ -8,7 +8,7 @@ import {
 import { Modals, Input, Buttons } from '@userscripters/stacks-helpers';
 import { displayToaster, page } from '../AdvancedFlagging';
 import Reporter from './Reporter';
-import { WebsocketUtils } from './WebsocketUtils';
+import WebsocketUtils from './WebsocketUtils';
 
 interface MetaSmokeApiItem {
     id: number;
@@ -161,8 +161,7 @@ export class MetaSmokeAPI extends Reporter {
 
         if (Store.dryRun) {
             console.log('Report post via', url, data);
-
-            throw new Error('Didn\'t report post: in debug mode');
+            return;
         }
 
         const reportRequest = await fetch(
@@ -197,34 +196,42 @@ export class MetaSmokeAPI extends Reporter {
     }
 
     public override canSendFeedback(feedback: AllFeedbacks): boolean {
-        return Boolean(this.smokeyId) || ( // the post has been reported OR:
-            feedback === 'tpu-' // the feedback is tpu-
-            && !this.deleted // AND the post is not deleted
-            && !MetaSmokeAPI.isDisabled // AND SD info is stored in cache
-            && Boolean(MetaSmokeAPI.accessToken) // AND user has authenticated with SM
-        );
+        const { isDisabled, accessToken } = MetaSmokeAPI;
+
+        return !isDisabled // user must have MS enabled
+            && Boolean(accessToken) // and must have authenticated with MS
+            && (
+                Boolean(this.smokeyId) || ( // the post has been reported OR:
+                    feedback === 'tpu-' // the feedback is tpu-
+                    && !this.deleted // AND the post is not deleted
+                )
+            );
     }
 
-    public override async sendFeedback(feedback: string): Promise<string> {
-        if (MetaSmokeAPI.isDisabled) return '';
-
+    public override async sendFeedback(feedback: string): Promise<void> {
         const { appKey, accessToken } = MetaSmokeAPI;
 
         // not reported, feedback is tpu AND the post isn't deleted => report it!
         if (!this.smokeyId && feedback === 'tpu-' && !this.deleted) {
             // see: https://chat.stackexchange.com/transcript/message/65076878
-            const wsUtils = new WebsocketUtils(this.wsUrl, this.id, this.wsAuth);
-            await this.reportRedFlag();
+            const wsUtils = new WebsocketUtils(this.wsUrl, this.id, this.progress, this.wsAuth);
+
+            const reportProgress = this.progress?.addSubItem('Sending report...');
+            try {
+                await this.reportRedFlag();
+                reportProgress?.completed();
+            } catch (error) {
+                wsUtils.closeWebsocket();
+                reportProgress?.failed();
+
+                throw error;
+            }
+
             await wsUtils.waitForReport(event => this.reportReceived(event));
 
             // https://chat.stackexchange.com/transcript/message/65097399
             // wait 3 seconds so that SD can start watching for post deletion
             await new Promise(resolve => setTimeout(resolve, 3 * 1000));
-
-            return this.reportMessage;
-        } else if (!accessToken || !this.smokeyId) {
-            // user hasn't authenticated or the post hasn't been reported => don't send feedback
-            return '';
         }
 
         // otherwise, send feedback
@@ -237,8 +244,7 @@ export class MetaSmokeAPI extends Reporter {
 
         if (Store.dryRun) {
             console.log('Feedback to Smokey via', url, data);
-
-            throw new Error('Didn\'t send feedback: debug mode');
+            return;
         }
 
         const feedbackRequest = await fetch(
@@ -253,10 +259,8 @@ export class MetaSmokeAPI extends Reporter {
         if (!feedbackRequest.ok) {
             console.error(`Failed to send feedback for ${this.smokeyId} to Smokey`, feedbackResponse);
 
-            throw new Error(this.getSentMessage(false, feedback));
+            throw new Error();
         }
-
-        return this.getSentMessage(true, feedback);
     }
 
     public override getIcon(): HTMLDivElement {
@@ -265,6 +269,12 @@ export class MetaSmokeAPI extends Reporter {
                 ? `//metasmoke.erwaysoftware.com/post/${this.smokeyId}`
                 : ''
         );
+    }
+
+    public override getProgressMessage(feedback: string): string {
+        return this.wasReported() || feedback !== 'tpu-'
+            ? super.getProgressMessage(feedback)
+            : 'Reporting post to Smokey';
     }
 
     private static getMetasmokeTokenPopup(): HTMLElement {

@@ -1,13 +1,16 @@
-import { displaySuccessFlagged, displayToaster, getFlagToRaise } from '../AdvancedFlagging';
+import { getFlagToRaise, displaySuccessFlagged } from '../AdvancedFlagging';
 import { Flags } from '../FlagTypes';
-import { getSvg, PostType, FlagNames, getFormDataFromObject, addXHRListener, delay } from '../shared';
+import { getSvg, PostType, FlagNames, getFormDataFromObject, addXHRListener } from '../shared';
+
 import { CopyPastorAPI } from './CopyPastorAPI';
 import { GenericBotAPI } from './GenericBotAPI';
 import { MetaSmokeAPI } from './MetaSmokeAPI';
 import { NattyAPI } from './NattyApi';
-import Page from './Page';
-import Reporter from './Reporter';
+
 import { Cached, CachedFlag, Store } from './Store';
+import Page from './Page';
+import { Progress } from './Progress';
+import Reporter from './Reporter';
 
 interface StackExchangeFlagResponse {
     FlagType: number;
@@ -51,6 +54,7 @@ export default class Post {
     public readonly failed: HTMLElement;
     public readonly flagged: HTMLElement;
 
+    public progress: Progress = new Progress(this);
     public readonly reporters: Reporters = {};
 
     private autoflagging = false;
@@ -159,12 +163,8 @@ export default class Post {
         // => reload the page
         if (response.ResultChangedState) {
             // wait 1 second before reloading
-            await delay(1000);
-
-            location.reload();
+            setTimeout(() => location.reload(), 1000);
         }
-
-        displaySuccessFlagged(this.flagged, flagName);
     }
 
     public downvote(): void {
@@ -207,18 +207,14 @@ export default class Post {
             throw new Error('could not parse JSON');
         }
 
-        if (json.Success) {
-            displayToaster('Voted to delete post.', 'success');
-        } else {
+        if (!json.Success) {
             console.error(json);
 
             throw new Error(json.Message.toLowerCase());
         }
 
         if (json.Refresh) {
-            await delay(1500);
-
-            location.reload();
+            setTimeout(() => location.reload(), 1500);
         }
     }
 
@@ -319,35 +315,40 @@ export default class Post {
         // hasFailed will be set to true if something goes wrong
         const allPromises = (Object.values(this.reporters) as Reporter[])
         // keep only the bots the user has opted to send feedback to
-            .filter(({ name }) => {
+            .filter(reporter => {
+                const { name } = reporter;
+
                 const sanitised = name.replace(/\s/g, '').toLowerCase();
                 const input = this.element.querySelector<HTMLInputElement>(
-                    `[id*="-send-feedback-to-${sanitised}-"]
-            `);
+                    `[id*="-send-feedback-to-${sanitised}-"]`
+                );
 
                 // this may be undefined
                 // (e.g. if the parameter is not passed or the checkbox is not found)
                 // hence the ?? instead of ||
                 const sendFeedback = input?.checked ?? true;
+                const feedback = feedbacks[name];
 
-                return sendFeedback && feedbacks[name];
+                return sendFeedback && feedback && reporter.canSendFeedback(feedback);
             })
             // return a promise that sends the feedback
             // use .map() so that they run in paraller
             .map(reporter => {
-                return reporter.sendFeedback(feedbacks[reporter.name])
-                    .then(message => {
-                        // promise resolves to a success message
-                        if (message) {
-                            displayToaster(message, 'success');
-                        }
-                    })
-                    // otherwise throws an error caught here
+                const feedback = feedbacks[reporter.name];
+
+                const text = reporter.getProgressMessage(feedback);
+                const sendingFeedback = this.progress.addItem(`${text}...`);
+
+                // useful in case a Reporter needs to append subitems
+                reporter.progress = sendingFeedback;
+
+                return reporter.sendFeedback(feedback)
+                    .then(() => sendingFeedback.completed())
                     .catch((error: unknown) => {
                         console.error(error);
 
                         if (error instanceof Error) {
-                            displayToaster(error.message, 'danger');
+                            sendingFeedback.failed(error.message);
                         }
 
                         hasFailed = true;

@@ -114,7 +114,7 @@ export function setupConfiguration(): void {
     configDiv.classList.add('ta-left', 'pt6');
 
     const configLink = document.createElement('a');
-    configLink.innerText = 'AdvancedFlagging configuration';
+    configLink.innerText = 'Advanced Flagging configuration';
     configLink.addEventListener('click', () => Stacks.showModal(configModal));
 
     configDiv.append(configLink);
@@ -122,7 +122,7 @@ export function setupConfiguration(): void {
     const commentsDiv = configDiv.cloneNode() as HTMLElement;
 
     const commentsLink = document.createElement('a');
-    commentsLink.innerText = 'AdvancedFlagging: edit comments and flags';
+    commentsLink.innerText = 'Advanced Flagging: edit comments and flags';
     commentsLink.addEventListener('click', () => Stacks.showModal(commentsModal));
 
     commentsDiv.append(commentsLink);

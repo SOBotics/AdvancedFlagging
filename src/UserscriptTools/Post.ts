@@ -42,9 +42,6 @@ export default class Post {
 
     public readonly date: Date;
 
-    public readonly raiseVlq: boolean;
-    public readonly canDelete: boolean;
-
     public readonly opReputation: number;
     public readonly opName: string;
 
@@ -58,7 +55,7 @@ export default class Post {
     public readonly reporters: Reporters = {};
 
     private autoflagging = false;
-    private readonly score: number;
+    private score: number;
 
     constructor(
         public readonly element: HTMLElement
@@ -73,9 +70,7 @@ export default class Post {
             Post.qDate = this.date;
         }
 
-        this.score = Number(this.element.dataset.score) || 0;
-        this.raiseVlq = this.qualifiesForVlq();
-        this.canDelete = this.deleteButtonExists();
+        this.score = this.getScore();
 
         this.opReputation = this.getOpReputation();
         this.opName = this.getOpName();
@@ -100,7 +95,7 @@ export default class Post {
     ): Promise<void> {
         // if the flag name is VLQ, then we need to check if the criteria are met.
         // If not, switch to NAA
-        const flagName = getFlagToRaise(reportType, this.raiseVlq);
+        const flagName = getFlagToRaise(reportType, this.qualifiesForVlq());
         const targetUrl = this.reporters.Guttenberg?.targetUrl;
 
         const url = `/flags/posts/${this.id}/add/${flagName}`;
@@ -180,6 +175,9 @@ export default class Post {
         }
 
         button?.click();
+
+        // update score
+        this.score = this.getScore();
     }
 
     public async deleteVote(): Promise<void> {
@@ -395,6 +393,24 @@ export default class Post {
         iconLocation?.append(...icons);
     }
 
+    public canDelete(): boolean {
+        const selector = '.js-delete-post[title^="Vote to delete"]';
+        const deleteButton = this.element.querySelector(selector);
+
+        const userRep = StackExchange.options.user.rep;
+
+        // >20k rep users can vote to delete answers with score < 0
+        return Boolean(deleteButton) || (userRep > 20_000 && this.score < 0);
+    }
+
+    private qualifiesForVlq(): boolean {
+        const dayMillis = 1000 * 60 * 60 * 24;
+
+        // a post can't be flagged as VLQ if it has a positive score
+        // or is more than 1 day old
+        return (new Date().valueOf() - this.date.valueOf()) < dayMillis && this.score <= 0;
+    }
+
     private static getIcon(svg: SVGElement, classname: string): HTMLElement {
         const wrapper = document.createElement('div');
         wrapper.classList.add('flex--item');
@@ -443,6 +459,10 @@ export default class Post {
         return Number(postId);
     }
 
+    private getScore(): number {
+        return Number(this.element.dataset.score) || 0;
+    }
+
     private getOpReputation(): number {
         // this won't work for community wiki posts,
         // and there's nothing that can be done about it:
@@ -477,22 +497,6 @@ export default class Post {
         const authorDateElement = Array.from(dateElements).pop();
 
         return new Date(authorDateElement?.title ?? '');
-    }
-
-    private qualifiesForVlq(): boolean {
-        const dayMillis = 1000 * 60 * 60 * 24;
-
-        // a post can't be flagged as VLQ if it has a positive score
-        // or is more than 1 day old
-        return (new Date().valueOf() - this.date.valueOf()) < dayMillis
-            && this.score <= 0;
-    }
-
-    private deleteButtonExists(): boolean {
-        const selector = '.js-delete-post[title^="Vote to delete"]';
-        const deleteButton = this.element.querySelector(selector);
-
-        return Boolean(deleteButton);
     }
 
     private initReporters(): void {

@@ -15,8 +15,6 @@ import { CopyPastorAPI } from './UserscriptTools/CopyPastorAPI';
 import { Buttons } from '@userscripters/stacks-helpers';
 import { Store, Cached } from './UserscriptTools/Store';
 
-// TODO how about creating a <nav> Config/Comments instead of 2 modals
-// TODO test extensively deleted posts
 // <TODO>
 // What's left for 2.0.0:
 // - Section to ONLY send feedback
@@ -26,8 +24,6 @@ import { Store, Cached } from './UserscriptTools/Store';
 //   - choose the feedback to send
 //   - also the recommend deletion/Delete popup
 // - Add new category/flagtype
-// - Choose the rep to low/high comments
-// - Show if any feedbacks have already been sent to a bot
 // </TODO>
 
 function setupStyles(): void {

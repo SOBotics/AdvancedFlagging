@@ -158,7 +158,7 @@ export class Popover {
             // hide delete checkbox when user can't delete vote
             .filter(([ text ]) => {
                 if (text === 'Leave comment') return Page.isStackOverflow;
-                else if (text === 'Delete') return this.post.canDelete;
+                else if (text === 'Delete') return this.post.canDelete();
 
                 return true;
             })
@@ -259,7 +259,7 @@ export class Popover {
         const tooltipCommentText = (this.post.deleted ? '' : commentText) ?? '';
 
         // if the flag changed from VLQ to NAA, let the user know why
-        const flagName = getFlagToRaise(reportType, this.post.raiseVlq);
+        const flagName = getFlagToRaise(reportType, this.post.qualifiesForVlq());
 
         let reportTypeHuman = reportType === 'NoFlag' || !this.post.deleted
             ? getHumanFromDisplayName(flagName)
@@ -294,7 +294,7 @@ export class Popover {
         popoverParent.append(downvoteWrapper);
 
         // Votes to delete the post
-        if (this.post.canDelete && !this.post.deleted
+        if (this.post.canDelete() && !this.post.deleted
             && reportType !== FlagNames.Plagiarism
             && reportType !== FlagNames.ModFlag
             && reportType !== FlagNames.NoFlag
@@ -455,7 +455,9 @@ export class Popover {
             }
 
             // downvote
-            if (downvote && flagType.downvote) this.post.downvote();
+            if (downvote && flagType.downvote) {
+                this.post.downvote();
+            }
 
             // flag & delete
             if (flag && reportType !== FlagNames.NoFlag) {
@@ -480,7 +482,7 @@ export class Popover {
 
             // delete vote if the user has chosen to flag the post
             // as spam/rude/NAA/VLQ
-            if (del && this.post.canDelete
+            if (del && this.post.canDelete()
                 && reportType !== FlagNames.Plagiarism
                 && reportType !== FlagNames.ModFlag
                 && reportType !== FlagNames.NoFlag

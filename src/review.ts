@@ -14,6 +14,8 @@ interface ReviewQueueResponse {
     isAudit: boolean; // detect audits & avoid sending feedback to bots
 }
 
+let audit = false;
+
 async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
     const regex = /\/review\/(next-task|task-reviewed\/)/;
 
@@ -24,6 +26,7 @@ async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
     ) return;
 
     const response = JSON.parse(xhr.responseText) as ReviewQueueResponse;
+    audit = response.isAudit;
     if (response.isAudit) return; // audit
 
     const page = new Page();
@@ -98,6 +101,7 @@ export function setupReview(): void {
             xhr.status !== 200 // request failed
             || !regex.test(xhr.responseURL) // didn't vote to delete
             || !document.querySelector('#answer') // answer element not found
+            || audit // don't run on review audits
         ) return;
 
         // the submit button

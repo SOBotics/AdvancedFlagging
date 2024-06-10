@@ -422,8 +422,9 @@ export class Popover {
 
         // HACK: this function messes up with our .s-spinner
         //       disable it temporarily
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         const old = StackExchange.helpers.removeSpinner;
-        StackExchange.helpers.removeSpinner = () => {};
+        StackExchange.helpers.removeSpinner = (): void => void 0;
 
         // only if the post hasn't been deleted should we
         // upvote a comment/send feedback/downvote/flag it

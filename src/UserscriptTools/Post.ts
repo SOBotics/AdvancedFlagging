@@ -275,6 +275,10 @@ export default class Post {
         // Watch for manual flags if the user has chosen to do so
         const watchFlags = Store.config[Cached.Configuration.watchFlags];
 
+        // don't watch for flags if the user doesn't want to
+        // exclude listener from running in deleted posts
+        if (!watchFlags || this.deleted) return;
+
         addXHRListener(xhr => {
             const { status, responseURL } = xhr;
 
@@ -282,8 +286,7 @@ export default class Post {
                 `/flags/posts/${this.id}/popup`
             );
 
-            if (!watchFlags // don't watch for flags
-                || this.autoflagging // post flagged via popover
+            if (this.autoflagging // post flagged via popover
                 || status !== 200 // request failed
                 || !regex.test(responseURL)
             ) return;

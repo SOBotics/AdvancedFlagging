@@ -420,6 +420,11 @@ export class Popover {
         // if feedback is sent successfully, the success variable is true, otherwise false
         const success = await this.post.sendFeedbacks(flagType);
 
+        // HACK: this function messes up with our .s-spinner
+        //       disable it temporarily
+        const old = StackExchange.helpers.removeSpinner;
+        StackExchange.helpers.removeSpinner = () => {};
+
         // only if the post hasn't been deleted should we
         // upvote a comment/send feedback/downvote/flag it
         if (!this.post.deleted) {
@@ -508,6 +513,9 @@ export class Popover {
         await delay(2000);
         flex.remove();
         this.post.progress.delete();
+
+        // re-enable .removeSpinner()
+        StackExchange.helpers.removeSpinner = old;
 
         // don't show performed/failed action icons if post has been flagged
         if (reportType !== 'NoFlag') return;

@@ -58,7 +58,8 @@ function cacheCategories(): void {
             {
                 isDangerous: category.isDangerous,
                 name: category.name,
-                appliesTo: category.appliesTo
+                appliesTo: category.appliesTo,
+                id: category.id
             } as CachedCategory
         ));
 
@@ -77,7 +78,7 @@ function setupDefaults(): void {
     }
 
     if (!Store.categories.length
-        || !('appliesTo' in Store.categories[0])) {
+        || !('id' in Store.categories[0])) {
         cacheCategories();
     }
 

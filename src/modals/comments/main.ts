@@ -1,4 +1,4 @@
-import { Cached, CachedFlag, Store } from '../../UserscriptTools/Store';
+import { Cached, CachedCategory, CachedFlag, Store } from '../../UserscriptTools/Store';
 import {
     getIconPath,
     displayStacksToast,
@@ -21,6 +21,7 @@ import {
     Toggle,
     Input,
 } from '@userscripters/stacks-helpers';
+import { getEmptyFlagType } from '../../FlagTypes';
 
 /* In this case, we are caching a FlagType, but removing unnecessary properties.
    Only the Id, FlagText, and Comments (both LowRep and HighRep) and the flag's name
@@ -286,9 +287,7 @@ function getH3(displayName: string): HTMLHeadElement {
     return h3;
 }
 
-function createFlagTypeDiv(
-    flagType: CachedFlag
-): HTMLDivElement {
+function createFlagTypeDiv(flagType: CachedFlag): HTMLDivElement {
     const {
         id,
         displayName,
@@ -347,15 +346,91 @@ function createFlagTypeDiv(
     return card;
 }
 
-function createCategoryDiv(displayName: string): HTMLDivElement {
+function createCategoryDiv(category: Partial<CachedCategory>): HTMLDivElement {
     const container = document.createElement('div');
     container.classList.add('flex--item');
 
-    const header = document.createElement('h2');
-    header.classList.add('ta-center', 'mb8', 'fs-title');
-    header.innerHTML = displayName;
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('d-flex', 'ai-center', 'mb8');
 
-    container.append(header);
+    const header = document.createElement('h2');
+    header.classList.add('flex--item', 'fs-title', 'mb0', 'mr-auto', 'fw-normal');
+    header.textContent = category.name ?? '';
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.classList.add('d-flex', 'g8', 'ai-center');
+
+    const addNew = Buttons.makeStacksButton(
+        `advanced-flagging-add-new-${category.id}`,
+        'New',
+        {
+            type: [ 'outlined' ],
+            iconConfig: {
+                name: 'iconPlus',
+                path: getIconPath('iconPlus'),
+                height: 18,
+                width: 18
+            },
+        }
+    );
+
+    addNew.addEventListener('click', () => {
+        const id = Math.max(...Store.flagTypes.map(({ id }) => id));
+
+        const flagType = getEmptyFlagType(id + 1, category.name ?? '');
+        Store.flagTypes.push(flagType);
+        Store.updateFlagTypes();
+
+        const div = createFlagTypeDiv(flagType);
+
+        // fade in
+        div.style.display = 'none';
+        container.append(div);
+        $(div).fadeIn();
+
+        // click edit & focus on name input
+        div.querySelector<HTMLButtonElement>('[id^="advanced-flagging-edit-flagtype-"]')?.click();
+        div.querySelector<HTMLInputElement>('[id^="advanced-flagging-flag-name-"]')?.focus();
+    });
+
+    const flagTypes = Store.flagTypes.filter(({ belongsTo }) => belongsTo === category.name);
+    const enabled = flagTypes.some(({ enabled }) => enabled);
+
+    const toggle = Toggle.makeStacksToggle(
+        `advanced-flagging-toggle-category-${category.id}`,
+        { text: '' },
+        enabled
+    ).querySelector('.s-toggle-switch') as HTMLInputElement;
+
+    toggle.addEventListener('change', () => {
+        container
+            .querySelectorAll('input[id^="advanced-flagging-toggle-flagtype-"]')
+            .forEach(box => {
+                (box as HTMLInputElement).checked = toggle.checked;
+            });
+
+        Store.flagTypes
+            .filter(({ belongsTo }) => belongsTo === category.name)
+            .forEach(flag => {
+                flag.enabled = toggle.checked;
+
+                const card = document.querySelector(`[data-flag-id="${flag.id}"]`);
+                if (!card) return;
+
+                card.classList[toggle.checked ? 'remove' : 'add']('s-card__muted');
+            });
+        Store.updateFlagTypes();
+
+        displayStacksToast(
+            `Successfully ${toggle.checked ? 'en' : 'dis'}abled all flag types from this category`,
+            'success',
+            true
+        );
+    });
+
+    buttonContainer.append(addNew, toggle);
+    wrapper.append(header, buttonContainer);
+    container.append(wrapper);
 
     return container;
 }
@@ -366,8 +441,9 @@ function getCommentsModalBody(): HTMLElement {
 
     const categories = Store.categories
         .filter(({ name }) => name)
-        .map(({ name }) => {
-            const div = createCategoryDiv(name ?? '');
+        .map(category => {
+            const { name } = category;
+            const div = createCategoryDiv(category);
 
             const flagTypes = Store.flagTypes
                 // only those belonging to "Name" category

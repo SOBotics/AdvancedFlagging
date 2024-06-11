@@ -1,4 +1,5 @@
 import { FlagTypeFeedbacks, PostType, FlagNames } from './shared';
+import { CachedFlag } from './UserscriptTools/Store';
 
 export type Flags = 'AnswerNotAnAnswer'
     | 'PostOffensive'
@@ -33,6 +34,7 @@ export interface FlagCategory {
     isDangerous: boolean; // whether each FlagType of the category should have a red colour
     name: string; // will appear on the edit comments & flags modal
     appliesTo: PostType[]; // where it'll appear (question, answer or both)
+    id: number;
     FlagTypes: FlagType[];
 }
 
@@ -41,6 +43,7 @@ export const flagCategories: FlagCategory[] = [
         isDangerous: true,
         name: 'Red flags',
         appliesTo: ['Answer', 'Question'],
+        id: 1,
         FlagTypes: [
             {
                 id: 1,
@@ -62,6 +65,7 @@ export const flagCategories: FlagCategory[] = [
         isDangerous: true,
         name: 'Guttenberg mod flags',
         appliesTo: [ 'Answer' ],
+        id: 2,
         FlagTypes: [
             {
                 id: 3,
@@ -102,6 +106,7 @@ export const flagCategories: FlagCategory[] = [
         isDangerous: false,
         name: 'Answer-related',
         appliesTo: [ 'Answer' ],
+        id: 3,
         FlagTypes: [
             {
                 id: 6,
@@ -232,6 +237,7 @@ export const flagCategories: FlagCategory[] = [
         isDangerous: false,
         name: 'General',
         appliesTo: ['Answer', 'Question'],
+        id: 4,
         FlagTypes: [
             {
                 id: 15,
@@ -257,3 +263,16 @@ export const flagCategories: FlagCategory[] = [
         ]
     }
 ];
+
+export function getEmptyFlagType(id: number, belongsTo: string): CachedFlag {
+    return {
+        id,
+        displayName: 'Name',
+        reportType: FlagNames.NoFlag,
+        feedbacks: { Smokey: '', Natty: '', Guttenberg: '', 'Generic Bot': '' },
+        sendWhenFlagRaised: false,
+        downvote: false,
+        enabled: true,
+        belongsTo
+    };
+}

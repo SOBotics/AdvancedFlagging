@@ -1,7 +1,7 @@
 import { build } from 'esbuild';
 import info from './package.json' assert { type: 'json' };
 
-const svgsNeeded = ['Checkmark', 'Clear', 'EyeOff', 'Flag', 'Pencil', 'Trash'];
+const svgsNeeded = ['Checkmark', 'Clear', 'EyeOff', 'Flag', 'Pencil', 'Trash', 'Plus'];
 const svgsUrls = svgsNeeded.map(svgName => {
     return `// @resource     icon${svgName} https://cdn.sstatic.net/Img/stacks-icons/${svgName}.svg`;
 });

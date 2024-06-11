@@ -23,7 +23,7 @@ import { Store, Cached } from './UserscriptTools/Store';
 //   - choose the bots to which to send feedback
 //   - choose the feedback to send
 //   - also the recommend deletion/Delete popup
-// - Add new category/flagtype
+// - Add option to flag post from recommend deletion popup
 // </TODO>
 
 function setupStyles(): void {

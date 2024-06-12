@@ -19,9 +19,7 @@ import { Store, Cached } from './UserscriptTools/Store';
 // What's left for 2.0.0:
 // - Manipulate the flag & recommend deletion popups:
 //   - choose the bots to which to send feedback
-//   - choose the feedback to send
 //   - also the recommend deletion/Delete popup
-// - Flag post from recommend deletion popup
 // </TODO>
 
 function setupStyles(): void {

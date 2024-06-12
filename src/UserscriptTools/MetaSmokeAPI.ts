@@ -43,7 +43,6 @@ export class MetaSmokeAPI extends Reporter {
     private static readonly filter = 'GGJFNNKKJFHFKJFLJLGIJMFIHNNJNINJ';
     private static readonly metasmokeIds: MetasmokeData = {};
 
-    private readonly reportMessage = 'Post reported to Smokey';
     private readonly failureMessage = 'Failed to report post to Smokey';
 
     private readonly wsUrl = 'wss://metasmoke.erwaysoftware.com/cable';
@@ -108,6 +107,10 @@ export class MetaSmokeAPI extends Reporter {
         } catch (error) {
             displayToaster('Failed to get Metasmoke URLs.', 'danger');
             console.error(error);
+
+            // if for whatever reason, info can't be fetched (e.g. MS is down)
+            // disable sending feedback and reporting posts to Smokey
+            MetaSmokeAPI.isDisabled = true;
         }
     }
 

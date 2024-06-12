@@ -1,6 +1,6 @@
 import { getFlagToRaise } from '../AdvancedFlagging';
 import { Flags } from '../FlagTypes';
-import { getSvg, PostType, FlagNames, getFormDataFromObject, addXHRListener, toggleLoading, delay } from '../shared';
+import { getSvg, PostType, FlagNames, getFormDataFromObject, addXHRListener, addProgress, FlagTypeFeedbacks } from '../shared';
 
 import { CopyPastorAPI } from './CopyPastorAPI';
 import { GenericBotAPI } from './GenericBotAPI';
@@ -307,38 +307,18 @@ export default class Post {
                     .find(item => item.sendWhenFlagRaised && item.reportType === flag);
                 if (!flagType) return;
 
-                // don't flag immediately
-                event.preventDefault();
-                event.stopPropagation();
-
                 if (Store.dryRun) {
                     console.log('Post', this.id, 'manually flagged as', flag, flagType);
                 }
 
-                const target = event.target as HTMLButtonElement;
-                toggleLoading(target);
-
-                this.progress = new Progress(submit);
-                this.progress.attach();
-
-                try {
-                    await this.sendFeedbacks(flagType);
-                    $(this.flagged).fadeIn();
-                } finally {
-                    await delay(1000);
-                    toggleLoading(target);
-                    target.click();
-                }
+                await addProgress(event, flagType, this);
+                $(this.flagged).fadeIn();
             }, { once: true });
         });
     }
 
-    public async sendFeedbacks({ feedbacks }: CachedFlag): Promise<boolean> {
-        let hasFailed = false;
-
-        // simultaneously send feedback to all bots
-        // hasFailed will be set to true if something goes wrong
-        const allPromises = (Object.values(this.reporters) as Reporter[])
+    public filterReporters(feedbacks: FlagTypeFeedbacks): Reporter[] {
+        return (Object.values(this.reporters) as Reporter[])
         // keep only the bots the user has opted to send feedback to
             .filter(reporter => {
                 const { name } = reporter;
@@ -355,7 +335,15 @@ export default class Post {
                 const feedback = feedbacks[name];
 
                 return sendFeedback && feedback && reporter.canSendFeedback(feedback);
-            })
+            });
+    }
+
+    public async sendFeedbacks({ feedbacks }: CachedFlag): Promise<boolean> {
+        let hasFailed = false;
+
+        // simultaneously send feedback to all bots
+        // hasFailed will be set to true if something goes wrong
+        const allPromises = this.filterReporters(feedbacks)
             // return a promise that sends the feedback
             // use .map() so that they run in paraller
             .map(reporter => {

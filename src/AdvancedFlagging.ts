@@ -17,13 +17,11 @@ import { Store, Cached } from './UserscriptTools/Store';
 
 // <TODO>
 // What's left for 2.0.0:
-// - Section to ONLY send feedback
-// - Manipulate the flag dialog:
-//   - send feedback to bots checkbox
+// - Manipulate the flag & recommend deletion popups:
 //   - choose the bots to which to send feedback
 //   - choose the feedback to send
 //   - also the recommend deletion/Delete popup
-// - Add option to flag post from recommend deletion popup
+// - Flag post from recommend deletion popup
 // </TODO>
 
 function setupStyles(): void {

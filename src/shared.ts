@@ -1,5 +1,7 @@
 import { CachedFlag, Configuration, Store } from './UserscriptTools/Store';
 import { Flags } from './FlagTypes';
+import Page from './UserscriptTools/Page';
+import { Progress } from './UserscriptTools/Progress';
 
 type BasicPlacement = 'auto' | 'top' | 'right' | 'bottom' | 'left';
 // Minimum TypeScript Version: 4.1
@@ -187,4 +189,34 @@ export function toggleLoading(button: HTMLButtonElement): void {
     button.classList.toggle('is-loading');
     button.ariaDisabled = button.ariaDisabled === 'true' ? 'false' : 'true';
     button.disabled = !button.disabled;
+}
+
+export async function addProgress(
+    event: Event,
+    flagType: CachedFlag,
+    post = new Page(true).posts[0]
+): Promise<void> {
+    if (!post.filterReporters(flagType.feedbacks).length) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const target = event.target as HTMLButtonElement;
+
+    // indicate loading
+    toggleLoading(target);
+
+    try {
+        post.progress = new Progress(target);
+        post.progress.attach();
+
+        await post.sendFeedbacks(flagType);
+    } finally {
+        // remove previously added indicators
+        await delay(1000);
+        toggleLoading(target);
+
+        // proceed with the vote
+        target.click();
+    }
 }

@@ -1,4 +1,4 @@
-import { addXHRListener, delay, toggleLoading } from './shared';
+import { addProgress, addXHRListener, delay } from './shared';
 import { isDone } from './AdvancedFlagging';
 
 import { MetaSmokeAPI } from './UserscriptTools/MetaSmokeAPI';
@@ -7,7 +7,6 @@ import { CopyPastorAPI } from './UserscriptTools/CopyPastorAPI';
 import { Cached, Store } from './UserscriptTools/Store';
 
 import Page from './UserscriptTools/Page';
-import { Progress } from './UserscriptTools/Progress';
 
 interface ReviewQueueResponse {
     postId: number;
@@ -66,19 +65,7 @@ async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
             // in case "looks fine" flagtype is deleted
             if (!flagType) return;
 
-            event.preventDefault();
-            event.stopPropagation();
-
-            const target = event.target as HTMLButtonElement;
-            toggleLoading(target);
-
-            const page = new Page(true);
-            await page.posts[0].sendFeedbacks(flagType);
-
-            await delay(1000);
-            toggleLoading(target);
-
-            target.click();
+            await addProgress(event, flagType);
         }, { once: true });
 }
 
@@ -113,31 +100,7 @@ export function setupReview(): void {
             const flagType = Store.flagTypes.find(({ id }) => id === 7);
             if (!flagType) return; // something went wrong
 
-            // don't recomment deletion immediately
-            event.preventDefault();
-            event.stopPropagation();
-
-            const target = event.target as HTMLButtonElement;
-
-            // indicate loading
-            toggleLoading(target);
-
-            try {
-                const page = new Page(true);
-                const post = page.posts[0];
-
-                post.progress = new Progress(target);
-                post.progress.attach();
-
-                await post.sendFeedbacks(flagType);
-            } finally {
-                // remove previously added indicators
-                await delay(1000);
-                toggleLoading(target);
-
-                // proceed with the vote
-                target.click();
-            }
+            await addProgress(event, flagType);
         }, { once: true });
     });
 }

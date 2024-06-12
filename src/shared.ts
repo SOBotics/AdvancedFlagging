@@ -206,10 +206,28 @@ export async function addProgress(
     // indicate loading
     toggleLoading(target);
 
-    try {
-        post.progress = new Progress(target);
-        post.progress.attach();
+    post.progress = new Progress(target);
+    post.progress.attach();
 
+    const input = document.querySelector<HTMLInputElement>('#advanced-flagging-flag-post');
+    if (input?.checked) {
+        const flagProgress = post.progress.addItem('Flagging as NAA...');
+
+        try {
+            await post.flag(FlagNames.NAA, null);
+            flagProgress.completed();
+        } catch (error) {
+            console.error(error);
+
+            flagProgress.failed(
+                error instanceof Error
+                    ? error.message
+                    : 'see console for more details'
+            );
+        }
+    }
+
+    try {
         await post.sendFeedbacks(flagType);
     } finally {
         // remove previously added indicators

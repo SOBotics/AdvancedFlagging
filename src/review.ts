@@ -7,6 +7,7 @@ import { CopyPastorAPI } from './UserscriptTools/CopyPastorAPI';
 import { Cached, Store } from './UserscriptTools/Store';
 
 import Page from './UserscriptTools/Page';
+import { Checkbox } from '@userscripters/stacks-helpers';
 
 interface ReviewQueueResponse {
     postId: number;
@@ -94,6 +95,21 @@ export function setupReview(): void {
         // the submit button
         const submit = document.querySelector('form .js-modal-submit');
         if (!submit) return;
+
+        const [, checkbox] = Checkbox.makeStacksCheckboxes(
+            [
+                {
+                    id: 'advanced-flagging-flag-post',
+                    labelConfig: {
+                        text: 'Flag post',
+                        classes: [ 'mt2' ]
+                    },
+                    selected: true
+                }
+            ]
+        );
+        checkbox.classList.add('flex--item');
+        submit.parentElement?.append(checkbox);
 
         submit.addEventListener('click', async event => {
             // find the "Not an answer" flag type

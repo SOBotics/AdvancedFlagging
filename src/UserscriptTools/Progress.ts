@@ -22,6 +22,9 @@ export class Progress {
             placement: 'bottom-start',
             toggleOnClick: true
         });
+
+        // hide popover, so that it is not shown when it is empty
+        this.element.style.display = 'none';
     }
 
     public delete(): void {
@@ -33,6 +36,9 @@ export class Progress {
     }
 
     public addItem(text: string): ProgressItemActions {
+        // if there is at least one item, show the popover
+        this.element.style.display = 'block';
+
         const flexItem = this.createItem(text);
         const wrapper = flexItem.firstElementChild as HTMLElement;
 

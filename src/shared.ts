@@ -186,7 +186,9 @@ export async function addProgress(
     flagType: CachedFlag,
     post = new Page(true).posts[0]
 ): Promise<void> {
-    if (!post.filterReporters(flagType.feedbacks).length) return;
+    const input = document.querySelector<HTMLInputElement>('#advanced-flagging-flag-post');
+
+    if (!post.filterReporters(flagType.feedbacks).length && !input?.checked) return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -199,7 +201,6 @@ export async function addProgress(
     post.progress = new Progress(target);
     post.progress.attach();
 
-    const input = document.querySelector<HTMLInputElement>('#advanced-flagging-flag-post');
     if (input?.checked) {
         const flagProgress = post.progress.addItem('Flagging as NAA...');
 

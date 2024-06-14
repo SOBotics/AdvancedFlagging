@@ -1,4 +1,4 @@
-import { CachedFlag, Configuration, Store } from './UserscriptTools/Store';
+import { CachedFlag, Store } from './UserscriptTools/Store';
 import { Flags } from './FlagTypes';
 import Page from './UserscriptTools/Page';
 import { Progress } from './UserscriptTools/Progress';
@@ -104,16 +104,6 @@ export function getFormDataFromObject<T extends Record<string, string>>(
             return formData;
         }, new FormData());
 }
-
-export const getCachedConfigBotKey = (
-    botName: BotNames
-): keyof Configuration => {
-    type Sanitised = 'Smokey' | 'Natty' | 'GenericBot' | 'Guttenberg';
-
-    const sanitised = botName.replace(/\s/g, '') as Sanitised;
-
-    return `defaultNo${sanitised}`;
-};
 
 export async function delay(milliseconds: number): Promise<void> {
     return new Promise<void>(resolve => setTimeout(resolve, milliseconds));

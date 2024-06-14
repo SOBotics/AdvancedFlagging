@@ -1,15 +1,23 @@
 import { ProgressItemActions } from './Progress';
 import { attachPopover, FlagTypeFeedbacks, AllFeedbacks } from '../shared';
 import Page from './Page';
+import { Configuration } from './Store';
+
+type Sanitised = 'Smokey' | 'Natty' | 'GenericBot' | 'Guttenberg';
 
 export default class Reporter {
     public readonly name: keyof FlagTypeFeedbacks;
     public readonly id: number;
+    public readonly sanitisedName: Sanitised;
+    public readonly cacheKey: keyof Configuration;
 
     public progress: ProgressItemActions | null = null;
 
     constructor(name: keyof FlagTypeFeedbacks, id: number) {
         this.name = name;
+        this.sanitisedName = this.name.replace(/\s/g, '') as Sanitised;
+        this.cacheKey = `defaultNo${this.sanitisedName}`;
+
         this.id = id;
     }
 

@@ -6,17 +6,11 @@ import {
     getHumanFromDisplayName,
 
     getFullFlag,
-    getCachedConfigBotKey,
     FlagNames,
     delay
 } from './shared';
 import { getFlagToRaise } from './AdvancedFlagging';
 import Post from './UserscriptTools/Post';
-
-import { MetaSmokeAPI } from './UserscriptTools/MetaSmokeAPI';
-import { NattyAPI } from './UserscriptTools/NattyApi';
-import { GenericBotAPI } from './UserscriptTools/GenericBotAPI';
-import { CopyPastorAPI } from './UserscriptTools/CopyPastorAPI';
 
 import { Menu, Spinner } from '@userscripters/stacks-helpers';
 import { isSpecialFlag } from './Configuration';
@@ -30,12 +24,9 @@ noneSpan.classList.add('o50');
 noneSpan.innerText = '(none)';
 
 export class Popover {
-    private readonly post: Post;
     public readonly popover: HTMLUListElement;
 
-    constructor(post: Post) {
-        this.post = post;
-
+    constructor(private readonly post: Post) {
         this.popover = this.makeMenu();
     }
 
@@ -187,39 +178,16 @@ export class Popover {
 
     // Section #3: Send feedback to X
     private getSendFeedbackToRow(): Menu.StacksMenuOptions['navItems'] {
-        // oof!
-        type ReportersEntries = [
-            ['Smokey', MetaSmokeAPI],
-            ['Natty', NattyAPI],
-            ['Guttenberg', CopyPastorAPI],
-            ['Generic Bot', GenericBotAPI]
-        ];
-
-        return (Object.entries(this.post.reporters) as ReportersEntries)
-            // exclude bots that we can't send feedback to
-            .filter(([, instance]) => instance.showOnPopover())
-            .map(([, instance]) => {
-                const cacheKey = getCachedConfigBotKey(instance.name);
-                const sanitised = instance.name.replace(/\s/g, '').toLowerCase();
-
-                // need the postId in the id to make it unique
-                const botNameId = `advanced-flagging-send-feedback-to-${sanitised}-${this.post.id}`;
-                const defaultNoCheck = Store.config[cacheKey];
-
+        return Object
+            .entries(this.post.getFeedbackBoxes())
+            .map(([name, checkbox]) => {
                 return {
-                    checkbox: {
-                        id: botNameId,
-                        labelConfig: {
-                            text: `Feedback to ${instance.getIcon().outerHTML}`,
-                            classes: [ 'fs-body1' ]
-                        },
-                        selected: !defaultNoCheck,
-                    },
+                    checkbox,
                     checkboxOptions: {
-                        classes: ['px6']
+                        classes: [ 'px6' ]
                     },
                     popover: {
-                        html: `Send feedback to ${instance.name}`,
+                        html: `Send feedback to ${name}`,
                         position: 'right-start'
                     }
                 };

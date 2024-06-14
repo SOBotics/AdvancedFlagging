@@ -1,6 +1,15 @@
 import { getFlagToRaise } from '../AdvancedFlagging';
 import { Flags } from '../FlagTypes';
-import { getSvg, PostType, FlagNames, getFormDataFromObject, addXHRListener, addProgress, FlagTypeFeedbacks } from '../shared';
+import {
+    getSvg,
+    PostType,
+    FlagNames,
+    getFormDataFromObject,
+    addXHRListener,
+    addProgress,
+    FlagTypeFeedbacks,
+    BotNames,
+} from '../shared';
 
 import { CopyPastorAPI } from './CopyPastorAPI';
 import { GenericBotAPI } from './GenericBotAPI';
@@ -8,9 +17,13 @@ import { MetaSmokeAPI } from './MetaSmokeAPI';
 import { NattyAPI } from './NattyApi';
 
 import { Cached, CachedFlag, Store } from './Store';
-import Page from './Page';
 import { Progress } from './Progress';
+import Page from './Page';
 import Reporter from './Reporter';
+
+import { Checkbox } from '@userscripters/stacks-helpers';
+
+type ReporterBoxes = Record<BotNames, Parameters<typeof Checkbox.makeStacksCheckboxes>[0][0]>;
 
 interface StackExchangeFlagResponse {
     FlagType: number;
@@ -321,11 +334,12 @@ export default class Post {
         return (Object.values(this.reporters) as Reporter[])
         // keep only the bots the user has opted to send feedback to
             .filter(reporter => {
-                const { name } = reporter;
+                const { name, sanitisedName } = reporter;
 
-                const sanitised = name.replace(/\s/g, '').toLowerCase();
-                const input = this.element.querySelector<HTMLInputElement>(
-                    `[id*="-send-feedback-to-${sanitised}-"]`
+                // in review, the checkbox, is not a child of this.element
+                const element = Page.isLqpReviewPage ? document : this.element;
+                const input = element.querySelector<HTMLInputElement>(
+                    `[id*="-send-feedback-to-${sanitisedName.toLowerCase()}-"]`
                 );
 
                 // this may be undefined
@@ -400,6 +414,40 @@ export default class Post {
         // a post can't be flagged as VLQ if it has a positive score
         // or is more than 1 day old
         return (new Date().valueOf() - this.date.valueOf()) < dayMillis && this.score <= 0;
+    }
+
+    // returns [bot name, checkbox config]
+    public getFeedbackBoxes(): ReporterBoxes {
+        type ReportersEntries = [
+            ['Smokey', MetaSmokeAPI],
+            ['Natty', NattyAPI],
+            ['Guttenberg', CopyPastorAPI],
+            ['Generic Bot', GenericBotAPI]
+        ];
+
+        const newEntries = (Object.entries(this.reporters) as ReportersEntries)
+            // exclude bots that we can't send feedback to
+            .filter(([, instance]) => instance.showOnPopover())
+            .map(([, instance]) => {
+                const botName = instance.sanitisedName.toLowerCase();
+
+                // need the postId in the id to make it unique
+                const botNameId = `advanced-flagging-send-feedback-to-${botName}-${this.id}`;
+                const defaultNoCheck = Store.config[instance.cacheKey];
+
+                const checkbox = {
+                    id: botNameId,
+                    labelConfig: {
+                        text: `Feedback to ${instance.getIcon().outerHTML}`,
+                        classes: [ 'fs-body1' ],
+                    },
+                    selected: !defaultNoCheck,
+                };
+
+                return [instance.name, checkbox];
+            });
+
+        return Object.fromEntries(newEntries) as ReporterBoxes;
     }
 
     private static getIcon(svg: SVGElement, classname: string): HTMLElement {

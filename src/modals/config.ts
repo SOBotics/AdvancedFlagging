@@ -1,13 +1,10 @@
 import { Cached, Configuration, Store } from '../UserscriptTools/Store';
 import { MetaSmokeAPI } from '../UserscriptTools/MetaSmokeAPI';
 
-import {
-    displayStacksToast,
-    attachPopover,
-    getCachedConfigBotKey
-} from '../shared';
+import { displayStacksToast, attachPopover } from '../shared';
 
 import { Buttons, Modals, Checkbox } from '@userscripters/stacks-helpers';
+import Reporter from '../UserscriptTools/Reporter';
 
 type GeneralItems = Exclude<keyof Configuration, 'EnabledFlags'>;
 
@@ -171,19 +168,19 @@ function getGeneralConfigItems(): HTMLElement {
         },
         {
             text: 'Don\'t send feedback to Smokey by default',
-            configValue: getCachedConfigBotKey('Smokey')
+            configValue: new Reporter('Smokey', 0).cacheKey
         },
         {
             text: 'Don\'t send feedback to Natty by default',
-            configValue: getCachedConfigBotKey('Natty')
+            configValue: new Reporter('Natty', 0).cacheKey
         },
         {
             text: 'Don\'t send feedback to Guttenberg by default',
-            configValue: getCachedConfigBotKey('Guttenberg')
+            configValue: new Reporter('Guttenberg', 0).cacheKey
         },
         {
             text: 'Don\'t send feedback to Generic Bot by default',
-            configValue: getCachedConfigBotKey('Generic Bot')
+            configValue: new Reporter('Generic Bot', 0).cacheKey
         },
         {
             text: 'Enable dry-run mode',

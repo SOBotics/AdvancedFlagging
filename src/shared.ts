@@ -239,7 +239,7 @@ export function appendLabelAndBoxes(
     const label = Label.makeStacksLabel(
         'noid',
         {
-            text: 'Feedback:',
+            text: 'Send feedback to:',
             classes: [ 'mt2', 'fw-normal' ]
         }
     );

@@ -17,6 +17,10 @@ import { Store, Cached } from './UserscriptTools/Store';
 
 function setupStyles(): void {
     GM_addStyle(`
+#popup-flag-post {
+    max-width: 680px !important;
+}
+
 .advanced-flagging-popover {
     min-width: 10rem !important;
 }

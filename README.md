@@ -63,9 +63,7 @@ There's also support:
 
 - the Low Quality Answers review queue on Stack Overflow:
 
-  ![screenshot from review I](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/640b6e71-a857-4e42-99fe-a37763f248ca)
-
-  ![screenshot from review II](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/c1590c09-5959-4050-9163-bbc6f02cbf3a)
+  ![screenshot from review](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/c1590c09-5959-4050-9163-bbc6f02cbf3a)
 
   ![after recommending deletion](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/2ecb7597-dd5f-4338-9a15-96f7d6d8effe)
 

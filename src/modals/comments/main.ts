@@ -388,9 +388,9 @@ function createCategoryDiv(category: Partial<CachedCategory>): HTMLDivElement {
         container.append(div);
         $(div).fadeIn({
             complete: () => {
-            // click edit & focus on name input
-            div.querySelector<HTMLButtonElement>('[id^="advanced-flagging-edit-flagtype-"]')?.click();
-            div.querySelector<HTMLInputElement>('[id^="advanced-flagging-flag-name-"]')?.focus();
+                // click edit & focus on name input
+                div.querySelector<HTMLButtonElement>('[id^="advanced-flagging-edit-flagtype-"]')?.click();
+                div.querySelector<HTMLInputElement>('[id^="advanced-flagging-flag-name-"]')?.focus();
             }
         });
     });

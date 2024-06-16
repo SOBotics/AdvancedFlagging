@@ -1,15 +1,14 @@
-# AdvancedFlagging
+# Advanced Flagging
 
 ![build](https://github.com/SOBotics/AdvancedFlagging/workflows/build/badge.svg?branch=master)
 
-AdvancedFlagging started as a set of modular TypeScript tools to aid with StackExchange Userscripts. It has support for:
+Advanced Flagging started as a set of modular TypeScript tools to aid with StackExchange Userscripts. It has support for:
 
-- SmokeDetector/MetaSmoke
+- SmokeDetector/metasmoke
 - Natty/Sentinel
-- GenericBot
+- Generic Bot
 - Guttenberg/CopyPastor
 - Chat
-- Stack Exchange API
 
 # Credits
 
@@ -21,129 +20,94 @@ This code uses different bits and pieces from the following sources:
 
 # Installation
 
-Click [this](https://raw.githubusercontent.com/SOBotics/AdvancedFlagging/master/dist/AdvancedFlagging.user.js) link to install the userscript via your favourite userscript manager. Currently, only TamperMonkey is officially supported
+[Direct install link](https://github.com/SOBotics/AdvancedFlagging/raw/master/dist/AdvancedFlagging.user.js) | [View source](https://github.com/SOBotics/AdvancedFlagging/blob/master/dist/AdvancedFlagging.user.js). Currently, only Tampermonkey is official supported.
 
 # What does it do?
 
-AdvancedFlagging adds icons from Smokey, Natty and Guttenberg to posts which have been reported. In addition, flags made through the AdvancedFlagging interface are reported to Natty, Smokey, Guttenberg and GenericBot if required.
+Advanced Flagging adds icons from Smokey, Natty and Guttenberg to posts that have been reported. In addition, flags made through the Advanced Flagging interface are reported to Natty, Smokey, Guttenberg and Generic Bot if required.
 
 # Interface
 
-![Picture of the interface](https://i.stack.imgur.com/4x1eQ.png)
+![Picture of the interface](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/fdf4bc24-0fce-40ea-8634-179b7b997cc3)
 
-- 'Leave Comment' is ticked by default if there are no comments beneath the post to avoid comment spam or if you have chosen otherwise. This is only available on Stack Overflow.
+Hovering over each option will show a tooltip describing the actions that will be performed on click:
 
-- 'Flag' is always ticked by default unless you choose otherwise. Unticking this box will *not* flag the post. Feedback to all sources will, however, still be sent.
+![tooltip showing actions](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/d2cade2e-16d4-4e03-8b74-29bc5f248603)
 
-- 'Downvote' is always ticked by default unless you choose otherwise. It downvotes a post if you've also selected an option that by default flags the post
+The script also monitors and reports the progress of each action the user decides to perform (e.g. flag, comment, send feedback):
 
-For every feedback that is sent to a bot a banner informs the user if it was sent successfully or if there was an error. A tick, check or flag is appended to the post menu, too. For example:
+![progress I](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/99b8f734-3ce0-460b-8e6e-d0eedf3f8378)
 
-[![Post flagged](https://i.stack.imgur.com/Pk2QJ.png)](https://i.stack.imgur.com/Pk2QJ.png)
+![progress II](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/f8799cc9-f7ba-4b2b-89bb-71ef990e6c53)
 
-[![Feedback sent, but post not flagged](https://i.stack.imgur.com/FdFmc.png)](https://i.stack.imgur.com/FdFmc.png)
+![progress III](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/2073b3fb-3a94-481f-8407-c917db5c6ef3)
 
-[![Oops, failed to send feedback](https://i.stack.imgur.com/5lIVS.png)](https://i.stack.imgur.com/5lIVS.png)
+![progress IV](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/60cf3e3f-3cbc-479f-82e4-0c33199f68b1)
 
-There's also support for the flags summary page:
+There's also support:
 
-[![AdvancedFlagging in flags summary](https://i.stack.imgur.com/9AioH.png)](https://i.stack.imgur.com/9AioH.png)
+- for flags manually raised through the flag dialog:
 
-The userscript is (should) be dark mode compatible and fully responsive.
+  ![screenshot of flag popup](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/008543b3-fe1b-49d5-ae39-4fc0d2a31f84)
 
-## Bot icons
+  ![screenshot after flagging as spam](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/2555d065-251f-48eb-91c5-940a6cdde2f9)
 
-### Smokey
-![Smokey Icon](https://i.stack.imgur.com/7cmCt.png?s=128&g=1)
 
-### Natty
+- for the flags summary page:
 
-![Natty Icon](https://i.stack.imgur.com/aMUMt.jpg?s=128&g=1)
+  ![Screenshot from flags summary](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/a960269c-76ed-4cd3-bc08-7497b3ca1955)
 
-### Guttenberg
+- for the "New Answers To Old Questions" page:
 
-![Guttenberg Icon](https://i.stack.imgur.com/A0JRA.png?s=128&g=1)
+  ![image from NATO page](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/bff8962e-f5f8-4cc8-971f-6531fbc2e0b4)
+
+- the Low Quality Answers review queue on Stack Overflow:
+
+  ![screenshot from review I](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/640b6e71-a857-4e42-99fe-a37763f248ca)
+
+  ![screenshot from review II](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/c1590c09-5959-4050-9163-bbc6f02cbf3a)
+
+  ![after recommending deletion](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/2ecb7597-dd5f-4338-9a15-96f7d6d8effe)
 
 ## Specialized reports
 
 ### Guttenberg reports
 
-When Guttenberg has detected a post, two of the three additional options below appear in the dropdown:
+When Guttenberg has detected a post, additional options appear in the dropdown:
 
-![Dropdown with Guttenberg](https://i.stack.imgur.com/I4953.png)
+![Guttenberg report](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/98d13798-7185-45aa-9a25-6b2f93126c2f)
 
-These links will raise the following custom flags:
+# Configuring Advanced Flagging
 
-- Plagiarism 
-
-  > Possible plagiarism of another answer [first linked question], as can be seen here [link to CopyPastor report]
-
-  No comment will be left.
-
-- Duplicate answer
-
-  > The answer is a repost of their other answer [first linked question], but as there are slight differences as seen here [first Guttenberg report], an auto flag wouldn't be raised.
-
-  The following comment will also be left:
-
-  > Please don't add the [same answer to multiple questions](//meta.stackexchange.com/q/104227). Answer the best one and flag the rest as duplicates, once you earn enough reputation. If it is not a duplicate, [edit] the answer and tailor the post to the question.
-
-- Bad attribution
-
-  > This post is copied from [another answer](link_to_other_answer), as can be seen here [link to CopyPastor]. The author only added a link to the other answer, which is [not the proper way of attribution](//stackoverflow.blog/2009/06/25/attribution-required).
-
-  No comment will be left.
-
-'Looks fine', 'Needs editing', 'Vandalism' and any NAA response will register as a false positive to Guttenberg.
-
-# Changing AdvancedFlagging defaults
-
-AdvancedFlagging allows you to both edit any comments you choose to leave or flags you choose to raise and configure it so that it's more convenient to use.
+Advanced Flagging allows you to both edit any comments you choose to leave or flags you choose to raise and configure it so that the script is more convenient to use.
 
 ## Configuration
 
 The link to configure AdvancedFlagging is at the footer of each StackExchange site.
 
-![Picture of link to configuration](https://i.stack.imgur.com/kTim6.png)
+![Picture of link to configuration](https://i.sstatic.net/kTim6.png)
 
 Clicking it opens the following modal box:
 
-[![Picture of configuration box](https://i.stack.imgur.com/i6N6L.png)](https://i.stack.imgur.com/0ns5M.png)
-
-### General
-
-- Open dropdown on hover: open the dropdown when you hover over the 'AdvancedFlagging' link.
-- Watch for manual flags: send feedback to bots when you manually flag the post.
-- Watch for queue responses: send feedback to bots when you choose the 'Recommend Deletion' option in the Low Quality Posts Queue.
-- Disable AdvancedFlagging link: stops displaying the AdvancedFlagging button in the post menu.
-- Uncheck Leave comment/Flag/Downvote by default: don't check the respective checkbox by default
-
-### Flags
-
-Choose which options should appear in the AdvancedFlagging dropdown.
-
-### Admin
-
-- Clear Metasmoke configuration: removes your metasmoke's access token from AdvancedFlagging
-- Clear chat fkey: removes the chat fkey. It will be re-retrieved the next time you send feedback to Natty.
+![configuration modal](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/7e41c396-6486-4f44-ad41-a477279254d6)
 
 ## Comments and flags
 
 The link to change the content of the comments and flags is in the footer of each StackExchange site as well:
 
-[![Picture of the comments and flags link](https://i.stack.imgur.com/i1xpO.png)](https://i.stack.imgur.com/i1xpO.png)
+[![Picture of the comments and flags link](https://i.sstatic.net/i1xpO.png)](https://i.sstatic.net/i1xpO.png)
 
 It opens the following modal:
 
-[![](https://i.stack.imgur.com/5sdgM.png)](https://i.stack.imgur.com/5sdgM.png)
+![comments and flags modal](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/d8b79064-406c-4046-b7c9-67e065256831)
 
-Click 'Edit' to start editing a flag type, 'Hide' if you did not make any changes or 'Save' when you're done.
+Click ![new button](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/5d91c4ed-1cd5-44aa-b5e2-cee67b85d92f) to add a new flag type and ![edit button](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/5d18d32d-e488-4e9c-a2e4-a5a558407996) to edit an existing one:
 
-- The textarea is the content of the comment/flag.
-- The `<select>` right below is the type of flag that should be raised when this comment is left (if you've ticked the 'Flag' checkbox).
-  - `PostLowQuality` is the VLQ flag.
-  - `AnswerNotAnAnswer` is the NAA flag.
-  - `NoFlag` doesn't raise a flag.
+![image](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/aa278d77-fe56-4be5-bb9a-a9044d523043)
+
+You can reset all flag types to default by clicking the reset button at the footer of the modal:
+
+![modal footer](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/a130092e-3965-4656-8e4a-8a17e36bf570)
 
 # Building
 

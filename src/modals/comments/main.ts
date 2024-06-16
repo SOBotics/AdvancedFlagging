@@ -386,11 +386,13 @@ function createCategoryDiv(category: Partial<CachedCategory>): HTMLDivElement {
         // fade in
         div.style.display = 'none';
         container.append(div);
-        $(div).fadeIn();
-
-        // click edit & focus on name input
-        div.querySelector<HTMLButtonElement>('[id^="advanced-flagging-edit-flagtype-"]')?.click();
-        div.querySelector<HTMLInputElement>('[id^="advanced-flagging-flag-name-"]')?.focus();
+        $(div).fadeIn({
+            complete: () => {
+            // click edit & focus on name input
+            div.querySelector<HTMLButtonElement>('[id^="advanced-flagging-edit-flagtype-"]')?.click();
+            div.querySelector<HTMLInputElement>('[id^="advanced-flagging-flag-name-"]')?.focus();
+            }
+        });
     });
 
     const flagTypes = Store.flagTypes.filter(({ belongsTo }) => belongsTo === category.name);

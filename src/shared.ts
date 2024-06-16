@@ -2,6 +2,8 @@ import { CachedFlag, Store } from './UserscriptTools/Store';
 import { Flags } from './FlagTypes';
 import Page from './UserscriptTools/Page';
 import { Progress } from './UserscriptTools/Progress';
+import Post from './UserscriptTools/Post';
+import { Checkbox, Label } from '@userscripters/stacks-helpers';
 
 type BasicPlacement = 'auto' | 'top' | 'right' | 'bottom' | 'left';
 // Minimum TypeScript Version: 4.1
@@ -228,4 +230,30 @@ export async function addProgress(
         // proceed with the vote
         target.click();
     }
+}
+
+export function appendLabelAndBoxes(
+    element: Element,
+    post: Post
+): void {
+    const label = Label.makeStacksLabel(
+        'noid',
+        {
+            text: 'Feedback:',
+            classes: [ 'mt2', 'fw-normal' ]
+        }
+    );
+    const boxes = Object
+        .entries(post.getFeedbackBoxes(true))
+        .map(([, box]) => box);
+
+    const [, ...checkboxes] = Checkbox.makeStacksCheckboxes(
+        boxes,
+        { horizontal: true }
+    );
+
+    // add flex--item to each box, so it is properly aligned
+    checkboxes.forEach(box => box.classList.add('flex--item'));
+
+    element.parentElement?.append(label, ...checkboxes);
 }

@@ -1,4 +1,4 @@
-import { addProgress, addXHRListener, delay } from './shared';
+import { addProgress, addXHRListener, appendLabelAndBoxes, delay } from './shared';
 import { isDone } from './AdvancedFlagging';
 
 import { MetaSmokeAPI } from './UserscriptTools/MetaSmokeAPI';
@@ -7,7 +7,7 @@ import { CopyPastorAPI } from './UserscriptTools/CopyPastorAPI';
 import { Cached, Store } from './UserscriptTools/Store';
 
 import Page from './UserscriptTools/Page';
-import { Checkbox, Label } from '@userscripters/stacks-helpers';
+import { Checkbox } from '@userscripters/stacks-helpers';
 
 interface ReviewQueueResponse {
     postId: number;
@@ -110,40 +110,11 @@ export function setupReview(): void {
         );
         checkbox.classList.add('flex--item');
 
-        const label = Label.makeStacksLabel(
-            'noid',
-            {
-                text: 'Send feedback to:',
-                classes: [ 'mt2', 'fw-normal' ]
-            }
-        );
-
         // feedback boxes
         const post = new Page(true).posts[0];
-        const boxes = Object
-            .entries(post.getFeedbackBoxes())
-            .filter(([name]) => {
-                // exclude feedback to Smokey if post wasn't reported
-                // (only spam posts are reported, not non-answers)
-                return name !== 'Smokey' || post.reporters.Smokey?.wasReported();
-            })
-            .map(([, box]) => {
-                // remove 'fs-body1' class, add 'mb4' instead
-                box.labelConfig.classes = [ 'mb4' ];
 
-                const newText = box.labelConfig.text.replace('Feedback to ', '');
-                box.labelConfig.text = newText;
-
-                return box;
-            });
-        const [, ...checkboxes] = Checkbox.makeStacksCheckboxes(
-            boxes,
-            { horizontal: true }
-        );
-
-        // add flex--item to each box, so it is properly aligned
-        checkboxes.forEach(box => box.classList.add('flex--item'));
-        submit.parentElement?.append(checkbox, label, ...checkboxes);
+        submit.parentElement?.append(checkbox);
+        appendLabelAndBoxes(submit, post);
 
         submit.addEventListener('click', async event => {
             // find the "Not an answer" flag type

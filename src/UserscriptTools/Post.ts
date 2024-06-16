@@ -9,6 +9,7 @@ import {
     addProgress,
     FlagTypeFeedbacks,
     BotNames,
+    appendLabelAndBoxes,
 } from '../shared';
 
 import { CopyPastorAPI } from './CopyPastorAPI';
@@ -309,6 +310,9 @@ export default class Post {
 
             if (!submit || !flagPopup || submit.textContent?.trim().startsWith('Retract')) return;
 
+            // add "Send feedback to: ..." buttons
+            appendLabelAndBoxes(submit, this);
+
             submit.addEventListener('click', async event => {
                 // get the type of flag selected
                 const checked = flagPopup.querySelector<HTMLInputElement>('input.s-radio:checked');
@@ -336,11 +340,10 @@ export default class Post {
             .filter(reporter => {
                 const { name, sanitisedName } = reporter;
 
-                // in review, the checkbox, is not a child of this.element
-                const element = Page.isLqpReviewPage ? document : this.element;
-                const input = element.querySelector<HTMLInputElement>(
-                    `[id*="-send-feedback-to-${sanitisedName.toLowerCase()}-"]`
-                );
+                const selector = `#advanced-flagging-send-feedback-to-${sanitisedName.toLowerCase()}-${this.id}`;
+                // priority to any flag/review checkboxes
+                const input = document.querySelector<HTMLInputElement>(`${selector}-flag-review`)
+                    ?? document.querySelector<HTMLInputElement>(selector);
 
                 // this may be undefined
                 // (e.g. if the parameter is not passed or the checkbox is not found)
@@ -417,7 +420,7 @@ export default class Post {
     }
 
     // returns [bot name, checkbox config]
-    public getFeedbackBoxes(): ReporterBoxes {
+    public getFeedbackBoxes(isFlagOrReview = false): ReporterBoxes {
         type ReportersEntries = [
             ['Smokey', MetaSmokeAPI],
             ['Natty', NattyAPI],
@@ -426,8 +429,13 @@ export default class Post {
         ];
 
         const newEntries = (Object.entries(this.reporters) as ReportersEntries)
-            // exclude bots that we can't send feedback to
-            .filter(([, instance]) => instance.showOnPopover())
+            .filter(([name, instance]) => {
+                // exclude bots that we can't send feedback to
+                return instance.showOnPopover()
+                    // note: in review, posts can't be reported to Smokey,
+                    //       so exclude the icon from the array that's returned
+                    && (!Page.isLqpReviewPage || (name !== 'Smokey' || instance.wasReported()));
+            })
             .map(([, instance]) => {
                 const botName = instance.sanitisedName.toLowerCase();
 
@@ -435,11 +443,13 @@ export default class Post {
                 const botNameId = `advanced-flagging-send-feedback-to-${botName}-${this.id}`;
                 const defaultNoCheck = Store.config[instance.cacheKey];
 
+                const iconHtml = instance.getIcon().outerHTML;
                 const checkbox = {
-                    id: botNameId,
+                    // on post page, the id is not unique!
+                    id: `${botNameId}${isFlagOrReview ? '-flag-review' : ''}`,
                     labelConfig: {
-                        text: `Feedback to ${instance.getIcon().outerHTML}`,
-                        classes: [ 'fs-body1' ],
+                        text: `${isFlagOrReview ? '' : 'Feedback to'} ${iconHtml}`,
+                        classes: [ isFlagOrReview ? 'mb4' : 'fs-body1' ],
                     },
                     selected: !defaultNoCheck,
                 };

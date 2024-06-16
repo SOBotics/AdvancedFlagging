@@ -15,11 +15,6 @@ import { CopyPastorAPI } from './UserscriptTools/CopyPastorAPI';
 import { Buttons } from '@userscripters/stacks-helpers';
 import { Store, Cached } from './UserscriptTools/Store';
 
-// <TODO>
-// What's left for 2.0.0:
-// - Manipulate the flag popup: choose the bots to which to send feedback
-// </TODO>
-
 function setupStyles(): void {
     GM_addStyle(`
 .advanced-flagging-popover {

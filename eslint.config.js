@@ -37,7 +37,7 @@ export default tseslint.config({
         '@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],
         '@typescript-eslint/explicit-function-return-type': 'warn',
         '@typescript-eslint/method-signature-style': 'warn',
-        '@typescript-eslint/no-unused-expressions': ['error', { 'allowTernary': true }],
+        '@typescript-eslint/no-unused-expressions': ['error', { allowTernary: true }],
         '@typescript-eslint/prefer-readonly': 'warn',
         '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
         '@typescript-eslint/prefer-promise-reject-errors': 'off',

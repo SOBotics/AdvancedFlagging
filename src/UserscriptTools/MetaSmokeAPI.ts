@@ -235,6 +235,9 @@ export class MetaSmokeAPI extends Reporter {
             // https://chat.stackexchange.com/transcript/message/65097399
             // wait 3 seconds so that SD can start watching for post deletion
             await new Promise(resolve => setTimeout(resolve, 3 * 1000));
+
+            // don't send feedback to post if it was just reported
+            return;
         }
 
         // otherwise, send feedback

@@ -37,7 +37,7 @@ export class Progress {
 
     public addItem(text: string): ProgressItemActions {
         // if there is at least one item, show the popover
-        this.element.style.display = 'block';
+        this.element.style.display = '';
 
         const flexItem = this.createItem(text);
         const wrapper = flexItem.firstElementChild as HTMLElement;

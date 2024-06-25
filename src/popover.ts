@@ -224,7 +224,7 @@ export class Popover {
 
         // Comment text: ...
         const commentText = this.getCommentText(flagType);
-        const tooltipCommentText = (this.post.deleted ? '' : commentText) ?? '';
+        const tooltipCommentText = (this.post.deleted ? '' : commentText) || '';
 
         // if the flag changed from VLQ to NAA, let the user know why
         const flagName = getFlagToRaise(reportType, this.post.qualifiesForVlq());
@@ -339,7 +339,7 @@ export class Popover {
         const { addAuthorName } = Store.config;
 
         const type = (this.post.opReputation || 0) > 50 ? 'high' : 'low';
-        let comment = comments?.[type] ?? comments?.low;
+        let comment = comments?.[type] || comments?.low;
         if (comment) {
             const sitename = StackExchange.options.site.name || '';
             const siteurl = window.location.hostname;
@@ -354,7 +354,7 @@ export class Popover {
             comment && addAuthorName
                 ? `${this.post.opName}, ${comment[0].toLowerCase()}${comment.slice(1)}`
                 : comment
-        ) ?? null;
+        ) || null;
     }
 
     private async handleReportLinkClick(
@@ -413,7 +413,7 @@ export class Popover {
                 .map(type => {
                     return dropdown.querySelector<HTMLInputElement>(
                         `[id*="-${type}-checkbox-"]`
-                    )?.checked ?? false;
+                    )?.checked || false;
                 });
 
             // comment

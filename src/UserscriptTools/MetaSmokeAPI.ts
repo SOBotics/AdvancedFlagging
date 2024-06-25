@@ -35,7 +35,7 @@ interface MetasmokeWsMessage {
 
 export class MetaSmokeAPI extends Reporter {
     public static accessToken: string;
-    public static isDisabled: boolean = Store.get<boolean>(Cached.Metasmoke.disabled) ?? false;
+    public static isDisabled: boolean = Store.get<boolean>(Cached.Metasmoke.disabled) || false;
 
     public smokeyId: number;
 

@@ -1,4 +1,4 @@
-import { addProgress, addXHRListener, appendLabelAndBoxes, delay } from './shared';
+import { addProgress, addXHRListener, appendLabelAndBoxes, delay, getFlagTypeFromFlagId } from './shared';
 import { isDone } from './AdvancedFlagging';
 
 import { MetaSmokeAPI } from './UserscriptTools/MetaSmokeAPI';
@@ -118,7 +118,7 @@ export function setupReview(): void {
 
         submit.addEventListener('click', async event => {
             // find the "Not an answer" flag type
-            const flagType = Store.flagTypes.find(({ id }) => id === 7);
+            const flagType = getFlagTypeFromFlagId(7);
             if (!flagType) return; // something went wrong
 
             await addProgress(event, flagType);

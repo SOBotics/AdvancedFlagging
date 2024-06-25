@@ -43,7 +43,12 @@ export default tseslint.config({
         '@typescript-eslint/prefer-promise-reject-errors': 'off',
         '@typescript-eslint/no-extraneous-class': 'off',
         '@typescript-eslint/non-nullable-type-assertion-style': 'off',
-        '@typescript-eslint/prefer-nullish-coalescing': ['error', { ignorePrimitives: { boolean: true } }],
+        '@typescript-eslint/prefer-nullish-coalescing': ['error', {
+            ignorePrimitives: {
+                boolean: true,
+                string: true
+            }
+        }],
         '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
 
         '@stylistic/arrow-parens': ['warn', 'as-needed'],

@@ -6,7 +6,7 @@ import {
 } from './UserscriptTools/Store';
 import { Flags, flagCategories } from './FlagTypes';
 
-import { FlagNames, displayStacksToast } from './shared';
+import { FlagNames, displayStacksToast, getFlagTypeFromFlagId } from './shared';
 
 import { buildConfigurationOverlay } from './modals/config';
 import { setupCommentsAndFlagsModal } from './modals/comments/main';
@@ -81,7 +81,7 @@ function setupDefaults(): void {
         cacheCategories();
 
         // update default link-only comment!
-        const linkOnly = Store.flagTypes.find(({ id }) => id === 6);
+        const linkOnly = getFlagTypeFromFlagId(6);
         const defaultComment = flagCategories[2].FlagTypes[0].comments?.low;
         if (linkOnly // link only flag type has not been removed
             && defaultComment

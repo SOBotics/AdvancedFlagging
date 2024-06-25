@@ -13,7 +13,7 @@ function saveName(
 ): void {
     const input = card.querySelector<HTMLInputElement>('.s-input__md');
 
-    flagType.displayName = input?.value ?? '';
+    flagType.displayName = input?.value || '';
 }
 
 function saveTextareaContent(
@@ -44,7 +44,7 @@ function saveSwfr(
 ): void {
     // swfr = send when flag raised :)
     const swfrBox = expandable.querySelector<HTMLInputElement>('[id*="-send-when-flag-raised-"');
-    const sendFeedback = swfrBox?.checked ?? false;
+    const sendFeedback = swfrBox?.checked || false;
 
     flagType.sendWhenFlagRaised = sendFeedback;
 
@@ -74,7 +74,7 @@ function saveDownvote(
 ): void {
     const downvote = expandable.querySelector<HTMLInputElement>('[id*="-downvote-post-"');
 
-    flagType.downvote = downvote?.checked ?? false;
+    flagType.downvote = downvote?.checked || false;
 }
 
 function saveFeedbacks(

@@ -115,7 +115,7 @@ export default class Post {
         const url = `/flags/posts/${this.id}/add/${flagName}`;
         const data = {
             fkey: StackExchange.options.user.fkey,
-            otherText: text ?? '',
+            otherText: text || '',
             // plagiarism flag: fill "Link(s) to original content"
             // note wrt link: site will always be Stack Overflow,
             //                post will always be an answer.
@@ -501,7 +501,7 @@ export default class Post {
             this.element.dataset.questionid ?? this.element.dataset.answerid
         ) ?? (
             this.type === 'Answer'// flags/NATO/search page: parse the post URL
-                ? new URL(href ?? '').pathname.split('/').pop()
+                ? new URL(href || '').pathname.split('/').pop()
                 : href?.split('/')[4]
         );
 

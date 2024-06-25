@@ -113,10 +113,12 @@ export const flagCategories: FlagCategory[] = [
                 displayName: 'Link Only',
                 reportType: FlagNames.VLQ,
                 comments: {
+                    // comment by Yunnosch: https://chat.stackoverflow.com/transcript/message/57442309
                     low: 'A link to a solution is welcome, but please ensure your answer is useful without it: '
-                       + '[add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will '
-                       + 'have some idea what it is and why it is there, then quote the most relevant part of the page '
-                       + 'you are linking to in case the target page is unavailable. '
+                       + 'You need to provide at least a technical summary of *how* the problem is solved, so that '
+                       + 'it can be reproduced even without the link. It is not enough to advertise *what* it '
+                       + 'achieves. Also please [add context around the link](//meta.stackexchange.com/a/8259) '
+                       + 'so your fellow users will have some idea what it is and why it is there. '
                        + `[Answers that are little more than a link may be deleted.](${deletedAnswers})`,
                 },
                 feedbacks: { Smokey: 'naa-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },

@@ -1,11 +1,10 @@
-import { flagCategories } from './FlagTypes';
 import {
     Store,
     Cached,
     CachedCategory,
     CachedFlag
 } from './UserscriptTools/Store';
-import { Flags } from './FlagTypes';
+import { Flags, flagCategories } from './FlagTypes';
 
 import { FlagNames, displayStacksToast } from './shared';
 
@@ -80,6 +79,17 @@ function setupDefaults(): void {
     if (!Store.categories.length
         || !('id' in Store.categories[0])) {
         cacheCategories();
+
+        // update default link-only comment!
+        const linkOnly = Store.flagTypes.find(({ id }) => id === 6);
+        const defaultComment = flagCategories[2].FlagTypes[0].comments?.low;
+        if (linkOnly // link only flag type has not been removed
+            && defaultComment
+            && linkOnly.comments?.low.includes('target page is unavailable') // using old comment
+        ) {
+            linkOnly.comments.low = defaultComment;
+            Store.updateFlagTypes();
+        }
     }
 
     // PostOther can be replaced with PlagiarizedContent

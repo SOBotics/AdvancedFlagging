@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      1.3.13
+// @version      2.0.0
 // @author       Robert Rudman
 // @contributor  double-beep
 // @match        *://*.stackexchange.com/*

@@ -22,7 +22,7 @@ import { Progress } from './Progress';
 import Page from './Page';
 import Reporter from './Reporter';
 
-import { Checkbox } from '@userscripters/stacks-helpers';
+import { type Checkbox } from '@userscripters/stacks-helpers';
 
 type ReporterBoxes = Record<BotNames, Parameters<typeof Checkbox.makeStacksCheckboxes>[0][0]>;
 

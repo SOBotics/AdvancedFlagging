@@ -52,7 +52,7 @@ export default class Post {
 
     public readonly type: PostType;
     public readonly id: number;
-    public readonly deleted: boolean;
+    public deleted: boolean;
 
     public readonly date: Date;
 
@@ -171,6 +171,8 @@ export default class Post {
         // flag changes the state of the post
         // => reload the page
         if (response.ResultChangedState) {
+            // the post should now be considered deleted
+            this.deleted = true;
             // wait 1 second before reloading
             setTimeout(() => location.reload(), 1000);
         }
@@ -408,7 +410,9 @@ export default class Post {
         const userRep = StackExchange.options.user.rep;
 
         // >20k rep users can vote to delete answers with score < 0
-        return Boolean(deleteButton) || (userRep > 20_000 && this.score < 0);
+        return (Boolean(deleteButton) || (userRep > 20_000 && this.score < 0))
+            // can delete if post isn't already deleted
+            && !this.deleted;
     }
 
     public qualifiesForVlq(): boolean {

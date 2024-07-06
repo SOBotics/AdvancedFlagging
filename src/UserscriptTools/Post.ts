@@ -409,13 +409,15 @@ export default class Post {
 
         const userRep = StackExchange.options.user.rep;
 
-        return StackExchange.options.user.isModerator || (
-            // if the delete button is visible, then the user can vote to delete
-            Boolean(deleteButton)
-            // >20k rep users can vote to delete answers with score < 0
-            || (userRep >= 20_000 && (popover ? this.score <= 0 : this.score < 0))
-        ) // can delete if post isn't already deleted
-            && !this.deleted;
+        return !this.deleted && (
+            // mods can delete no matter what
+            StackExchange.options.user.isModerator || (
+                // if the delete button is visible, then the user can vote to delete
+                Boolean(deleteButton)
+                // >20k rep users can vote to delete answers with score < 0
+                || (userRep >= 20_000 && (popover ? this.score <= 0 : this.score < 0))
+            )
+        );
     }
 
     public qualifiesForVlq(): boolean {

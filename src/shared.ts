@@ -203,7 +203,7 @@ export async function addProgress(
     post.progress = new Progress(target);
     post.progress.attach();
 
-    if (input?.checked) {
+    if (input?.checked && !StackExchange.options.user.isModerator) {
         const flagProgress = post.progress.addItem('Flagging as NAA...');
 
         try {

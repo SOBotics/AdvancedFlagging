@@ -1770,6 +1770,7 @@
         }
       }
       if (response.ResultChangedState) {
+        this.deleted = true;
         setTimeout(() => location.reload(), 1e3);
       }
     }
@@ -1907,11 +1908,12 @@
       const icons = Object.values(this.reporters).filter((reporter) => reporter.wasReported()).map((reporter) => reporter.getIcon());
       iconLocation?.append(...icons);
     }
-    canDelete() {
+    canDelete(popover = false) {
       const selector = '.js-delete-post[title^="Vote to delete"]';
       const deleteButton = this.element.querySelector(selector);
       const userRep = StackExchange.options.user.rep;
-      return Boolean(deleteButton) || userRep > 2e4 && this.score < 0;
+      return !this.deleted && (StackExchange.options.user.isModerator || // if the delete button is visible, then the user can vote to delete
+      (Boolean(deleteButton) || userRep >= 2e4 && (popover ? this.score <= 0 : this.score < 0)));
     }
     qualifiesForVlq() {
       const dayMillis2 = 1e3 * 60 * 60 * 24;
@@ -3319,7 +3321,7 @@
       ];
       return config.filter(([text]) => {
         if (text === "Leave comment") return Page.isStackOverflow;
-        else if (text === "Delete") return this.post.canDelete();
+        else if (text === "Delete") return this.post.canDelete(true);
         return true;
       }).map(([text, cacheKey]) => {
         const uncheck = Store.config[cacheKey] || text === "Leave comment" && comments;
@@ -3471,7 +3473,7 @@
         if (downvote && flagType.downvote) {
           this.post.downvote();
         }
-        if (flag && reportType !== "NoFlag" /* NoFlag */) {
+        if (flag && reportType !== "NoFlag" /* NoFlag */ && (!StackExchange.options.user.isModerator || reportType === "PostSpam" /* Spam */ || reportType === "PostOffensive" /* Rude */)) {
           const humanFlag = getHumanFromDisplayName(reportType);
           const fProgress = this.post.progress.addItem(`Flagging ${humanFlag}...`);
           try {

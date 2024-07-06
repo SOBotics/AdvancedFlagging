@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
-// @version      2.0.0
+// @version      2.0.1
 // @author       Robert Rudman
 // @contributor  double-beep
 // @match        *://*.stackexchange.com/*
@@ -848,7 +848,7 @@
     toggleLoading(target);
     post.progress = new Progress(target);
     post.progress.attach();
-    if (input?.checked) {
+    if (input?.checked && !StackExchange.options.user.isModerator) {
       const flagProgress = post.progress.addItem("Flagging as NAA...");
       try {
         await post.flag("AnswerNotAnAnswer" /* NAA */, null);
@@ -1912,7 +1912,8 @@
       const selector = '.js-delete-post[title^="Vote to delete"]';
       const deleteButton = this.element.querySelector(selector);
       const userRep = StackExchange.options.user.rep;
-      return !this.deleted && (StackExchange.options.user.isModerator || // if the delete button is visible, then the user can vote to delete
+      return !this.deleted && // mods can delete no matter what
+      (StackExchange.options.user.isModerator || // if the delete button is visible, then the user can vote to delete
       (Boolean(deleteButton) || userRep >= 2e4 && (popover ? this.score <= 0 : this.score < 0)));
     }
     qualifiesForVlq() {

@@ -149,7 +149,7 @@ export class Popover {
             // hide delete checkbox when user can't delete vote
             .filter(([ text ]) => {
                 if (text === 'Leave comment') return Page.isStackOverflow;
-                else if (text === 'Delete') return this.post.canDelete();
+                else if (text === 'Delete') return this.post.canDelete(true);
 
                 return true;
             })

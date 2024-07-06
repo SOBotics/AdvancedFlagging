@@ -403,15 +403,17 @@ export default class Post {
         iconLocation?.append(...icons);
     }
 
-    public canDelete(): boolean {
+    public canDelete(popover = false): boolean {
         const selector = '.js-delete-post[title^="Vote to delete"]';
         const deleteButton = this.element.querySelector(selector);
 
         const userRep = StackExchange.options.user.rep;
 
         // >20k rep users can vote to delete answers with score < 0
-        return (Boolean(deleteButton) || (userRep > 20_000 && this.score < 0))
-            // can delete if post isn't already deleted
+        return (
+            Boolean(deleteButton)
+            || (userRep >= 20_000 && (popover ? this.score <= 0 : this.score < 0))
+        ) // can delete if post isn't already deleted
             && !this.deleted;
     }
 

@@ -434,7 +434,13 @@ export class Popover {
             }
 
             // flag & delete
-            if (flag && reportType !== FlagNames.NoFlag) {
+            if (flag && reportType !== FlagNames.NoFlag
+                // as requested by Zoe: https://chat.stackoverflow.com/transcript/message/57483258
+                && (!StackExchange.options.user.isModerator
+                    || reportType === FlagNames.Spam
+                    || reportType === FlagNames.Rude
+                )
+            ) {
                 const humanFlag = getHumanFromDisplayName(reportType);
                 const fProgress = this.post.progress.addItem(`Flagging ${humanFlag}...`);
 

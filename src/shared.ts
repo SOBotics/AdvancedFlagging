@@ -123,7 +123,7 @@ export function interceptXhr(): void {
     const open = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function(): void {
         this.addEventListener('load', () => {
-            callbacks.forEach(cb => cb(this));
+            callbacks.forEach(cb => setTimeout(() => cb(this)));
         }, false);
 
         // eslint-disable-next-line prefer-rest-params

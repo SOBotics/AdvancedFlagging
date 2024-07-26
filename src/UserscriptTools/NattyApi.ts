@@ -21,6 +21,8 @@ interface NattyFeedbackItem {
 }
 
 export class NattyAPI extends Reporter {
+    public raisedRedFlag = false;
+
     private static nattyIds: number[] = [];
 
     private readonly chat: ChatApi = new ChatApi();
@@ -115,7 +117,11 @@ export class NattyAPI extends Reporter {
         // - when a mod flags a post as NAA/VLQ it is deleted immediately.
         // - when a reviewer sends the last Recommend deletion/Delete review,
         //   the post is also deleted immediately
-        if (StackExchange.options.user.isModerator || Page.isLqpReviewPage) {
+        // - if a red flag has been raised by the user
+        if (StackExchange.options.user.isModerator
+            || Page.isLqpReviewPage
+            || this.raisedRedFlag
+        ) {
             // init websocket
             const url = await this.chat.getFinalUrl();
             const wsUtils = new WebsocketUtils(url, this.id, this.progress);

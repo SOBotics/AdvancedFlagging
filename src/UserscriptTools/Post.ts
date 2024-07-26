@@ -330,6 +330,11 @@ export default class Post {
                     console.log('Post', this.id, 'manually flagged as', flag, flagType);
                 }
 
+                const natty = this.reporters.Natty;
+                if (natty) {
+                    natty.raisedRedFlag = ['PostSpam', 'PostOffensive'].includes(flag);
+                }
+
                 await addProgress(event, flagType, this);
                 $(this.flagged).fadeIn();
             }, { once: true });

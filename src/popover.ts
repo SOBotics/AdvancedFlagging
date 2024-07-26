@@ -385,6 +385,11 @@ export class Popover {
         this.post.progress = new Progress(controller);
         this.post.progress.attach();
 
+        const natty = this.post.reporters.Natty;
+        if (natty) {
+            natty.raisedRedFlag = reportType === FlagNames.Spam || reportType === FlagNames.Rude;
+        }
+
         // if feedback is sent successfully, the success variable is true, otherwise false
         const success = await this.post.sendFeedbacks(flagType);
 

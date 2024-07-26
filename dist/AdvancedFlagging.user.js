@@ -806,7 +806,7 @@
     const open = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function() {
       this.addEventListener("load", () => {
-        callbacks.forEach((cb) => cb(this));
+        callbacks.forEach((cb) => setTimeout(() => cb(this)));
       }, false);
       open.apply(this, arguments);
     };
@@ -1615,6 +1615,7 @@
       this.feedbackMessage = `@Natty feedback https://stackoverflow.com/a/${this.id}`;
       this.reportMessage = `@Natty report https://stackoverflow.com/a/${this.id}`;
     }
+    raisedRedFlag = false;
     static nattyIds = [];
     chat = new ChatApi();
     feedbackMessage;
@@ -1664,7 +1665,7 @@
     }
     async report() {
       if (!this.canBeReported()) return "";
-      if (StackExchange.options.user.isModerator || Page.isLqpReviewPage) {
+      if (StackExchange.options.user.isModerator || Page.isLqpReviewPage || this.raisedRedFlag) {
         const url = await this.chat.getFinalUrl();
         const wsUtils = new WebsocketUtils(url, this.id, this.progress);
         const reportProgress = this.progress?.addSubItem("Sending report...");
@@ -1867,6 +1868,10 @@
           if (!flagType) return;
           if (Store.dryRun) {
             console.log("Post", this.id, "manually flagged as", flag, flagType);
+          }
+          const natty = this.reporters.Natty;
+          if (natty) {
+            natty.raisedRedFlag = ["PostSpam", "PostOffensive"].includes(flag);
           }
           await addProgress(event, flagType, this);
           $(this.flagged).fadeIn();
@@ -3444,6 +3449,10 @@
       const controller = this.post.element.querySelector(".advanced-flagging-spinner");
       this.post.progress = new Progress(controller);
       this.post.progress.attach();
+      const natty = this.post.reporters.Natty;
+      if (natty) {
+        natty.raisedRedFlag = reportType === "PostSpam" /* Spam */ || reportType === "PostOffensive" /* Rude */;
+      }
       const success = await this.post.sendFeedbacks(flagType);
       const old = StackExchange.helpers.removeSpinner;
       StackExchange.helpers.removeSpinner = () => void 0;

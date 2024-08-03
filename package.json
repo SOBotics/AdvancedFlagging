@@ -12,12 +12,12 @@
     "@eslint/js": "^9.8.0",
     "@stylistic/eslint-plugin": "^2.6.1",
     "@types/jquery": "3.5.30",
-    "@types/node": "^22.0.2",
+    "@types/node": "^22.1.0",
     "@types/tampermonkey": "5.0.3",
     "@userscripters/stackexchange-global-types": "^2.8.0",
     "esbuild": "^0.23.0",
     "typescript": "5.5.4",
-    "typescript-eslint": "^8.0.0-alpha.45"
+    "typescript-eslint": "^8.0.0"
   },
   "dependencies": {
     "@userscripters/stacks-helpers": "1.1.2"

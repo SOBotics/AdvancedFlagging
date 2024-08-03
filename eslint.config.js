@@ -50,6 +50,7 @@ export default tseslint.config({
             }
         }],
         '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
+        '@typescript-eslint/no-unnecessary-type-parameters': 'off',
 
         '@stylistic/arrow-parens': ['warn', 'as-needed'],
         '@stylistic/quote-props': ['warn', 'as-needed'],

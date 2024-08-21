@@ -157,9 +157,7 @@ function setPopoverOpening(
 export let page = new Page();
 
 function setupPostPage(): void {
-    // check if the link + popover should be set up
-    const linkDisabled = Store.config[Cached.Configuration.linkDisabled];
-    if (linkDisabled || Page.isLqpReviewPage) return; // do not add the buttons on review
+    if (Page.isLqpReviewPage) return; // do not add the buttons on review
 
     // split setup into two parts:
     // i)  append the icons to iconLocation
@@ -173,10 +171,20 @@ function setupPostPage(): void {
         return;
     }
 
+    const linkDisabled = Store.config[Cached.Configuration.linkDisabled];
+
     page.posts.forEach(post => {
         const { id, done, failed, flagged, element } = post;
 
+        // even if the user chose to disable AF link,
+        // the script should still watch for post flags
+        // and append icons
         post.watchForFlags();
+        if (linkDisabled) {
+            post.addIcons();
+
+            return;
+        }
 
         // Now append the advanced flagging dropdown
         const advancedFlaggingLink = Buttons.makeStacksButton(

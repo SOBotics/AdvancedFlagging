@@ -232,7 +232,7 @@ function Setup(): void {
         setupConfiguration();
 
         // TODO make more specific & remove jQuery
-        // appends advanced flagging link to new/edited posts
+        // appends Advanced Flagging link to new/edited posts
         $(document).ajaxComplete(() => setupPostPage());
 
         isDone = true;

@@ -291,8 +291,8 @@ export default class Post {
         // Watch for manual flags if the user has chosen to do so
         const watchFlags = Store.config[Cached.Configuration.watchFlags];
 
-        // don't watch for flags if the user doesn't want to
-        // exclude listener from running in deleted posts
+        // Don't watch for flags if the user doesn't want to.
+        // Exclude listener from running in deleted posts.
         if (!watchFlags || this.deleted) return;
 
         addXHRListener(xhr => {
@@ -338,7 +338,7 @@ export default class Post {
                 await addProgress(event, flagType, this);
                 $(this.flagged).fadeIn();
             }, { once: true });
-        });
+        }, this.id);
     }
 
     public filterReporters(feedbacks: FlagTypeFeedbacks): Reporter[] {

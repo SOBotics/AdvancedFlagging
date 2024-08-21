@@ -113,8 +113,16 @@ export async function delay(milliseconds: number): Promise<void> {
 
 // Credits: https://github.com/SOBotics/Userscripts/blob/master/Natty/NattyReporter.user.js#L101
 const callbacks: ((request: XMLHttpRequest) => void)[] = [];
+const postIds: number[] = [];
 
-export function addXHRListener(callback: (request: XMLHttpRequest) => void): void {
+export function addXHRListener(
+    callback: (request: XMLHttpRequest) => void,
+    postId?: number
+): void {
+    // used so that the script watches for flags once per post
+    if (postId && postIds.includes(postId)) return;
+    else if (postId) postIds.push(postId);
+
     callbacks.push(callback);
 }
 

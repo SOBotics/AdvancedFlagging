@@ -6,7 +6,7 @@ import { setupConfiguration } from './Configuration';
 import { Popover } from './popover';
 
 import { setupReview } from './review';
-import { FlagNames, interceptXhr, popupDelay } from './shared';
+import { addXHRListener, FlagNames, interceptXhr, popupDelay } from './shared';
 
 import { NattyAPI } from './UserscriptTools/NattyApi';
 import { MetaSmokeAPI } from './UserscriptTools/MetaSmokeAPI';
@@ -231,9 +231,13 @@ function Setup(): void {
         setupStyles();
         setupConfiguration();
 
-        // TODO make more specific & remove jQuery
         // appends Advanced Flagging link to new/edited posts
-        $(document).ajaxComplete(() => setupPostPage());
+        // see https://github.com/Charcoal-SE/userscripts/blob/master/sim/sim.user.js#L822-L829
+        addXHRListener(() => {
+            setupPostPage();
+            setTimeout(setupPostPage, 55);
+            setTimeout(setupPostPage, 200);
+        });
 
         isDone = true;
     });

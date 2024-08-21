@@ -799,7 +799,10 @@
     return new Promise((resolve) => setTimeout(resolve, milliseconds));
   }
   var callbacks = [];
-  function addXHRListener(callback) {
+  var postIds = [];
+  function addXHRListener(callback, postId) {
+    if (postId && postIds.includes(postId)) return;
+    else if (postId) postIds.push(postId);
     callbacks.push(callback);
   }
   function interceptXhr() {
@@ -1621,12 +1624,12 @@
     feedbackMessage;
     reportMessage;
     static getAllNattyIds(ids) {
-      const postIds = (ids ?? page.getAllPostIds(false, false)).join(",");
-      if (!Page.isStackOverflow || !postIds) return Promise.resolve();
+      const postIds2 = (ids ?? page.getAllPostIds(false, false)).join(",");
+      if (!Page.isStackOverflow || !postIds2) return Promise.resolve();
       return new Promise((resolve, reject) => {
         GM_xmlhttpRequest({
           method: "GET",
-          url: `${nattyFeedbackUrl}${postIds}`,
+          url: `${nattyFeedbackUrl}${postIds2}`,
           onload: ({ status, responseText }) => {
             if (status !== 200) reject();
             const result = JSON.parse(responseText);
@@ -1876,7 +1879,7 @@
           await addProgress(event, flagType, this);
           $(this.flagged).fadeIn();
         }, { once: true });
-      });
+      }, this.id);
     }
     filterReporters(feedbacks) {
       return Object.values(this.reporters).filter((reporter) => {
@@ -3714,16 +3717,20 @@
   }
   var page = new Page();
   function setupPostPage() {
-    const linkDisabled = Store.config[Cached.Configuration.linkDisabled];
-    if (linkDisabled || Page.isLqpReviewPage) return;
+    if (Page.isLqpReviewPage) return;
     page = new Page();
     if (page.name && page.name !== "Question") {
       page.posts.forEach((post) => post.addIcons());
       return;
     }
+    const linkDisabled = Store.config[Cached.Configuration.linkDisabled];
     page.posts.forEach((post) => {
       const { id, done, failed, flagged, element } = post;
       post.watchForFlags();
+      if (linkDisabled) {
+        post.addIcons();
+        return;
+      }
       const advancedFlaggingLink = buttons_exports.makeStacksButton(
         `advanced-flagging-link-${id}`,
         "Advanced Flagging",

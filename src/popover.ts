@@ -381,8 +381,7 @@ export class Popover {
 
         dropdown.closest('.flex--item')?.after(flex);
 
-        const controller = this.post.element.querySelector('.advanced-flagging-spinner');
-        this.post.progress = new Progress(controller);
+        this.post.progress = new Progress(spinner);
         this.post.progress.attach();
 
         const natty = this.post.reporters.Natty;
@@ -465,6 +464,8 @@ export class Popover {
                 }
             }
 
+            this.post.progress.updateLocation(); // just in case
+
             // delete vote if the user has chosen to flag the post
             // as spam/rude/NAA/VLQ
             if (del && this.post.canDelete()
@@ -487,6 +488,8 @@ export class Popover {
                     );
                 }
             }
+
+            this.post.progress.updateLocation(); // just in case
         }
 
         // remove spinner after 2 secs

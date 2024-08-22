@@ -1,4 +1,4 @@
-import { getFlagToRaise } from '../AdvancedFlagging';
+import { getFlagToRaise, page } from '../AdvancedFlagging';
 import { Flags } from '../FlagTypes';
 import {
     getSvg,
@@ -10,6 +10,7 @@ import {
     FlagTypeFeedbacks,
     BotNames,
     appendLabelAndBoxes,
+    getIconPath,
 } from '../shared';
 
 import { CopyPastorAPI } from './CopyPastorAPI';
@@ -22,7 +23,7 @@ import { Progress } from './Progress';
 import Page from './Page';
 import Reporter from './Reporter';
 
-import { type Checkbox } from '@userscripters/stacks-helpers';
+import { Notice, type Checkbox } from '@userscripters/stacks-helpers';
 
 type ReporterBoxes = Record<BotNames, Parameters<typeof Checkbox.makeStacksCheckboxes>[0][0]>;
 
@@ -168,14 +169,7 @@ export default class Post {
             }
         }
 
-        // flag changes the state of the post
-        // => reload the page
-        if (response.ResultChangedState) {
-            // the post should now be considered deleted
-            this.deleted = true;
-            // wait 1 second before reloading
-            setTimeout(() => location.reload(), 1000);
-        }
+        if (response.ResultChangedState) this.reload();
     }
 
     public downvote(): void {
@@ -227,9 +221,7 @@ export default class Post {
             throw new Error(json.Message.toLowerCase());
         }
 
-        if (json.Refresh) {
-            setTimeout(() => location.reload(), 1500);
-        }
+        if (json.Refresh) this.reload();
     }
 
     public async comment(text: string): Promise<void> {
@@ -562,6 +554,62 @@ export default class Post {
         const authorDateElement = Array.from(dateElements).pop();
 
         return new Date(authorDateElement?.title ?? '');
+    }
+
+    private reload(): void {
+        // treat the post as deleted from now on
+        this.deleted = true;
+
+        // credit to Makyen:
+        // - https://chat.stackexchange.com/transcript/message/66156886
+        // - https://chat.stackexchange.com/transcript/message/66157638
+        if (StackExchange.options.user.canSeeDeletedPosts) {
+            if (this.type === 'Question') {
+                const postIds = page.getAllPostIds(true, false) as number[];
+
+                void StackExchange.realtime.reloadPosts(postIds);
+            } else {
+                void StackExchange.realtime.reloadPosts([ this.id ]);
+            }
+        } else {
+            // undo effects of postDeleted, see
+            // https://dev.stackoverflow.com/content/js/full.en.js
+            this.element.style.opacity = '1';
+
+            const previous = this.element.previousElementSibling;
+            if (previous?.matches('.realtime-post-deleted-notification')) previous.remove();
+
+            // change background of the deleted post and add
+            this.element.classList.add('deleted-answer', 'py16');
+
+            const disabledLink = document.createElement('span');
+            disabledLink.classList.add('disabled-link');
+            disabledLink.textContent = 'Comments disabled on deleted / locked posts / reviews';
+
+            this.element.querySelector('.js-add-link')?.replaceWith(disabledLink);
+
+            const text = document.createElement('div');
+
+            const b = document.createElement('b');
+            b.textContent = 'This post is hidden';
+
+            text.append(b, '. It was deleted.');
+
+            const notice = Notice.makeStacksNotice({
+                type: 'info',
+                text,
+                icon: [
+                    'iconEyeOff',
+                    getIconPath('iconEyeOff')
+                ],
+                classes: ['mb16']
+            });
+
+            this.element.querySelector('.js-post-body')?.prepend(notice);
+
+            // since a new element is added, the progress popover location changes
+            this.progress.updateLocation();
+        }
     }
 
     private initReporters(): void {

@@ -17,7 +17,7 @@
         "@types/jquery": "3.5.30",
         "@types/node": "^22.4.2",
         "@types/tampermonkey": "5.0.3",
-        "@userscripters/stackexchange-global-types": "^2.8.0",
+        "@userscripters/stackexchange-global-types": "^2.8.1",
         "esbuild": "^0.23.1",
         "typescript": "5.5.4",
         "typescript-eslint": "^8.2.0"
@@ -1035,15 +1035,15 @@
       }
     },
     "node_modules/@userscripters/stackexchange-global-types": {
-      "version": "2.8.0",
-      "resolved": "https://registry.npmjs.org/@userscripters/stackexchange-global-types/-/stackexchange-global-types-2.8.0.tgz",
-      "integrity": "sha512-ON4fQN/sthA8TsiyUHIca/ZakUjK56DJT5a7renrUabxj3n9clcvw38DYJLJgqFa2FsY/afywe+K5mUd6qNy1g==",
+      "version": "2.8.1",
+      "resolved": "https://registry.npmjs.org/@userscripters/stackexchange-global-types/-/stackexchange-global-types-2.8.1.tgz",
+      "integrity": "sha512-79NmbtIpA0wAQWxCjfo29w5WT5UzQPAm243YTCy5VuGeriSOrp81VfpOPUQRQhXYepJ2GE9lvLqH6Y3tr9tJsw==",
       "dev": true,
       "license": "GPL-3.0-or-later",
       "dependencies": {
         "@hotwired/stimulus": "^3.2.2",
-        "@stackoverflow/stacks": "^2.0.8",
-        "@types/jquery": "^3.5.29"
+        "@stackoverflow/stacks": "^2.5.7",
+        "@types/jquery": "^3.5.30"
       }
     },
     "node_modules/@userscripters/stacks-helpers": {

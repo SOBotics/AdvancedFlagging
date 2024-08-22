@@ -10,7 +10,7 @@ export interface ProgressItemActions {
 export class Progress {
     private readonly element: HTMLElement;
 
-    constructor(private readonly controller?: Element | null) {
+    constructor(private readonly controller?: HTMLElement | null) {
         this.element = this.getPopover();
     }
 
@@ -25,6 +25,16 @@ export class Progress {
 
         // hide popover, so that it is not shown when it is empty
         this.element.style.display = 'none';
+    }
+
+    public updateLocation(): void {
+        const controller = document.querySelector<HTMLElement>(
+            '.s-spinner[aria-controls="advanced-flagging-progress-popover"]'
+        );
+        if (!controller) return;
+
+        Stacks.hidePopover(controller);
+        Stacks.showPopover(controller);
     }
 
     public delete(): void {

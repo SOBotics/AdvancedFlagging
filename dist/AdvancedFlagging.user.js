@@ -320,6 +320,42 @@
     return menu;
   };
 
+  // node_modules/@userscripters/stacks-helpers/dist/notices.js
+  var notices_exports = {};
+  __export(notices_exports, {
+    makeStacksNotice: () => makeStacksNotice
+  });
+  var makeStacksNotice = (options) => {
+    const { type, important = false, icon, text, classes = [] } = options;
+    const notice = document.createElement("aside");
+    notice.classList.add("s-notice", ...classes);
+    notice.setAttribute("role", important ? "alert" : "status");
+    if (type) {
+      notice.classList.add(`s-notice__${type}`);
+    }
+    if (important) {
+      notice.classList.add("s-notice__important");
+    }
+    if (icon) {
+      notice.classList.add("d-flex");
+      const iconContainer = document.createElement("div");
+      iconContainer.classList.add("flex--item", "mr8");
+      const [name, path] = icon;
+      const [svgIcon] = icons_exports.makeStacksIcon(name, path, { width: 18 });
+      iconContainer.append(svgIcon);
+      const textContainer = document.createElement("div");
+      textContainer.classList.add("flex--item", "lh-lg");
+      textContainer.append(text);
+      notice.append(iconContainer, textContainer);
+    } else {
+      const p = document.createElement("p");
+      p.classList.add("m0");
+      p.append(text);
+      notice.append(p);
+    }
+    return notice;
+  };
+
   // node_modules/@userscripters/stacks-helpers/dist/radio.js
   var radio_exports = {};
   __export(radio_exports, {
@@ -671,6 +707,14 @@
         toggleOnClick: true
       });
       this.element.style.display = "none";
+    }
+    updateLocation() {
+      const controller = document.querySelector(
+        '.s-spinner[aria-controls="advanced-flagging-progress-popover"]'
+      );
+      if (!controller) return;
+      Stacks.hidePopover(controller);
+      Stacks.showPopover(controller);
     }
     delete() {
       if (this.controller) {
@@ -1773,10 +1817,7 @@
           throw new Error(message);
         }
       }
-      if (response.ResultChangedState) {
-        this.deleted = true;
-        setTimeout(() => location.reload(), 1e3);
-      }
+      if (response.ResultChangedState) this.reload();
     }
     downvote() {
       const button = this.element.querySelector(".js-vote-down-btn");
@@ -1812,9 +1853,7 @@
         console.error(json);
         throw new Error(json.Message.toLowerCase());
       }
-      if (json.Refresh) {
-        setTimeout(() => location.reload(), 1500);
-      }
+      if (json.Refresh) this.reload();
     }
     async comment(text) {
       const data = {
@@ -2000,6 +2039,41 @@
       const dateElements = this.element.querySelectorAll(".user-info .relativetime");
       const authorDateElement = Array.from(dateElements).pop();
       return new Date(authorDateElement?.title ?? "");
+    }
+    reload() {
+      this.deleted = true;
+      if (StackExchange.options.user.canSeeDeletedPosts) {
+        if (this.type === "Question") {
+          const postIds2 = page.getAllPostIds(true, false);
+          void StackExchange.realtime.reloadPosts(postIds2);
+        } else {
+          void StackExchange.realtime.reloadPosts([this.id]);
+        }
+      } else {
+        this.element.style.opacity = "1";
+        const previous = this.element.previousElementSibling;
+        if (previous?.matches(".realtime-post-deleted-notification")) previous.remove();
+        this.element.classList.add("deleted-answer", "py16");
+        const disabledLink = document.createElement("span");
+        disabledLink.classList.add("disabled-link");
+        disabledLink.textContent = "Comments disabled on deleted / locked posts / reviews";
+        this.element.querySelector(".js-add-link")?.replaceWith(disabledLink);
+        const text = document.createElement("div");
+        const b = document.createElement("b");
+        b.textContent = "This post is hidden";
+        text.append(b, ". It was deleted.");
+        const notice = notices_exports.makeStacksNotice({
+          type: "info",
+          text,
+          icon: [
+            "iconEyeOff",
+            getIconPath("iconEyeOff")
+          ],
+          classes: ["mb16"]
+        });
+        this.element.querySelector(".js-post-body")?.prepend(notice);
+        this.progress.updateLocation();
+      }
     }
     initReporters() {
       this.reporters.Smokey = new MetaSmokeAPI(this.id, this.type, this.deleted);
@@ -3449,8 +3523,7 @@
       flex.classList.add("flex--item");
       flex.append(spinner);
       dropdown.closest(".flex--item")?.after(flex);
-      const controller = this.post.element.querySelector(".advanced-flagging-spinner");
-      this.post.progress = new Progress(controller);
+      this.post.progress = new Progress(spinner);
       this.post.progress.attach();
       const natty = this.post.reporters.Natty;
       if (natty) {
@@ -3500,6 +3573,7 @@
             );
           }
         }
+        this.post.progress.updateLocation();
         if (del && this.post.canDelete() && reportType !== "PlagiarizedContent" /* Plagiarism */ && reportType !== "PostOther" /* ModFlag */ && reportType !== "NoFlag" /* NoFlag */) {
           const dProgress = this.post.progress.addItem("Voting to delete...");
           try {
@@ -3512,6 +3586,7 @@
             );
           }
         }
+        this.post.progress.updateLocation();
       }
       await delay(2e3);
       flex.remove();
@@ -3762,7 +3837,11 @@
       setupPostPage();
       setupStyles();
       setupConfiguration();
-      $(document).ajaxComplete(() => setupPostPage());
+      addXHRListener(() => {
+        setupPostPage();
+        setTimeout(setupPostPage, 55);
+        setTimeout(setupPostPage, 200);
+      });
       isDone = true;
     });
   }

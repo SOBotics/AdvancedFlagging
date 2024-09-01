@@ -4,15 +4,20 @@ on: [push, pull_request]
 
 jobs:
   build:
-
+    name: Build on Node ${{ matrix.node }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        node: [ 20, 22 ]
 
     steps:
     - uses: actions/checkout@v4
-    - name: Using Node 20
+    - name: Using Node ${{ matrix.node }}
       uses: actions/setup-node@v4
       with:
-        node-version: 20
+        node-version: ${{ matrix.node }}
     - name: Update npm version to latest
       run: npm install -g npm@latest # shop showing warnings about the lockfile
     - name: Install dependencies

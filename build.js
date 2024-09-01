@@ -1,5 +1,5 @@
 import { build } from 'esbuild';
-import info from './package.json' assert { type: 'json' };
+import info from './package.json' with { type: 'json' };
 
 const svgsNeeded = ['Checkmark', 'Clear', 'EyeOff', 'Flag', 'Pencil', 'Trash', 'Plus'];
 const svgsUrls = svgsNeeded.map(svgName => {

@@ -12,7 +12,7 @@
     "@eslint/js": "^9.9.0",
     "@stylistic/eslint-plugin": "^2.6.4",
     "@types/jquery": "3.5.30",
-    "@types/node": "^22.4.2",
+    "@types/node": "^22.5.1",
     "@types/tampermonkey": "5.0.3",
     "@userscripters/stackexchange-global-types": "^2.8.1",
     "esbuild": "^0.23.1",

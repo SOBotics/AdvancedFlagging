@@ -58,11 +58,14 @@ export default tseslint.config({
         '@stylistic/comma-dangle': 'off',
         '@stylistic/indent-binary-ops': 'off',
         '@stylistic/space-before-function-paren': 'off',
-        '@stylistic/type-annotation-spacing': ['warn', {
-            'before': false,
-            'after': true,
-            'overrides': {
-                'arrow': { 'before': true, 'after': true }}
+        '@stylistic/type-annotation-spacing': [
+            'warn',
+            {
+                'before': true,
+                'after': true,
+                'overrides': {
+                    'colon': { 'before': false, 'after': true }
+                }
             }
         ],
         '@stylistic/array-bracket-spacing': 'off'

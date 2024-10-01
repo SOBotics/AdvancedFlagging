@@ -11,7 +11,7 @@
   "devDependencies": {
     "@eslint/js": "^9.9.1",
     "@stylistic/eslint-plugin": "^2.7.2",
-    "@types/jquery": "3.5.30",
+    "@types/jquery": "3.5.31",
     "@types/node": "^22.5.1",
     "@types/tampermonkey": "5.0.3",
     "@userscripters/stackexchange-global-types": "^2.8.1",

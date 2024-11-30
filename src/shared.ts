@@ -25,6 +25,7 @@ export interface FlagTypeFeedbacks {
 export type BotNames = keyof FlagTypeFeedbacks;
 export type AllFeedbacks = FlagTypeFeedbacks[BotNames] | '(none)';
 
+// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
 export const possibleFeedbacks: { [key in BotNames]: AllFeedbacks[] } = {
     Smokey: ['tpu-', 'tp-', 'fp-', 'naa-', ''],
     Natty: ['tp', 'fp', 'ne', ''],

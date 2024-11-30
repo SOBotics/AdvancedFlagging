@@ -18,6 +18,7 @@ import { Store, Cached, Configuration, CachedFlag } from './UserscriptTools/Stor
 import Reporter from './UserscriptTools/Reporter';
 import Page from './UserscriptTools/Page';
 import { Progress } from './UserscriptTools/Progress';
+import { Flags } from './FlagTypes';
 
 const noneSpan = document.createElement('span');
 noneSpan.classList.add('o50');
@@ -29,6 +30,15 @@ export class Popover {
     constructor(private readonly post: Post) {
         this.popover = this.makeMenu();
     }
+
+    // do not vote to delete if reportType is one of these:
+    private readonly excludedTypes: Flags[] = [
+        FlagNames.Plagiarism,
+        FlagNames.ModFlag,
+        FlagNames.NoFlag,
+        FlagNames.Spam,
+        FlagNames.Rude
+    ];
 
     private makeMenu(): HTMLUListElement {
         const menu = Menu.makeMenu(
@@ -262,10 +272,9 @@ export class Popover {
         popoverParent.append(downvoteWrapper);
 
         // Votes to delete the post
-        if (this.post.canDelete() && !this.post.deleted
-            && reportType !== FlagNames.Plagiarism
-            && reportType !== FlagNames.ModFlag
-            && reportType !== FlagNames.NoFlag
+        if (this.post.canDelete()
+            && !this.post.deleted
+            && !this.excludedTypes.includes(reportType)
         ) {
             const wrapper = document.createElement('li');
             wrapper.innerHTML = '<b>Votes to delete</b> the post';
@@ -467,12 +476,8 @@ export class Popover {
             this.post.progress.updateLocation(); // just in case
 
             // delete vote if the user has chosen to flag the post
-            // as spam/rude/NAA/VLQ
-            if (del && this.post.canDelete()
-                && reportType !== FlagNames.Plagiarism
-                && reportType !== FlagNames.ModFlag
-                && reportType !== FlagNames.NoFlag
-            ) {
+            // as NAA/VQL (exclude spam and r/a)
+            if (del && this.post.canDelete() && !this.excludedTypes.includes(reportType)) {
                 const dProgress = this.post.progress.addItem('Voting to delete...');
 
                 try {

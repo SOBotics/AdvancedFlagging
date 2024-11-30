@@ -10,14 +10,14 @@
   "license": "ISC",
   "devDependencies": {
     "@eslint/js": "^9.16.0",
-    "@stylistic/eslint-plugin": "^2.10.1",
+    "@stylistic/eslint-plugin": "^2.11.0",
     "@types/jquery": "3.5.32",
-    "@types/node": "^22.8.6",
+    "@types/node": "^22.10.1",
     "@types/tampermonkey": "5.0.3",
     "@userscripters/stackexchange-global-types": "^2.8.2",
     "esbuild": "^0.24.0",
-    "typescript": "5.5.4",
-    "typescript-eslint": "^8.8.0"
+    "typescript": "5.7.2",
+    "typescript-eslint": "^8.16.0"
   },
   "dependencies": {
     "@userscripters/stacks-helpers": "1.1.2"

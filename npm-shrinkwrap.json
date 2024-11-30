@@ -14,7 +14,7 @@
       "devDependencies": {
         "@eslint/js": "^9.11.1",
         "@stylistic/eslint-plugin": "^2.10.1",
-        "@types/jquery": "3.5.31",
+        "@types/jquery": "3.5.32",
         "@types/node": "^22.8.6",
         "@types/tampermonkey": "5.0.3",
         "@userscripters/stackexchange-global-types": "^2.8.2",
@@ -785,9 +785,9 @@
       }
     },
     "node_modules/@types/jquery": {
-      "version": "3.5.31",
-      "resolved": "https://registry.npmjs.org/@types/jquery/-/jquery-3.5.31.tgz",
-      "integrity": "sha512-rf/iB+cPJ/YZfMwr+FVuQbm7IaWC4y3FVYfVDxRGqmUCFjjPII0HWaP0vTPJGp6m4o13AXySCcMbWfrWtBFAKw==",
+      "version": "3.5.32",
+      "resolved": "https://registry.npmjs.org/@types/jquery/-/jquery-3.5.32.tgz",
+      "integrity": "sha512-b9Xbf4CkMqS02YH8zACqN1xzdxc3cO735Qe5AbSUFmyOiaWAbcpqh9Wna+Uk0vgACvoQHpWDg2rGdHkYPLmCiQ==",
       "dev": true,
       "dependencies": {
         "@types/sizzle": "*"

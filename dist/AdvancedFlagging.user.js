@@ -3330,6 +3330,14 @@
       this.popover = this.makeMenu();
     }
     popover;
+    // do not vote to delete if reportType is one of these:
+    excludedTypes = [
+      "PlagiarizedContent" /* Plagiarism */,
+      "PostOther" /* ModFlag */,
+      "NoFlag" /* NoFlag */,
+      "PostSpam" /* Spam */,
+      "PostOffensive" /* Rude */
+    ];
     makeMenu() {
       const menu = menus_exports.makeMenu(
         {
@@ -3462,7 +3470,7 @@
       const downvoteOrNot = downvote ? "<b>Downvotes</b>" : "Does <b>not</b> downvote";
       downvoteWrapper.innerHTML = `${downvoteOrNot} the post`;
       popoverParent.append(downvoteWrapper);
-      if (this.post.canDelete() && !this.post.deleted && reportType !== "PlagiarizedContent" /* Plagiarism */ && reportType !== "PostOther" /* ModFlag */ && reportType !== "NoFlag" /* NoFlag */) {
+      if (this.post.canDelete() && !this.post.deleted && !this.excludedTypes.includes(reportType)) {
         const wrapper = document.createElement("li");
         wrapper.innerHTML = "<b>Votes to delete</b> the post";
         popoverParent.append(wrapper);
@@ -3574,7 +3582,7 @@
           }
         }
         this.post.progress.updateLocation();
-        if (del && this.post.canDelete() && reportType !== "PlagiarizedContent" /* Plagiarism */ && reportType !== "PostOther" /* ModFlag */ && reportType !== "NoFlag" /* NoFlag */) {
+        if (del && this.post.canDelete() && !this.excludedTypes.includes(reportType)) {
           const dProgress = this.post.progress.addItem("Voting to delete...");
           try {
             await this.post.deleteVote();

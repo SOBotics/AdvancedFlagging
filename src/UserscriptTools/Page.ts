@@ -1,11 +1,12 @@
 import Post from './Post';
 
-type Pages = 'Question' | 'NATO' | 'Flags' | 'Search' | 'Review';
+type Pages = 'Question' | 'NATO' | 'Flags' | 'Search' | 'Review' | 'Staging Ground';
 
 export default class Page {
     public static readonly isStackOverflow = /^https:\/\/stackoverflow.com/.test(location.href);
     public static readonly isQuestionPage = /\/questions\/\d+.*/.test(location.href);
     public static readonly isLqpReviewPage = /\/review\/low-quality-posts(?:\/\d+)?(?:\/)?$/.test(location.href);
+    public static readonly isStagingGroundPage = /\/staging-ground\/\d+/.test(location.href);
 
     public readonly name: Pages | '';
     public readonly posts: Post[] = [];
@@ -52,16 +53,16 @@ export default class Page {
     }
 
     private getName(): Pages | '' {
-        const isQuestionPage = /\/questions\/\d+.*/.test(location.href);
         const isNatoPage = this.href.pathname.startsWith('/tools/new-answers-old-questions');
         const isFlagsPage = /\/users\/flag-summary\/\d+/.test(location.href);
         const isSearch = this.href.pathname.startsWith('/search');
 
         if (isFlagsPage) return 'Flags';
         else if (isNatoPage) return 'NATO';
-        else if (isQuestionPage) return 'Question';
+        else if (Page.isQuestionPage) return 'Question';
         else if (isSearch) return 'Search';
         else if (Page.isLqpReviewPage) return 'Review';
+        else if (Page.isStagingGroundPage) return 'Staging Ground';
         else return '';
     }
 
@@ -72,6 +73,7 @@ export default class Page {
             case 'Flags':
                 return '.flagged-post';
             case 'Question':
+            case 'Staging Ground':
                 return '.question, .answer';
             case 'Search':
                 return '.js-search-results .s-post-summary';

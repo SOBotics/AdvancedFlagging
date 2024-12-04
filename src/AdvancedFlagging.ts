@@ -165,7 +165,7 @@ function setupPostPage(): void {
 
     page = new Page();
 
-    if (page.name && page.name !== 'Question') {
+    if (page.name && page.name !== 'Question' && page.name !== 'Staging Ground') {
         page.posts.forEach(post => post.addIcons());
 
         return;

@@ -62,7 +62,7 @@ export default class Reporter {
         const iconWrapper = document.createElement('div');
         iconWrapper.classList.add('flex--item', 'd-inline-block', 'advanced-flagging-icon');
 
-        if (!Page.isQuestionPage && !Page.isLqpReviewPage) {
+        if (!Page.isQuestionPage && !Page.isLqpReviewPage && !Page.isStagingGroundPage) {
             iconWrapper.classList.add('ml8'); // flag pages
         }
 

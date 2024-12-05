@@ -390,9 +390,9 @@ export default class Post {
     }
 
     public addIcons(): void {
-        const iconLocation = this.element.querySelector(
-            'a.question-hyperlink, a.answer-hyperlink, .s-link, .js-post-menu > div.d-flex'
-        );
+        const iconLocation = this.element.querySelector('.js-post-menu > div.d-flex')
+            ?? this.element.querySelector('a.question-hyperlink, a.answer-hyperlink, .s-link');
+
         const icons = (Object.values(this.reporters) as Reporter[])
             .filter(reporter => reporter.wasReported())
             .map(reporter => reporter.getIcon());

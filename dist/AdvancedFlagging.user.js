@@ -1120,7 +1120,7 @@
       };
       const iconWrapper = document.createElement("div");
       iconWrapper.classList.add("flex--item", "d-inline-block", "advanced-flagging-icon");
-      if (!Page.isQuestionPage && !Page.isLqpReviewPage) {
+      if (!Page.isQuestionPage && !Page.isLqpReviewPage && !Page.isStagingGroundPage) {
         iconWrapper.classList.add("ml8");
       }
       const iconLink = document.createElement("a");
@@ -1949,9 +1949,7 @@
       return !hasFailed;
     }
     addIcons() {
-      const iconLocation = this.element.querySelector(
-        "a.question-hyperlink, a.answer-hyperlink, .s-link, .js-post-menu > div.d-flex"
-      );
+      const iconLocation = this.element.querySelector(".js-post-menu > div.d-flex") ?? this.element.querySelector("a.question-hyperlink, a.answer-hyperlink, .s-link");
       const icons = Object.values(this.reporters).filter((reporter) => reporter.wasReported()).map((reporter) => reporter.getIcon());
       iconLocation?.append(...icons);
     }
@@ -2104,6 +2102,7 @@
     static isStackOverflow = /^https:\/\/stackoverflow.com/.test(location.href);
     static isQuestionPage = /\/questions\/\d+.*/.test(location.href);
     static isLqpReviewPage = /\/review\/low-quality-posts(?:\/\d+)?(?:\/)?$/.test(location.href);
+    static isStagingGroundPage = /\/staging-ground\/\d+/.test(location.href);
     name;
     posts = [];
     href;
@@ -2118,15 +2117,15 @@
       });
     }
     getName() {
-      const isQuestionPage = /\/questions\/\d+.*/.test(location.href);
       const isNatoPage = this.href.pathname.startsWith("/tools/new-answers-old-questions");
       const isFlagsPage = /\/users\/flag-summary\/\d+/.test(location.href);
       const isSearch = this.href.pathname.startsWith("/search");
       if (isFlagsPage) return "Flags";
       else if (isNatoPage) return "NATO";
-      else if (isQuestionPage) return "Question";
+      else if (_Page.isQuestionPage) return "Question";
       else if (isSearch) return "Search";
       else if (_Page.isLqpReviewPage) return "Review";
+      else if (_Page.isStagingGroundPage) return "Staging Ground";
       else return "";
     }
     getPostSelector() {
@@ -2136,6 +2135,7 @@
         case "Flags":
           return ".flagged-post";
         case "Question":
+        case "Staging Ground":
           return ".question, .answer";
         case "Search":
           return ".js-search-results .s-post-summary";
@@ -3802,7 +3802,7 @@
   function setupPostPage() {
     if (Page.isLqpReviewPage) return;
     page = new Page();
-    if (page.name && page.name !== "Question") {
+    if (page.name && page.name !== "Question" && page.name !== "Staging Ground") {
       page.posts.forEach((post) => post.addIcons());
       return;
     }

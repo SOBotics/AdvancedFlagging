@@ -1704,7 +1704,7 @@
     }
     getIcon() {
       return this.createBotIcon(
-        this.wasReported() ? `//sentinel.erwaysoftware.com/posts/aid/${this.id}` : ""
+        this.wasReported() ? `//logs.sobotics.org/Natty/${this.id}.html` : ""
       );
     }
     getProgressMessage(feedback) {

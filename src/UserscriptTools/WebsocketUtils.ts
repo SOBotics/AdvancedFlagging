@@ -37,7 +37,7 @@ export default class WebsocketUtils {
 
         connectProgress?.completed();
 
-        const reportProgress = this.progress?.addSubItem('Waiting for report to be received...');
+        const reportProgress = this.progress?.addSubItem('Waiting for the report to be received...');
         await this.withTimeout(
             this.timeout,
             reportProgress,

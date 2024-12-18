@@ -270,12 +270,17 @@ export default class Post {
                 if (text !== stripped && text !== strippedAlt) return;
 
                 const parent = element.closest('li');
-
-                parent
+                const button = parent
                     ?.querySelector<HTMLAnchorElement>(
                         'a.js-comment-up.comment-up-off' // voting button
-                    )
-                    ?.click(); // click it!
+                    );
+
+                if (Store.dryRun) {
+                    console.log('Upvote', element, 'by clicking', button);
+                    return;
+                }
+
+                button?.click();
             });
     }
 

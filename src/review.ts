@@ -29,6 +29,16 @@ async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
     audit = response.isAudit;
     if (response.isAudit) return; // audit
 
+    // Update reporters info *before* a new page is created,
+    // (otherwise the Post constructor will call initReporters()
+    // before metasmoke info is updated)
+    const url = `//stackoverflow.com/a/${response.postId}`;
+    await Promise.all([
+        MetaSmokeAPI.queryMetaSmokeInternal([ url ]),
+        NattyAPI.getAllNattyIds([ response.postId ]),
+        CopyPastorAPI.storeReportedPosts([ url ])
+    ]);
+
     const page = new Page();
     // page.posts should be an element with just one item:
     //   the answer the user is reviewing
@@ -36,14 +46,6 @@ async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
 
     // eslint-disable-next-line no-await-in-loop
     while (!isDone) await delay(200);
-
-    // update info on reporters
-    const url = `//stackoverflow.com/a/${post.id}`;
-    await Promise.all([
-        MetaSmokeAPI.queryMetaSmokeInternal([ url ]),
-        NattyAPI.getAllNattyIds([ post.id ]),
-        CopyPastorAPI.storeReportedPosts([ url ])
-    ]);
 
     post.addIcons();
 

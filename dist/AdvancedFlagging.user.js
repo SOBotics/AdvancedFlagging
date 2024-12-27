@@ -1335,7 +1335,7 @@
         return;
       }
       connectProgress?.completed();
-      const reportProgress = this.progress?.addSubItem("Waiting for report to be received...");
+      const reportProgress = this.progress?.addSubItem("Waiting for the report to be received...");
       await this.withTimeout(
         this.timeout,
         reportProgress,
@@ -1883,10 +1883,15 @@
         const text = element.innerText.toLowerCase();
         if (text !== stripped && text !== strippedAlt) return;
         const parent = element.closest("li");
-        parent?.querySelector(
+        const button = parent?.querySelector(
           "a.js-comment-up.comment-up-off"
           // voting button
-        )?.click();
+        );
+        if (Store.dryRun) {
+          console.log("Upvote", element, "by clicking", button);
+          return;
+        }
+        button?.click();
       });
     }
     watchForFlags() {
@@ -3641,15 +3646,15 @@
     const response = JSON.parse(xhr.responseText);
     audit = response.isAudit;
     if (response.isAudit) return;
+    const url = `//stackoverflow.com/a/${response.postId}`;
+    await Promise.all([
+      MetaSmokeAPI.queryMetaSmokeInternal([url]),
+      NattyAPI.getAllNattyIds([response.postId]),
+      CopyPastorAPI.storeReportedPosts([url])
+    ]);
     const page2 = new Page();
     const post = page2.posts[0];
     while (!isDone) await delay(200);
-    const url = `//stackoverflow.com/a/${post.id}`;
-    await Promise.all([
-      MetaSmokeAPI.queryMetaSmokeInternal([url]),
-      NattyAPI.getAllNattyIds([post.id]),
-      CopyPastorAPI.storeReportedPosts([url])
-    ]);
     post.addIcons();
     document.querySelector(".js-review-submit")?.addEventListener("click", async (event) => {
       const looksGood = document.querySelector(

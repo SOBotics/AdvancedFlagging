@@ -74,7 +74,7 @@ async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
 
 export function setupReview(): void {
     const watchReview = Store.config[Cached.Configuration.watchQueues];
-    if (!watchReview || !Page.isLqpReviewPage) return;
+    if (!watchReview || !Page.isLqpReviewPage || !Page.isStackOverflow) return;
 
     addXHRListener(runOnNewTask);
 

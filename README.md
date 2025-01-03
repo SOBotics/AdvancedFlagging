@@ -1,6 +1,6 @@
 # Advanced Flagging
 
-![build](https://github.com/SOBotics/AdvancedFlagging/workflows/build/badge.svg?branch=master)
+[![build](https://github.com/SOBotics/AdvancedFlagging/actions/workflows/nodejs.yml/badge.svg)](https://github.com/SOBotics/AdvancedFlagging/actions/workflows/nodejs.yml)
 
 Advanced Flagging started as a set of modular TypeScript tools to aid with StackExchange Userscripts. It has support for:
 

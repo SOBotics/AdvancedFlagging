@@ -494,6 +494,36 @@ export default class Post {
             .replace(' - From Review', ''); // remove the "from review" part
     }
 
+    private static markDeleted(post: Post): void {
+        // change background of the deleted post
+        post.element.classList.add('deleted-answer', 'py16');
+
+        const disabledLink = document.createElement('span');
+        disabledLink.classList.add('disabled-link');
+        disabledLink.textContent = 'Comments disabled on deleted / locked posts / reviews';
+
+        post.element.querySelector('.js-add-link')?.replaceWith(disabledLink);
+
+        const text = document.createElement('div');
+
+        const b = document.createElement('b');
+        b.textContent = 'This post is hidden';
+
+        text.append(b, '. It was deleted.');
+
+        const notice = Notice.makeStacksNotice({
+            type: 'info',
+            text,
+            icon: [
+                'iconEyeOff',
+                getIconPath('iconEyeOff')
+            ],
+            classes: ['mb16']
+        });
+
+        post.element.querySelector('.js-post-body')?.prepend(notice);
+    }
+
     private getType(): PostType {
         return this.element.classList.contains('question')
             || this.element.id.startsWith('question')
@@ -565,6 +595,16 @@ export default class Post {
         // treat the post as deleted from now on
         this.deleted = true;
 
+        const newPage = new Page(true);
+        // undo effects of postDeleted from all posts in the page (just in case),
+        // see https://dev.stackoverflow.com/content/js/full.en.js
+        newPage.posts.forEach(post => {
+            post.element.style.opacity = '1';
+
+            const previous = post.element.previousElementSibling;
+            if (previous?.matches('.realtime-post-deleted-notification')) previous.remove();
+        });
+
         // credit to Makyen:
         // - https://chat.stackexchange.com/transcript/message/66156886
         // - https://chat.stackexchange.com/transcript/message/66157638
@@ -577,42 +617,13 @@ export default class Post {
                 void StackExchange.realtime.reloadPosts([ this.id ]);
             }
         } else {
-            // undo effects of postDeleted, see
-            // https://dev.stackoverflow.com/content/js/full.en.js
-            this.element.style.opacity = '1';
+            // if the question has been deleted,
+            // mark the question + all of its answers as deleted
+            this.type === 'Question'
+                ? newPage.posts.forEach(post => Post.markDeleted(post))
+                : Post.markDeleted(this);
 
-            const previous = this.element.previousElementSibling;
-            if (previous?.matches('.realtime-post-deleted-notification')) previous.remove();
-
-            // change background of the deleted post and add
-            this.element.classList.add('deleted-answer', 'py16');
-
-            const disabledLink = document.createElement('span');
-            disabledLink.classList.add('disabled-link');
-            disabledLink.textContent = 'Comments disabled on deleted / locked posts / reviews';
-
-            this.element.querySelector('.js-add-link')?.replaceWith(disabledLink);
-
-            const text = document.createElement('div');
-
-            const b = document.createElement('b');
-            b.textContent = 'This post is hidden';
-
-            text.append(b, '. It was deleted.');
-
-            const notice = Notice.makeStacksNotice({
-                type: 'info',
-                text,
-                icon: [
-                    'iconEyeOff',
-                    getIconPath('iconEyeOff')
-                ],
-                classes: ['mb16']
-            });
-
-            this.element.querySelector('.js-post-body')?.prepend(notice);
-
-            // since a new element is added, the progress popover location changes
+            // since new element are added, the progress popover location changes
             this.progress.updateLocation();
         }
     }

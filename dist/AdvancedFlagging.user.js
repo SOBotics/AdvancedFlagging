@@ -2003,6 +2003,27 @@
     static getStrippedComment(text) {
       return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1").replace(/\[([^\]]+)\][^(]*?/g, "$1").replace(/_([^_]+)_/g, "$1").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\*([^*]+)\*/g, "$1").replace(" - From Review", "");
     }
+    static markDeleted(post) {
+      post.element.classList.add("deleted-answer", "py16");
+      const disabledLink = document.createElement("span");
+      disabledLink.classList.add("disabled-link");
+      disabledLink.textContent = "Comments disabled on deleted / locked posts / reviews";
+      post.element.querySelector(".js-add-link")?.replaceWith(disabledLink);
+      const text = document.createElement("div");
+      const b = document.createElement("b");
+      b.textContent = "This post is hidden";
+      text.append(b, ". It was deleted.");
+      const notice = notices_exports.makeStacksNotice({
+        type: "info",
+        text,
+        icon: [
+          "iconEyeOff",
+          getIconPath("iconEyeOff")
+        ],
+        classes: ["mb16"]
+      });
+      post.element.querySelector(".js-post-body")?.prepend(notice);
+    }
     getType() {
       return this.element.classList.contains("question") || this.element.id.startsWith("question") || this.element.querySelector(".question-hyperlink") ? "Question" : "Answer";
     }
@@ -2045,6 +2066,12 @@
     }
     reload() {
       this.deleted = true;
+      const newPage = new Page(true);
+      newPage.posts.forEach((post) => {
+        post.element.style.opacity = "1";
+        const previous = post.element.previousElementSibling;
+        if (previous?.matches(".realtime-post-deleted-notification")) previous.remove();
+      });
       if (StackExchange.options.user.canSeeDeletedPosts) {
         if (this.type === "Question") {
           const postIds2 = page.getAllPostIds(true, false);
@@ -2053,28 +2080,7 @@
           void StackExchange.realtime.reloadPosts([this.id]);
         }
       } else {
-        this.element.style.opacity = "1";
-        const previous = this.element.previousElementSibling;
-        if (previous?.matches(".realtime-post-deleted-notification")) previous.remove();
-        this.element.classList.add("deleted-answer", "py16");
-        const disabledLink = document.createElement("span");
-        disabledLink.classList.add("disabled-link");
-        disabledLink.textContent = "Comments disabled on deleted / locked posts / reviews";
-        this.element.querySelector(".js-add-link")?.replaceWith(disabledLink);
-        const text = document.createElement("div");
-        const b = document.createElement("b");
-        b.textContent = "This post is hidden";
-        text.append(b, ". It was deleted.");
-        const notice = notices_exports.makeStacksNotice({
-          type: "info",
-          text,
-          icon: [
-            "iconEyeOff",
-            getIconPath("iconEyeOff")
-          ],
-          classes: ["mb16"]
-        });
-        this.element.querySelector(".js-post-body")?.prepend(notice);
+        this.type === "Question" ? newPage.posts.forEach((post) => _Post.markDeleted(post)) : _Post.markDeleted(this);
         this.progress.updateLocation();
       }
     }
@@ -3668,7 +3674,7 @@
   }
   function setupReview() {
     const watchReview = Store.config[Cached.Configuration.watchQueues];
-    if (!watchReview || !Page.isLqpReviewPage) return;
+    if (!watchReview || !Page.isLqpReviewPage || !Page.isStackOverflow) return;
     addXHRListener(runOnNewTask);
     addXHRListener((xhr) => {
       const regex = /\/posts\/modal\/delete\/\d+/;

@@ -21,10 +21,17 @@ export type Configuration = Mutable<{
     // so that cache keys aren't duplicated
     [key in keyof (Omit<typeof Cached.Configuration, 'key'>)]: boolean
 }> & { // add bot values that don't exist in Cached
-    defaultNoSmokey: boolean;
-    defaultNoNatty: boolean;
-    defaultNoGuttenberg: boolean;
-    defaultNoGenericBot: boolean;
+    default: {
+        smokey: boolean;
+        natty: boolean;
+        genericbot: boolean;
+        guttenberg: boolean;
+
+        comment: boolean;
+        flag: boolean;
+        delete: boolean;
+        downvote: boolean;
+    };
 };
 
 // Cache keys
@@ -33,10 +40,6 @@ export const Cached = {
         key: 'Configuration',
 
         openOnHover: 'openOnHover',
-        defaultNoFlag: 'defaultNoFlag',
-        defaultNoComment: 'defaultNoComment',
-        defaultNoDownvote: 'defaultNoDownvote',
-        defaultNoDelete: 'defaultNoDelete',
 
         watchFlags: 'watchFlags',
         watchQueues: 'watchQueues',
@@ -59,7 +62,9 @@ export class Store {
     // cache-related helpers/values
     // Some information from cache is stored on the variables as objects to make editing easier and simpler
     // Each time something is changed in the variables, update* must also be called to save the changes to the cache
-    public static config = Store.get<Configuration>(Cached.Configuration.key) ?? {} as Partial<Configuration>;
+    public static config = Store.get<Configuration>(Cached.Configuration.key)
+        ?? { default: {} } as Partial<Configuration> & { default: object };
+
     public static categories = Store.get<CachedCategory[]>(Cached.FlagCategories) ?? [] as (Partial<CachedCategory>)[];
     public static flagTypes = Store.get<CachedFlag[]>(Cached.FlagTypes) ?? [];
 

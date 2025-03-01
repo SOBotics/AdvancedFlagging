@@ -7,14 +7,15 @@ import {
 
     getFullFlag,
     FlagNames,
-    delay
+    delay,
+    configBoxes
 } from './shared';
 import { getFlagToRaise } from './AdvancedFlagging';
 import Post from './UserscriptTools/Post';
 
 import { Menu, Spinner } from '@userscripters/stacks-helpers';
 import { isSpecialFlag } from './Configuration';
-import { Store, Cached, Configuration, CachedFlag } from './UserscriptTools/Store';
+import { Store, CachedFlag } from './UserscriptTools/Store';
 import Reporter from './UserscriptTools/Reporter';
 import Page from './UserscriptTools/Page';
 import { Progress } from './UserscriptTools/Progress';
@@ -148,14 +149,7 @@ export class Popover {
     private getOptionsRow(): Menu.StacksMenuOptions['navItems'] {
         const comments = this.post.element.querySelector('.comment-body');
 
-        const config = [
-            ['Leave comment', Cached.Configuration.defaultNoComment],
-            ['Flag', Cached.Configuration.defaultNoFlag],
-            ['Downvote', Cached.Configuration.defaultNoDownvote],
-            ['Delete', Cached.Configuration.defaultNoDelete]
-        ] as [string, keyof Configuration][];
-
-        return config
+        return configBoxes
             // hide delete checkbox when user can't delete vote
             .filter(([ text ]) => {
                 if (text === 'Leave comment') return Page.isStackOverflow;
@@ -164,7 +158,7 @@ export class Popover {
                 return true;
             })
             .map(([text, cacheKey]) => {
-                const uncheck = Store.config[cacheKey]
+                const uncheck = !Store.config.default[cacheKey]
                     // extra requirement for the leave comment option:
                     // there shouldn't be any comments below the post
                     || (text === 'Leave comment' && comments);

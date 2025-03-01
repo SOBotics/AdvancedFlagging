@@ -1,23 +1,27 @@
 import { Cached, Configuration, Store } from '../UserscriptTools/Store';
 import { MetaSmokeAPI } from '../UserscriptTools/MetaSmokeAPI';
 
-import { displayStacksToast, attachPopover } from '../shared';
+import { displayStacksToast, attachPopover, configBoxes } from '../shared';
 
 import { Buttons, Modals, Checkbox } from '@userscripters/stacks-helpers';
 import Reporter from '../UserscriptTools/Reporter';
 
-type GeneralItems = Exclude<keyof Configuration, 'EnabledFlags'>;
+type GeneralItems = Exclude<keyof Configuration, 'default'>;
 
 function saveChanges(): void {
-    // find the option id (it's the data-option-id attribute)
-    // and store whether the box is checked or not
+    // find the option id and store whether the box is checked or not
     document
-        .querySelectorAll('#advanced-flagging-configuration-section-general > div > input')
+        .querySelectorAll('#advanced-flagging-configuration-section-general input')
         .forEach(element => {
-            const id = element.id.split('-').pop() as GeneralItems;
+            const id = element.id;
+            const key = id.split('-').pop();
             const checked = (element as HTMLInputElement).checked;
 
-            Store.config[id] = checked;
+            if (id.startsWith('advanced-flagging-default')) {
+                Store.config.default[key as keyof Configuration['default']] = checked;
+            } else {
+                Store.config[key as GeneralItems] = checked;
+            }
         });
 
     Store.updateConfiguration();
@@ -40,7 +44,6 @@ function resetConfig(): void {
 /* The configuration modal has two sections:
    - General (uses cache): general options. They are properties of the main
      Configuration object and accept Boolean values.
-     All options (except defaultNoDownvote and defaultNoDelete) are disabled by default.
    - Admin: doesn't use cache, but it interacts with it (deletes/amends values)
    Sample cache:
 
@@ -48,6 +51,13 @@ function resetConfig(): void {
        openOnHover: true,
        anotherOption: false,
        doFooBar: true,
+       checkByDefault: {
+           natty: true,
+           ...,
+           comment: false,
+           delete: true,
+           ...
+       },
        ...
    }
 
@@ -63,7 +73,7 @@ export function buildConfigurationOverlay(): void {
         'advanced-flagging-configuration-modal',
         {
             title: {
-                text: 'AdvancedFlagging configuration',
+                text: 'Advanced Flagging configuration',
             },
             body: {
                 bodyHtml: getConfigModalBody()
@@ -128,79 +138,103 @@ function getGeneralConfigItems(): HTMLElement {
         {
             text: 'Open dropdown on hover',
             configValue: Cached.Configuration.openOnHover,
-            tooltipText: 'Open the dropdown on hover and not on click'
+            description: 'Open the dropdown on hover and not on click'
         },
         {
             text: 'Watch for manual flags',
             configValue: Cached.Configuration.watchFlags,
-            tooltipText: 'Send feedback when a flag is raised manually'
+            description: 'Send feedback when a flag is raised manually'
         },
         {
             text: 'Watch for queue responses',
             configValue: Cached.Configuration.watchQueues,
-            tooltipText: 'Send feedback after a Looks OK or Recommend '
+            description: 'Send feedback after a Looks OK or Recommend '
                        + 'Deletion review in the Low Quality Answers queue'
-        },
-        {
-            text: 'Disable AdvancedFlagging link',
-            configValue: Cached.Configuration.linkDisabled
-        },
-        {
-            text: 'Uncheck \'Leave comment\' by default',
-            configValue: Cached.Configuration.defaultNoComment
-        },
-        {
-            text: 'Uncheck \'Flag\' by default',
-            configValue: Cached.Configuration.defaultNoFlag
-        },
-        {
-            text: 'Uncheck \'Downvote\' by default',
-            configValue: Cached.Configuration.defaultNoDownvote
-        },
-        {
-            text: 'Uncheck \'Delete\' by default',
-            configValue: Cached.Configuration.defaultNoDelete
         },
         {
             text: 'Add author\'s name before comments',
             configValue: Cached.Configuration.addAuthorName,
-            tooltipText: 'Add the author\'s name before every comment to make them friendlier'
+            description: 'Add the author\'s name before every comment to make them friendlier'
         },
         {
-            text: 'Don\'t send feedback to Smokey by default',
-            configValue: new Reporter('Smokey', 0).cacheKey
-        },
-        {
-            text: 'Don\'t send feedback to Natty by default',
-            configValue: new Reporter('Natty', 0).cacheKey
-        },
-        {
-            text: 'Don\'t send feedback to Guttenberg by default',
-            configValue: new Reporter('Guttenberg', 0).cacheKey
-        },
-        {
-            text: 'Don\'t send feedback to Generic Bot by default',
-            configValue: new Reporter('Generic Bot', 0).cacheKey
+            text: 'Disable Advanced Flagging link',
+            configValue: Cached.Configuration.linkDisabled
         },
         {
             text: 'Enable dry-run mode',
             configValue: Cached.Configuration.debug
         }
-    ].map(({ text, configValue, tooltipText }) => {
-        const selected = Store.config[configValue as GeneralItems];
+    ].map(({ text, configValue, description }) => {
+        const selected = Store.config[configValue as GeneralItems] as boolean;
 
         return {
             id: `advanced-flagging-${configValue}`,
             labelConfig: {
                 text,
-                description: tooltipText,
+                description,
             },
             selected
         };
     });
 
+    // Send feedback to <bot name> by default
+    const botBoxes = (['Smokey', 'Natty', 'Generic Bot', 'Guttenberg'] as const)
+        .map(name => {
+            const reporter = new Reporter(name, 0);
+            const sanitised = reporter.sanitisedName;
+            const selected = Store.config.default[sanitised];
+
+            return {
+                id: `advanced-flagging-default-${sanitised}`,
+                labelConfig: {
+                    text: name
+                },
+                selected
+            };
+        });
+    const [defaultFeedback] = Checkbox.makeStacksCheckboxes(
+        botBoxes,
+        {
+            horizontal: true,
+            classes: [ 'fs-body2' ]
+        }
+    );
+
+    const botDescription = document.createElement('div');
+    botDescription.classList.add('flex--item');
+    botDescription.innerText = 'Send feedback by default to:';
+
+    defaultFeedback.prepend(botDescription);
+
+    // Check <option text> by default
+    const optionBoxes = configBoxes
+        .map(([ name, sanitised ]) => {
+            const selected = Store.config.default[sanitised];
+
+            return {
+                id: `advanced-flagging-default-${sanitised}`,
+                labelConfig: {
+                    text: name
+                },
+                selected
+            };
+        });
+    const [defaultCheck] = Checkbox.makeStacksCheckboxes(
+        optionBoxes,
+        {
+            horizontal: true,
+            classes: [ 'fs-body2' ]
+        }
+    );
+    const optionDescription = document.createElement('div');
+    optionDescription.classList.add('flex--item');
+    optionDescription.innerText = 'Check the following by default:';
+
+    defaultCheck.prepend(optionDescription);
+
     const [fieldset] = Checkbox.makeStacksCheckboxes(checkboxes);
     fieldset.id = 'advanced-flagging-configuration-section-general';
+    fieldset.append(defaultFeedback, defaultCheck);
 
     return fieldset;
 }

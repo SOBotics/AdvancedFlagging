@@ -482,7 +482,7 @@ export function setupCommentsAndFlagsModal(): void {
         'advanced-flagging-comments-modal',
         {
             title: {
-                text: 'AdvancedFlagging: edit comments and flags',
+                text: 'Advanced Flagging: edit comments and flags',
             },
             body: {
                 bodyHtml: getCommentsModalBody()

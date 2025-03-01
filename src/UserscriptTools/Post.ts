@@ -448,11 +448,10 @@ export default class Post {
                     && (!Page.isLqpReviewPage || (name !== 'Smokey' || instance.wasReported()));
             })
             .map(([, instance]) => {
-                const botName = instance.sanitisedName.toLowerCase();
+                const botName = instance.sanitisedName;
 
                 // need the postId in the id to make it unique
                 const botNameId = `advanced-flagging-send-feedback-to-${botName}-${this.id}`;
-                const defaultNoCheck = Store.config[instance.cacheKey];
 
                 const iconHtml = instance.getIcon().outerHTML;
                 const checkbox = {
@@ -462,7 +461,7 @@ export default class Post {
                         text: `${isFlagOrReview ? '' : 'Feedback to'} ${iconHtml}`,
                         classes: [ isFlagOrReview ? 'mb4' : 'fs-body1' ],
                     },
-                    selected: !defaultNoCheck,
+                    selected: Store.config.default[botName],
                 };
 
                 return [instance.name, checkbox];

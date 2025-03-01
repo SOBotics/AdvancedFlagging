@@ -49,6 +49,14 @@ export const username = document.querySelector<HTMLDivElement>(
 )?.title ?? '';
 export const popupDelay = 4 * 1000;
 
+// [checkbox text, cache key in Store.config.default]
+export const configBoxes = [
+    ['Leave comment', 'comment'],
+    ['Flag', 'flag'],
+    ['Downvote', 'downvote'],
+    ['Delete', 'delete']
+] as const;
+
 export const getIconPath = (name: string): string => {
     const element = GM_getResourceText(name);
     const parsed = new DOMParser().parseFromString(element, 'text/html');

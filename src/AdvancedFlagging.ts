@@ -220,6 +220,8 @@ function setupPostPage(): void {
 export let isDone = false;
 
 function Setup(): void {
+    setupConfiguration();
+
     // Collect all ids
     void Promise.all([
         MetaSmokeAPI.setup(),
@@ -229,7 +231,6 @@ function Setup(): void {
     ]).then(() => {
         setupPostPage();
         setupStyles();
-        setupConfiguration();
 
         // appends Advanced Flagging link to new/edited posts
         // see https://github.com/Charcoal-SE/userscripts/blob/master/sim/sim.user.js#L822-L829

@@ -71,13 +71,11 @@ function setupDefaults(): void {
     // if there's no downvote property, then the user
     // is probably using an older version of AF
     // clear and re-save
-    if (!Store.flagTypes.length
-        || !('downvote' in Store.flagTypes[0])) {
+    if (!Store.flagTypes.length || !('downvote' in Store.flagTypes[0])) {
         cacheFlags();
     }
 
-    if (!Store.categories.length
-        || !('id' in Store.categories[0])) {
+    if (!Store.categories.length || !('id' in Store.categories[0])) {
         cacheCategories();
 
         // update default link-only comment!
@@ -103,8 +101,27 @@ function setupDefaults(): void {
     });
     Store.updateFlagTypes();
 
-    if (!('defaultNoDelete' in Store.config)) {
-        Store.config.defaultNoDelete = true;
+    // "defaultNo" format is deprecated
+    if ('defaultNoSmokey' in Store.config) {
+        // @ts-expect-error errors due to change in the config type for older versions
+        Store.config.default = {};
+        // [old, new]
+        ([
+            [ 'defaultNoComment', 'comment' ],
+            [ 'defaultNoFlag', 'flag' ],
+            [ 'defaultNoDownvote', 'downvote' ],
+            [ 'defaultNoSmokey', 'smokey' ],
+            [ 'defaultNoNatty', 'natty' ],
+            [ 'defaultNoGuttenberg', 'guttenberg' ],
+            [ 'defaultNoGenericBot', 'genericbot' ],
+            [ 'defaultNoDelete', 'delete' ],
+        ] as const).forEach(([ oldName, newName ]) => {
+            // @ts-expect-error for the same reason as above
+            Store.config.default[newName] = !Store.config[oldName];
+            // @ts-expect-error for the same reason as above
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+            delete Store.config[oldName];
+        });
 
         Store.updateConfiguration();
     }
@@ -153,20 +170,10 @@ export function setupConfiguration(): void {
     if (!propertyDoesNotExist) return;
 
     displayStacksToast(
-        'Please set up AdvancedFlagging before continuing.',
+        'Please set up Advanced Flagging before continuing.',
         'info',
         true
     );
 
-    setTimeout(() => {
-        Stacks.showModal(configModal);
-
-        // tick "uncheck downvote by default" option
-        // request by Scratte, Shree
-        const checkbox = document.querySelector(
-            '#advanced-flagging-defaultNoDownvote'
-        ) as HTMLInputElement;
-
-        checkbox.checked = true;
-    });
+    setTimeout(() => Stacks.showModal(configModal));
 }

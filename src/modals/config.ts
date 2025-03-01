@@ -138,23 +138,29 @@ function getGeneralConfigItems(): HTMLElement {
         {
             text: 'Open dropdown on hover',
             configValue: Cached.Configuration.openOnHover,
-            description: 'Open the dropdown on hover and not on click'
+            description: 'Opens the dropdown on hover and not on click'
         },
         {
             text: 'Watch for manual flags',
             configValue: Cached.Configuration.watchFlags,
-            description: 'Send feedback when a flag is raised manually'
+            description: 'Sends feedback when a flag is raised manually'
         },
         {
             text: 'Watch for queue responses',
             configValue: Cached.Configuration.watchQueues,
-            description: 'Send feedback after a Looks OK or Recommend '
+            description: 'Sends feedback after a Looks OK or Recommend '
                        + 'Deletion review in the Low Quality Answers queue'
         },
         {
             text: 'Add author\'s name before comments',
             configValue: Cached.Configuration.addAuthorName,
-            description: 'Add the author\'s name before every comment to make them friendlier'
+            description: 'Adds the author\'s name before every comment to make it friendlier'
+        },
+        {
+            text: 'Enable "Leave comment" on all Stack Exchange sites',
+            configValue: Cached.Configuration.allowComments,
+            description: 'Shows the "Leave comment" checkbox and the answer-related '
+                       + 'dropdown options on every Stack Exchange site'
         },
         {
             text: 'Disable Advanced Flagging link',

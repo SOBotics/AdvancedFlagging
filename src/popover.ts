@@ -84,6 +84,11 @@ export class Popover {
         Store.flagTypes
             // exclude disabled and non-SO flag types
             .filter(({ reportType, id, belongsTo, enabled }) => {
+                // show answer-related options if we are on SO or allowComments is enabled
+                if (belongsTo === 'Answer-related'
+                    && (Page.isStackOverflow || Store.config.allowComments)
+                ) return true;
+
                 // only Guttenberg reports (can) have ReportType === 'PlagiarizedContent/PostOther'
                 const isGuttenbergItem = isSpecialFlag(reportType, false);
 
@@ -150,18 +155,19 @@ export class Popover {
         const comments = this.post.element.querySelector('.comment-body');
 
         return configBoxes
-            // hide delete checkbox when user can't delete vote
             .filter(([ text ]) => {
-                if (text === 'Leave comment') return Page.isStackOverflow;
+                // show "Leave comment" either if we are on SO or allowComments is enabled
+                if (text === 'Leave comment') return Store.config.allowComments || Page.isStackOverflow;
+                // hide "Delete" when user doesn't have delete privileges
                 else if (text === 'Delete') return this.post.canDelete(true);
 
                 return true;
             })
             .map(([text, cacheKey]) => {
-                const uncheck = !Store.config.default[cacheKey]
+                const selected = Store.config.default[cacheKey]
                     // extra requirement for the leave comment option:
                     // there shouldn't be any comments below the post
-                    || (text === 'Leave comment' && comments);
+                    && (text === 'Leave comment' ? Boolean(comments) : true);
 
                 const idified = text.toLowerCase().replace(' ', '-');
                 const id = `advanced-flagging-${idified}-checkbox-${this.post.id}`;
@@ -173,8 +179,7 @@ export class Popover {
                             text,
                             classes: ['pt1', 'fs-body1']
                         },
-                        // !uncheck => whether the checkbox should be checked :)
-                        selected: !uncheck
+                        selected
                     }
                 };
             });
@@ -238,7 +243,7 @@ export class Popover {
             : '';
 
         if (reportType !== flagName) {
-            reportTypeHuman += ' (VLQ criteria weren\'t met)';
+            reportTypeHuman += ' (VLQ criteria aren\'t met)';
         }
 
         // ---------------------------------------------------

@@ -101,6 +101,13 @@ function setupDefaults(): void {
     });
     Store.updateFlagTypes();
 
+    // new option
+    if (!(Cached.Configuration.allowComments in Store.config)) {
+        Store.config.allowComments = false;
+
+        Store.updateConfiguration();
+    }
+
     // "defaultNo" format is deprecated
     if ('defaultNoSmokey' in Store.config) {
         // @ts-expect-error errors due to change in the config type for older versions

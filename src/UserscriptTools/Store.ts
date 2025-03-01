@@ -44,6 +44,7 @@ export const Cached = {
         watchFlags: 'watchFlags',
         watchQueues: 'watchQueues',
 
+        allowComments: 'allowComments',
         linkDisabled: 'linkDisabled',
         addAuthorName: 'addAuthorName',
         debug: 'debug',

@@ -17,6 +17,7 @@
       "jquery",
       "tampermonkey",
       "node"
-    ]
+    ],
+    "skipLibCheck": true
   }
 }

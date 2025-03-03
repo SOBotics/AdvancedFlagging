@@ -1,10 +1,11 @@
 {
   "name": "advancedflagging",
-  "version": "2.1.3",
+  "version": "2.2.0",
   "scripts": {
     "lint": "eslint src",
-    "build": "npm run lint && npm run esbuild",
-    "esbuild": "node build.js"
+    "build": "npm run lint && npm run typecheck && npm run esbuild",
+    "esbuild": "node build.js",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "author": "Robert Rudman <rjrudman@gmail.com> (https://github.com/rjrudman)",
   "license": "ISC",

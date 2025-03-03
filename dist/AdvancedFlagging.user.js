@@ -50,12 +50,9 @@
     Configuration: {
       key: "Configuration",
       openOnHover: "openOnHover",
-      defaultNoFlag: "defaultNoFlag",
-      defaultNoComment: "defaultNoComment",
-      defaultNoDownvote: "defaultNoDownvote",
-      defaultNoDelete: "defaultNoDelete",
       watchFlags: "watchFlags",
       watchQueues: "watchQueues",
+      allowComments: "allowComments",
       linkDisabled: "linkDisabled",
       addAuthorName: "addAuthorName",
       debug: "debug"
@@ -72,7 +69,7 @@
     // cache-related helpers/values
     // Some information from cache is stored on the variables as objects to make editing easier and simpler
     // Each time something is changed in the variables, update* must also be called to save the changes to the cache
-    static config = _Store.get(Cached.Configuration.key) ?? {};
+    static config = _Store.get(Cached.Configuration.key) ?? { default: {} };
     static categories = _Store.get(Cached.FlagCategories) ?? [];
     static flagTypes = _Store.get(Cached.FlagTypes) ?? [];
     static updateConfiguration = () => _Store.set(Cached.Configuration.key, this.config);
@@ -805,6 +802,12 @@
     'a[href^="/users/"] div[title]'
   )?.title ?? "";
   var popupDelay = 4 * 1e3;
+  var configBoxes = [
+    ["Leave comment", "comment"],
+    ["Flag", "flag"],
+    ["Downvote", "downvote"],
+    ["Delete", "delete"]
+  ];
   var getIconPath = (name) => {
     const element = GM_getResourceText(name);
     const parsed = new DOMParser().parseFromString(element, "text/html");
@@ -1081,12 +1084,10 @@
     name;
     id;
     sanitisedName;
-    cacheKey;
     progress = null;
     constructor(name, id) {
       this.name = name;
-      this.sanitisedName = this.name.replace(/\s/g, "");
-      this.cacheKey = `defaultNo${this.sanitisedName}`;
+      this.sanitisedName = this.name.replace(/\s/g, "").toLowerCase();
       this.id = id;
     }
     wasReported() {
@@ -1704,7 +1705,7 @@
     }
     getIcon() {
       return this.createBotIcon(
-        this.wasReported() ? `//logs.sobotics.org/Natty/${this.id}.html` : ""
+        this.wasReported() ? `//sentinel.sobotics.org/posts/aid/${this.id}` : ""
       );
     }
     getProgressMessage(feedback) {
@@ -1975,9 +1976,8 @@
       const newEntries = Object.entries(this.reporters).filter(([name, instance]) => {
         return instance.showOnPopover() && (!Page.isLqpReviewPage || (name !== "Smokey" || instance.wasReported()));
       }).map(([, instance]) => {
-        const botName = instance.sanitisedName.toLowerCase();
+        const botName = instance.sanitisedName;
         const botNameId = `advanced-flagging-send-feedback-to-${botName}-${this.id}`;
-        const defaultNoCheck = Store.config[instance.cacheKey];
         const iconHtml = instance.getIcon().outerHTML;
         const checkbox = {
           // on post page, the id is not unique!
@@ -1986,7 +1986,7 @@
             text: `${isFlagOrReview ? "" : "Feedback to"} ${iconHtml}`,
             classes: [isFlagOrReview ? "mb4" : "fs-body1"]
           },
-          selected: !defaultNoCheck
+          selected: Store.config.default[botName]
         };
         return [instance.name, checkbox];
       });
@@ -2378,10 +2378,15 @@
 
   // src/modals/config.ts
   function saveChanges() {
-    document.querySelectorAll("#advanced-flagging-configuration-section-general > div > input").forEach((element) => {
-      const id = element.id.split("-").pop();
+    document.querySelectorAll("#advanced-flagging-configuration-section-general input").forEach((element) => {
+      const id = element.id;
+      const key = id.split("-").pop();
       const checked = element.checked;
-      Store.config[id] = checked;
+      if (id.startsWith("advanced-flagging-default")) {
+        Store.config.default[key] = checked;
+      } else {
+        Store.config[key] = checked;
+      }
     });
     Store.updateConfiguration();
     displayStacksToast("Configuration saved", "success");
@@ -2400,7 +2405,7 @@
       "advanced-flagging-configuration-modal",
       {
         title: {
-          text: "AdvancedFlagging configuration"
+          text: "Advanced Flagging configuration"
         },
         body: {
           bodyHtml: getConfigModalBody()
@@ -2460,76 +2465,94 @@
       {
         text: "Open dropdown on hover",
         configValue: Cached.Configuration.openOnHover,
-        tooltipText: "Open the dropdown on hover and not on click"
+        description: "Opens the dropdown on hover and not on click"
       },
       {
         text: "Watch for manual flags",
         configValue: Cached.Configuration.watchFlags,
-        tooltipText: "Send feedback when a flag is raised manually"
+        description: "Sends feedback when a flag is raised manually"
       },
       {
         text: "Watch for queue responses",
         configValue: Cached.Configuration.watchQueues,
-        tooltipText: "Send feedback after a Looks OK or Recommend Deletion review in the Low Quality Answers queue"
-      },
-      {
-        text: "Disable AdvancedFlagging link",
-        configValue: Cached.Configuration.linkDisabled
-      },
-      {
-        text: "Uncheck 'Leave comment' by default",
-        configValue: Cached.Configuration.defaultNoComment
-      },
-      {
-        text: "Uncheck 'Flag' by default",
-        configValue: Cached.Configuration.defaultNoFlag
-      },
-      {
-        text: "Uncheck 'Downvote' by default",
-        configValue: Cached.Configuration.defaultNoDownvote
-      },
-      {
-        text: "Uncheck 'Delete' by default",
-        configValue: Cached.Configuration.defaultNoDelete
+        description: "Sends feedback after a Looks OK or Recommend Deletion review in the Low Quality Answers queue"
       },
       {
         text: "Add author's name before comments",
         configValue: Cached.Configuration.addAuthorName,
-        tooltipText: "Add the author's name before every comment to make them friendlier"
+        description: "Adds the author's name before every comment to make it friendlier"
       },
       {
-        text: "Don't send feedback to Smokey by default",
-        configValue: new Reporter("Smokey", 0).cacheKey
+        text: 'Enable "Leave comment" on all Stack Exchange sites',
+        configValue: Cached.Configuration.allowComments,
+        description: 'Shows the "Leave comment" checkbox and the answer-related dropdown options on every Stack Exchange site'
       },
       {
-        text: "Don't send feedback to Natty by default",
-        configValue: new Reporter("Natty", 0).cacheKey
-      },
-      {
-        text: "Don't send feedback to Guttenberg by default",
-        configValue: new Reporter("Guttenberg", 0).cacheKey
-      },
-      {
-        text: "Don't send feedback to Generic Bot by default",
-        configValue: new Reporter("Generic Bot", 0).cacheKey
+        text: "Disable Advanced Flagging link",
+        configValue: Cached.Configuration.linkDisabled
       },
       {
         text: "Enable dry-run mode",
         configValue: Cached.Configuration.debug
       }
-    ].map(({ text, configValue, tooltipText }) => {
+    ].map(({ text, configValue, description }) => {
       const selected = Store.config[configValue];
       return {
         id: `advanced-flagging-${configValue}`,
         labelConfig: {
           text,
-          description: tooltipText
+          description
         },
         selected
       };
     });
+    const botBoxes = ["Smokey", "Natty", "Generic Bot", "Guttenberg"].map((name) => {
+      const reporter = new Reporter(name, 0);
+      const sanitised = reporter.sanitisedName;
+      const selected = Store.config.default[sanitised];
+      return {
+        id: `advanced-flagging-default-${sanitised}`,
+        labelConfig: {
+          text: name
+        },
+        selected
+      };
+    });
+    const [defaultFeedback] = checkbox_exports.makeStacksCheckboxes(
+      botBoxes,
+      {
+        horizontal: true,
+        classes: ["fs-body2"]
+      }
+    );
+    const botDescription = document.createElement("div");
+    botDescription.classList.add("flex--item");
+    botDescription.innerText = "Send feedback by default to:";
+    defaultFeedback.prepend(botDescription);
+    const optionBoxes = configBoxes.map(([name, sanitised]) => {
+      const selected = Store.config.default[sanitised];
+      return {
+        id: `advanced-flagging-default-${sanitised}`,
+        labelConfig: {
+          text: name
+        },
+        selected
+      };
+    });
+    const [defaultCheck] = checkbox_exports.makeStacksCheckboxes(
+      optionBoxes,
+      {
+        horizontal: true,
+        classes: ["fs-body2"]
+      }
+    );
+    const optionDescription = document.createElement("div");
+    optionDescription.classList.add("flex--item");
+    optionDescription.innerText = "Check the following by default:";
+    defaultCheck.prepend(optionDescription);
     const [fieldset] = checkbox_exports.makeStacksCheckboxes(checkboxes);
     fieldset.id = "advanced-flagging-configuration-section-general";
+    fieldset.append(defaultFeedback, defaultCheck);
     return fieldset;
   }
   function getAdminConfigItems() {
@@ -3186,7 +3209,7 @@
       "advanced-flagging-comments-modal",
       {
         title: {
-          text: "AdvancedFlagging: edit comments and flags"
+          text: "Advanced Flagging: edit comments and flags"
         },
         body: {
           bodyHtml: getCommentsModalBody()
@@ -3288,8 +3311,25 @@
       cachedFlag.reportType = "PlagiarizedContent" /* Plagiarism */;
     });
     Store.updateFlagTypes();
-    if (!("defaultNoDelete" in Store.config)) {
-      Store.config.defaultNoDelete = true;
+    if (!(Cached.Configuration.allowComments in Store.config)) {
+      Store.config.allowComments = false;
+      Store.updateConfiguration();
+    }
+    if ("defaultNoSmokey" in Store.config) {
+      Store.config.default = {};
+      [
+        ["defaultNoComment", "comment"],
+        ["defaultNoFlag", "flag"],
+        ["defaultNoDownvote", "downvote"],
+        ["defaultNoSmokey", "smokey"],
+        ["defaultNoNatty", "natty"],
+        ["defaultNoGuttenberg", "guttenberg"],
+        ["defaultNoGenericBot", "genericbot"],
+        ["defaultNoDelete", "delete"]
+      ].forEach(([oldName, newName]) => {
+        Store.config.default[newName] = !Store.config[oldName];
+        delete Store.config[oldName];
+      });
       Store.updateConfiguration();
     }
   }
@@ -3318,17 +3358,11 @@
     );
     if (!propertyDoesNotExist) return;
     displayStacksToast(
-      "Please set up AdvancedFlagging before continuing.",
+      "Please set up Advanced Flagging before continuing.",
       "info",
       true
     );
-    setTimeout(() => {
-      Stacks.showModal(configModal);
-      const checkbox = document.querySelector(
-        "#advanced-flagging-defaultNoDownvote"
-      );
-      checkbox.checked = true;
-    });
+    setTimeout(() => Stacks.showModal(configModal));
   }
 
   // src/popover.ts
@@ -3375,6 +3409,7 @@
       const { copypastorId, repost, targetUrl } = copypastor ?? {};
       const categories = Store.categories.filter((item) => item.appliesTo?.includes(this.post.type)).map((item) => ({ ...item, FlagTypes: [] }));
       Store.flagTypes.filter(({ reportType, id, belongsTo, enabled }) => {
+        if (belongsTo === "Answer-related" && (Page.isStackOverflow || Store.config.allowComments)) return true;
         const isGuttenbergItem = isSpecialFlag(reportType, false);
         const showGutReport = Boolean(copypastorId) && (id === 4 ? repost : !repost);
         const showOnSo = ["Red flags", "General"].includes(belongsTo) || Page.isStackOverflow;
@@ -3415,18 +3450,12 @@
     // Section #2: Leave comment, Flag, Downvote
     getOptionsRow() {
       const comments = this.post.element.querySelector(".comment-body");
-      const config = [
-        ["Leave comment", Cached.Configuration.defaultNoComment],
-        ["Flag", Cached.Configuration.defaultNoFlag],
-        ["Downvote", Cached.Configuration.defaultNoDownvote],
-        ["Delete", Cached.Configuration.defaultNoDelete]
-      ];
-      return config.filter(([text]) => {
-        if (text === "Leave comment") return Page.isStackOverflow;
+      return configBoxes.filter(([text]) => {
+        if (text === "Leave comment") return Store.config.allowComments || Page.isStackOverflow;
         else if (text === "Delete") return this.post.canDelete(true);
         return true;
       }).map(([text, cacheKey]) => {
-        const uncheck = Store.config[cacheKey] || text === "Leave comment" && comments;
+        const selected = Store.config.default[cacheKey] && (text === "Leave comment" ? Boolean(comments) : true);
         const idified = text.toLowerCase().replace(" ", "-");
         const id = `advanced-flagging-${idified}-checkbox-${this.post.id}`;
         return {
@@ -3436,8 +3465,7 @@
               text,
               classes: ["pt1", "fs-body1"]
             },
-            // !uncheck => whether the checkbox should be checked :)
-            selected: !uncheck
+            selected
           }
         };
       });
@@ -3468,7 +3496,7 @@
       const flagName = getFlagToRaise(reportType, this.post.qualifiesForVlq());
       let reportTypeHuman = reportType === "NoFlag" || !this.post.deleted ? getHumanFromDisplayName(flagName) : "";
       if (reportType !== flagName) {
-        reportTypeHuman += " (VLQ criteria weren't met)";
+        reportTypeHuman += " (VLQ criteria aren't met)";
       }
       const popoverParent = document.createElement("div");
       Object.entries({
@@ -3847,6 +3875,7 @@
   }
   var isDone = false;
   function Setup() {
+    setupConfiguration();
     void Promise.all([
       MetaSmokeAPI.setup(),
       MetaSmokeAPI.queryMetaSmokeInternal(),
@@ -3855,7 +3884,6 @@
     ]).then(() => {
       setupPostPage();
       setupStyles();
-      setupConfiguration();
       addXHRListener(() => {
         setupPostPage();
         setTimeout(setupPostPage, 55);

@@ -99,7 +99,7 @@ export class NattyAPI extends Reporter {
     public override getIcon(): HTMLDivElement {
         return this.createBotIcon(
             this.wasReported()
-                ? `//logs.sobotics.org/Natty/${this.id}.html`
+                ? `//sentinel.sobotics.org/posts/aid/${this.id}`
                 : ''
         );
     }

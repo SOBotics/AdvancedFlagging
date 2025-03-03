@@ -167,7 +167,7 @@ export class Popover {
                 const selected = Store.config.default[cacheKey]
                     // extra requirement for the leave comment option:
                     // there shouldn't be any comments below the post
-                    && (text === 'Leave comment' ? Boolean(comments) : true);
+                    && (text === 'Leave comment' ? !comments : true);
 
                 const idified = text.toLowerCase().replace(' ', '-');
                 const id = `advanced-flagging-${idified}-checkbox-${this.post.id}`;

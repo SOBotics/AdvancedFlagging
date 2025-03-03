@@ -3455,7 +3455,7 @@
         else if (text === "Delete") return this.post.canDelete(true);
         return true;
       }).map(([text, cacheKey]) => {
-        const selected = Store.config.default[cacheKey] && (text === "Leave comment" ? Boolean(comments) : true);
+        const selected = Store.config.default[cacheKey] && (text === "Leave comment" ? !comments : true);
         const idified = text.toLowerCase().replace(" ", "-");
         const id = `advanced-flagging-${idified}-checkbox-${this.post.id}`;
         return {

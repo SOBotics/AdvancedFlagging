@@ -81,23 +81,23 @@ Advanced Flagging allows you to both edit any comments you choose to leave or fl
 
 ## Configuration
 
-The link to configure AdvancedFlagging is at the footer of each StackExchange site.
+The link to configure Advanced Flagging is at the footer of each Stack Exchange site.
 
-![Picture of link to configuration](https://i.sstatic.net/kTim6.png)
+[![Picture of the comments and flags link](https://github.com/user-attachments/assets/8c52593c-f14c-4714-92d9-801d28d032dc)](https://github.com/user-attachments/assets/8c52593c-f14c-4714-92d9-801d28d032dc)
 
 Clicking it opens the following modal box:
 
-![configuration modal](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/7e41c396-6486-4f44-ad41-a477279254d6)
+![configuration modal](https://github.com/user-attachments/assets/0df06951-80cd-4e78-9ccf-c503a3014a32)
 
 ## Comments and flags
 
-The link to change the content of the comments and flags is in the footer of each StackExchange site as well:
+The link to change the content of the comments and flags is in the footer of each Stack Exchange site as well:
 
-[![Picture of the comments and flags link](https://i.sstatic.net/i1xpO.png)](https://i.sstatic.net/i1xpO.png)
+[![Picture of the comments and flags link](https://github.com/user-attachments/assets/8c52593c-f14c-4714-92d9-801d28d032dc)](https://github.com/user-attachments/assets/8c52593c-f14c-4714-92d9-801d28d032dc)
 
 It opens the following modal:
 
-![comments and flags modal](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/d8b79064-406c-4046-b7c9-67e065256831)
+![comments and flags modal](https://github.com/user-attachments/assets/4b0393ab-a5f0-4302-88fd-66adb023d721)
 
 Click ![new button](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/5d91c4ed-1cd5-44aa-b5e2-cee67b85d92f) to add a new flag type and ![edit button](https://github.com/SOBotics/AdvancedFlagging/assets/38133098/5d18d32d-e488-4e9c-a2e4-a5a558407996) to edit an existing one:
 

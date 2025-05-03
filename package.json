@@ -18,7 +18,7 @@
     "@userscripters/stackexchange-global-types": "^2.8.2",
     "esbuild": "^0.25.3",
     "typescript": "5.8.3",
-    "typescript-eslint": "^8.29.1"
+    "typescript-eslint": "^8.31.1"
   },
   "dependencies": {
     "@userscripters/stacks-helpers": "1.1.2"

@@ -19,19 +19,11 @@
 // @exclude      *://stackoverflow.com/c/*
 // @exclude      *://winterbash*.stackexchange.com/*
 // @exclude      *://api.stackexchange.com/*
-// @resource     iconCheckmark https://cdn.sstatic.net/Img/stacks-icons/Checkmark.svg
-// @resource     iconClear https://cdn.sstatic.net/Img/stacks-icons/Clear.svg
-// @resource     iconEyeOff https://cdn.sstatic.net/Img/stacks-icons/EyeOff.svg
-// @resource     iconFlag https://cdn.sstatic.net/Img/stacks-icons/Flag.svg
-// @resource     iconPencil https://cdn.sstatic.net/Img/stacks-icons/Pencil.svg
-// @resource     iconTrash https://cdn.sstatic.net/Img/stacks-icons/Trash.svg
-// @resource     iconPlus https://cdn.sstatic.net/Img/stacks-icons/Plus.svg
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_deleteValue
 // @grant        GM_addStyle
-// @grant        GM_getResourceText
 // @downloadURL  https://github.com/SOBotics/AdvancedFlagging/raw/master/dist/AdvancedFlagging.user.js
 // @updateURL    https://github.com/SOBotics/AdvancedFlagging/raw/master/dist/AdvancedFlagging.user.js
 // ==/UserScript==
@@ -622,10 +614,21 @@
     svg.setAttribute("height", height.toString());
     svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
     svg.setAttribute("aria-hidden", "true");
-    const path = document.createElementNS(ns, "path");
-    path.setAttribute("d", pathConfig);
-    svg.append(path);
-    return [svg, path];
+    if (typeof pathConfig === "string") {
+      const path = document.createElementNS(ns, "path");
+      path.setAttribute("d", pathConfig);
+      svg.append(path);
+      return [svg, path];
+    } else {
+      const paths = [];
+      pathConfig.forEach((svgPath) => {
+        const path = document.createElementNS(ns, "path");
+        path.setAttribute("d", svgPath);
+        svg.append(path);
+        paths.push(path);
+      });
+      return [svg, paths[0]];
+    }
   };
 
   // node_modules/@userscripters/stacks-helpers/dist/modals/index.js
@@ -808,16 +811,10 @@
     ["Downvote", "downvote"],
     ["Delete", "delete"]
   ];
-  var getIconPath = (name) => {
-    const element = GM_getResourceText(name);
-    const parsed = new DOMParser().parseFromString(element, "text/html");
-    const path = parsed.body.querySelector("path");
-    return path.getAttribute("d") ?? "";
-  };
-  var getSvg = (name) => {
-    const element = GM_getResourceText(name);
-    const parsed = new DOMParser().parseFromString(element, "text/html");
-    return parsed.body.firstElementChild;
+  var getIconPath = (svg) => {
+    const parsed = new DOMParser().parseFromString(svg, "text/html");
+    const paths = [...parsed.body.querySelectorAll("path")];
+    return paths.map((path) => path.getAttribute("d") ?? "");
   };
   function displayStacksToast(message, type, dismissable) {
     StackExchange.helpers.showToast(message, {
@@ -1736,6 +1733,15 @@
     }
   };
 
+  // node_modules/@stackoverflow/stacks-icons/dist/icons.js
+  var IconCheckmark = '<svg aria-hidden="true" class="svg-icon iconCheckmark" width="18" height="18"  viewBox="0 0 18 18"><path  d="M16 4.41 14.59 3 6 11.59 2.41 8 1 9.41l5 5z"/></svg>';
+  var IconClear = '<svg aria-hidden="true" class="svg-icon iconClear" width="18" height="18"  viewBox="0 0 18 18"><path  d="M15 4.41 13.59 3 9 7.59 4.41 3 3 4.41 7.59 9 3 13.59 4.41 15 9 10.41 13.59 15 15 13.59 10.41 9z"/></svg>';
+  var IconEyeOff = '<svg aria-hidden="true" class="svg-icon iconEyeOff" width="18" height="18"  viewBox="0 0 18 18"><path  d="m5.02 9.44-2.22 2.2C1.63 10.25 1 9 1 9s3-6 8.06-6q1.13.01 2.12.38L9.5 5.03 9 5a4 4 0 0 0-3.98 4.44m2.03 3.05A4 4 0 0 0 13 9q-.01-1.1-.54-2l-1.51 1.54q.05.22.05.46a2 2 0 0 1-2.44 1.95zm7.11-7.22A15 15 0 0 1 17 9s-3 6-7.94 6c-1.31 0-2.48-.4-3.5-1l-1.97 2L2 14.41 14.59 2 16 3.41z"/></svg>';
+  var IconFlag = '<svg aria-hidden="true" class="svg-icon iconFlag" width="18" height="18"  viewBox="0 0 18 18"><path  d="M3 2v14h2v-6h3.6l.4 1h6V3H9.5L9 2z"/></svg>';
+  var IconPencil = '<svg aria-hidden="true" class="svg-icon iconPencil" width="18" height="18"  viewBox="0 0 18 18"><path fill="#F1B600" d="m2 13.13 8.5-8.5 2.88 2.88-8.5 8.5H2z"/><path fill="#E87C87" d="m13.68 2.15 2.17 2.17c.2.2.2.51 0 .71L14.5 6.39l-2.88-2.88 1.35-1.36c.2-.2.51-.2.71 0"/></svg>';
+  var IconPlus = '<svg aria-hidden="true" class="svg-icon iconPlus" width="18" height="18"  viewBox="0 0 18 18"><path  d="M10 2H8v6H2v2h6v6h2v-6h6V8h-6z"/></svg>';
+  var IconTrash = '<svg aria-hidden="true" class="svg-icon iconTrash" width="18" height="18"  viewBox="0 0 18 18"><path  d="M15 2a1 1 0 0 1 1 1v1H2V3a1 1 0 0 1 1-1h2a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1zm0 3H3v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2z"/></svg>';
+
   // src/UserscriptTools/Post.ts
   var Post = class _Post {
     constructor(element) {
@@ -1771,10 +1777,10 @@
     score;
     static getActionIcons() {
       return [
-        ["Checkmark", "fc-green-500"],
-        ["Clear", "fc-red-500"],
-        ["Flag", "fc-red-500"]
-      ].map(([svg, classname]) => _Post.getIcon(getSvg(`icon${svg}`), classname));
+        [IconCheckmark, "fc-green-500"],
+        [IconClear, "fc-red-500"],
+        [IconFlag, "fc-red-500"]
+      ].map(([svg, classname]) => _Post.getIcon(svg, classname));
     }
     async flag(reportType, text) {
       const flagName = getFlagToRaise(reportType, this.qualifiesForVlq());
@@ -1992,7 +1998,9 @@
       });
       return Object.fromEntries(newEntries);
     }
-    static getIcon(svg, classname) {
+    static getIcon(element, classname) {
+      const parsed = new DOMParser().parseFromString(element, "text/html");
+      const svg = parsed.querySelector("svg");
       const wrapper = document.createElement("div");
       wrapper.classList.add("flex--item");
       wrapper.style.display = "none";
@@ -2018,7 +2026,7 @@
         text,
         icon: [
           "iconEyeOff",
-          getIconPath("iconEyeOff")
+          getIconPath(IconEyeOff)[0]
         ],
         classes: ["mb16"]
       });
@@ -2981,12 +2989,9 @@
       const h3 = getH3(input?.value ?? "");
       input?.parentElement?.replaceWith(h3);
     }
-    const pencil = getIconPath("iconPencil");
-    const eyeOff = getIconPath("iconEyeOff");
     const [svg, , text] = [...edit.childNodes];
-    svg.classList.toggle("iconPencil");
-    svg.classList.toggle("iconEyeOff");
-    svg.firstElementChild?.setAttribute("d", isExpanded ? eyeOff : pencil);
+    svg.insertAdjacentHTML("afterend", isExpanded ? IconEyeOff : IconPencil);
+    svg.remove();
     text.textContent = isExpanded ? " Hide" : "Edit";
     isExpanded ? $(save).fadeIn("fast") : $(save).fadeOut("fast");
   }
@@ -3007,7 +3012,7 @@
       {
         iconConfig: {
           name: "iconPencil",
-          path: getIconPath("iconPencil"),
+          path: getIconPath(IconPencil),
           height: 18,
           width: 18
         },
@@ -3025,7 +3030,7 @@
         type: ["danger"],
         iconConfig: {
           name: "iconTrash",
-          path: getIconPath("iconTrash"),
+          path: getIconPath(IconTrash),
           width: 18,
           height: 18
         },
@@ -3132,7 +3137,7 @@
         type: ["outlined"],
         iconConfig: {
           name: "iconPlus",
-          path: getIconPath("iconPlus"),
+          path: getIconPath(IconPlus),
           height: 18,
           width: 18
         }

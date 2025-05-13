@@ -1,7 +1,6 @@
 import { getFlagToRaise, page } from '../AdvancedFlagging';
 import { Flags } from '../FlagTypes';
 import {
-    getSvg,
     PostType,
     FlagNames,
     getFormDataFromObject,
@@ -24,6 +23,12 @@ import Page from './Page';
 import Reporter from './Reporter';
 
 import { Notice, type Checkbox } from '@userscripters/stacks-helpers';
+import {
+    IconCheckmark,
+    IconClear,
+    IconEyeOff,
+    IconFlag
+} from '@stackoverflow/stacks-icons/icons';
 
 type ReporterBoxes = Record<BotNames, Parameters<typeof Checkbox.makeStacksCheckboxes>[0][0]>;
 
@@ -97,11 +102,11 @@ export default class Post {
 
     public static getActionIcons(): HTMLElement[] {
         return [
-            ['Checkmark', 'fc-green-500'],
-            ['Clear', 'fc-red-500'],
-            ['Flag', 'fc-red-500']
+            [IconCheckmark, 'fc-green-500'],
+            [IconClear, 'fc-red-500'],
+            [IconFlag, 'fc-red-500']
         ]
-            .map(([svg, classname]) => Post.getIcon(getSvg(`icon${svg}`), classname));
+            .map(([svg, classname]) => Post.getIcon(svg, classname));
     }
 
     public async flag(
@@ -470,7 +475,10 @@ export default class Post {
         return Object.fromEntries(newEntries) as ReporterBoxes;
     }
 
-    private static getIcon(svg: SVGElement, classname: string): HTMLElement {
+    private static getIcon(element: string, classname: string): HTMLElement {
+        const parsed = new DOMParser().parseFromString(element, 'text/html');
+        const svg = parsed.querySelector('svg') as SVGElement;
+
         const wrapper = document.createElement('div');
         wrapper.classList.add('flex--item');
         wrapper.style.display = 'none';
@@ -515,7 +523,7 @@ export default class Post {
             text,
             icon: [
                 'iconEyeOff',
-                getIconPath('iconEyeOff')
+                getIconPath(IconEyeOff)[0]
             ],
             classes: ['mb16']
         });

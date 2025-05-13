@@ -57,19 +57,11 @@ export const configBoxes = [
     ['Delete', 'delete']
 ] as const;
 
-export const getIconPath = (name: string): string => {
-    const element = GM_getResourceText(name);
-    const parsed = new DOMParser().parseFromString(element, 'text/html');
-    const path = parsed.body.querySelector('path') as SVGPathElement;
+export const getIconPath = (svg: string): string[] => {
+    const parsed = new DOMParser().parseFromString(svg, 'text/html');
+    const paths = [...parsed.body.querySelectorAll('path')] as SVGPathElement[];
 
-    return path.getAttribute('d') ?? '';
-};
-
-export const getSvg = (name: string): SVGElement => {
-    const element = GM_getResourceText(name);
-    const parsed = new DOMParser().parseFromString(element, 'text/html');
-
-    return parsed.body.firstElementChild as SVGElement;
+    return paths.map(path => path.getAttribute('d') ?? '');
 };
 
 export function displayStacksToast(

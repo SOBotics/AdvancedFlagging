@@ -1,11 +1,6 @@
 import { build } from 'esbuild';
 import info from './package.json' with { type: 'json' };
 
-const svgsNeeded = ['Checkmark', 'Clear', 'EyeOff', 'Flag', 'Pencil', 'Trash', 'Plus'];
-const svgsUrls = svgsNeeded.map(svgName => {
-    return `// @resource     icon${svgName} https://cdn.sstatic.net/Img/stacks-icons/${svgName}.svg`;
-});
-
 const userscriptHeader = `// ==UserScript==
 // @name         Advanced Flagging
 // @namespace    https://github.com/SOBotics
@@ -27,13 +22,11 @@ const userscriptHeader = `// ==UserScript==
 // @exclude      *://stackoverflow.com/c/*
 // @exclude      *://winterbash*.stackexchange.com/*
 // @exclude      *://api.stackexchange.com/*
-${svgsUrls.join('\n')}
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_deleteValue
 // @grant        GM_addStyle
-// @grant        GM_getResourceText
 // @downloadURL  https://github.com/SOBotics/AdvancedFlagging/raw/master/dist/AdvancedFlagging.user.js
 // @updateURL    https://github.com/SOBotics/AdvancedFlagging/raw/master/dist/AdvancedFlagging.user.js
 // ==/UserScript==

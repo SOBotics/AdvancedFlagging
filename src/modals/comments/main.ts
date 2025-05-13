@@ -14,6 +14,7 @@ import {
 } from './rows';
 
 import { wrapInFlexItem, cacheFlags } from '../../Configuration';
+import { getEmptyFlagType } from '../../FlagTypes';
 
 import {
     Buttons,
@@ -21,7 +22,12 @@ import {
     Toggle,
     Input,
 } from '@userscripters/stacks-helpers';
-import { getEmptyFlagType } from '../../FlagTypes';
+import {
+    IconEyeOff,
+    IconPencil,
+    IconPlus,
+    IconTrash,
+} from '@stackoverflow/stacks-icons/icons';
 
 /* In this case, we are caching a FlagType, but removing unnecessary properties.
    Only the Id, FlagText, and Comments (both LowRep and HighRep) and the flag's name
@@ -143,14 +149,10 @@ function expandableToggled(edit: HTMLElement): void {
             ?.replaceWith(h3);
     }
 
-    const pencil = getIconPath('iconPencil');
-    const eyeOff = getIconPath('iconEyeOff');
-
     const [svg,, text] = [...edit.childNodes] as HTMLElement[];
 
-    svg.classList.toggle('iconPencil');
-    svg.classList.toggle('iconEyeOff');
-    svg.firstElementChild?.setAttribute('d', isExpanded ? eyeOff : pencil);
+    svg.insertAdjacentHTML('afterend', isExpanded ? IconEyeOff : IconPencil);
+    svg.remove();
     text.textContent = isExpanded ? ' Hide' : 'Edit';
 
     isExpanded
@@ -186,7 +188,7 @@ function getActionItems(
         {
             iconConfig: {
                 name: 'iconPencil',
-                path: getIconPath('iconPencil'),
+                path: getIconPath(IconPencil),
                 height: 18,
                 width: 18
             },
@@ -207,7 +209,7 @@ function getActionItems(
             type: ['danger'],
             iconConfig: {
                 name: 'iconTrash',
-                path: getIconPath('iconTrash'),
+                path: getIconPath(IconTrash),
                 width: 18,
                 height: 18
             },
@@ -367,7 +369,7 @@ function createCategoryDiv(category: Partial<CachedCategory>): HTMLDivElement {
             type: [ 'outlined' ],
             iconConfig: {
                 name: 'iconPlus',
-                path: getIconPath('iconPlus'),
+                path: getIconPath(IconPlus),
                 height: 18,
                 width: 18
             },

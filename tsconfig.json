@@ -14,6 +14,7 @@
     "types": [
       "@userscripters/stackexchange-global-types",
       "@userscripters/stacks-helpers",
+      "@stackoverflow/stacks-icons",
       "jquery",
       "tampermonkey",
       "node"

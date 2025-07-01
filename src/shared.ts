@@ -7,8 +7,7 @@ import { Checkbox, Label } from '@userscripters/stacks-helpers';
 
 type BasicPlacement = 'auto' | 'top' | 'right' | 'bottom' | 'left';
 // Minimum TypeScript Version: 4.1
-type AllPlacements =
-    | BasicPlacement
+type AllPlacements = BasicPlacement
     | `${BasicPlacement}-start`
     | `${BasicPlacement}-end`;
 

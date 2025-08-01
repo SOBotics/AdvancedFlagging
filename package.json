@@ -10,7 +10,7 @@
   "author": "Robert Rudman <rjrudman@gmail.com> (https://github.com/rjrudman)",
   "license": "ISC",
   "devDependencies": {
-    "@eslint/js": "^9.30.0",
+    "@eslint/js": "^9.32.0",
     "@stylistic/eslint-plugin": "^5.1.0",
     "@types/jquery": "3.5.32",
     "@types/node": "^24.0.8",

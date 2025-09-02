@@ -10,15 +10,15 @@
   "author": "Robert Rudman <rjrudman@gmail.com> (https://github.com/rjrudman)",
   "license": "ISC",
   "devDependencies": {
-    "@eslint/js": "^9.32.0",
-    "@stylistic/eslint-plugin": "^5.2.3",
-    "@types/jquery": "3.5.32",
-    "@types/node": "^24.0.8",
+    "@eslint/js": "^9.34.0",
+    "@stylistic/eslint-plugin": "^5.3.1",
+    "@types/jquery": "3.5.33",
+    "@types/node": "^24.3.0",
     "@types/tampermonkey": "5.0.4",
     "@userscripters/stackexchange-global-types": "^2.8.2",
-    "esbuild": "^0.25.8",
-    "typescript": "5.8.3",
-    "typescript-eslint": "^8.35.1"
+    "esbuild": "^0.25.9",
+    "typescript": "5.9.2",
+    "typescript-eslint": "^8.41.0"
   },
   "dependencies": {
     "@stackoverflow/stacks-icons": "^6.6.1",

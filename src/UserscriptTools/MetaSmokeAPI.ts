@@ -343,7 +343,7 @@ export class MetaSmokeAPI extends Reporter {
 
                     if (!token) return;
 
-                    resolve(token.toString());
+                    resolve(token);
                 });
         });
     }

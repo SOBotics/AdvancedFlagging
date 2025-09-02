@@ -312,7 +312,7 @@ export default class Post {
             const flagPopup = document.querySelector('#popup-flag-post');
             const submit = flagPopup?.querySelector('.js-popup-submit');
 
-            if (!submit || !flagPopup || submit.textContent?.trim().startsWith('Retract')) return;
+            if (!submit || !flagPopup || submit.textContent.trim().startsWith('Retract')) return;
 
             // add "Send feedback to: ..." buttons
             appendLabelAndBoxes(submit, this);
@@ -559,7 +559,7 @@ export default class Post {
     private getScore(): number {
         const voteElement = this.element.querySelector('.js-vote-count');
 
-        return Number(voteElement?.textContent?.trim()) || 0;
+        return Number(voteElement?.textContent.trim()) || 0;
     }
 
     private getOpReputation(): number {
@@ -588,7 +588,7 @@ export default class Post {
         // in Flags page, authorName will be empty, but we aren't interested in it there anyways...
         const lastNameEl = [...this.element.querySelectorAll('.user-info .user-details a')].pop();
 
-        return lastNameEl?.textContent?.trim() ?? '';
+        return lastNameEl?.textContent.trim() ?? '';
     }
 
     private getCreationDate(): Date {

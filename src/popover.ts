@@ -524,7 +524,9 @@ function increaseTooltipWidth(menu: HTMLUListElement): void {
         .filter(li => li.firstElementChild?.classList.contains('s-block-link'))
         .map(reportLink => reportLink.nextElementSibling)
         .forEach(tooltip => {
-            const textLength = tooltip?.textContent?.length;
+            if (!tooltip) return;
+
+            const textLength = tooltip.textContent.length;
             if (!textLength) return;
 
             tooltip.classList.add(

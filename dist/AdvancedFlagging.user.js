@@ -874,7 +874,6 @@
       ["PostSpam" /* Spam */]: "as spam",
       ["PostOffensive" /* Rude */]: "as R/A",
       ["AnswerNotAnAnswer" /* NAA */]: "as NAA",
-      ["PostLowQuality" /* VLQ */]: "as VLQ",
       ["NoFlag" /* NoFlag */]: "",
       ["PlagiarizedContent" /* Plagiarism */]: "for plagiarism",
       ["PostOther" /* ModFlag */]: "for moderator attention"
@@ -1608,7 +1607,7 @@
           const token = input?.value;
           popup.remove();
           if (!token) return;
-          resolve(token.toString());
+          resolve(token);
         });
       });
     }
@@ -1782,8 +1781,7 @@
         [IconFlag, "fc-red-500"]
       ].map(([svg, classname]) => _Post.getIcon(svg, classname));
     }
-    async flag(reportType, text) {
-      const flagName = getFlagToRaise(reportType, this.qualifiesForVlq());
+    async flag(flagName, text) {
       const targetUrl = this.reporters.Guttenberg?.targetUrl;
       const url = `/flags/posts/${this.id}/add/${flagName}`;
       const data = {
@@ -1912,7 +1910,7 @@
         if (this.autoflagging || status !== 200 || !regex.test(responseURL)) return;
         const flagPopup = document.querySelector("#popup-flag-post");
         const submit = flagPopup?.querySelector(".js-popup-submit");
-        if (!submit || !flagPopup || submit.textContent?.trim().startsWith("Retract")) return;
+        if (!submit || !flagPopup || submit.textContent.trim().startsWith("Retract")) return;
         appendLabelAndBoxes(submit, this);
         submit.addEventListener("click", async (event) => {
           const checked = flagPopup.querySelector("input.s-radio:checked");
@@ -1972,10 +1970,6 @@
       return !this.deleted && // mods can delete no matter what
       (StackExchange.options.user.isModerator || // if the delete button is visible, then the user can vote to delete
       (Boolean(deleteButton) || userRep >= 2e4 && (popover ? this.score <= 0 : this.score < 0)));
-    }
-    qualifiesForVlq() {
-      const dayMillis2 = 1e3 * 60 * 60 * 24;
-      return (/* @__PURE__ */ new Date()).valueOf() - this.date.valueOf() < dayMillis2 && this.score <= 0;
     }
     // returns [bot name, checkbox config]
     getFeedbackBoxes(isFlagOrReview = false) {
@@ -2047,7 +2041,7 @@
     }
     getScore() {
       const voteElement = this.element.querySelector(".js-vote-count");
-      return Number(voteElement?.textContent?.trim()) || 0;
+      return Number(voteElement?.textContent.trim()) || 0;
     }
     getOpReputation() {
       const repDiv = [...this.element.querySelectorAll(
@@ -2065,7 +2059,7 @@
     }
     getOpName() {
       const lastNameEl = [...this.element.querySelectorAll(".user-info .user-details a")].pop();
-      return lastNameEl?.textContent?.trim() ?? "";
+      return lastNameEl?.textContent.trim() ?? "";
     }
     getCreationDate() {
       const dateElements = this.element.querySelectorAll(".user-info .relativetime");
@@ -2248,7 +2242,7 @@
         {
           id: 6,
           displayName: "Link Only",
-          reportType: "PostLowQuality" /* VLQ */,
+          reportType: "AnswerNotAnAnswer" /* NAA */,
           comments: {
             // comment by Yunnosch: https://chat.stackoverflow.com/transcript/message/57442309
             low: `A link to a solution is welcome, but please ensure your answer is useful without it: You need to provide at least a technical summary of *how* the problem is solved, so that it can be reproduced even without the link. It is not enough to advertise *what* it achieves. Also please [add context around the link](//meta.stackexchange.com/a/8259) so your fellow users will have some idea what it is and why it is there. [Answers that are little more than a link may be deleted.](${deletedAnswers})`
@@ -2291,7 +2285,7 @@
         {
           id: 10,
           displayName: "Library",
-          reportType: "PostLowQuality" /* VLQ */,
+          reportType: "AnswerNotAnAnswer" /* NAA */,
           comments: {
             low: "Please don't just post some tool or library as an answer. At least demonstrate [how it solves the problem](//meta.stackoverflow.com/a/251605) in the answer itself."
           },
@@ -2322,7 +2316,7 @@
         {
           id: 13,
           displayName: "Non English",
-          reportType: "PostLowQuality" /* VLQ */,
+          reportType: "AnswerNotAnAnswer" /* NAA */,
           comments: {
             low: "Please write your answer in English, as Stack Overflow is an [English-only site](//meta.stackoverflow.com/a/297680)."
           },
@@ -3337,6 +3331,10 @@
       });
       Store.updateConfiguration();
     }
+    Store.flagTypes.filter(({ reportType }) => reportType === "PostLowQuality").forEach((flagType) => {
+      flagType.reportType = "AnswerNotAnAnswer" /* NAA */;
+    });
+    Store.updateFlagTypes();
   }
   function setupConfiguration() {
     setupDefaults();
@@ -3498,11 +3496,7 @@
       const tooltipFlagText = this.post.deleted ? "" : flagText;
       const commentText = this.getCommentText(flagType);
       const tooltipCommentText = (this.post.deleted ? "" : commentText) || "";
-      const flagName = getFlagToRaise(reportType, this.post.qualifiesForVlq());
-      let reportTypeHuman = reportType === "NoFlag" || !this.post.deleted ? getHumanFromDisplayName(flagName) : "";
-      if (reportType !== flagName) {
-        reportTypeHuman += " (VLQ criteria aren't met)";
-      }
+      const reportTypeHuman = reportType === "NoFlag" || !this.post.deleted ? getHumanFromDisplayName(reportType) : "";
       const popoverParent = document.createElement("div");
       Object.entries({
         Flag: reportTypeHuman,
@@ -3656,7 +3650,8 @@
   };
   function increaseTooltipWidth(menu) {
     [...menu.querySelectorAll("li")].filter((li) => li.firstElementChild?.classList.contains("s-block-link")).map((reportLink) => reportLink.nextElementSibling).forEach((tooltip) => {
-      const textLength = tooltip?.textContent?.length;
+      if (!tooltip) return;
+      const textLength = tooltip.textContent.length;
       if (!textLength) return;
       tooltip.classList.add(
         textLength > 100 ? "wmn5" : "wmn2"
@@ -3793,11 +3788,6 @@
   );
   popupWrapper.id = "advanced-flagging-snackbar";
   document.body.append(popupWrapper);
-  function getFlagToRaise(flagName, qualifiesForVlq) {
-    const vlqFlag = "PostLowQuality" /* VLQ */;
-    const naaFlag = "AnswerNotAnAnswer" /* NAA */;
-    return flagName === vlqFlag ? qualifiesForVlq ? vlqFlag : naaFlag : flagName;
-  }
   function displayToaster(text, state) {
     const element = document.createElement("div");
     element.classList.add("p12", `bg-${state}`);

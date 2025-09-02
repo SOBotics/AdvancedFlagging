@@ -1,4 +1,4 @@
-import { getFlagToRaise, page } from '../AdvancedFlagging';
+import { page } from '../AdvancedFlagging';
 import { Flags } from '../FlagTypes';
 import {
     PostType,
@@ -110,12 +110,9 @@ export default class Post {
     }
 
     public async flag(
-        reportType: Flags,
+        flagName: Flags,
         text: string | null,
     ): Promise<void> {
-        // if the flag name is VLQ, then we need to check if the criteria are met.
-        // If not, switch to NAA
-        const flagName = getFlagToRaise(reportType, this.qualifiesForVlq());
         const targetUrl = this.reporters.Guttenberg?.targetUrl;
 
         const url = `/flags/posts/${this.id}/add/${flagName}`;
@@ -425,14 +422,6 @@ export default class Post {
                 || (userRep >= 20_000 && (popover ? this.score <= 0 : this.score < 0))
             )
         );
-    }
-
-    public qualifiesForVlq(): boolean {
-        const dayMillis = 1000 * 60 * 60 * 24;
-
-        // a post can't be flagged as VLQ if it has a positive score
-        // or is more than 1 day old
-        return (new Date().valueOf() - this.date.valueOf()) < dayMillis && this.score <= 0;
     }
 
     // returns [bot name, checkbox config]

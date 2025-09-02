@@ -36,7 +36,6 @@ export enum FlagNames {
     Spam = 'PostSpam',
     Rude = 'PostOffensive',
     NAA = 'AnswerNotAnAnswer',
-    VLQ = 'PostLowQuality',
     NoFlag = 'NoFlag',
     Plagiarism = 'PlagiarizedContent',
     ModFlag = 'PostOther'
@@ -167,7 +166,6 @@ export type HumanFlags = 'as NAA'
     | 'as R/A'
     | 'as spam'
     | 'for plagiarism'
-    | 'as VLQ'
     | 'for moderator attention'
     | '';
 
@@ -176,7 +174,6 @@ export function getHumanFromDisplayName(displayName: Flags): HumanFlags {
         [FlagNames.Spam]: 'as spam',
         [FlagNames.Rude]: 'as R/A',
         [FlagNames.NAA]: 'as NAA',
-        [FlagNames.VLQ]: 'as VLQ',
         [FlagNames.NoFlag]: '',
         [FlagNames.Plagiarism]: 'for plagiarism',
         [FlagNames.ModFlag]: 'for moderator attention',

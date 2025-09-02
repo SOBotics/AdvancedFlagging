@@ -132,6 +132,16 @@ function setupDefaults(): void {
 
         Store.updateConfiguration();
     }
+
+    // https://meta.stackoverflow.com/a/434697
+    Store.flagTypes
+        // @ts-expect-error VLQ flag is removed, see the link above
+        .filter(({ reportType }) => reportType === 'PostLowQuality')
+        .forEach(flagType => {
+            flagType.reportType = FlagNames.NAA;
+        });
+
+    Store.updateFlagTypes();
 }
 
 export function setupConfiguration(): void {

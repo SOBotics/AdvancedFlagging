@@ -1,12 +1,11 @@
 import Post from './UserscriptTools/Post';
 import Page from './UserscriptTools/Page';
 
-import { Flags } from './FlagTypes';
 import { setupConfiguration } from './Configuration';
 import { Popover } from './popover';
 
 import { setupReview } from './review';
-import { addXHRListener, FlagNames, interceptXhr, popupDelay } from './shared';
+import { addXHRListener, interceptXhr, popupDelay } from './shared';
 
 import { NattyAPI } from './UserscriptTools/NattyApi';
 import { MetaSmokeAPI } from './UserscriptTools/MetaSmokeAPI';
@@ -71,20 +70,6 @@ popupWrapper.classList.add(
 popupWrapper.id = 'advanced-flagging-snackbar';
 
 document.body.append(popupWrapper);
-
-export function getFlagToRaise(
-    flagName: Flags,
-    qualifiesForVlq: boolean
-): Flags {
-    const vlqFlag = FlagNames.VLQ;
-    const naaFlag = FlagNames.NAA;
-
-    // If the flag name is VLQ, check if the criteria are met.
-    // If not, switch to NAA
-    return flagName === vlqFlag
-        ? (qualifiesForVlq ? vlqFlag : naaFlag)
-        : flagName;
-}
 
 export function displayToaster(
     text: string,

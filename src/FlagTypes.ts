@@ -6,7 +6,6 @@ export type Flags = 'AnswerNotAnAnswer'
     | 'PostSpam'
     | 'NoFlag'
     | 'PostOther'
-    | 'PostLowQuality'
     | 'PlagiarizedContent';
 
 const deletedAnswers = '/help/deleted-answers';
@@ -111,7 +110,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 6,
                 displayName: 'Link Only',
-                reportType: FlagNames.VLQ,
+                reportType: FlagNames.NAA,
                 comments: {
                     // comment by Yunnosch: https://chat.stackoverflow.com/transcript/message/57442309
                     low: 'A link to a solution is welcome, but please ensure your answer is useful without it: '
@@ -179,7 +178,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 10,
                 displayName: 'Library',
-                reportType: FlagNames.VLQ,
+                reportType: FlagNames.NAA,
                 comments: {
                     low: 'Please don\'t just post some tool or library as an answer. At least demonstrate '
                        + '[how it solves the problem](//meta.stackoverflow.com/a/251605) in the answer itself.',
@@ -214,7 +213,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 13,
                 displayName: 'Non English',
-                reportType: FlagNames.VLQ,
+                reportType: FlagNames.NAA,
                 comments: {
                     low: 'Please write your answer in English, as Stack Overflow is an '
                        + '[English-only site](//meta.stackoverflow.com/a/297680).',

@@ -114,7 +114,7 @@ export class NattyAPI extends Reporter {
         if (!this.canBeReported()) return '';
 
         // Handle cases where the post may not be reported to Natty on time:
-        // - when a mod flags a post as NAA/VLQ it is deleted immediately.
+        // - when a mod flags a post as NAA it is deleted immediately.
         // - when a reviewer sends the last Recommend deletion/Delete review,
         //   the post is also deleted immediately
         // - if a red flag has been raised by the user

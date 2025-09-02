@@ -10,7 +10,6 @@ import {
     delay,
     configBoxes
 } from './shared';
-import { getFlagToRaise } from './AdvancedFlagging';
 import Post from './UserscriptTools/Post';
 
 import { Menu, Spinner } from '@userscripters/stacks-helpers';
@@ -209,7 +208,7 @@ export class Popover {
     ): string {
         /*
         Example innerText:
-            Flag: as VLQ
+            Flag: as NAA
             Comment: Please write your answer in English, as Stack Overflow
                      is an [English-only site](//meta.stackoverflow.com/a/297680).
             Feedbacks: tp to Natty, track with Generic Bot
@@ -235,16 +234,9 @@ export class Popover {
         const commentText = this.getCommentText(flagType);
         const tooltipCommentText = (this.post.deleted ? '' : commentText) || '';
 
-        // if the flag changed from VLQ to NAA, let the user know why
-        const flagName = getFlagToRaise(reportType, this.post.qualifiesForVlq());
-
-        let reportTypeHuman = reportType === 'NoFlag' || !this.post.deleted
-            ? getHumanFromDisplayName(flagName)
+        const reportTypeHuman = reportType === 'NoFlag' || !this.post.deleted
+            ? getHumanFromDisplayName(reportType)
             : '';
-
-        if (reportType !== flagName) {
-            reportTypeHuman += ' (VLQ criteria aren\'t met)';
-        }
 
         // ---------------------------------------------------
 

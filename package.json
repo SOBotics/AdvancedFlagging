@@ -17,7 +17,7 @@
     "@types/tampermonkey": "5.0.4",
     "@userscripters/stackexchange-global-types": "^2.8.2",
     "esbuild": "^0.25.9",
-    "typescript": "5.9.2",
+    "typescript": "5.9.3",
     "typescript-eslint": "^8.41.0"
   },
   "dependencies": {

@@ -2,8 +2,8 @@ import {
     displayStacksToast,
     FlagTypeFeedbacks,
     getFlagTypeFromFlagId,
+    Flags
 } from '../../shared';
-import { Flags } from '../../FlagTypes';
 import { isSpecialFlag } from '../../Configuration';
 import { CachedFlag, Store } from '../../UserscriptTools/Store';
 

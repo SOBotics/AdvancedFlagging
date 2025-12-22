@@ -1,12 +1,5 @@
-import { FlagTypeFeedbacks, PostType, FlagNames } from './shared';
+import { FlagTypeFeedbacks, PostType, Flags } from './shared';
 import { CachedFlag } from './UserscriptTools/Store';
-
-export type Flags = 'AnswerNotAnAnswer'
-    | 'PostOffensive'
-    | 'PostSpam'
-    | 'NoFlag'
-    | 'PostOther'
-    | 'PlagiarizedContent';
 
 const deletedAnswers = '/help/deleted-answers';
 const commentHelp = '/help/privileges/comment';
@@ -47,14 +40,14 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 1,
                 displayName: 'Spam',
-                reportType: FlagNames.Spam,
+                reportType: Flags.Spam,
                 feedbacks: { Smokey: 'tpu-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
                 sendWhenFlagRaised: true
             },
             {
                 id: 2,
                 displayName: 'Rude or Abusive',
-                reportType: FlagNames.Rude,
+                reportType: Flags.Rude,
                 feedbacks: { Smokey: 'tpu-', Natty: 'tp', Guttenberg: '', 'Generic Bot': 'track' },
                 sendWhenFlagRaised: true
             }
@@ -69,7 +62,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 3,
                 displayName: 'Plagiarism',
-                reportType: FlagNames.Plagiarism,
+                reportType: Flags.Plagiarism,
                 flagText: 'Possible plagiarism of the linked answer, as can be seen here $COPYPASTOR$',
                 // don't send feedback to Smokey despite https://charcoal-se.org/smokey/Feedback-Guidance.html#plagiarism
                 feedbacks: { Smokey: '', Natty: '', Guttenberg: 'tp', 'Generic Bot': '' },
@@ -78,7 +71,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 4,
                 displayName: 'Duplicate answer',
-                reportType: FlagNames.ModFlag,
+                reportType: Flags.ModFlag,
                 flagText: 'The post is a repost of their other answer: $TARGET$, but as there are slight differences '
                         + '(see $COPYPASTOR$), an auto flag would not be raised.',
                 comments: {
@@ -92,7 +85,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 5,
                 displayName: 'Bad attribution',
-                reportType: FlagNames.Plagiarism,
+                reportType: Flags.Plagiarism,
                 flagText: 'This post is copied from $TARGET$, as can be seen here $COPYPASTOR$. The author '
                                + 'only added a link to the other answer, which is [not the proper way of attribution]'
                                + '(//stackoverflow.blog/2009/06/25/attribution-required).',
@@ -110,7 +103,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 6,
                 displayName: 'Link Only',
-                reportType: FlagNames.NAA,
+                reportType: Flags.NAA,
                 comments: {
                     // comment by Yunnosch: https://chat.stackoverflow.com/transcript/message/57442309
                     low: 'A link to a solution is welcome, but please ensure your answer is useful without it: '
@@ -126,7 +119,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 7,
                 displayName: 'Not an answer',
-                reportType: FlagNames.NAA,
+                reportType: Flags.NAA,
                 comments: {
                     low: 'This does not provide an answer to the question. You can [search for similar questions](/search), '
                        + 'or refer to the related and linked questions on the right-hand side of the page to find an answer. '
@@ -144,7 +137,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 8,
                 displayName: 'Thanks',
-                reportType: FlagNames.NAA,
+                reportType: Flags.NAA,
                 comments: {
                     low: 'Please don\'t add _thanks_ as answers. They don\'t actually provide an answer to the question, and '
                        + 'can be perceived as noise by its future visitors. Once you [earn](//meta.stackoverflow.com/q/146472) '
@@ -164,7 +157,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 9,
                 displayName: 'Me too',
-                reportType: FlagNames.NAA,
+                reportType: Flags.NAA,
                 comments: {
                     low: 'Please don\'t add *Me too* as answers. It doesn\'t actually provide an answer to the question. '
                        + 'If you have a different but related question, then [ask](/questions/ask) it (reference this one '
@@ -178,7 +171,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 10,
                 displayName: 'Library',
-                reportType: FlagNames.NAA,
+                reportType: Flags.NAA,
                 comments: {
                     low: 'Please don\'t just post some tool or library as an answer. At least demonstrate '
                        + '[how it solves the problem](//meta.stackoverflow.com/a/251605) in the answer itself.',
@@ -189,7 +182,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 11,
                 displayName: 'Comment',
-                reportType: FlagNames.NAA,
+                reportType: Flags.NAA,
                 comments: {
                     low: 'This does not provide an answer to the question. Once you have sufficient '
                        + `[reputation](${reputationHelp}) you will be able to [comment on any post](${commentHelp}); instead, `
@@ -202,7 +195,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 12,
                 displayName: 'Duplicate',
-                reportType: FlagNames.NAA,
+                reportType: Flags.NAA,
                 comments: {
                     low: 'Instead of posting an answer which merely links to another answer, please instead '
                        + `[flag the question](${flagPosts}) as a duplicate.`,
@@ -213,7 +206,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 13,
                 displayName: 'Non English',
-                reportType: FlagNames.NAA,
+                reportType: Flags.NAA,
                 comments: {
                     low: 'Please write your answer in English, as Stack Overflow is an '
                        + '[English-only site](//meta.stackoverflow.com/a/297680).',
@@ -224,7 +217,7 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 14,
                 displayName: 'Should be an edit',
-                reportType: FlagNames.NAA,
+                reportType: Flags.NAA,
                 comments: {
                     low: 'Please use the edit link on your question to add additional information. '
                        + 'The "Post Answer" button should be used only for complete answers to the question.',
@@ -243,21 +236,21 @@ export const flagCategories: FlagCategory[] = [
             {
                 id: 15,
                 displayName: 'Looks Fine',
-                reportType: FlagNames.NoFlag,
+                reportType: Flags.NoFlag,
                 feedbacks: { Smokey: 'fp-', Natty: 'fp', Guttenberg: 'fp', 'Generic Bot': '' },
                 sendWhenFlagRaised: false
             },
             {
                 id: 16,
                 displayName: 'Needs Editing',
-                reportType: FlagNames.NoFlag,
+                reportType: Flags.NoFlag,
                 feedbacks: { Smokey: 'fp-', Natty: 'ne', Guttenberg: 'fp', 'Generic Bot': '' },
                 sendWhenFlagRaised: false
             },
             {
                 id: 17,
                 displayName: 'Vandalism',
-                reportType: FlagNames.NoFlag,
+                reportType: Flags.NoFlag,
                 feedbacks: { Smokey: 'tp-', Natty: '', Guttenberg: 'fp', 'Generic Bot': '' },
                 sendWhenFlagRaised: false
             }
@@ -269,7 +262,7 @@ export function getEmptyFlagType(id: number, belongsTo: string): CachedFlag {
     return {
         id,
         displayName: 'Name',
-        reportType: FlagNames.NoFlag,
+        reportType: Flags.NoFlag,
         feedbacks: { Smokey: '', Natty: '', Guttenberg: '', 'Generic Bot': '' },
         sendWhenFlagRaised: false,
         downvote: false,

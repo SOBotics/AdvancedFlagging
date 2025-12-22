@@ -4,21 +4,21 @@ import {
     CachedCategory,
     CachedFlag
 } from './UserscriptTools/Store';
-import { Flags, flagCategories } from './FlagTypes';
+import { flagCategories } from './FlagTypes';
 
-import { FlagNames, displayStacksToast, getFlagTypeFromFlagId } from './shared';
+import { Flags, displayStacksToast, getFlagTypeFromFlagId } from './shared';
 
 import { buildConfigurationOverlay } from './modals/config';
 import { setupCommentsAndFlagsModal } from './modals/comments/main';
 
 export function isSpecialFlag(flagName: Flags, checkNoFlag = true): boolean {
     const arrayOfFlags: Flags[] = [
-        FlagNames.ModFlag,
-        FlagNames.Plagiarism
+        Flags.ModFlag,
+        Flags.Plagiarism
     ];
 
     if (checkNoFlag) {
-        arrayOfFlags.push(FlagNames.NoFlag);
+        arrayOfFlags.push(Flags.NoFlag);
     }
 
     return arrayOfFlags.includes(flagName);
@@ -97,7 +97,7 @@ function setupDefaults(): void {
         // filter by id because names can be edited by the user
         if (cachedFlag.id !== 3 && cachedFlag.id !== 5) return;
 
-        cachedFlag.reportType = FlagNames.Plagiarism;
+        cachedFlag.reportType = Flags.Plagiarism;
     });
     Store.updateFlagTypes();
 
@@ -136,9 +136,10 @@ function setupDefaults(): void {
     // https://meta.stackoverflow.com/a/434697
     Store.flagTypes
         // @ts-expect-error VLQ flag is removed, see the link above
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
         .filter(({ reportType }) => reportType === 'PostLowQuality')
         .forEach(flagType => {
-            flagType.reportType = FlagNames.NAA;
+            flagType.reportType = Flags.NAA;
         });
 
     Store.updateFlagTypes();

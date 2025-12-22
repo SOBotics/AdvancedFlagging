@@ -1,5 +1,4 @@
 import { CachedFlag, Store } from './UserscriptTools/Store';
-import { Flags } from './FlagTypes';
 import Page from './UserscriptTools/Page';
 import { Progress } from './UserscriptTools/Progress';
 import Post from './UserscriptTools/Post';
@@ -32,7 +31,7 @@ export const possibleFeedbacks: { [key in BotNames]: AllFeedbacks[] } = {
     'Generic Bot': ['track', '']
 };
 
-export enum FlagNames {
+export enum Flags {
     Spam = 'PostSpam',
     Rude = 'PostOffensive',
     NAA = 'AnswerNotAnAnswer',
@@ -128,7 +127,7 @@ export function addXHRListener(
 export function interceptXhr(): void {
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const open = XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open = function(): void {
+    XMLHttpRequest.prototype.open = function (): void {
         this.addEventListener('load', () => {
             callbacks.forEach(cb => setTimeout(() => cb(this)));
         }, false);
@@ -171,12 +170,12 @@ export type HumanFlags = 'as NAA'
 
 export function getHumanFromDisplayName(displayName: Flags): HumanFlags {
     const flags = {
-        [FlagNames.Spam]: 'as spam',
-        [FlagNames.Rude]: 'as R/A',
-        [FlagNames.NAA]: 'as NAA',
-        [FlagNames.NoFlag]: '',
-        [FlagNames.Plagiarism]: 'for plagiarism',
-        [FlagNames.ModFlag]: 'for moderator attention',
+        [Flags.Spam]: 'as spam',
+        [Flags.Rude]: 'as R/A',
+        [Flags.NAA]: 'as NAA',
+        [Flags.NoFlag]: '',
+        [Flags.Plagiarism]: 'for plagiarism',
+        [Flags.ModFlag]: 'for moderator attention',
     } as const;
 
     return flags[displayName] || '';
@@ -212,7 +211,7 @@ export async function addProgress(
         const flagProgress = post.progress.addItem('Flagging as NAA...');
 
         try {
-            await post.flag(FlagNames.NAA, null);
+            await post.flag(Flags.NAA, null);
             flagProgress.completed();
         } catch (error) {
             console.error(error);

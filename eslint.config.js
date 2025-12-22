@@ -57,7 +57,6 @@ export default tseslint.config({
         '@stylistic/brace-style': ['error', '1tbs'],
         '@stylistic/comma-dangle': 'off',
         '@stylistic/indent-binary-ops': 'off',
-        '@stylistic/space-before-function-paren': 'off',
         '@stylistic/type-annotation-spacing': [
             'warn',
             {

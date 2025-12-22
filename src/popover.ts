@@ -5,8 +5,8 @@ import {
     attachPopover,
     getHumanFromDisplayName,
 
+    Flags,
     getFullFlag,
-    FlagNames,
     delay,
     configBoxes
 } from './shared';
@@ -18,7 +18,6 @@ import { Store, CachedFlag } from './UserscriptTools/Store';
 import Reporter from './UserscriptTools/Reporter';
 import Page from './UserscriptTools/Page';
 import { Progress } from './UserscriptTools/Progress';
-import { Flags } from './FlagTypes';
 
 const noneSpan = document.createElement('span');
 noneSpan.classList.add('o50');
@@ -33,11 +32,11 @@ export class Popover {
 
     // do not vote to delete if reportType is one of these:
     private readonly excludedTypes: Flags[] = [
-        FlagNames.Plagiarism,
-        FlagNames.ModFlag,
-        FlagNames.NoFlag,
-        FlagNames.Spam,
-        FlagNames.Rude
+        Flags.Plagiarism,
+        Flags.ModFlag,
+        Flags.NoFlag,
+        Flags.Spam,
+        Flags.Rude
     ];
 
     private makeMenu(): HTMLUListElement {
@@ -234,7 +233,7 @@ export class Popover {
         const commentText = this.getCommentText(flagType);
         const tooltipCommentText = (this.post.deleted ? '' : commentText) || '';
 
-        const reportTypeHuman = reportType === 'NoFlag' || !this.post.deleted
+        const reportTypeHuman = reportType === Flags.NoFlag || !this.post.deleted
             ? getHumanFromDisplayName(reportType)
             : '';
 
@@ -386,7 +385,7 @@ export class Popover {
 
         const natty = this.post.reporters.Natty;
         if (natty) {
-            natty.raisedRedFlag = reportType === FlagNames.Spam || reportType === FlagNames.Rude;
+            natty.raisedRedFlag = reportType === Flags.Spam || reportType === Flags.Rude;
         }
 
         // if feedback is sent successfully, the success variable is true, otherwise false
@@ -438,11 +437,11 @@ export class Popover {
             }
 
             // flag & delete
-            if (flag && reportType !== FlagNames.NoFlag
+            if (flag && reportType !== Flags.NoFlag
                 // as requested by Zoe: https://chat.stackoverflow.com/transcript/message/57483258
                 && (!StackExchange.options.user.isModerator
-                    || reportType === FlagNames.Spam
-                    || reportType === FlagNames.Rude
+                    || reportType === Flags.Spam
+                    || reportType === Flags.Rude
                 )
             ) {
                 const humanFlag = getHumanFromDisplayName(reportType);
@@ -497,7 +496,7 @@ export class Popover {
         StackExchange.helpers.removeSpinner = old;
 
         // don't show performed/failed action icons if post has been flagged
-        if (reportType !== 'NoFlag') return;
+        if (reportType !== Flags.NoFlag) return;
 
         if (success) {
             attachPopover(this.post.done, `Performed action ${displayName}`);

@@ -3496,7 +3496,7 @@
       const tooltipFlagText = this.post.deleted ? "" : flagText;
       const commentText = this.getCommentText(flagType);
       const tooltipCommentText = (this.post.deleted ? "" : commentText) || "";
-      const reportTypeHuman = reportType === "NoFlag" || !this.post.deleted ? getHumanFromDisplayName(reportType) : "";
+      const reportTypeHuman = reportType === "NoFlag" /* NoFlag */ || !this.post.deleted ? getHumanFromDisplayName(reportType) : "";
       const popoverParent = document.createElement("div");
       Object.entries({
         Flag: reportTypeHuman,
@@ -3638,7 +3638,7 @@
       flex.remove();
       this.post.progress.delete();
       StackExchange.helpers.removeSpinner = old;
-      if (reportType !== "NoFlag") return;
+      if (reportType !== "NoFlag" /* NoFlag */) return;
       if (success) {
         attachPopover(this.post.done, `Performed action ${displayName}`);
         $(this.post.done).fadeIn();

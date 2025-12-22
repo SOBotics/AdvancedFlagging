@@ -218,7 +218,7 @@ export function getTextareas({
         textarea.insertAdjacentElement('afterend', charsLeft);
 
         // change the string on keyup
-        textarea.addEventListener('keyup', function() {
+        textarea.addEventListener('keyup', function () {
             const newCharsLeft = getCharSpan(this, contentType);
 
             this.nextElementSibling?.replaceWith(newCharsLeft);

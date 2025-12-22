@@ -1,8 +1,7 @@
 import { page } from '../AdvancedFlagging';
-import { Flags } from '../FlagTypes';
 import {
     PostType,
-    FlagNames,
+    Flags,
     getFormDataFromObject,
     addXHRListener,
     addProgress,
@@ -122,7 +121,7 @@ export default class Post {
             // plagiarism flag: fill "Link(s) to original content"
             // note wrt link: site will always be Stack Overflow,
             //                post will always be an answer.
-            customData: flagName === FlagNames.Plagiarism
+            customData: flagName === Flags.Plagiarism
                 ? JSON.stringify({ plagiarizedSource: `https:${targetUrl}` })
                 : ''
         };

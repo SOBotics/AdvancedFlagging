@@ -1,8 +1,9 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import { defineConfig } from 'eslint/config';
 import stylistic from '@stylistic/eslint-plugin';
 
-export default tseslint.config({
+export default defineConfig({
     extends: [
         eslint.configs.recommended,
         ...tseslint.configs.strictTypeChecked,
@@ -51,6 +52,7 @@ export default tseslint.config({
         }],
         '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
         '@typescript-eslint/no-unnecessary-type-parameters': 'off',
+        '@typescript-eslint/no-floating-promises': 'error',
 
         '@stylistic/arrow-parens': ['warn', 'as-needed'],
         '@stylistic/quote-props': ['warn', 'as-needed'],

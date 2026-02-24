@@ -11,14 +11,14 @@
   "license": "ISC",
   "devDependencies": {
     "@eslint/js": "^9.39.2",
-    "@stylistic/eslint-plugin": "^5.7.1",
-    "@types/jquery": "3.5.33",
-    "@types/node": "^25.0.10",
+    "@stylistic/eslint-plugin": "^5.9.0",
+    "@types/jquery": "4.0.0",
+    "@types/node": "^25.3.0",
     "@types/tampermonkey": "5.0.5",
     "@userscripters/stackexchange-global-types": "^2.8.2",
-    "esbuild": "^0.27.2",
+    "esbuild": "^0.27.3",
     "typescript": "5.9.3",
-    "typescript-eslint": "^8.53.1"
+    "typescript-eslint": "^8.56.1"
   },
   "dependencies": {
     "@stackoverflow/stacks-icons": "^6.9.0",

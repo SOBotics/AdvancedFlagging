@@ -1069,7 +1069,7 @@
           return fkey;
         } catch (error) {
           console.error(error);
-          throw new Error("Failed to get chat fkey");
+          throw new Error("Failed to get chat fkey", { cause: error });
         }
       }, expiryDate);
     }
@@ -1852,7 +1852,7 @@
         json = JSON.parse(response);
       } catch (error) {
         console.error(error, response);
-        throw new Error("could not parse JSON");
+        throw new Error("could not parse JSON", { cause: error });
       }
       if (!json.Success) {
         console.error(json);

@@ -213,7 +213,7 @@ export default class Post {
         } catch (error) {
             console.error(error, response);
 
-            throw new Error('could not parse JSON');
+            throw new Error('could not parse JSON', { cause: error });
         }
 
         if (!json.Success) {

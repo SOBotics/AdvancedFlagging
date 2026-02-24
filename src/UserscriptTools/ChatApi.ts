@@ -199,7 +199,7 @@ export class ChatApi {
                 return fkey;
             } catch (error) {
                 console.error(error);
-                throw new Error('Failed to get chat fkey');
+                throw new Error('Failed to get chat fkey', { cause: error });
             }
         }, expiryDate);
     }

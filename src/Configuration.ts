@@ -59,7 +59,7 @@ function cacheCategories(): void {
                 name: category.name,
                 appliesTo: category.appliesTo,
                 id: category.id
-            } as CachedCategory
+            }
         ));
 
     Store.set<CachedCategory[]>(Cached.FlagCategories, categories);

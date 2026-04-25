@@ -698,6 +698,7 @@
       this.controller = controller;
       this.element = this.getPopover();
     }
+    controller;
     element;
     attach() {
       if (!this.controller) return;
@@ -937,6 +938,8 @@
       this.chatUrl = chatUrl;
       this.roomId = roomId;
     }
+    chatUrl;
+    roomId;
     nattyId = 6817005;
     getChatUserId() {
       return StackExchange.options.user.userId;
@@ -1250,6 +1253,7 @@
       super("Generic Bot", id);
       this.deleted = deleted;
     }
+    deleted;
     key = "Cm45BSrt51FR3ju";
     sendFeedback(trackPost) {
       const flaggerName = encodeURIComponent(username || "");
@@ -1320,6 +1324,11 @@
       this.timeout = timeout;
       this.initWebsocket();
     }
+    url;
+    id;
+    progress;
+    auth;
+    timeout;
     websocket = null;
     async waitForReport(callback) {
       const connectProgress = this.progress?.addSubItem("Connecting to websocket...");
@@ -1399,6 +1408,8 @@
       this.deleted = deleted;
       this.smokeyId = _MetaSmokeAPI.metasmokeIds[this.id] ?? 0;
     }
+    postType;
+    deleted;
     static accessToken;
     static isDisabled = Store.get(Cached.Metasmoke.disabled) || false;
     smokeyId;
@@ -1659,6 +1670,9 @@
       this.feedbackMessage = `@Natty feedback https://stackoverflow.com/a/${this.id}`;
       this.reportMessage = `@Natty report https://stackoverflow.com/a/${this.id}`;
     }
+    questionDate;
+    answerDate;
+    deleted;
     raisedRedFlag = false;
     static nattyIds = [];
     chat = new ChatApi();
@@ -1758,6 +1772,7 @@
       [this.done, this.failed, this.flagged] = _Post.getActionIcons();
       this.initReporters();
     }
+    element;
     static qDate = /* @__PURE__ */ new Date();
     type;
     id;
@@ -2112,6 +2127,7 @@
         Post.qDate = post.date;
       }
     }
+    includeModified;
     static isStackOverflow = /^https:\/\/stackoverflow.com/.test(location.href);
     static isQuestionPage = /\/questions\/\d+.*/.test(location.href);
     static isLqpReviewPage = /\/review\/low-quality-posts(?:\/\d+)?(?:\/)?$/.test(location.href);
@@ -3377,6 +3393,7 @@
       this.post = post;
       this.popover = this.makeMenu();
     }
+    post;
     popover;
     // do not vote to delete if reportType is one of these:
     excludedTypes = [

@@ -13,8 +13,6 @@
     "lib": [ "esnext", "DOM", "DOM.Iterable" ],
     "types": [
       "@userscripters/stackexchange-global-types",
-      "@userscripters/stacks-helpers",
-      "@stackoverflow/stacks-icons",
       "jquery",
       "tampermonkey",
       "node"

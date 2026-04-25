@@ -171,7 +171,7 @@ function getGeneralConfigItems(): HTMLElement {
             configValue: Cached.Configuration.debug
         }
     ].map(({ text, configValue, description }) => {
-        const selected = Store.config[configValue as GeneralItems] as boolean;
+        const selected = Store.config[configValue];
 
         return {
             id: `advanced-flagging-${configValue}`,

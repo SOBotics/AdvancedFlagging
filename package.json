@@ -13,7 +13,7 @@
     "@eslint/js": "^10.0.1",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/jquery": "4.0.0",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.9.1",
     "@types/tampermonkey": "5.0.5",
     "@userscripters/stackexchange-global-types": "^2.8.2",
     "esbuild": "^0.28.0",

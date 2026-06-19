@@ -12,13 +12,13 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@stylistic/eslint-plugin": "^5.10.0",
-    "@types/jquery": "4.0.0",
-    "@types/node": "^25.6.0",
+    "@types/jquery": "4.0.1",
+    "@types/node": "^26.0.0",
     "@types/tampermonkey": "5.0.5",
     "@userscripters/stackexchange-global-types": "^2.8.2",
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.28.1",
     "typescript": "6.0.3",
-    "typescript-eslint": "^8.59.0"
+    "typescript-eslint": "^8.61.1"
   },
   "dependencies": {
     "@stackoverflow/stacks-icons": "^6.9.0",
@@ -29,5 +29,8 @@
     "url": "https://github.com/SOBotics/AdvancedFlagging.git"
   },
   "sideEffects": false,
-  "type": "module"
+  "type": "module",
+  "allowScripts": {
+    "esbuild@0.28.1": true
+  }
 }

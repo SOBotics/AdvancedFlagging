@@ -1176,7 +1176,14 @@
           method: "GET",
           url,
           timeout: 1500,
-          onload: ({ responseText }) => {
+          onload: ({ responseText, status, statusText }) => {
+            if (status !== 200) {
+              reject(`Bad response from ${this.server}.
+Status: ${status} ${statusText}.
+Response was:
+${responseText}`);
+              return;
+            }
             const response = JSON.parse(responseText);
             if (response.status === "failure") return;
             response.posts.forEach((item) => {

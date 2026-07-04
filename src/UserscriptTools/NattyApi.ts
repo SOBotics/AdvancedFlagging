@@ -1,6 +1,6 @@
 import { ChatApi } from './ChatApi';
 import { AllFeedbacks } from '../shared';
-import { page } from '../AdvancedFlagging';
+import { displayToaster, page } from '../AdvancedFlagging';
 
 import WebsocketUtils from './WebsocketUtils';
 import Reporter from './Reporter';
@@ -41,22 +41,33 @@ export class NattyAPI extends Reporter {
         this.reportMessage = `@Natty report https://stackoverflow.com/a/${this.id}`;
     }
 
-    public static getAllNattyIds(ids?: number[]): Promise<void> {
+    public static async getAllNattyIds(ids?: number[]): Promise<void> {
         const postIds = (ids ?? page.getAllPostIds(false, false)).join(',');
 
-        if (!Page.isStackOverflow || !postIds) return Promise.resolve();
+        if (!Page.isStackOverflow || !postIds) return;
 
-        return new Promise<void>((resolve, reject) => {
+        try {
+            this.nattyIds = await this.requestNattyIds(postIds);
+        } catch (error) {
+            displayToaster('Could not connect to Natty.', 'danger');
+            console.error(error);
+        }
+    }
+
+    private static requestNattyIds(postIds: string): Promise<number[]> {
+        return new Promise<number[]>((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: `${nattyFeedbackUrl}${postIds}`,
-                onload: ({ status, responseText }) => {
-                    if (status !== 200) reject();
+                onload: ({ status, responseText, statusText }) => {
+                    if (status !== 200) {
+                        reject(`Bad response from ${nattyFeedbackUrl}.\nStatus: ${status} ${statusText}.\nResponse was:\n${responseText}`);
+                        return;
+                    }
 
                     const result = JSON.parse(responseText) as NattyFeedback;
-                    this.nattyIds = result.items.map(({ name }) => Number(name));
 
-                    resolve();
+                    resolve(result.items.map(({ name }) => Number(name)));
                 },
                 onerror: () => reject()
             });

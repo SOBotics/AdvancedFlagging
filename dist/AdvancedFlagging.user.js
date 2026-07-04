@@ -1176,7 +1176,14 @@
           method: "GET",
           url,
           timeout: 1500,
-          onload: ({ responseText }) => {
+          onload: ({ responseText, status, statusText }) => {
+            if (status !== 200) {
+              reject(`Bad response from ${this.server}.
+Status: ${status} ${statusText}.
+Response was:
+${responseText}`);
+              return;
+            }
             const response = JSON.parse(responseText);
             if (response.status === "failure") return;
             response.posts.forEach((item) => {
@@ -1678,18 +1685,31 @@
     chat = new ChatApi();
     feedbackMessage;
     reportMessage;
-    static getAllNattyIds(ids) {
+    static async getAllNattyIds(ids) {
       const postIds2 = (ids ?? page.getAllPostIds(false, false)).join(",");
-      if (!Page.isStackOverflow || !postIds2) return Promise.resolve();
+      if (!Page.isStackOverflow || !postIds2) return;
+      try {
+        this.nattyIds = await this.requestNattyIds(postIds2);
+      } catch (error) {
+        displayToaster("Could not connect to Natty.", "danger");
+        console.error(error);
+      }
+    }
+    static requestNattyIds(postIds2) {
       return new Promise((resolve, reject) => {
         GM_xmlhttpRequest({
           method: "GET",
           url: `${nattyFeedbackUrl}${postIds2}`,
-          onload: ({ status, responseText }) => {
-            if (status !== 200) reject();
+          onload: ({ status, responseText, statusText }) => {
+            if (status !== 200) {
+              reject(`Bad response from ${nattyFeedbackUrl}.
+Status: ${status} ${statusText}.
+Response was:
+${responseText}`);
+              return;
+            }
             const result = JSON.parse(responseText);
-            this.nattyIds = result.items.map(({ name }) => Number(name));
-            resolve();
+            resolve(result.items.map(({ name }) => Number(name)));
           },
           onerror: () => reject()
         });

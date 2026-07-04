@@ -73,7 +73,12 @@ export class CopyPastorAPI extends Reporter {
                 method: 'GET',
                 url,
                 timeout: 1500,
-                onload: ({ responseText }) => {
+                onload: ({ responseText, status, statusText }) => {
+                    if (status !== 200) {
+                        reject(`Bad response from ${this.server}.\nStatus: ${status} ${statusText}.\nResponse was:\n${responseText}`);
+                        return;
+                    }
+
                     const response = JSON.parse(responseText) as CopyPastorFindTargetResponse;
 
                     if (response.status === 'failure') return;

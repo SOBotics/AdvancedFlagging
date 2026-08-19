@@ -931,6 +931,9 @@
     checkboxes.forEach((box) => box.classList.add("flex--item"));
     element.parentElement?.append(label, ...checkboxes);
   }
+  function waitForSvg() {
+    return "Svg" in window ? Promise.resolve() : delay(100).then(waitForSvg);
+  }
 
   // src/UserscriptTools/ChatApi.ts
   var ChatApi = class _ChatApi {
@@ -3396,11 +3399,13 @@ ${responseText}`);
       Cached.Configuration.addAuthorName
     );
     if (!propertyDoesNotExist) return;
-    displayStacksToast(
-      "Please set up Advanced Flagging before continuing.",
-      "info",
-      true
-    );
+    void waitForSvg().then(() => {
+      displayStacksToast(
+        "Please set up Advanced Flagging before continuing.",
+        "info",
+        true
+      );
+    });
     setTimeout(() => Stacks.showModal(configModal));
   }
 

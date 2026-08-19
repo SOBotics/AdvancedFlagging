@@ -6,7 +6,7 @@ import {
 } from './UserscriptTools/Store';
 import { flagCategories } from './FlagTypes';
 
-import { Flags, displayStacksToast, getFlagTypeFromFlagId } from './shared';
+import { Flags, displayStacksToast, getFlagTypeFromFlagId, waitForSvg } from './shared';
 
 import { buildConfigurationOverlay } from './modals/config';
 import { setupCommentsAndFlagsModal } from './modals/comments/main';
@@ -187,11 +187,13 @@ export function setupConfiguration(): void {
 
     if (!propertyDoesNotExist) return;
 
-    displayStacksToast(
-        'Please set up Advanced Flagging before continuing.',
-        'info',
-        true
-    );
+    void waitForSvg().then(() => {
+        displayStacksToast(
+            'Please set up Advanced Flagging before continuing.',
+            'info',
+            true
+        );
+    });
 
     setTimeout(() => Stacks.showModal(configModal));
 }

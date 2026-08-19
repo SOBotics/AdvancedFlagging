@@ -261,3 +261,9 @@ export function appendLabelAndBoxes(
 
     element.parentElement?.append(label, ...checkboxes);
 }
+
+export function waitForSvg(): Promise<void> {
+    return 'Svg' in window
+        ? Promise.resolve()
+        : delay(100).then(waitForSvg);
+}

@@ -13,12 +13,12 @@
     "@eslint/js": "^10.0.1",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/jquery": "4.0.1",
-    "@types/node": "^26.1.0",
+    "@types/node": "^26.2.0",
     "@types/tampermonkey": "5.0.5",
     "@userscripters/stackexchange-global-types": "^2.8.2",
-    "esbuild": "^0.28.1",
+    "esbuild": "^0.28.2",
     "typescript": "6.0.3",
-    "typescript-eslint": "^8.62.1"
+    "typescript-eslint": "^8.67.0"
   },
   "dependencies": {
     "@stackoverflow/stacks-icons": "^6.9.0",

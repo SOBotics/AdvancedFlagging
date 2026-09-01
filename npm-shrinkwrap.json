@@ -17,7 +17,7 @@
         "@stylistic/eslint-plugin": "^5.10.0",
         "@types/jquery": "4.0.1",
         "@types/node": "^26.2.0",
-        "@types/tampermonkey": "5.0.5",
+        "@types/tampermonkey": "5.5.0",
         "@typescript/native": "npm:typescript@^7.0.2",
         "@userscripters/stackexchange-global-types": "^2.8.2",
         "esbuild": "^0.28.2",
@@ -775,9 +775,9 @@
       "license": "MIT"
     },
     "node_modules/@types/tampermonkey": {
-      "version": "5.0.5",
-      "resolved": "https://registry.npmjs.org/@types/tampermonkey/-/tampermonkey-5.0.5.tgz",
-      "integrity": "sha512-ZWitwJH4T/jcQiynhc3I5DNiwlsDzVTKPXg6A8ltTw3SDuf0b00bNRSV0Z/yldnhhBi9e8g8vY/X3LVSQcaCKQ==",
+      "version": "5.5.0",
+      "resolved": "https://registry.npmjs.org/@types/tampermonkey/-/tampermonkey-5.5.0.tgz",
+      "integrity": "sha512-I90oAlYhgP7DFr5LbwdvPNSd51SULGT6zLw6A+nK4FtRlgDsAYtKShWhsxjmU6LzSWI2XbPq8oAQE/ckZHW2LQ==",
       "dev": true,
       "license": "MIT"
     },

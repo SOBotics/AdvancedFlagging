@@ -14,7 +14,7 @@
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/jquery": "4.0.1",
     "@types/node": "^26.2.0",
-    "@types/tampermonkey": "5.0.5",
+    "@types/tampermonkey": "5.5.0",
     "@userscripters/stackexchange-global-types": "^2.8.2",
     "esbuild": "^0.28.2",
     "@typescript/native": "npm:typescript@^7.0.2",

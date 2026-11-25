@@ -123,7 +123,7 @@ export class Popover {
                         : '';
 
                     const tooltipHtml = this.getTooltipHtml(flagType, flagText);
-                    const classes = isDangerous ? [ 'fc-red-500' ] : '';
+                    const classes = isDangerous ? ['fc-red-500'] : '';
 
                     return {
                         text: displayName,
@@ -153,7 +153,7 @@ export class Popover {
         const comments = this.post.element.querySelector('.comment-body');
 
         return configBoxes
-            .filter(([ text ]) => {
+            .filter(([text]) => {
                 // show "Leave comment" either if we are on SO or allowComments is enabled
                 if (text === 'Leave comment') return Store.config.allowComments || Page.isStackOverflow;
                 // hide "Delete" when user doesn't have delete privileges
@@ -191,7 +191,7 @@ export class Popover {
                 return {
                     checkbox,
                     checkboxOptions: {
-                        classes: [ 'px6' ]
+                        classes: ['px6']
                     },
                     popover: {
                         html: `Send feedback to ${name}`,
@@ -371,7 +371,7 @@ export class Popover {
         // add Stacks spinner
         const spinner = Spinner.makeSpinner({
             size: 'sm',
-            classes: [ 'advanced-flagging-spinner' ]
+            classes: ['advanced-flagging-spinner']
         });
 
         const flex = document.createElement('div');

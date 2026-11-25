@@ -34,9 +34,9 @@ async function runOnNewTask(xhr: XMLHttpRequest): Promise<void> {
     // before metasmoke info is updated)
     const url = `//stackoverflow.com/a/${response.postId}`;
     await Promise.all([
-        MetaSmokeAPI.queryMetaSmokeInternal([ url ]),
-        NattyAPI.getAllNattyIds([ response.postId ]),
-        CopyPastorAPI.storeReportedPosts([ url ])
+        MetaSmokeAPI.queryMetaSmokeInternal([url]),
+        NattyAPI.getAllNattyIds([response.postId]),
+        CopyPastorAPI.storeReportedPosts([url])
     ]);
 
     const page = new Page();
@@ -104,7 +104,7 @@ export function setupReview(): void {
                     id: 'advanced-flagging-flag-post',
                     labelConfig: {
                         text: 'Flag post',
-                        classes: [ 'mt2' ]
+                        classes: ['mt2']
                     },
                     selected: true
                 }

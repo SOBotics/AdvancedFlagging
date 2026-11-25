@@ -56,7 +56,7 @@ export const flagCategories: FlagCategory[] = [
     {
         isDangerous: true,
         name: 'Guttenberg mod flags',
-        appliesTo: [ 'Answer' ],
+        appliesTo: ['Answer'],
         id: 2,
         FlagTypes: [
             {
@@ -97,7 +97,7 @@ export const flagCategories: FlagCategory[] = [
     {
         isDangerous: false,
         name: 'Answer-related',
-        appliesTo: [ 'Answer' ],
+        appliesTo: ['Answer'],
         id: 3,
         FlagTypes: [
             {

@@ -353,7 +353,7 @@ function getRadiosForBot(
 
     const [fieldset] = Radio.makeStacksRadios(config, name, {
         horizontal: true,
-        classes: [ 'fs-body2' ]
+        classes: ['fs-body2']
     });
     // add data-feedback attribute
     fieldset.querySelectorAll('input').forEach(radio => {

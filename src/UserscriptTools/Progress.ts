@@ -74,7 +74,7 @@ export class Progress {
 
         const spinner = Spinner.makeSpinner({
             size: 'sm',
-            classes: [ 'flex--item' ]
+            classes: ['flex--item']
         });
 
         wrapper.append(spinner, action);

@@ -76,7 +76,7 @@ export class Store {
 
     // export const updateCategories = (): void => GreaseMonkeyCache.storeInCache(FlagCategoriesKey, cachedCategories);
 
-    public static async getAndCache<T>(
+    public static async getAndCache<T extends Tampermonkey.StorageValue>(
         cacheKey: string,
         getterPromise: () => Promise<T>,
         expiresAt?: Date
@@ -112,7 +112,11 @@ export class Store {
             : cachedItem;
     }
 
-    public static set<T>(cacheKey: string, item: T, expiresAt?: Date): void {
+    public static set<T extends Tampermonkey.StorageValue>(
+        cacheKey: string,
+        item: T,
+        expiresAt?: Date
+    ): void {
         const jsonObject = expiresAt
             ? { Expires: expiresAt.getTime(), Data: item }
             : item;

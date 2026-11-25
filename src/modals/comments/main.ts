@@ -132,7 +132,7 @@ function expandableToggled(edit: HTMLElement): void {
         const input = Input.makeStacksInput(
             `advanced-flagging-flag-name-${flagId}`,
             {
-                classes: [ 's-input__md' ],
+                classes: ['s-input__md'],
                 value: name?.innerText ?? ''
             }
         );
@@ -176,7 +176,7 @@ function getActionItems(
         'Save',
         {
             primary: true,
-            classes: [ 'flex--item' ]
+            classes: ['flex--item']
         }
     );
     save.style.display = 'none';
@@ -192,7 +192,7 @@ function getActionItems(
                 height: 18,
                 width: 18
             },
-            classes: [ 'flex--item' ]
+            classes: ['flex--item']
         }
     );
     edit.dataset.controller = 's-expandable-control';
@@ -213,7 +213,7 @@ function getActionItems(
                 width: 18,
                 height: 18
             },
-            classes: [ 'flex--item' ]
+            classes: ['flex--item']
         }
     );
 
@@ -366,7 +366,7 @@ function createCategoryDiv(category: Partial<CachedCategory>): HTMLDivElement {
         `advanced-flagging-add-new-${category.id}`,
         'New',
         {
-            type: [ 'outlined' ],
+            type: ['outlined'],
             iconConfig: {
                 name: 'iconPlus',
                 path: getIconPath(IconPlus),
@@ -511,7 +511,7 @@ export function setupCommentsAndFlagsModal(): void {
                             'advanced-flagging-configuration-modal-reset',
                             'Reset',
                             {
-                                type: [ 'danger' ],
+                                type: ['danger'],
                                 click: {
                                     handler: resetFlagTypes
                                 }

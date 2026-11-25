@@ -244,7 +244,7 @@ export function appendLabelAndBoxes(
         'noid',
         {
             text: 'Send feedback to:',
-            classes: [ 'mt2', 'fw-normal' ]
+            classes: ['mt2', 'fw-normal']
         }
     );
     const boxes = Object

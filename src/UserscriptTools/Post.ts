@@ -452,7 +452,7 @@ export default class Post {
                     id: `${botNameId}${isFlagOrReview ? '-flag-review' : ''}`,
                     labelConfig: {
                         text: `${isFlagOrReview ? '' : 'Feedback to'} ${iconHtml}`,
-                        classes: [ isFlagOrReview ? 'mb4' : 'fs-body1' ],
+                        classes: [isFlagOrReview ? 'mb4' : 'fs-body1'],
                     },
                     selected: Store.config.default[botName],
                 };
@@ -609,7 +609,7 @@ export default class Post {
 
                 void StackExchange.realtime.reloadPosts(postIds);
             } else {
-                void StackExchange.realtime.reloadPosts([ this.id ]);
+                void StackExchange.realtime.reloadPosts([this.id]);
             }
         } else {
             // if the question has been deleted,

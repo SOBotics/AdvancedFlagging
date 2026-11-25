@@ -114,15 +114,15 @@ function setupDefaults(): void {
         Store.config.default = {};
         // [old, new]
         ([
-            [ 'defaultNoComment', 'comment' ],
-            [ 'defaultNoFlag', 'flag' ],
-            [ 'defaultNoDownvote', 'downvote' ],
-            [ 'defaultNoSmokey', 'smokey' ],
-            [ 'defaultNoNatty', 'natty' ],
-            [ 'defaultNoGuttenberg', 'guttenberg' ],
-            [ 'defaultNoGenericBot', 'genericbot' ],
-            [ 'defaultNoDelete', 'delete' ],
-        ] as const).forEach(([ oldName, newName ]) => {
+            ['defaultNoComment', 'comment'],
+            ['defaultNoFlag', 'flag'],
+            ['defaultNoDownvote', 'downvote'],
+            ['defaultNoSmokey', 'smokey'],
+            ['defaultNoNatty', 'natty'],
+            ['defaultNoGuttenberg', 'guttenberg'],
+            ['defaultNoGenericBot', 'genericbot'],
+            ['defaultNoDelete', 'delete'],
+        ] as const).forEach(([oldName, newName]) => {
             // @ts-expect-error for the same reason as above
             Store.config.default[newName] = !Store.config[oldName];
             // @ts-expect-error for the same reason as above

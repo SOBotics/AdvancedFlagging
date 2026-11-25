@@ -147,7 +147,7 @@ export class MetaSmokeAPI extends Reporter {
         // different sites
         if (url.host !== location.host) return [];
 
-        return [ postId ];
+        return [postId];
     }
 
     public async reportRedFlag(): Promise<void> {
@@ -391,6 +391,7 @@ export class MetaSmokeAPI extends Reporter {
                 const { token } = await tokenCall.json() as { token: string };
 
                 return token;
-            });
+            }
+        );
     }
 }

@@ -108,7 +108,7 @@ export function buildConfigurationOverlay(): void {
                             'advanced-flagging-configuration-modal-reset',
                             'Reset',
                             {
-                                type: [ 'danger' ],
+                                type: ['danger'],
                                 click: {
                                     handler: resetConfig
                                 }
@@ -202,7 +202,7 @@ function getGeneralConfigItems(): HTMLElement {
         botBoxes,
         {
             horizontal: true,
-            classes: [ 'fs-body2' ]
+            classes: ['fs-body2']
         }
     );
 
@@ -214,7 +214,7 @@ function getGeneralConfigItems(): HTMLElement {
 
     // Check <option text> by default
     const optionBoxes = configBoxes
-        .map(([ name, sanitised ]) => {
+        .map(([name, sanitised]) => {
             const selected = Store.config.default[sanitised];
 
             return {
@@ -229,7 +229,7 @@ function getGeneralConfigItems(): HTMLElement {
         optionBoxes,
         {
             horizontal: true,
-            classes: [ 'fs-body2' ]
+            classes: ['fs-body2']
         }
     );
     const optionDescription = document.createElement('div');

@@ -56,7 +56,8 @@ export default class WebsocketUtils {
                             reportProgress?.completed();
                             resolve();
                         }
-                    });
+                    }
+                );
             })
         );
     }
@@ -107,7 +108,7 @@ export default class WebsocketUtils {
         });
 
         await Promise
-            .race([ promise, timeout ])
+            .race([promise, timeout])
             .finally(() => {
                 clearTimeout(time);
                 this.closeWebsocket();

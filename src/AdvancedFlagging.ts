@@ -176,8 +176,8 @@ function setupPostPage(): void {
             `advanced-flagging-link-${id}`,
             'Advanced Flagging',
             {
-                type: [ 'link' ],
-                classes: [ 'advanced-flagging-link' ]
+                type: ['link'],
+                classes: ['advanced-flagging-link']
             }
         );
 

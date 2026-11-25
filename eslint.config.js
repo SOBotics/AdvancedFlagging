@@ -53,6 +53,7 @@ export default defineConfig({
         '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
         '@typescript-eslint/no-unnecessary-type-parameters': 'off',
         '@typescript-eslint/no-floating-promises': 'error',
+        '@typescript-eslint/no-unsafe-enum-assignment': 'off',
 
         '@stylistic/arrow-parens': ['warn', 'as-needed'],
         '@stylistic/quote-props': ['warn', 'as-needed'],
@@ -69,6 +70,11 @@ export default defineConfig({
                 }
             }
         ],
-        '@stylistic/array-bracket-spacing': 'off'
+        '@stylistic/array-bracket-spacing': 'off',
+        '@stylistic/list-style': ['error', {
+            'overrides': {
+                'IfStatement': 'off',
+            }
+        }]
     }
 });

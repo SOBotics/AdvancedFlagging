@@ -11,15 +11,15 @@
   "license": "ISC",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@stylistic/eslint-plugin": "^5.10.0",
+    "@stylistic/eslint-plugin": "^6.0.1",
     "@types/jquery": "4.0.1",
-    "@types/node": "^26.2.0",
-    "@types/tampermonkey": "5.0.5",
+    "@types/node": "^26.6.10",
+    "@types/tampermonkey": "5.5.0",
     "@userscripters/stackexchange-global-types": "^2.8.2",
     "esbuild": "^0.28.2",
     "@typescript/native": "npm:typescript@^7.0.2",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "typescript-eslint": "^8.67.0"
+    "typescript-eslint": "^8.74.0"
   },
   "dependencies": {
     "@stackoverflow/stacks-icons": "^6.9.0",
@@ -32,6 +32,6 @@
   "sideEffects": false,
   "type": "module",
   "allowScripts": {
-    "esbuild@0.28.1": true
+    "esbuild@0.28.2": true
   }
 }
